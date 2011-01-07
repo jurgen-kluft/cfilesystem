@@ -1,6 +1,6 @@
-#ifndef _X_FILESYSTEM_COMMON_H__
+#ifndef __X_FILESYSTEM_COMMON_H__
 #define __X_FILESYSTEM_COMMON_H__
-#include "..\x_target.h"
+#include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,10 +8,9 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "..\x_types.h"
-#include "..\x_llist.h"
-
-#include "x_filesystem.h"
+#include "xbase\x_types.h"
+#include "xfilesystem\private\x_filesystem_spsc_queue.h"
+#include "xfilesystem\private\x_filesystem_llist.h"
 
 //==============================================================================
 // xCore namespace
@@ -228,7 +227,6 @@ namespace xcore
 			extern FileInfo*		GetFileInfo			( u32 uHandle );
 			extern u32				FindFreeFileSlot	( void );
 
-			extern s32				AsyncIONumActiveSlots( void );
 			extern s32				AsyncIONumFreeSlots	( void );
 			extern AsyncIOInfo*		GetAsyncIOData		( u32 nSlot );
 			extern AsyncIOInfo*		FreeAsyncIOPop		( void );
@@ -354,8 +352,8 @@ namespace xcore
 			u32								m_nCacheHandle;
 			u64								m_uCacheSize;
 			CacheHeader						m_xHeader;
-			xllist<FileEntry>				m_xPermanentList;
-			xllist<FileEntry>				m_xTransientList;
+			xfilesystem::llist<FileEntry>	m_xPermanentList;
+			xfilesystem::llist<FileEntry>	m_xTransientList;
 
 			static	CallbackData			m_xCallbacks[MAX_CALLBACKS];
 
@@ -364,6 +362,9 @@ namespace xcore
 		public:
 						xfilecache						();
 						~xfilecache						();
+
+			void*		operator new (size_t size, xfilecache *p)	{ return p; }
+
 
 			void		Initialise						();
 			void		PurgeCache						();

@@ -1,6 +1,6 @@
-#ifndef __X_FILESYSTEM_PC_H__
-#define __X_FILESYSTEM_PC_H__
-#include "..\x_target.h"
+#ifndef __X_FILESYSTEM_WIN32_H__
+#define __X_FILESYSTEM_WIN32_H__
+#include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,7 +8,7 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "..\x_types.h"
+#include "xbase\x_types.h"
 
 //==============================================================================
 // xCore namespace
@@ -31,6 +31,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_PC_H__
+// END __X_FILESYSTEM_WIN32_H__
 //==============================================================================
 #endif

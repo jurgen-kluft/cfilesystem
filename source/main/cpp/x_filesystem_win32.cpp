@@ -1,4 +1,4 @@
-#include "../x_target.h"
+#include "xbase\x_target.h"
 #ifdef TARGET_PC
 
 //==============================================================================
@@ -11,18 +11,15 @@
 #include <windows.h>
 #include <stdio.h>
 
-#include "../x_debug.h"
-#include "../x_stdio.h"
-#include "../x_thread.h"
-#include "../x_container.h"
-#include "../x_llist.h"
-#include "../x_string.h"
-#include "../x_va_list.h"
-#include "../x_time.h"
-#include "../x_system.h"
+#include "xbase\x_debug.h"
+#include "xbase\x_string_std.h"
+#include "xbase\x_va_list.h"
 
-#include "x_filesystem_common.h"
-#include "x_filesystem_pc.h"
+#include "xtime\x_time.h"
+
+#include "xfilesystem\x_filesystem.h"
+#include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem\private\x_filesystem_win32.h"
 
 
 namespace xcore
@@ -492,7 +489,7 @@ namespace xcore
 			{
 				// Allocate and fill info
 				// m_pszFileListData	= (char**)HeapManager::GetHeap()->AllocFromEnd(m_uFileListLength * sizeof(char*));
-				m_pszFileListData = (char**)x_malloc(sizeof(char*), m_uFileListLength, XMEM_FLAG_ALIGN_8B);
+				m_pszFileListData = (char**)xfilesystem_heap_alloc(m_uFileListLength, 8);
 
 				u32	uIndex	= 0;
 				__private::ParseDir(szPath, boRecursive, uIndex, m_pszFileListData);
@@ -506,10 +503,10 @@ namespace xcore
 			// Done - free all buffers
 			for(u32 uFile = 0; uFile < m_uFileListLength; uFile++)
 			{
-				x_free(m_pszFileListData[uFile]);
+				xfilesystem_heap_free(m_pszFileListData[uFile]);
 			}
 
-			x_free(m_pszFileListData);
+			xfilesystem_heap_free(m_pszFileListData);
 
 			m_uFileListLength	= 0;
 			m_pszFileListData	= NULL;
