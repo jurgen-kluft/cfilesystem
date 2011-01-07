@@ -29,7 +29,7 @@
     <Item Src="target\xfilesystem\outdir\xfilesystem_*\xfilesystem_*_${Platform}.lib" Dst="libs\" />
   </Content>
   
-  <Dependency Package="example_package_name">
+  <Dependency Package="xbase">
     <Group>com.virtuos.tnt</Group>
     <Version>[1.0,)</Version>
     <Type>Package</Type>
