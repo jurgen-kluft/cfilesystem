@@ -1,24 +1,21 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "../x_target.h"
-#include "../x_debug.h"
-#include "../x_stdio.h"
-#include "../x_thread.h"
-#include "../x_container.h"
-#include "../x_string.h"
-#include "../x_llist.h"
+#include "xbase\x_target.h"
+#include "xbase\x_debug.h"
+#include "xbase\x_string_std.h"
 
-#include "x_filesystem.h"
-#include "x_filesystem_common.h"
+#include "xstring\x_string.h"
 
+#include "xfilesystem\x_filesystem.h"
+#include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem\private\x_filesystem_spsc_queue.h"
 
 //==============================================================================
 // xCore namespace
 //==============================================================================
 namespace xcore
 {
-
 	//------------------------------------------------------------------------------------------
 	//------------------------------------------------------------------------------------------
 	//----------------------- xfilesystem Common Implementations -------------------------------
@@ -32,11 +29,11 @@ namespace xcore
 		static AsyncIOInfo				m_AsyncIOData[FS_MAX_ASYNC_IO_OPS];
 		static QueueItem				m_aAsyncQueue[FS_MAX_ASYNC_QUEUE_ITEMS];
 
-		static xmtllist<QueueItem>		m_pAsyncQueueList[FS_PRIORITY_COUNT];
-		static xmtllist<QueueItem>		m_pFreeQueueItemList;
+		static spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>	m_pAsyncQueueList[FS_PRIORITY_COUNT];
+		static spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>	m_pFreeQueueItemList;
 
-		static xmtllist<AsyncIOInfo>	m_pFreeAsyncIOList;
-		static xmtllist<AsyncIOInfo>	m_pAsyncIOList;
+		static spsc_cqueue<AsyncIOInfo*, FS_MAX_ASYNC_IO_OPS>		m_pFreeAsyncIOList;
+		static spsc_cqueue<AsyncIOInfo*, FS_MAX_ASYNC_IO_OPS>		m_pAsyncIOList;
 
 		static EError					m_eLastErrorStack[FS_MAX_ERROR_ITEMS];
 		static xfilecache*				m_pCache = NULL;
@@ -144,11 +141,11 @@ namespace xcore
 			if (uFlags & LOAD_FLAGS_FROM_END)
 			{
 				// Allocate from the end of the heap
-				pData = x_malloc(sizeof(xbyte), (s32)u64FileSize, x_MemAligmentToEnum(uAlignment));
+				pData = xfilesystem_heap_alloc((s32)u64FileSize, uAlignment);
 			}
 			else
 			{
-				pData = x_malloc(sizeof(xbyte), (s32)u64FileSize, x_MemAligmentToEnum(uAlignment));
+				pData = xfilesystem_heap_alloc((s32)u64FileSize, uAlignment);
 			}
 
 			Read(nFileHandle, 0, u64FileSize, pData, false);
@@ -236,7 +233,7 @@ namespace xcore
 
 			if(pOpen == 0)
 			{
-				ASSERTS(0, "Stdio: " TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
+				ASSERTS(0, "xfilesystem: " TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				SetLastError(FILE_ERROR_MAX_ASYNC);
 
@@ -271,7 +268,7 @@ namespace xcore
 
 			if(pRead == 0)
 			{
-				ASSERTS(0, "Stdio:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
+				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				SetLastError(FILE_ERROR_MAX_ASYNC);
 
@@ -306,7 +303,7 @@ namespace xcore
 
 			if(pWrite == 0)
 			{
-				ASSERTS(0, "Stdio:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
+				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				SetLastError(FILE_ERROR_MAX_ASYNC);
 
@@ -341,7 +338,7 @@ namespace xcore
 
 			if(pDelete == 0)
 			{
-				ASSERTS(0, "Stdio:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
+				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				SetLastError(FILE_ERROR_MAX_ASYNC);
 
@@ -376,7 +373,7 @@ namespace xcore
 
 			if(pClose == 0)
 			{
-				ASSERTS(0, "Stdio:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
+				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				SetLastError(FILE_ERROR_MAX_ASYNC);
 
@@ -408,7 +405,7 @@ namespace xcore
 			u32 uHandle = FindFreeFileSlot ();
 			if(uHandle == (u32)INVALID_FILE_HANDLE)
 			{
-				ASSERTS(0, "Stdio:" TARGET_PLATFORM_STR " ERROR Too many files opened!");
+				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Too many files opened!");
 
 				SetLastError(FILE_ERROR_MAX_FILES);
 				return (u32)INVALID_FILE_HANDLE;
@@ -419,7 +416,7 @@ namespace xcore
 
 			if (boWrite && IsSourceReadonly(eSource))
 			{
-				ASSERTS(0, "Stdio:" TARGET_PLATFORM_STR " ERROR Device is readonly!");
+				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Device is readonly!");
 
 				SetLastError(FILE_ERROR_DEVICE_READONLY);
 				return (u32)INVALID_FILE_HANDLE;
@@ -1309,7 +1306,7 @@ namespace xcore
 		{
 			void				InitialiseCommon ( u32 uAsyncQueueSize, xbool boEnableCache )
 			{
-				x_printf ("Stdio:"TARGET_PLATFORM_STR" INFO Initialise()\n");
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" INFO Initialise()\n");
 
 				//--------------------------------
 				// Clear the error stack
@@ -1328,7 +1325,7 @@ namespace xcore
 				for (u32 uLoop = 0; uLoop < FS_MAX_ASYNC_QUEUE_ITEMS; uLoop++)
 				{
 					m_aAsyncQueue[uLoop].clear();
-					m_pFreeQueueItemList.addToTail(&(m_aAsyncQueue[uLoop]));
+					m_pFreeQueueItemList.push(&(m_aAsyncQueue[uLoop]));
 				}
 
 				//---------------------------------------
@@ -1342,7 +1339,7 @@ namespace xcore
 				for(u32 uSlot = 0; uSlot < FS_MAX_ASYNC_IO_OPS; uSlot++)	
 				{
 					m_AsyncIOData[uSlot].clear();
-					m_pFreeAsyncIOList.addToTail(&m_AsyncIOData[uSlot]);
+					m_pFreeAsyncIOList.push(&m_AsyncIOData[uSlot]);
 				}
 
 				if (boEnableCache)
@@ -1354,7 +1351,7 @@ namespace xcore
 			void				ShutdownCommon		( void )
 			{
 				DestroyFileCache();
-				x_printf ("Stdio:"TARGET_PLATFORM_STR" INFO Shutdown()\n");
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" INFO Shutdown()\n");
 			}
 
 			//------------------------------------------------------------------------------------------
@@ -1449,17 +1446,9 @@ namespace xcore
 
 			//------------------------------------------------------------------------------------------
 
-			s32					AsyncIONumActiveSlots(const u32 uPriority)
-			{
-				ASSERT(uPriority<FS_PRIORITY_COUNT);
-				return m_pAsyncQueueList[uPriority].getLength();
-			}
-
-			//------------------------------------------------------------------------------------------
-
 			s32					AsyncIONumFreeSlots()
 			{
-				return m_pFreeQueueItemList.getLength();
+				return m_pFreeQueueItemList.size();
 			}
 
 			//------------------------------------------------------------------------------------------
@@ -1474,8 +1463,11 @@ namespace xcore
 
 			AsyncIOInfo*		FreeAsyncIOPop		( void )
 			{
-				AsyncIOInfo* asyncIOInfo = m_pFreeAsyncIOList.removeHead();
-				return asyncIOInfo;
+				AsyncIOInfo* asyncIOInfo;
+				if (m_pFreeAsyncIOList.pop(asyncIOInfo))
+					return asyncIOInfo;
+				else
+					return NULL;
 			}
 
 			//------------------------------------------------------------------------------------------
@@ -1483,58 +1475,65 @@ namespace xcore
 			void				FreeAsyncIOAddToTail( AsyncIOInfo* asyncIOInfo )
 			{
 				asyncIOInfo->m_nFileIndex = INVALID_FILE_HANDLE;
-				m_pFreeAsyncIOList.addToTail(asyncIOInfo);
+				m_pFreeAsyncIOList.push(asyncIOInfo);
 			}
 
 			//------------------------------------------------------------------------------------------
 
 			AsyncIOInfo*		AsyncIORemoveHead	( void )
 			{
-				return m_pAsyncIOList.removeHead();
+				AsyncIOInfo* item;
+				if (m_pAsyncIOList.pop(item))
+					return item;
+				return NULL;
 			}
 
 			//------------------------------------------------------------------------------------------
 
 			void				AsyncIOAddToTail	( AsyncIOInfo* asyncIOInfo )
 			{
-				m_pAsyncIOList.addToTail(asyncIOInfo);
+				m_pAsyncIOList.push(asyncIOInfo);
 			}
 
 			//------------------------------------------------------------------------------------------
 
 			QueueItem*			FreeAsyncQueuePop	( )
 			{
-				QueueItem* item = m_pFreeQueueItemList.removeHead();
-				return item;
+				QueueItem* item;
+				if (m_pFreeQueueItemList.pop(item))
+					return item;
+				return NULL;
 			}
 
 			//------------------------------------------------------------------------------------------
 
 			void				FreeAsyncQueueAddToTail( QueueItem* asyncQueueItem )
 			{
-				m_pFreeQueueItemList.addToTail(asyncQueueItem);
+				m_pFreeQueueItemList.push(asyncQueueItem);
 			}
 
 			//------------------------------------------------------------------------------------------
 
 			QueueItem*			AsyncQueueRemoveHead( u32 uPriority )
 			{
-				QueueItem* item = m_pAsyncQueueList[uPriority].removeHead();
-				return item;
+				QueueItem* item;
+				if (m_pAsyncQueueList[uPriority].pop(item))
+					return item;
+				return NULL;
 			}
 
 			//------------------------------------------------------------------------------------------
 
 			void				AsyncQueueAddToTail	( u32 uPriority, QueueItem* asyncQueueItem )
 			{
-				m_pAsyncQueueList[uPriority].addToTail(asyncQueueItem);
+				m_pAsyncQueueList[uPriority].push(asyncQueueItem);
 			}
 
 			//------------------------------------------------------------------------------------------
 
 			void				AsyncQueueAddToHead	( u32 uPriority, QueueItem* asyncQueueItem )
 			{
-				m_pAsyncQueueList[uPriority].addToHead(asyncQueueItem);
+				m_pAsyncQueueList[uPriority].push(asyncQueueItem);
 			}
 
 			//------------------------------------------------------------------------------------------
@@ -1794,7 +1793,7 @@ namespace xcore
 							}
 							else
 							{
-								x_Sleep(1);
+								// ?????? TODO x_Sleep(1);
 							}
 						}
 						else if( pOperation->m_nStatus == FILE_OP_STATUS_DONE )
@@ -1815,14 +1814,17 @@ namespace xcore
 
 			void				CreateFileCache		( void )
 			{
-				m_pCache = x_new(xfilecache, 1, XMEM_FLAG_ALIGN_16B);
+				void* mem = xfilesystem_heap_alloc(sizeof(xfilecache), 16);
+				m_pCache = (xfilecache*)mem;
+				xfilecache* filecache = new(m_pCache) xfilecache;
 			}
 
 			//------------------------------------------------------------------------------------------
 
 			void				DestroyFileCache	( void )
 			{
-				x_delete(m_pCache);
+				m_pCache->~xfilecache();
+				xfilesystem_heap_free(m_pCache);
 				m_pCache = NULL;
 			}
 
@@ -1875,33 +1877,33 @@ namespace xcore
 			switch (GetLastError())
 			{
 			case FILE_ERROR_OK:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Ok";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Ok";
 			case FILE_ERROR_NO_FILE:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=File doesn't exist";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=File doesn't exist";
 			case FILE_ERROR_BADF:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Bad file descriptor";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Bad file descriptor";
 			case FILE_ERROR_PRIORITY:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Wrong priority";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Wrong priority";
 			case FILE_ERROR_MAX_FILES:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Maximum number of open files reached";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Maximum number of open files reached";
 			case FILE_ERROR_MAX_ASYNC:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Maximum number of async operations reached";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Maximum number of async operations reached";
 			case FILE_ERROR_DEVICE:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Unknown device";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Unknown device";
 			case FILE_ERROR_UNSUP:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Unsupported operation";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Unsupported operation";
 			case FILE_ERROR_CANNOT_MOUNT:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Mount failed";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Mount failed";
 			case FILE_ERROR_ASYNC_BUSY:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Async busy";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Async busy";
 			case FILE_ERROR_NOASYNC:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=No async operation has been performed";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=No async operation has been performed";
 			case FILE_ERROR_NOCWD:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Current directory doesn't exist";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Current directory doesn't exist";
 			case FILE_ERROR_NAMETOOLONG:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Filename too long";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Filename too long";
 			default:
-				return "Stdio:"TARGET_PLATFORM_STR" ERROR=Unknown";
+				return "xfilesystem:"TARGET_PLATFORM_STR" ERROR=Unknown";
 			}
 		}
 	};

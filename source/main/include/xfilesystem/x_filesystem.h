@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_H__
 #define __X_FILESYSTEM_H__
-#include "../x_target.h"
+#include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,8 +8,8 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "../x_types.h"
-#include "../x_debug.h"
+#include "xbase\x_types.h"
+#include "xbase\x_debug.h"
 
 //==============================================================================
 // xCore namespace
@@ -28,6 +28,8 @@ namespace xcore
 
 	namespace xfilesystem
 	{
+		extern void*	xfilesystem_heap_alloc(s32 size, s32 alignment);
+		extern void		xfilesystem_heap_free(void* mem);
 
 #if defined(TARGET_PS3) || defined(TARGET_360) || defined(TARGET_PC)
 

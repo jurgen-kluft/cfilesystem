@@ -35,7 +35,19 @@
     <Type>Package</Type>
   </Dependency>
 
-  <Project Name="xfilesystem" Category="Main" Language="C++" Location="source\main\cpp" Scope="Public">
+  <Dependency Package="xtime">
+    <Group>com.virtuos.tnt</Group>
+    <Version>[1.0,)</Version>
+    <Type>Package</Type>
+  </Dependency>
+
+  <Dependency Package="xstring">
+    <Group>com.virtuos.tnt</Group>
+    <Version>[1.0,)</Version>
+    <Type>Package</Type>
+  </Dependency>
+
+  <Project Name="xfilesystem" Group="Main" Language="C++" Location="source\main\cpp" Scope="Public">
     <ProjectFile>
 			<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 			  <PropertyGroup Label="Globals">
@@ -80,7 +92,7 @@
 			</Project>				
     </ProjectFile>
   </Project>
-  <Project Name="xfilesystem_test" Category="UnitTest" Language="C++" Location="source\test\cpp" Scope="Private">
+  <Project Name="xfilesystem_test" Group="UnitTest" Language="C++" Location="source\test\cpp" Scope="Private" DependsOn="xfilesystem">
     <ProjectFile>
 			<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 			  <PropertyGroup Label="Globals">

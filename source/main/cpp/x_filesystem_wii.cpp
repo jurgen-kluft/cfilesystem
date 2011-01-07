@@ -1,4 +1,4 @@
-#include "../x_target.h"
+#include "xbase\x_target.h"
 #ifdef TARGET_WII
 
 #include <revolution.h>
@@ -10,17 +10,12 @@
 // INCLUDES
 //==============================================================================
 
-#include "../x_types.h"
-#include "../x_debug.h"
-#include "../x_stdio.h"
-#include "../x_container.h"
-#include "../x_string.h"
-#include "../x_time.h"
-#include "../x_llist.h"
-#include "../x_system.h"
+#include "xbase\x_types.h"
+#include "xbase\x_debug.h"
+#include "xbase\x_string_std.h"
 
-#include "x_filesystem_common.h"
-#include "x_filesystem_wii.h"
+#include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem\private\x_filesystem_wii.h"
 
 //==============================================================================
 // xCore namespace
@@ -159,14 +154,6 @@ namespace xcore
 		static xbyte					m_pAsyncIOThreadStack[FS_ASYNC_WORKER_THREAD_STACK_SIZE];
 
 		static FileInfo					m_OpenAsyncFile[FS_MAX_OPENED_FILES];
-
-		static QueueItem				m_aAsyncQueue[FS_MAX_ASYNC_QUEUE_ITEMS];
-		static xmtllist<QueueItem>		m_pAsyncQueueList[FS_PRIORITY_COUNT];
-		static xmtllist<QueueItem>		m_pFreeQueueItemList;
-
-		static AsyncIOInfo				m_AsyncIOData[FS_MAX_ASYNC_IO_OPS];
-		static xmtllist<AsyncIOInfo>	m_pFreeAsyncIOList;
-		static xmtllist<AsyncIOInfo>	m_pAsyncIOList;
 
 		static u32						m_uFileListLength = 0;
 		static char**					m_pszFileListData = NULL;
@@ -361,8 +348,6 @@ namespace xcore
 		{
 			ASSERTS (pTimeAndDate, "GetOpenCreatedTime() : Pointer to xsystem::TimeAndDate is NULL!");
 
-			//CellFsStat	xStat;
-			//CellFsErrno eError = cellFsFstat(m_OpenAsyncFile[uHandle].m_nFileHandle, &xStat);
 
 			pTimeAndDate = xdatetime::sFromFileTime(0);
 		}
@@ -373,8 +358,6 @@ namespace xcore
 		{
 			ASSERTS (pTimeAndDate, "GetOpenModifiedTime() : Pointer to xsystem::TimeAndDate is NULL!");
 
-			//CellFsStat	xStat;
-			//CellFsErrno eError = cellFsFstat(m_OpenAsyncFile[uHandle].m_nFileHandle, &xStat);
 
 			pTimeAndDate = xdatetime::sFromFileTime(0);
 		}
@@ -383,13 +366,11 @@ namespace xcore
 
 		void				ReSize( u32 uHandle, u64 uNewSize )
 		{
-			FileInfo* pInfo = &m_OpenAsyncFile[uHandle];
-
 			s32 nResult=-1;
-// 			nResult	= cellFsFtruncate(pInfo->m_nFileHandle, uNewSize);
+
 			if(nResult < 0)
 			{
-				x_printf("Stdio:"TARGET_PLATFORM_STR" ERROR ReSize %d\n", x_va_list(nResult));
+				x_printf("xfilesystem:"TARGET_PLATFORM_STR" ERROR ReSize %d\n", x_va_list(nResult));
 			}
 		}
 

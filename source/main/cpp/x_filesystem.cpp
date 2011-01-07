@@ -1,15 +1,12 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "../x_target.h"
-#include "../x_debug.h"
-#include "../x_stdio.h"
-#include "../x_thread.h"
-#include "../x_container.h"
-#include "../x_string.h"
-#include "../x_va_list.h"
+#include "xbase\x_target.h"
+#include "xbase\x_debug.h"
+#include "xbase\x_string_std.h"
+#include "xbase\x_va_list.h"
 
-#include "x_filesystem.h"
+#include "xfilesystem\x_filesystem.h"
 
 
 //==============================================================================

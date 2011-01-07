@@ -1,12 +1,12 @@
-#include "../x_target.h"
+#include "xbase\x_target.h"
 #ifdef TARGET_360
 
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "../x_system.h"
+#include "xbase\x_system.h"
 
-#include "x_filesystem_common.h"
+#include "xfilesystem\private\x_filesystem_common.h"
 
 //==============================================================================
 // xCore namespace

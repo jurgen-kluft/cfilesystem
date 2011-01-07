@@ -1,15 +1,17 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "../x_target.h"
-#include "../x_debug.h"
-#include "../x_stdio.h"
-#include "../x_container.h"
-#include "../x_string.h"
-#include "../x_va_list.h"
-#include "../x_time.h"
+#include "xbase\x_target.h"
+#include "xbase\x_debug.h"
+#include "xbase\x_console.h"
+#include "xbase\x_memory_std.h"
+#include "xbase\x_string_std.h"
+#include "xbase\x_va_list.h"
 
-#include "x_filesystem.h"
+#include "xtime\x_time.h"
+
+#include "xfilesystem\x_file.h"
+#include "xfilesystem\x_filesystem.h"
 
 
 //==============================================================================
@@ -40,8 +42,6 @@ namespace xcore
 		mRead     = xFALSE;
 		mWrite    = xFALSE;
 		mAsync    = xFALSE;
-		
-		cacheDestroy();
 	}
 
 	//------------------------------------------------------------------------------
@@ -49,12 +49,6 @@ namespace xcore
 	xfile::xfile(void)
 		: mFile((u32)xfilesystem::INVALID_FILE_HANDLE)
 		, mAsync(xFALSE)
-		, mCacheWritePos(0)
-		, mCacheWriteSize(0)
-		, mCacheReadPos(0)
-		, mCacheReadSize(0)
-		, mCacheSize(0)
-		, mCache(NULL)
 	{
 	}
 
@@ -129,8 +123,8 @@ namespace xcore
 			case 'b':   bText=false; break;
 			default:
 				{
-					xstring_tmp tmp("Don't understand this [%c] access mode while opening file (%s)", (s8)mode[i], path);
-					ASSERTS(0, tmp.c_str());
+					xconsole::writeLine("Error: Don't understand this [%c] access mode while opening file (%s)", (s8)mode[i], path);
+					ASSERT(false);
 				}
 			}
 		}
@@ -183,11 +177,6 @@ namespace xcore
 	// -----------------------------------------------------------------
 	void xfile::close(void)
 	{
-		if (mCache != NULL && mWrite)
-		{
-			cacheWriteFlush();
-		}
-
 		if (mFile != (u32)xfilesystem::INVALID_FILE_HANDLE)
 		{
 			if (mAsync)
@@ -202,17 +191,6 @@ namespace xcore
 		// Done with the file
 		//
 		clear();
-	}
-
-	void xfile::enableCache(u32 cacheSize)
-	{
-		// Cache does not support 'read and write'
-		if (mRead && mWrite)
-			return;
-
-		cacheSize = (cacheSize<4096) ? 4096 : cacheSize;
-		cacheSize = x_Align(cacheSize, (u32)128);
-		cacheInit(cacheSize);
 	}
 
 	//------------------------------------------------------------------------------
@@ -241,12 +219,6 @@ namespace xcore
 		ASSERT(mRead);
 
 		s32 totalCount = size*count;
-
-		if (cacheRead(mFile, buffer, size, count) == xTRUE)
-		{
-			mPos += totalCount;
-			return xTRUE;
-		}
 
 		if (mAsync)
 			xfilesystem::AsyncRead(mFile, mPos, totalCount, buffer);
@@ -283,13 +255,10 @@ namespace xcore
 
 		s32 totalCount = size*count;
 		
-		if (cacheWrite(mFile, buffer, size, count) == xFALSE)
-		{
 		if (mAsync)
 			xfilesystem::AsyncWrite(mFile, mPos, totalCount, buffer);
 		else 
 			xfilesystem::Write(mFile, mPos, totalCount, buffer);
-		}
 
 		mPos += totalCount;
 	}
@@ -320,9 +289,10 @@ namespace xcore
 		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
 		ASSERT(formatStr);
 
-		xstring_tmp s(formatStr, args);
-		writeRaw((const void*)s.c_str(), 1, s.getLength());
-		return s.getLength();
+		char buffer[256];
+		s32 l = x_vsprintf(buffer, sizeof(buffer)-1, formatStr, args);
+		writeRaw((const void*)buffer, 1, l);
+		return l;
 	}
 
 
@@ -698,200 +668,6 @@ namespace xcore
 		readRaw(buffer, bufferSize, 1);
 	}
 
-	//------------------------------------------------------------------------------
-	// Author:
-	//     Tomas Arce
-	// Summary:
-	//     Write a xstring to file.
-	// Arguments:
-	//     val    - The xstring to be written.
-	// Returns:
-	//     void
-	// Description:
-	//.....The function output an empty char '\0' at the end of xstring. The data will be written at position specified by current file pointer.
-	// See Also:
-	//     getC(), PutC()
-	//------------------------------------------------------------------------------
-	void xfile::write(const xstring& val)
-	{
-		for(s32 i=0; val[i]; i++)
-			putC(val[i]);
-		putC(0);
-	}
-
-	//------------------------------------------------------------------------------
-	// Author:
-	//     Tomas Arce
-	// Summary:
-	//     Write a xstring to the current file.
-	// Arguments:
-	//     val    - The xstring to be written.
-	// Returns:
-	//     void
-	// Description:
-	//.....The function output an empty char '\0' at the end of xstring. The data will be written at position specified by current file pointer.
-	// See Also:
-	//     write(const xstring& val), getC(), PutC()
-	//------------------------------------------------------------------------------
-	void xfile::write(xstring& val)
-	{
-		write((const xstring&) val);
-	}
-
-	//------------------------------------------------------------------------------
-	// Author:
-	//     Tomas Arce
-	// Summary:
-	//     Read a xstring from xfile
-	// Arguments:
-	//     val    - The data read from xfile will be written to val.
-	// Returns:
-	//     If reads successful, return xTRUE.
-	// Description:
-	//.....The function seems NOT work, for i wonder if getC() can return 0.
-	// See Also:
-	//     write(const xstring& val), getC(), PutC()
-	//------------------------------------------------------------------------------
-	// TODO: Add the fail condition
-	// TODO: Where is the end of reading?
-	xbool xfile::read(xstring& val)
-	{
-		char buffer[256];
-		s32  times = 0;
-		s32  i;
-
-		val.clear();
-
-		for(i=0; (buffer[i] = (char)getC()) != 0; i++)
-		{
-			if(i > 253)
-			{
-				buffer[255]=0;
-				if(times > 0)
-				{
-					val.appendFormat(buffer);
-				}
-				else
-				{
-					val.format(buffer);
-				}
-
-				times++;
-				i=0;
-			}
-		}
-
-		ASSERT(buffer[i]==0);
-		if(times > 0)
-		{
-			val.appendFormat(buffer);
-		}
-		else
-		{
-			val.format(buffer);
-		}
-		return xTRUE;
-	}
-
-	void					xfile::cacheInit		(u32 cacheSize)
-	{
-		mCache = (xbyte*)x_malloc(1, cacheSize, XMEM_FLAG_ALIGN_128B);
-		mCacheSize = cacheSize;
-
-		mCacheWritePos = 0;
-		mCacheWriteSize = 0;
-		mCacheReadPos = 0;
-		mCacheReadSize = 0;
-	}
-
-	void					xfile::cacheDestroy		(void)
-	{
-		if (mCache != NULL)
-			x_free(mCache);
-		mCache = NULL;
-		mCacheSize = 0;
-
-		mCacheWritePos = 0;
-		mCacheWriteSize = 0;
-		mCacheReadPos = 0;
-		mCacheReadSize = 0;
-	}
-
-	xbool					xfile::cacheRead		(u32 handle, void* buffer, s32 size, s32 count)
-	{
-		if (mCache == NULL)
-			return xFALSE;
-
-		const u32 totalCount = size*count;
-		if (mPos>=mCacheReadPos && ((mPos+totalCount) <= (mCacheReadPos + mCacheReadSize)))
-		{
-			x_memcpy(buffer, mCache + mPos-mCacheReadPos, totalCount);
-		}
-		else
-		{
-			if ((u32)totalCount > (mCacheSize / 4))
-				return xFALSE;
-
-			// Clamp the read against the file length
-			u32 readSize = mCacheSize;
-			if ((mPos + readSize) > mFileLength)
-				readSize = mFileLength - mPos;
-
-			xfilesystem::Read(mFile, mPos, readSize, mCache);
-
-			mCacheReadPos = mPos;
-			mCacheReadSize = readSize;
-
-			x_memcpy(buffer, mCache + mPos-mCacheReadPos, totalCount);
-		}
-
-		return xTRUE;
-	}
-
-	xbool					xfile::cacheWrite		(u32 handle, const void* buffer, s32 size, s32 count)
-	{
-		if (mCache == NULL)
-			return xFALSE;
-
-		// Put the cache at the position of the first write
-		if (mCacheWriteSize==0)
-			mCacheWritePos = mPos;
-
-		const u32 totalCount = size*count;
-		if (mPos>=mCacheWritePos && ((mPos+totalCount) < (mCacheWritePos + mCacheSize)))
-		{
-			x_memcpy(mCache + mPos-mCacheWritePos, buffer, totalCount);
-
-			if (((mPos+totalCount)-mCacheWritePos) > mCacheWriteSize)
-				mCacheWriteSize = ((mPos+totalCount)-mCacheWritePos);
-		}
-		else
-		{
-			// Flush the cache to disk
-			cacheWriteFlush();
-
-			mCacheWritePos = mPos;
-			if (totalCount < mCacheSize)
-			{
-				x_memcpy(mCache, buffer, totalCount);
-				mCacheWriteSize = totalCount;
-			}
-			else
-			{
-				return xFALSE;
-			}
-		}
-		return xTRUE;
-	}
-
-	void					xfile::cacheWriteFlush()
-	{
-		if (mCacheWriteSize > 0)
-		{
-			xfilesystem::Write(mFile, mCacheWritePos, mCacheWriteSize, mCache);
-			mCacheWriteSize = 0;
-		}
-	}
 
 //==============================================================================
 // END xCore namespace

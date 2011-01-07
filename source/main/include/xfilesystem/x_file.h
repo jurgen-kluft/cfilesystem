@@ -5,7 +5,7 @@
 //==============================================================================
 #ifndef __X_STDIO_H__
 #define __X_STDIO_H__
-#include "x_target.h"
+#include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -13,8 +13,8 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "x_types.h"
-#include "x_debug.h"
+#include "xbase\x_types.h"
+#include "xbase\x_debug.h"
 
 
 //==============================================================================
@@ -31,8 +31,6 @@ namespace xcore
 
 		xbool                   open            (const char* fileName, const char* mode);
 		void                    close           (void);
-
-		void					enableCache		(u32 cacheSize = 65536);
 
 		xbool                   readRaw         (void* buffer, s32 size, s32 count);
 		void                    writeRaw        (const void* buffer, s32 size, s32 count);
@@ -54,10 +52,6 @@ namespace xcore
 		xbool            		getFileTime     (u64& fileTime);
 		xbool            		deleteFile      (void);
 
-		void                    write           (xstring& val);
-		void                    write           (const xstring& val);
-		xbool                   read            (xstring& val);
-
 		template<class T> void  write           (T& val);
 		template<class T> void  write           (T* val, s32 count);
 		template<class T> xbool read            (T& val);
@@ -72,29 +66,13 @@ namespace xcore
 		xbool					mRead;
 		xbool					mWrite;
 		xbool					mAsync;
-
-		///< ReadWriteCache
-		u32						mCacheWritePos;
-		u32						mCacheWriteSize;
-		u32						mCacheReadPos;
-		u32						mCacheReadSize;
-
-		u32						mCacheSize;
-		xbyte*					mCache;
-
-		void					cacheInit		(u32 cacheSize);
-		void					cacheDestroy	(void);
-
-		xbool					cacheRead		(u32 handle, void* buffer, s32 size, s32 count);
-		xbool					cacheWrite		(u32 handle, const void* buffer, s32 size, s32 count);
-		void					cacheWriteFlush	(void);
 	};
 
 
 	//==============================================================================
 	// INLINES
 	//==============================================================================
-	#include "Implementation\x_stdio_inline.h"
+	#include "private\x_stdio_inline.h"
 
 	//==============================================================================
 	// END xCore namespace

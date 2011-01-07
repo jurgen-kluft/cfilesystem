@@ -1,6 +1,5 @@
-#include "../x_target.h"
+#include "xbase\x_target.h"
 #ifdef TARGET_PSP
-
 
 //==============================================================================
 // INCLUDES
@@ -19,17 +18,12 @@
 #include <utility/utility_module.h>
 #include <np/np_drm.h>
 
-#include "../x_debug.h"
-#include "../x_system.h"
-#include "../x_thread.h"
-#include "../x_container.h"
-#include "../x_string.h"
-#include "../x_va_list.h"
-#include "../x_llist.h"
-#include "../x_stdio.h"
+#include "xbase\x_debug.h"
+#include "xbase\x_string_std.h"
+#include "xbase\x_va_list.h"
 
-#include "x_filesystem.h"
-#include "x_filesystem_common.h"
+#include "xfilesystem\x_filesystem.h"
+#include "xfilesystem\private\x_filesystem_common.h"
 
 
 namespace xcore
