@@ -119,11 +119,11 @@ namespace xcore
 	//     void
 	// Description:
 	// See Also:
-	//      x_StdioExit()
+	//      x_FileSystemExit()
 	//------------------------------------------------------------------------------
 	static char sAppDir[1024] = { '\0' };										///< Needs to end with a backslash!
 	static char sWorkDir[1024] = { '\0' };										///< Needs to end with a backslash!
-	void x_StdioInit(void)
+	void x_FileSystemInit(void)
 	{
 		// Get the application directory (by removing the executable filename)
 		::GetModuleFileName(0, sAppDir, sizeof(sAppDir) - 1);
@@ -171,9 +171,9 @@ namespace xcore
 	//     void
 	// Description:
 	// See Also:
-	//      x_StdioInit()
+	//      x_FileSystemInit()
 	//------------------------------------------------------------------------------
-	void x_StdioExit()
+	void x_FileSystemExit()
 	{
 		xfilesystem::Shutdown();
 		xfilesystem::ExitAlias();

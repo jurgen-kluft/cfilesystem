@@ -1,6 +1,6 @@
 
-extern void x_StdioInit();
-extern void x_StdioExit();
+extern void x_FileSystemInit();
+extern void x_FileSystemExit();
 
 //==============================================================================
 // XFILE 
