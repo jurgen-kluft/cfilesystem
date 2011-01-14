@@ -53,34 +53,57 @@
 			  <PropertyGroup Label="Globals">
 			    <ProjectGuid>{1f0f824c-e747-44e2-8bdb-399b54546d86}</ProjectGuid>
 			  </PropertyGroup>
+			  <ImportGroup Label="TargetDirs">
+		  	  <Import Project="$(SolutionDir)target\xfilesystem\xfilesystem.$(Platform).props" Condition="exists('$(SolutionDir)target\xfilesystem\xfilesystem.$(Platform).props')" Label="xfilesystem_TargetDir" />
+			  </ImportGroup>
 			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevDebug|Win32'">
 			    <ClCompile>
 			      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-			      <AdditionalIncludeDirectories>#$(SolutionDir)target\xfilesystem\Win32\source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			      <AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 			    <Link>
-			      <AdditionalLibraryDirectories>#$(SolutionDir)target\xfilesystem\Win32\libs</AdditionalLibraryDirectories>
+			      <AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)libs</AdditionalLibraryDirectories>
 			      <AdditionalDependencies>#xfilesystem_DevDebug_Win32.lib</AdditionalDependencies>
 			    </Link>
 				</ItemDefinitionGroup>
 			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevRelease|Win32'">
 			    <ClCompile>
 			      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-			      <AdditionalIncludeDirectories>#$(SolutionDir)target\xfilesystem\Win32\source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			      <AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 			    <Link>
-			      <AdditionalLibraryDirectories>#$(SolutionDir)target\xfilesystem\Win32\libs</AdditionalLibraryDirectories>
+			      <AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)libs</AdditionalLibraryDirectories>
 			      <AdditionalDependencies>#xfilesystem_DevRelease_Win32.lib</AdditionalDependencies>
 			    </Link>
 				</ItemDefinitionGroup>
 			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|Win32'">
 			    <ClCompile>
 			      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-			      <AdditionalIncludeDirectories>#$(SolutionDir)target\xfilesystem\Win32\source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			      <AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 			    <Link>
-			      <AdditionalLibraryDirectories>#$(SolutionDir)target\xfilesystem\Win32\libs</AdditionalLibraryDirectories>
+			      <AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)libs</AdditionalLibraryDirectories>
 			      <AdditionalDependencies>#xfilesystem_DevFinal_Win32.lib</AdditionalDependencies>
+			    </Link>
+				</ItemDefinitionGroup>
+			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Win32'">
+			    <ClCompile>
+			      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			      <AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+					</ClCompile>
+			    <Link>
+			      <AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)libs</AdditionalLibraryDirectories>
+			      <AdditionalDependencies>#xfilesystem_TestDebug_Win32.lib</AdditionalDependencies>
+			    </Link>
+				</ItemDefinitionGroup>
+			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Win32'">
+			    <ClCompile>
+			      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			      <AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+					</ClCompile>
+			    <Link>
+			      <AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)libs</AdditionalLibraryDirectories>
+			      <AdditionalDependencies>#xfilesystem_TestRelease_Win32.lib</AdditionalDependencies>
 			    </Link>
 				</ItemDefinitionGroup>
 			  <ItemGroup>
@@ -98,28 +121,19 @@
 			  <PropertyGroup Label="Globals">
 			    <ProjectGuid>{63c55abe-bb19-459b-a1e4-42b96fa2175d}</ProjectGuid>
 			  </PropertyGroup>
-			  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DevDebug|Win32'" Label="Configuration">
+			  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Win32'" Label="Configuration">
 			    <ConfigurationType>Application</ConfigurationType>
 			  </PropertyGroup>
-			  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|Win32'" Label="Configuration">
+			  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Win32'" Label="Configuration">
 			    <ConfigurationType>Application</ConfigurationType>
 			  </PropertyGroup>
-			  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DevRelease|Win32'" Label="Configuration">
-			    <ConfigurationType>Application</ConfigurationType>
-			  </PropertyGroup>
-			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevDebug|Win32'">
+			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Win32'">
 			    <ClCompile>
 			      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 			      <AdditionalIncludeDirectories>$(SolutionDir)source\test\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 				</ItemDefinitionGroup>
-			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevRelease|Win32'">
-			    <ClCompile>
-			      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-			      <AdditionalIncludeDirectories>$(SolutionDir)source\test\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-					</ClCompile>
-				</ItemDefinitionGroup>
-			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|Win32'">
+			  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Win32'">
 			    <ClCompile>
 			      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 			      <AdditionalIncludeDirectories>$(SolutionDir)source\test\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
