@@ -1,10 +1,8 @@
 //==============================================================================
-//
-//  x_stdio.h
-//
+//  x_file.h
 //==============================================================================
-#ifndef __X_STDIO_H__
-#define __X_STDIO_H__
+#ifndef __XFILESYSTEM_XFILE_H__
+#define __XFILESYSTEM_XFILE_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -22,7 +20,6 @@
 //==============================================================================
 namespace xcore
 {
-	///< Deprecated
 	class xfile
 	{
 	public:
@@ -35,21 +32,22 @@ namespace xcore
 		xbool                   readRaw         (void* buffer, s32 size, s32 count);
 		void                    writeRaw        (const void* buffer, s32 size, s32 count);
 		void                    toMemory        (void* buffer, s32 bufferSize);
+
 		xbool				    synchronize     (xbool isBlock);
 		void                    asyncAbort      (void);
-		s32                     printf          (const char* formatStr, const x_va_list& args);
+
 		void                    forceFlush      (xbool isOnOff);
 		void                    flush           (void);
+
 		void                    seekOrigin      (s32 offset);
 		void                    seekEnd         (s32 offset);
 		void                    seekCurrent     (s32 offset);
+
 		s32                     tell            (void);
 		xbool                   isEof           (void);
-		s32                     getC            (void);
-		void                    putC            (s32 inC, s32 count = 1, xbool isUpdatePos = xTRUE);
-		void                    alignPutC       (s32 inC, s32 count = 0, s32 aligment = 4, xbool isUpdatePos = xTRUE);
-		s32                     getFileLength   (void);
-		xbool            		getFileTime     (u64& fileTime);
+
+		s32                     getLength		(void);
+		xbool            		getTime			(u64& fileTime);
 		xbool            		deleteFile      (void);
 
 		template<class T> void  write           (T& val);
@@ -61,7 +59,7 @@ namespace xcore
 		void					clear			(void);
 
 		u32						mFile;
-		u32						mFileLength;
+		s32						mFileLength;
 		u32						mPos;
 		xbool					mRead;
 		xbool					mWrite;
@@ -72,7 +70,7 @@ namespace xcore
 	//==============================================================================
 	// INLINES
 	//==============================================================================
-	#include "private\x_stdio_inline.h"
+	#include "private\x_file_inline.h"
 
 	//==============================================================================
 	// END xCore namespace
@@ -80,6 +78,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_STDIO_H__
+// END __XFILESYSTEM_XFILE_H__
 //==============================================================================
 #endif

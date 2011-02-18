@@ -102,25 +102,21 @@ namespace xcore
 	{
 		ASSERT(mode);
 
-		bool bSeekToEnd = false;
 		bool bRead = false;
-		bool bCreate = false;
 		bool bWrite = false;
-		bool bCompression = false;
 		bool bAsync = false;
-		bool bText = false;
 		for(s32 i=0; mode[i]; i++)
 		{
 			switch(mode[i])
 			{
-			case 'a':   bRead=true; bWrite=true; bSeekToEnd=true; break;         
+			case 'a':   bRead=true; bWrite=true; break;         
 			case 'r':   bRead=true;  break;
 			case 'w':   bWrite=true; break;
-			case '+':   bRead=true; bWrite=true; bCreate=true; break;         
-			case 'c':   bCompression=true; break;
+			case '+':   bRead=true; bWrite=true; break;         
+			case 'c':   break;
 			case '@':   bAsync=true; break;
-			case 't':   bText=true; break;
-			case 'b':   bText=false; break;
+			case 't':   break;
+			case 'b':   break;
 			default:
 				{
 					xconsole::writeLine("Error: Don't understand this [%c] access mode while opening file (%s)", (s8)mode[i], path);
@@ -212,7 +208,7 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	xbool xfile::readRaw(void* buffer, s32 size, s32 count)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
 		ASSERT(buffer);
 		ASSERT(size > 0);
 		ASSERT(count >= 0);
@@ -247,7 +243,7 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	void xfile::writeRaw(const void* buffer, s32 size, s32 count)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
 		ASSERT(buffer);
 		ASSERT(size > 0);
 		ASSERT(count >= 0);
@@ -267,39 +263,6 @@ namespace xcore
 	// Author:
 	//     Tomas Arce
 	// Summary:
-	//     Print formatted output to the standard output stream.
-	// Arguments:
-	//     formatStr    - is a specially formatted string which need decoding by this function.
-	//                     for more reference about how the formatting works check x_sprintf.
-	//                     You should never pass as a <B>NULL</B>.
-	//     args         - Optional arguments needed by the Formatted string.
-	// Returns:
-	//     Returns the number of characters printed.
-	// Description:
-	//     This function is mainly intended for debug printing. Its main purpose 
-	//     is to print in the console screen similar how a command pront works in windows.
-	//     The behavior of this function should resemble closely of the standard printf.
-	//     This function is usually overwritten by the system using x_SetFunctionPrintF.
-	//     So it is not encourage for the user to overwrite its behavior. 
-	// See Also:
-	//     x_sprintf DefaultPrintFXY x_printfxy x_DebugMsg x_SetFunctionPrintF
-	//------------------------------------------------------------------------------
-	s32 xfile::printf(const char* formatStr, const x_va_list& args)
-	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
-		ASSERT(formatStr);
-
-		char buffer[256];
-		s32 l = x_vsprintf(buffer, sizeof(buffer)-1, formatStr, args);
-		writeRaw((const void*)buffer, 1, l);
-		return l;
-	}
-
-
-	//------------------------------------------------------------------------------
-	// Author:
-	//     Tomas Arce
-	// Summary:
 	//     Set force flush flag.
 	// Arguments:
 	//     inOnOff    - is a xbool. It sets the force flush flag true of false.
@@ -312,7 +275,7 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	void xfile::forceFlush(xbool isOnOff)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
 
 	}
 
@@ -332,7 +295,7 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	void xfile::asyncAbort(void)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
 		xfilesystem::AsyncQueueCancel(mFile);
 	}
 
@@ -360,7 +323,7 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	xbool xfile::synchronize(xbool isBlock)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
 
 		if (mAsync)
 		{
@@ -392,7 +355,7 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	void xfile::flush(void)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
 	
 	}
 
@@ -412,7 +375,7 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	void xfile::seekOrigin(s32 offset)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
 		mPos = offset;
 	}
 	//------------------------------------------------------------------------------
@@ -431,9 +394,10 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	void xfile::seekEnd(s32 offset)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
-		mPos = getFileLength() - offset;
-		if (mPos<0)
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
+		if (getLength() >= offset)
+			mPos = getLength() - offset;
+		else
 			mPos = 0;
 	}
 
@@ -453,9 +417,12 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	void xfile::seekCurrent(s32 offset)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
-		mPos += offset;
-		if (mPos<0)
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
+		if (offset>=0)
+			mPos += offset;
+		else if (((u32)-offset)<mPos)
+			mPos += offset;
+		else
 			mPos = 0;
 	}
 
@@ -475,7 +442,7 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	s32 xfile::tell(void)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
 		return mPos;
 	}
 
@@ -495,89 +462,8 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	xbool xfile::isEof(void)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
-		return mPos >= (u32)getFileLength();
-	}
-
-	//------------------------------------------------------------------------------
-	// Author:
-	//     Tomas Arce
-	// Summary:
-	//     Read one char from file
-	// Arguments:
-	//     void
-	// Returns:
-	//     Returns the char has been read. If failed to read (Only reached the end of the file), return -1;
-	// Description:
-	//.....The function read one char from the position that file pointer indicates.
-	// See Also:
-	//     putC()
-	//------------------------------------------------------------------------------
-	s32 xfile::getC(void)
-	{
-		u8 c;
-		if (read(c) == xFALSE) 
-			return -1;
-		return c;
-	}
-
-	//------------------------------------------------------------------------------
-	// Author:
-	//     Tomas Arce
-	// Summary:
-	//     Write a char to file.
-	// Arguments:
-	//     inC    - The char to be written. This is s32. And the char output is u8 which define as: u8 charOut = inC;
-	//     count  - The times that the char to be written.
-	//     isUpdatePos  - If it is xTRUE, the file pointer will update its offset in order to indicates a new position.
-	//                    If it is xFALSE, the offset of file pointer won't change.
-	// Returns:
-	//     void
-	// Description:
-	//.....The function write "inC" for "count" times. The data will be written at position specified by current file pointer.
-	// See Also:
-	//     getC(), alignPutC()
-	//------------------------------------------------------------------------------
-	void xfile::putC(s32 inC, s32 count, xbool isUpdatePos)
-	{
-		s32 pos = 0;
-		u8  c = (u8)inC;
-
-		if (isUpdatePos == xFALSE) 
-			pos = tell();
-
-		for (s32 i=0; i<count; i++)
-			write(c);
-
-		if (isUpdatePos == xFALSE) 
-			seekOrigin(pos);
-	}
-
-	//------------------------------------------------------------------------------
-	// Author:
-	//     Tomas Arce
-	// Summary:
-	//     Write a char for a specified times.
-	// Arguments:
-	//     c        - The char to be written.
-	//     count    - The original times in that the char to be written.
-	//     aligment - The alignment value. The real time in that the char to be written will be aligned to this value.
-	//     isUpdatePos    - Whether the file pointer (the offset) update.
-	// Returns:
-	//     void
-	// Description:
-	//.....The function write a char in a aligned times.
-	// See Also:
-	//     getC(), putC()
-	//------------------------------------------------------------------------------
-	void xfile::alignPutC(s32 c, s32 count, s32 aligment, xbool isUpdatePos)
-	{
-		// First solve the alignment issue
-		s32 pos      = tell();
-		s32 putCount = x_Align(count+pos, aligment) - pos;
-
-		// Put all the necessary characters
-		putC(c, putCount, isUpdatePos);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
+		return mPos >= (u32)getLength();
 	}
 
 	//------------------------------------------------------------------------------
@@ -594,9 +480,9 @@ namespace xcore
 	// See Also:
 	//     seekOrigin(), seekCurrent(), seekEnd()
 	//------------------------------------------------------------------------------
-	s32 xfile::getFileLength(void)
+	s32 xfile::getLength(void)
 	{
-		ASSERT(mFile != xfilesystem::INVALID_FILE_HANDLE);
+		ASSERT(mFile != (u32)xfilesystem::INVALID_FILE_HANDLE);
 		return (s32)xfilesystem::Size(mFile);
 	}
 
@@ -615,7 +501,7 @@ namespace xcore
 	// See Also:
 	//     seekOrigin(), seekCurrent(), seekEnd()
 	//------------------------------------------------------------------------------
-	xbool xfile::getFileTime(u64& fileTime)
+	xbool xfile::getTime(u64& fileTime)
 	{
 		xdatetime tad;
 		xfilesystem::GetOpenModifiedTime(mFile, tad);
@@ -663,7 +549,7 @@ namespace xcore
 	{
 		// seek at the begging of the file
 		seekOrigin(0);
-		s32 length = getFileLength();
+		s32 length = getLength();
 		ASSERT(length >= bufferSize);
 		readRaw(buffer, bufferSize, 1);
 	}

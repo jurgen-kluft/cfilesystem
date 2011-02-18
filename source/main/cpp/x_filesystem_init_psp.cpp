@@ -28,26 +28,30 @@
 
 namespace xcore
 {
-	//------------------------------------------------------------------------------
-	void x_StdioInit(void)
+	namespace xfilesystem
 	{
-		xfilesystem::AddAlias(xfilesystem::xalias("host", xfilesystem::FS_SOURCE_HOST, "host0:"));
-		xfilesystem::AddAlias(xfilesystem::xalias("dvd" , xfilesystem::FS_SOURCE_DVD , "disc0:/PSP_GAME/USRDIR/" )); 
 
-		xfilesystem::xalias appdir( "appdir", "host" );
-		xfilesystem::xalias curdir( "curdir", "host" );
-		xfilesystem::AddAlias(appdir);
-		xfilesystem::AddAlias(curdir);
+		//------------------------------------------------------------------------------
+		void init(void)
+		{
+			xfilesystem::AddAlias(xfilesystem::xalias("host", xfilesystem::FS_SOURCE_HOST, "host0:"));
+			xfilesystem::AddAlias(xfilesystem::xalias("dvd" , xfilesystem::FS_SOURCE_DVD , "disc0:/PSP_GAME/USRDIR/" )); 
 
-		xfilesystem::Initialise(64, xTRUE);
+			xfilesystem::xalias appdir( "appdir", "host" );
+			xfilesystem::xalias curdir( "curdir", "host" );
+			xfilesystem::AddAlias(appdir);
+			xfilesystem::AddAlias(curdir);
+
+			xfilesystem::Initialise(64, xTRUE);
+		}
+
+		void exit()
+		{
+			xfilesystem::Shutdown();
+			xfilesystem::ExitAlias();
+		}
+
 	}
-
-	void x_StdioExit()
-	{
-		xfilesystem::Shutdown();
-		xfilesystem::ExitAlias();
-	}
-
 	//==============================================================================
 	// END xCore namespace
 	//==============================================================================

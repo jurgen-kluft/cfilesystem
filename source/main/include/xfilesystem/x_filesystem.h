@@ -28,8 +28,12 @@ namespace xcore
 
 	namespace xfilesystem
 	{
-		extern void*	xfilesystem_heap_alloc(s32 size, s32 alignment);
-		extern void		xfilesystem_heap_free(void* mem);
+		extern void*	heap_alloc(s32 size, s32 alignment);
+		extern void		heap_free(void* mem);
+
+		extern void		init();
+		extern void		exit();
+
 
 #if defined(TARGET_PS3) || defined(TARGET_360) || defined(TARGET_PC)
 
