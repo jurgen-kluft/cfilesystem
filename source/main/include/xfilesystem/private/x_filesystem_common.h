@@ -123,47 +123,47 @@ namespace xcore
 			}
 		};
 
+		struct AsyncIOInfo
+		{
+			AsyncIOInfo*		m_pPrev;
+			AsyncIOInfo*		m_pNext;
 
+			s32					m_nFileIndex;
+			s32					m_nStatus;
+			const void*			m_pWriteAddress;
+			void*				m_pReadAddress;
+
+			u64					m_uReadWriteOffset;
+			u64					m_uReadWriteSize;
+
+			AsyncIOInfo*		getPrev	()										{ return m_pPrev; }
+			AsyncIOInfo*		getNext	()										{ return m_pNext; }
+
+			void				setPrev	( AsyncIOInfo* pPrev )					{ m_pPrev = pPrev; }
+			void				setNext	( AsyncIOInfo* pNext )					{ m_pNext = pNext; }
+
+			void				clear()
+			{
+				m_pPrev			= NULL;
+				m_pNext			= NULL;
+
+				m_nFileIndex	= -1;
+				m_nStatus		= FILE_OP_STATUS_FREE;
+					
+				m_pWriteAddress	= NULL;
+				m_pReadAddress	= NULL;
+
+				m_uReadWriteOffset	= 0;
+				m_uReadWriteSize	= 0;
+			}
+		};
 
 		//////////////////////////////////////////////////////////////////////////
 		// Private xfilesystem functionality
 		//////////////////////////////////////////////////////////////////////////
 		namespace __private
 		{
-			struct AsyncIOInfo
-			{
-				AsyncIOInfo*		m_pPrev;
-				AsyncIOInfo*		m_pNext;
 
-				s32					m_nFileIndex;
-				s32					m_nStatus;
-				const void*			m_pWriteAddress;
-				void*				m_pReadAddress;
-
-				u64					m_uReadWriteOffset;
-				u64					m_uReadWriteSize;
-
-				AsyncIOInfo*		getPrev	()										{ return m_pPrev; }
-				AsyncIOInfo*		getNext	()										{ return m_pNext; }
-
-				void				setPrev	( AsyncIOInfo* pPrev )					{ m_pPrev = pPrev; }
-				void				setNext	( AsyncIOInfo* pNext )					{ m_pNext = pNext; }
-
-				void				clear()
-				{
-					m_pPrev			= NULL;
-					m_pNext			= NULL;
-
-					m_nFileIndex	= -1;
-					m_nStatus		= FILE_OP_STATUS_FREE;
-					
-					m_pWriteAddress	= NULL;
-					m_pReadAddress	= NULL;
-
-					m_uReadWriteOffset	= 0;
-					m_uReadWriteSize	= 0;
-				}
-			};
 
 			class QueueItem
 			{
@@ -430,6 +430,32 @@ namespace xcore
 		extern const xalias*	FindAliasFromFilename(const char* filename);
 		extern const xalias*	FindAndRemoveAliasFromFilename(xstring_buffer& ioFilename);
 		extern void				ReplaceAliasOfFilename(xstring_buffer& ioFilename, const xalias* inNewAlias);
+	};
+
+	
+	//==============================================================================
+	// xfiledevice
+	//==============================================================================
+
+	namespace xfilesystem
+	{
+		// Forward declares
+		class xfiledevice;
+
+		//------------------------------------------------------------------------------
+		// Description:
+		//     This class binds an alias to a filedevice.
+		//     This acts as an association and is used to add new filedevices
+		//
+		//     source:\folder\filename.ext, where source = c:\temp
+		//     data:\folder\filename.ext, where data = g:\
+		//     dvd:\folder\filename.ext, where dvd = g:\
+		//     
+		//------------------------------------------------------------------------------
+		extern void					UnregisterAllFileDevices();
+		extern void					RegisterFileDevice(xalias* alias, xfiledevice* device);
+		extern const xfiledevice*	FindFileDevice(xalias* alias);
+		extern const xfiledevice*	FindFileDeviceFromFilename(const char* filename);
 	};
 
 	//==============================================================================

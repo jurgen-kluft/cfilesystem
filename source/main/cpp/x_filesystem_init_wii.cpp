@@ -16,33 +16,34 @@
 namespace xcore
 {
 	//------------------------------------------------------------------------------
-
-	void x_StdioInit(void)
+	namespace xfilesystem
 	{
-		xfilesystem::xalias host ("host" , xfilesystem::FS_SOURCE_HOST,	"/");
-		xfilesystem::xalias dvd  ("dvd"  , xfilesystem::FS_SOURCE_DVD,	"/");
-		xfilesystem::xalias cache("cache", xfilesystem::FS_SOURCE_CACHE,"/");
+		void init(void)
+		{
+			xfilesystem::xalias host ("host" , xfilesystem::FS_SOURCE_HOST,	"/");
+			xfilesystem::xalias dvd  ("dvd"  , xfilesystem::FS_SOURCE_DVD,	"/");
+			xfilesystem::xalias cache("cache", xfilesystem::FS_SOURCE_CACHE,"/");
 
-		xfilesystem::AddAlias(host);
-		xfilesystem::AddAlias(dvd);
-		xfilesystem::AddAlias(cache);
+			xfilesystem::AddAlias(host);
+			xfilesystem::AddAlias(dvd);
+			xfilesystem::AddAlias(cache);
 
-		xfilesystem::xalias appdir( "appdir", "host" );
-		xfilesystem::xalias curdir( "curdir", "host" );
-		xfilesystem::AddAlias(appdir);
-		xfilesystem::AddAlias(curdir);
+			xfilesystem::xalias appdir( "appdir", "host" );
+			xfilesystem::xalias curdir( "curdir", "host" );
+			xfilesystem::AddAlias(appdir);
+			xfilesystem::AddAlias(curdir);
 
-		xfilesystem::Initialise(64, xTRUE);
+			xfilesystem::Initialise(64, xTRUE);
+		}
+
+		//------------------------------------------------------------------------------
+
+		void exit()
+		{
+			xfilesystem::Shutdown();
+			xfilesystem::ExitAlias();
+		}
 	}
-
-	//------------------------------------------------------------------------------
-
-	void x_StdioExit()
-	{
-		xfilesystem::Shutdown();
-		xfilesystem::ExitAlias();
-	}
-
 	//==============================================================================
 	// END xCore namespace
 	//==============================================================================

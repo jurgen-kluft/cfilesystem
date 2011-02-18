@@ -108,80 +108,83 @@ namespace xcore
 		}
 	}
 
-	//------------------------------------------------------------------------------
-	// Author:
-	//     Tomas Arce
-	// Summary:
-	//     Initialize the stdio system
-	// Arguments:
-	//     void
-	// Returns:
-	//     void
-	// Description:
-	// See Also:
-	//      x_StdioExit()
-	//------------------------------------------------------------------------------
-	static char sAppDir[1024] = { '\0' };										///< Needs to end with a backslash!
-	static char sWorkDir[1024] = { '\0' };										///< Needs to end with a backslash!
-	void x_StdioInit(void)
+	namespace xfilesystem
 	{
-		// Get the application directory (by removing the executable filename)
-		::GetModuleFileName(0, sAppDir, sizeof(sAppDir) - 1);
-		char* lastBackSlash = sAppDir + x_strlen(sAppDir);
-		while (lastBackSlash > sAppDir) { if (*lastBackSlash == '\\') break; lastBackSlash--; }
-		if (lastBackSlash > sAppDir)
+		//------------------------------------------------------------------------------
+		// Author:
+		//     Tomas Arce
+		// Summary:
+		//     Initialize the stdio system
+		// Arguments:
+		//     void
+		// Returns:
+		//     void
+		// Description:
+		// See Also:
+		//      x_StdioExit()
+		//------------------------------------------------------------------------------
+		static char sAppDir[1024] = { '\0' };										///< Needs to end with a backslash!
+		static char sWorkDir[1024] = { '\0' };										///< Needs to end with a backslash!
+		void init(void)
 		{
-			++lastBackSlash;													///< Keep the backslash
-			*lastBackSlash = '\0';
+			// Get the application directory (by removing the executable filename)
+			::GetModuleFileName(0, sAppDir, sizeof(sAppDir) - 1);
+			char* lastBackSlash = sAppDir + x_strlen(sAppDir);
+			while (lastBackSlash > sAppDir) { if (*lastBackSlash == '\\') break; lastBackSlash--; }
+			if (lastBackSlash > sAppDir)
+			{
+				++lastBackSlash;													///< Keep the backslash
+				*lastBackSlash = '\0';
+			}
+
+			// Get the working directory
+			::GetCurrentDirectory(sizeof(sWorkDir)-1, sWorkDir);
+			if (sWorkDir[x_strlen(sWorkDir)-1] != '\\')								///< Make sure the path ends with a backslash
+			{
+				sWorkDir[x_strlen(sWorkDir)] = '\\';
+				sWorkDir[x_strlen(sWorkDir)+1] = '\0';
+			}
+
+			x_FileSystemRegisterSystemAliases();
+
+			// Determine the source type of the app and work dir
+			const xfilesystem::xalias* workDirAlias = xfilesystem::FindAliasFromFilename(sAppDir);
+			const xfilesystem::xalias* appDirAlias  = xfilesystem::FindAliasFromFilename(sWorkDir);
+
+			// After this, xsystem can initialize the aliases
+			xfilesystem::AddAlias(xfilesystem::xalias("appdir", appDirAlias->source(), sAppDir));
+			xfilesystem::AddAlias(xfilesystem::xalias("curdir", workDirAlias->source(), sWorkDir));
+
+			xfilesystem::AddAlias(xfilesystem::xalias("host", xfilesystem::FS_SOURCE_HDD, sWorkDir));
+			xfilesystem::AddAlias(xfilesystem::xalias("dvd", xfilesystem::FS_SOURCE_DVD, sWorkDir));
+			xfilesystem::AddAlias(xfilesystem::xalias("HDD", xfilesystem::FS_SOURCE_MS, sWorkDir));
+
+			xfilesystem::Initialise(64, xTRUE);
 		}
 
-		// Get the working directory
-		::GetCurrentDirectory(sizeof(sWorkDir)-1, sWorkDir);
-		if (sWorkDir[x_strlen(sWorkDir)-1] != '\\')								///< Make sure the path ends with a backslash
+		//------------------------------------------------------------------------------
+		// Author:
+		//     Tomas Arce
+		// Summary:
+		//     Exit the stdio system.
+		// Arguments:
+		//     void
+		// Returns:
+		//     void
+		// Description:
+		// See Also:
+		//      x_StdioInit()
+		//------------------------------------------------------------------------------
+		void exit()
 		{
-			sWorkDir[x_strlen(sWorkDir)] = '\\';
-			sWorkDir[x_strlen(sWorkDir)+1] = '\0';
+			xfilesystem::Shutdown();
+			xfilesystem::ExitAlias();
 		}
-
-		x_FileSystemRegisterSystemAliases();
-
-		// Determine the source type of the app and work dir
-		const xfilesystem::xalias* workDirAlias = xfilesystem::FindAliasFromFilename(sAppDir);
-		const xfilesystem::xalias* appDirAlias  = xfilesystem::FindAliasFromFilename(sWorkDir);
-
-		// After this, xsystem can initialize the aliases
-		xfilesystem::AddAlias(xfilesystem::xalias("appdir", appDirAlias->source(), sAppDir));
-		xfilesystem::AddAlias(xfilesystem::xalias("curdir", workDirAlias->source(), sWorkDir));
-
-		xfilesystem::AddAlias(xfilesystem::xalias("host", xfilesystem::FS_SOURCE_HDD, sWorkDir));
-		xfilesystem::AddAlias(xfilesystem::xalias("dvd", xfilesystem::FS_SOURCE_DVD, sWorkDir));
-		xfilesystem::AddAlias(xfilesystem::xalias("HDD", xfilesystem::FS_SOURCE_MS, sWorkDir));
-
-		xfilesystem::Initialise(64, xTRUE);
 	}
 
-	//------------------------------------------------------------------------------
-	// Author:
-	//     Tomas Arce
-	// Summary:
-	//     Exit the stdio system.
-	// Arguments:
-	//     void
-	// Returns:
-	//     void
-	// Description:
-	// See Also:
-	//      x_StdioInit()
-	//------------------------------------------------------------------------------
-	void x_StdioExit()
-	{
-		xfilesystem::Shutdown();
-		xfilesystem::ExitAlias();
-	}
-
-//==============================================================================
-// END xCore namespace
-//==============================================================================
+	//==============================================================================
+	// END xCore namespace
+	//==============================================================================
 };
 
 #endif // TARGET_PC

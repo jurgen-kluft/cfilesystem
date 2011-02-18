@@ -489,7 +489,7 @@ namespace xcore
 			{
 				// Allocate and fill info
 				// m_pszFileListData	= (char**)HeapManager::GetHeap()->AllocFromEnd(m_uFileListLength * sizeof(char*));
-				m_pszFileListData = (char**)xfilesystem_heap_alloc(m_uFileListLength, 8);
+				m_pszFileListData = (char**)heap_alloc(m_uFileListLength, 8);
 
 				u32	uIndex	= 0;
 				__private::ParseDir(szPath, boRecursive, uIndex, m_pszFileListData);
@@ -503,10 +503,10 @@ namespace xcore
 			// Done - free all buffers
 			for(u32 uFile = 0; uFile < m_uFileListLength; uFile++)
 			{
-				xfilesystem_heap_free(m_pszFileListData[uFile]);
+				heap_free(m_pszFileListData[uFile]);
 			}
 
-			xfilesystem_heap_free(m_pszFileListData);
+			heap_free(m_pszFileListData);
 
 			m_uFileListLength	= 0;
 			m_pszFileListData	= NULL;

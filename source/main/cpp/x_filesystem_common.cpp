@@ -141,11 +141,11 @@ namespace xcore
 			if (uFlags & LOAD_FLAGS_FROM_END)
 			{
 				// Allocate from the end of the heap
-				pData = xfilesystem_heap_alloc((s32)u64FileSize, uAlignment);
+				pData = heap_alloc((s32)u64FileSize, uAlignment);
 			}
 			else
 			{
-				pData = xfilesystem_heap_alloc((s32)u64FileSize, uAlignment);
+				pData = heap_alloc((s32)u64FileSize, uAlignment);
 			}
 
 			Read(nFileHandle, 0, u64FileSize, pData, false);
@@ -1814,7 +1814,7 @@ namespace xcore
 
 			void				CreateFileCache		( void )
 			{
-				void* mem = xfilesystem_heap_alloc(sizeof(xfilecache), 16);
+				void* mem = heap_alloc(sizeof(xfilecache), 16);
 				m_pCache = (xfilecache*)mem;
 				xfilecache* filecache = new(m_pCache) xfilecache;
 			}
@@ -1824,7 +1824,7 @@ namespace xcore
 			void				DestroyFileCache	( void )
 			{
 				m_pCache->~xfilecache();
-				xfilesystem_heap_free(m_pCache);
+				heap_free(m_pCache);
 				m_pCache = NULL;
 			}
 
