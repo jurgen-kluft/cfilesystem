@@ -1,8 +1,9 @@
 <Package Name="xfilesystem" Group="com.virtuos.tnt">
+	
 	<Versions>
 		<Version>1.0.0</Version>
 	</Versions>
-
+	
 	<Variables>
 		<Name>xfilesystem</Name>
 		<Language>C++</Language>
@@ -11,20 +12,20 @@
 	</Variables>
 	
 	<DirectoryStructure>
-		<Item Folder="docs\manuals"/>
-		<Item Folder="docs\references"/>
-		<Item Folder="source\main\cpp"/>
-		<Item Folder="source\main\include\xfilesystem"/>
-		<Item Folder="source\main\include\xfilesystem\private"/>
-		<Item Folder="source\main\resources"/>
-		<Item Folder="source\test\cpp"/>
-		<Item Folder="source\test\include\xfilesystem"/>
-		<Item Folder="source\test\include\xfilesystem\private"/>
-		<Item Folder="source\test\resources"/>
-		<Item Folder="target"/>
-		<Item Folder="tools"/>
+		<Item Folder="docs\manuals" />
+		<Item Folder="docs\references" />
+		<Item Folder="source\main\cpp" />
+		<Item Folder="source\main\include\xfilesystem" />
+		<Item Folder="source\main\include\xfilesystem\private" />
+		<Item Folder="source\main\resources" />
+		<Item Folder="source\test\cpp" />
+		<Item Folder="source\test\include\xfilesystem" />
+		<Item Folder="source\test\include\xfilesystem\private" />
+		<Item Folder="source\test\resources" />
+		<Item Folder="target" />
+		<Item Folder="tools" />
 	</DirectoryStructure>
-
+	
 	<Content>
 		<Item Src="pom.xml" Dst="" Required="True" />
 		<Item Src="pom.props" Dst="" Required="True" />
@@ -35,11 +36,11 @@
 		<Item Src="libs\**\*.*" Dst="libs\" />
 		<Item Src="docs\**\*.*" Dst="docs\" />
 		<Item Src="tools\**\*.*" Dst="Tools\" />
-		<Item Src="target\${Name}\outdir\${Name}_DevDebug_${Platform}\${Name}_DevDebug_${Platform}.lib" Dst="libs\" Required="True"/>
-		<Item Src="target\${Name}\outdir\${Name}_DevRelease_${Platform}\${Name}_DevRelease_${Platform}.lib" Dst="libs\" Required="True"/>
-		<Item Src="target\${Name}\outdir\${Name}_DevFinal_${Platform}\${Name}_DevFinal_${Platform}.lib" Dst="libs\" Required="True"/>
-		<Item Src="target\${Name}\outdir\${Name}_TestDebug_${Platform}\${Name}_TestDebug_${Platform}.lib" Dst="libs\" Required="True"/>
-		<Item Src="target\${Name}\outdir\${Name}_TestRelease_${Platform}\${Name}_TestRelease_${Platform}.lib" Dst="libs\" Required="True"/>
+		<Item Src="target\${Name}\outdir\${Name}_DevDebug_${Platform}\${Name}_DevDebug_${Platform}.lib" Dst="libs\" Required="True" />
+		<Item Src="target\${Name}\outdir\${Name}_DevRelease_${Platform}\${Name}_DevRelease_${Platform}.lib" Dst="libs\" Required="True" />
+		<Item Src="target\${Name}\outdir\${Name}_DevFinal_${Platform}\${Name}_DevFinal_${Platform}.lib" Dst="libs\" Required="True" />
+		<Item Src="target\${Name}\outdir\${Name}_TestDebug_${Platform}\${Name}_TestDebug_${Platform}.lib" Dst="libs\" Required="True" />
+		<Item Src="target\${Name}\outdir\${Name}_TestRelease_${Platform}\${Name}_TestRelease_${Platform}.lib" Dst="libs\" Required="True" />
 	</Content>
 
 	<Dependency Package="xbase">
@@ -59,9 +60,33 @@
 		<Version>[1.0,)</Version>
 		<Type>Package</Type>
 	</Dependency>
-	
+
 	<Dependency Package="xunittest">
 		<Group>com.virtuos.tnt</Group>
+		<Version>[1.0,)</Version>
+		<Type>Package</Type>
+	</Dependency>
+
+	<Dependency Package="sdk_ps3" Platform="PS3">
+		<Group>com.virtuos.sdk</Group>
+		<Version>[300.0.01,)</Version>
+		<Type>Package</Type>
+	</Dependency>
+
+	<Dependency Package="sdk_360" Platform="Xbox 360">
+		<Group>com.virtuos.sdk</Group>
+		<Version>[1.0,)</Version>
+		<Type>Package</Type>
+	</Dependency>
+
+	<Dependency Package="sdk_wii" Platform="WII">
+		<Group>com.virtuos.sdk</Group>
+		<Version>[1.0,)</Version>
+		<Type>Package</Type>
+	</Dependency>
+
+	<Dependency Package="sdk_3ds" Platform="N3DS">
+		<Group>com.virtuos.sdk</Group>
 		<Version>[1.0,)</Version>
 		<Type>Package</Type>
 	</Dependency>
@@ -72,30 +97,33 @@
 				<PropertyGroup Label="Globals">
 					<ProjectGuid>{${GUID_Main}}</ProjectGuid>
 				</PropertyGroup>
+				<ImportGroup Label="TargetDirs">
+					<Import Project="$(SolutionDir)target\xfilesystem\xfilesystem.$(Platform).props" Condition="exists('$(SolutionDir)target\xfilesystem\xfilesystem.$(Platform).props')" Label="xfilesystem_TargetDir" />
+				</ImportGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevDebug|Win32'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)libs</AdditionalLibraryDirectories>
+						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\libs</AdditionalLibraryDirectories>
 						<AdditionalDependencies>#xfilesystem_DevDebug_Win32.lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevRelease|Win32'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)libs</AdditionalLibraryDirectories>
+						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\libs</AdditionalLibraryDirectories>
 						<AdditionalDependencies>#xfilesystem_DevRelease_Win32.lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|Win32'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)libs</AdditionalLibraryDirectories>
+						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\libs</AdditionalLibraryDirectories>
 						<AdditionalDependencies>#xfilesystem_DevFinal_Win32.lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
@@ -251,7 +279,7 @@
 						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)libs</AdditionalLibraryDirectories>
 						<AdditionalDependencies>#xfilesystem_TestRelease_WII.lib</AdditionalDependencies>
 					</Link>
-				</ItemDefinitionGroup>								
+				</ItemDefinitionGroup>
 				<ItemGroup>
 					<ClCompile Include="source\main\cpp\**\*.cpp" />
 				</ItemGroup>
@@ -280,10 +308,10 @@
 					<ConfigurationType>Application</ConfigurationType>
 				</PropertyGroup>
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|PS3'">
-				    <TargetExt>.self</TargetExt>
+					<TargetExt>.elf</TargetExt>
 				</PropertyGroup>
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|PS3'">
-				    <TargetExt>.self</TargetExt>
+					<TargetExt>.elf</TargetExt>
 				</PropertyGroup>
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Xbox 360'" Label="Configuration">
 					<ConfigurationType>Application</ConfigurationType>
@@ -298,10 +326,10 @@
 					<ConfigurationType>Application</ConfigurationType>
 				</PropertyGroup>
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|WII'">
-				    <TargetExt>.elf</TargetExt>
+					<TargetExt>.elf</TargetExt>
 				</PropertyGroup>
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|WII'">
-				    <TargetExt>.elf</TargetExt>
+					<TargetExt>.elf</TargetExt>
 				</PropertyGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Win32'">
 					<ClCompile>
@@ -313,6 +341,12 @@
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Win32'">
+					<ClCompile>
+						<PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+						<AdditionalIncludeDirectories>$(SolutionDir)source\test\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+					</ClCompile>
+				</ItemDefinitionGroup>
+				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|Win32'">
 					<ClCompile>
 						<AdditionalIncludeDirectories>$(SolutionDir)source\test\include</AdditionalIncludeDirectories>
 					</ClCompile>
@@ -374,7 +408,7 @@
 						<AdditionalLibraryDirectories>$(SolutionDir)target\xfilesystem\outdir\xfilesystem_$(Configuration)_$(Platform)\</AdditionalLibraryDirectories>
 						<AdditionalDependencies>xfilesystem_$(Configuration)_WII.lib</AdditionalDependencies>
 					</Link>
-				</ItemDefinitionGroup>					
+				</ItemDefinitionGroup>
 				<ItemGroup>
 					<ClCompile Include="source\test\cpp\**\*.cpp" />
 				</ItemGroup>
@@ -385,7 +419,3 @@
 		</ProjectFile>
 	</Project>
 </Package>
-
-
-
-
