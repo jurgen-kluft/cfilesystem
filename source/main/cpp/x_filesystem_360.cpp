@@ -395,7 +395,7 @@ namespace xcore
 							pAsync->m_nStatus	= FILE_OP_STATUS_DONE;
 						}
 					}
-						FreeAsyncIOAddToTail(pAsync);//m_pFreeAsyncIOList.addToTail(pAsync);
+						FreeAsyncIOAddToTail(pAsync);
 				}
 				else
 				{
