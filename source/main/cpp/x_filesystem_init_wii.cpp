@@ -12,40 +12,53 @@
 
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem\private\x_filesystem_WII.h"
 
 namespace xcore
 {
 	//------------------------------------------------------------------------------
 	namespace xfilesystem
 	{
-		void init(void)
-		{
-			xfilesystem::xalias host ("host" , xfilesystem::FS_SOURCE_HOST,	"/");
-			xfilesystem::xalias dvd  ("dvd"  , xfilesystem::FS_SOURCE_DVD,	"/");
-			xfilesystem::xalias cache("cache", xfilesystem::FS_SOURCE_CACHE,"/");
+		static xfiledevice*	sSystemFileDevice = NULL;
 
-			xfilesystem::AddAlias(host);
-			xfilesystem::AddAlias(dvd);
-			xfilesystem::AddAlias(cache);
+		void init(x_iothread* io_thread, x_iallocator* allocator)
+		{
+			xfilesystem::setAllocator(allocator);
+			xfilesystem::setIoThread(io_thread);
+			xfilesystem::initAlias();
+
+			sSystemFileDevice = x_CreateFileDeviceWII();
+
+			xfilesystem::xalias host ("host" , sSystemFileDevice, "/");
+			xfilesystem::xalias dvd  ("dvd"  , sSystemFileDevice, "/");
+			xfilesystem::xalias cache("cache", sSystemFileDevice, "/");
+
+			xfilesystem::addAlias(host);
+			xfilesystem::addAlias(dvd);
+			xfilesystem::addAlias(cache);
 
 			xfilesystem::xalias appdir( "appdir", "host" );
 			xfilesystem::xalias curdir( "curdir", "host" );
-			xfilesystem::AddAlias(appdir);
-			xfilesystem::AddAlias(curdir);
+			xfilesystem::addAlias(appdir);
+			xfilesystem::addAlias(curdir);
 
-			xfilesystem::Initialise(64, xTRUE);
+			xfilesystem::initialise(64, xTRUE);
 		}
 
 		//------------------------------------------------------------------------------
-
 		void exit()
 		{
-			xfilesystem::Shutdown();
-			xfilesystem::ExitAlias();
+			xfilesystem::shutdown();
+			xfilesystem::exitAlias();
+
+			x_DestroyFileDeviceWII(sSystemFileDevice);
+
+			xfilesystem::setIoThread(NULL);
+			xfilesystem::setAllocator(NULL);
 		}
 	}
 	//==============================================================================
-	// END xCore namespace
+	// END xcore namespace
 	//==============================================================================
 };
 

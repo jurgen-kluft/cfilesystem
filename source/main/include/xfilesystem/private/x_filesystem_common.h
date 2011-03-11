@@ -9,25 +9,43 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
+
+#include "xfilesystem\x_filesystem.h"
+#include "xfilesystem\private\x_filesystem_private.h"
+
 #include "xfilesystem\private\x_filesystem_spsc_queue.h"
 #include "xfilesystem\private\x_filesystem_llist.h"
 
 //==============================================================================
-// xCore namespace
+// xcore namespace
 //==============================================================================
 namespace xcore
 {
 	//==============================================================================
-	// FORWARD DECLARES
-	//==============================================================================
-	class xstring_buffer;
-
-	//==============================================================================
-	// xfilecache
+	// xfilesystem common, private
 	//==============================================================================
 	namespace xfilesystem
 	{
+		//==============================================================================
+		// FORWARD DECLARES
+		//==============================================================================
+		class xfiledevice;
+		struct xfileinfo;
+		struct xfileasync;
+
 		class xfilecache;
+
+		enum ESettings
+		{
+			FS_SYNC_WAIT				= 0x00,
+			FS_SYNC_NOWAIT				= 0x01,
+			FS_MAX_PATH					= 256,
+			FS_MAX_OPENED_FILES 		= 32,
+			FS_MAX_ASYNC_IO_OPS			= 32,
+			FS_MAX_ASYNC_QUEUE_ITEMS	= 64,
+			FS_MAX_ERROR_ITEMS	 		= 32,
+			FS_MEM_ALIGNMENT			= 128,
+		};
 
 		enum EFileQueueStatus
 		{	
@@ -56,410 +74,132 @@ namespace xcore
 			FILE_QUEUE_MARKER
 		};
 
-		enum EFileOpStatus
-		{
-			FILE_OP_STATUS_FREE,
-
-			FILE_OP_STATUS_OPEN_PENDING,
-			FILE_OP_STATUS_OPENING,
-
-			FILE_OP_STATUS_CLOSE_PENDING,
-			FILE_OP_STATUS_CLOSING,
-
-			FILE_OP_STATUS_READ_PENDING,
-			FILE_OP_STATUS_READING,
-
-			FILE_OP_STATUS_WRITE_PENDING,
-			FILE_OP_STATUS_WRITING,
-
-			FILE_OP_STATUS_STAT_PENDING,
-			FILE_OP_STATUS_STATING,
-
-			FILE_OP_STATUS_DELETE_PENDING,
-			FILE_OP_STATUS_DELETING,
-
-			FILE_OP_STATUS_DONE,
-		};
-
-		struct FileInfo
-		{
-			u64 				m_uByteOffset;
-			u64 				m_uByteSize;
-
-			u64 				m_uSectorOffset;
-			u64 				m_uNumSectors;
-			u64 				m_uSectorSize;
-
-			s32 				m_nFileIndex;
-			s32 				m_nLastError;
-
-			char				m_szFilename[FS_MAX_PATH];
-			xbool				m_boWriting;
-			xbool				m_boWaitAsync;
-			ESourceType			m_eSource;
-
-			// Async IO worker thread will write here:
-			volatile u32 		m_nFileHandle;
-
-			void				clear()
-			{
-				m_uByteOffset		= 0;
-				m_uByteSize			= 0;
-
-				m_uSectorOffset		= 0;
-				m_uNumSectors		= 0;
-				m_uSectorSize		= 0;
-
-				m_nFileIndex		= 0;
-				m_nFileHandle		= (u32)INVALID_FILE_HANDLE;
-				m_nLastError		= 0;
-
-				m_szFilename[0] = '\0';
-				m_szFilename[FS_MAX_PATH - 1] = '\0';
-
-				m_boWriting			= false;
-				m_boWaitAsync		= false;
-				m_eSource			= FS_SOURCE_DEFAULT;
-			}
-		};
-
-		struct AsyncIOInfo
-		{
-			AsyncIOInfo*		m_pPrev;
-			AsyncIOInfo*		m_pNext;
-
-			s32					m_nFileIndex;
-			s32					m_nStatus;
-			const void*			m_pWriteAddress;
-			void*				m_pReadAddress;
-
-			u64					m_uReadWriteOffset;
-			u64					m_uReadWriteSize;
-
-			AsyncIOInfo*		getPrev	()										{ return m_pPrev; }
-			AsyncIOInfo*		getNext	()										{ return m_pNext; }
-
-			void				setPrev	( AsyncIOInfo* pPrev )					{ m_pPrev = pPrev; }
-			void				setNext	( AsyncIOInfo* pNext )					{ m_pNext = pNext; }
-
-			void				clear()
-			{
-				m_pPrev			= NULL;
-				m_pNext			= NULL;
-
-				m_nFileIndex	= -1;
-				m_nStatus		= FILE_OP_STATUS_FREE;
-					
-				m_pWriteAddress	= NULL;
-				m_pReadAddress	= NULL;
-
-				m_uReadWriteOffset	= 0;
-				m_uReadWriteSize	= 0;
-			}
-		};
 
 		//////////////////////////////////////////////////////////////////////////
 		// Private xfilesystem functionality
 		//////////////////////////////////////////////////////////////////////////
-		namespace __private
+		class QueueItem
 		{
-
-
-			class QueueItem
-			{
-				QueueItem*			m_pPrev;
-				QueueItem*			m_pNext;
-
-			public:
-				u32					m_nHandle;
-				void*				m_pDestAddr;
-				const void*			m_pSrcAddr;
-				uintfs				m_uOffset;
-				uintfs				m_uSize;
-				EFileQueueStatus	m_uStatus;
-
-				AsyncQueueCallBack	m_CallbackFunc;
-				AsyncQueueCallBack2	m_CallbackFunc2;
-				AsyncQueueCallBack3	m_CallbackFunc3;
-
-				void*				m_pCallbackClass;
-				s32					m_nCallbackID;
-
-				u32					m_uPriority;
-
-				QueueItem*			getPrev	()										{ return m_pPrev; }
-				QueueItem*			getNext	()										{ return m_pNext; }
-
-				void				setPrev	( QueueItem* pPrev )					{ m_pPrev = pPrev; }
-				void				setNext	( QueueItem* pNext )					{ m_pNext = pNext; }
-
-				void				clear	( )
-				{
-					m_pPrev				= NULL;
-					m_pNext				= NULL;
-
-					m_nHandle			= 0;
-					m_pDestAddr			= NULL;
-					m_pSrcAddr			= NULL;
-					m_uOffset			= 0;
-					m_uSize				= 0;
-					m_uStatus			= FILE_QUEUE_FREE;
-
-					m_CallbackFunc		= NULL;
-					m_CallbackFunc2		= NULL;
-					m_CallbackFunc3		= NULL;
-
-					m_pCallbackClass	= NULL;
-					m_nCallbackID		= 0;
-
-					m_uPriority			= FS_PRIORITY_LOW;
-				}
-			};
-
-			///< Common
-			extern void				InitialiseCommon	( u32 uAsyncQueueSize, xbool boEnableCache );
-			extern void				ShutdownCommon		( void );
-
-			extern ESourceType		CreateSystemPath	( const char* szFilename, xstring_buffer& outFilename );
-			extern const char*		GetFileExtension	( const char* szFilename );
-			extern xbool			IsSourceReadonly	( ESourceType eSource );
-
-			extern FileInfo*		GetFileInfo			( u32 uHandle );
-			extern u32				FindFreeFileSlot	( void );
-
-			extern s32				AsyncIONumFreeSlots	( void );
-			extern AsyncIOInfo*		GetAsyncIOData		( u32 nSlot );
-			extern AsyncIOInfo*		FreeAsyncIOPop		( void );
-			extern void				FreeAsyncIOAddToTail( AsyncIOInfo* asyncIOInfo );
-			extern AsyncIOInfo*		AsyncIORemoveHead	( void );
-			extern void				AsyncIOAddToTail	( AsyncIOInfo* asyncIOInfo );
-
-			extern QueueItem*		FreeAsyncQueuePop	( );
-			extern void				FreeAsyncQueueAddToTail( QueueItem* asyncQueueItem );
-			extern QueueItem*		AsyncQueueRemoveHead( u32 uPriority );
-			extern void				AsyncQueueAddToTail	( u32 uPriority, QueueItem* asyncQueueItem );
-			extern void				AsyncQueueAddToHead	( u32 uPriority, QueueItem* asyncQueueItem );
-			extern xbool			AsyncQueueAdd		( const EFileQueueStatus uOperation, const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, const void* pSrc, AsyncQueueCallBack callbackFunc, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID );
-			extern xbool			AsyncQueueUpdate	( void );
-
-			extern xbool			Sync				( u32 uFlag = FS_SYNC_WAIT );
-
-			extern void				ParseDir			( const char* szDir, xbool boRecursive, u32& ruFileList, char** pszFileList );
-
-			extern void				CreateFileCache		( void );
-			extern void				DestroyFileCache	( void );
-			extern xfilecache*		GetFileCache		( );
-
-			extern u32				FindFileHandle		( const char* szName );
-			extern xbool			IsPathUNIXStyle		( void );					///< UNIX = '/', Win32 = '\'
-
-			///< Error
-			extern void				SetLastError		( EError error );
-
-			///< Async worker
-			extern void				AsyncIOWorkerResume	( void );
-
-			///< Synchronous file operations
-			extern u32				SyncOpen			( const char* szName, xbool boWrite = false, xbool boRetry = false );
-			extern uintfs			SyncSize			( u32 uHandle );
-			extern void				SyncRead			( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer, xbool boRetry = false );	
-			extern void				SyncWrite			( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer, xbool boRetry = false );
-			extern void 			SyncClose			( u32& uHandle );
-			extern void				SyncDelete			( u32& uHandle );
-
-		};
-
-	};
-
-
-	//==============================================================================
-	// xfilecache
-	//==============================================================================
-	namespace xfilesystem
-	{
-
-		//--------
-		// Defines
-		//--------
-		enum ECacheSettings
-		{
-			CACHED_FILE_NAME_LENGTH		= 256,
-			MAX_CALLBACKS				= 16,
-			MAX_CACHED_FILES			= 1024,
-			CACHE_FILE_ALIGNMENT		= 2048
-		};
-
-		#define	CACHE_PATH					"cache:\\"
-		#define	CACHE_FILENAME				CACHE_PATH "DataCache.dat"
-
-		//---------
-		// Typedefs
-		//---------
-		typedef void (*CacheCallBack) (void* pClass, s32 nID);
-
-		//------
-		// Enums
-		//------
-		enum ECacheFileFlags
-		{
-			CACHE_FILE_FLAGS_INVALID	= 0x00,		// Data not set
-			CACHE_FILE_FLAGS_VALID		= 0x01,		// Valid cached data
-			CACHE_FILE_FLAGS_PERMANENT	= 0x02,		// Must not be automatically de-cached
-			CACHE_FILE_FLAGS_BUSY		= 0x04,		// Operation in progress
-		};
-
-		//-----------
-		// Data Types
-		//-----------
-
-		class xfilecache
-		{
-			class FileEntry
-			{
-			public:
-				FileEntry*		m_pPrev;
-				FileEntry*		m_pNext;
-
-				char			m_szName[CACHED_FILE_NAME_LENGTH];
-				u64				m_uOffset;
-				u64				m_uSize;
-
-				u32				m_uFlags;
-				u32				m_uCRC;
-
-				FileEntry*		getPrev	()											{ return m_pPrev; }
-				FileEntry*		getNext	()											{ return m_pNext; }
-
-				void			setPrev	( FileEntry* pPrev )						{ m_pPrev = pPrev; }
-				void			setNext	( FileEntry* pNext )						{ m_pNext = pNext; }
-			};
-
-			class CallbackData
-			{
-			public:
-				CacheCallBack	m_Callback;
-				void*			m_pClass;
-				s32				m_nID;
-			};
-
-			class CacheHeader
-			{
-			public:
-				u32				m_uFlags;
-				FileEntry		m_xCacheList[MAX_CACHED_FILES];
-			};
-
-			u32								m_nCacheHandle;
-			u64								m_uCacheSize;
-			CacheHeader						m_xHeader;
-			xfilesystem::llist<FileEntry>	m_xPermanentList;
-			xfilesystem::llist<FileEntry>	m_xTransientList;
-
-			static	CallbackData			m_xCallbacks[MAX_CALLBACKS];
-
-			static void	FileIOCallback		( u32 nHandle, s32 nID );
+			QueueItem*			m_pPrev;
+			QueueItem*			m_pNext;
 
 		public:
-						xfilecache						();
-						~xfilecache						();
+			u32					m_nHandle;
+			void*				m_pDestAddr;
+			const void*			m_pSrcAddr;
+			uintfs				m_uOffset;
+			uintfs				m_uSize;
+			EFileQueueStatus	m_uStatus;
 
-			void*		operator new (size_t size, xfilecache *p)	{ return p; }
+			AsyncQueueCallBack	m_CallbackFunc;
+			AsyncQueueCallBack2	m_CallbackFunc2;
+			AsyncQueueCallBack3	m_CallbackFunc3;
 
+			void*				m_pCallbackClass;
+			s32					m_nCallbackID;
 
-			void		Initialise						();
-			void		PurgeCache						();
+			u32					m_uPriority;
 
-			s32			GetCachedIndex					( const char* szFilename, u64 uOffset = 0 );
-			void		GetCacheData					( s32 nIndex, FileEntry& rxFileEntry );
+			QueueItem*			getPrev	()										{ return m_pPrev; }
+			QueueItem*			getNext	()										{ return m_pNext; }
 
-			bool		AddToCache						( const char* szFilename, void* pData, const u64 uOffset, const u64 uSize, const bool boPermanent );
-			bool		AddToCacheAsync					( const char* szFilename, void* pData, const u64 uOffset, const u64 uSize, const bool boPermanent, CacheCallBack Callback, void* pClass, s32 nID );
-			bool		SetCacheData					( const char* szFilename, void* pData, const u64 uOffset, const u64 uSize, const bool boPermanent );
+			void				setPrev	( QueueItem* pPrev )					{ m_pPrev = pPrev; }
+			void				setNext	( QueueItem* pNext )					{ m_pNext = pNext; }
 
-			void		RemoveFromCache					( const char* szFilename );
+			void				clear	( )
+			{
+				m_pPrev				= NULL;
+				m_pNext				= NULL;
 
-			void		InvalidateCacheIndexFile		();
-			void		InvalidateCacheIndexFileAsync	();
+				m_nHandle			= 0;
+				m_pDestAddr			= NULL;
+				m_pSrcAddr			= NULL;
+				m_uOffset			= 0;
+				m_uSize				= 0;
+				m_uStatus			= FILE_QUEUE_FREE;
 
-			void		WriteCacheIndexFile				();
-			void		WriteCacheIndexFileAsync		();
-		};
-	};
+				m_CallbackFunc		= NULL;
+				m_CallbackFunc2		= NULL;
+				m_CallbackFunc3		= NULL;
 
+				m_pCallbackClass	= NULL;
+				m_nCallbackID		= 0;
 
-
-	//==============================================================================
-	// xalias
-	//==============================================================================
-
-	namespace xfilesystem
-	{
-		//------------------------------------------------------------------------------
-		// Description:
-		//     This class maps an alias to a source.
-		//     This acts as an indirection and is useful for defining folders
-		//     as drives, remap drives etc..
-		//
-		//     source:\folder\filename.ext, where source = c:\temp
-		//     data:\folder\filename.ext, where data = g:\
-		//     dvd:\folder\filename.ext, where dvd = g:\
-		//     
-		//------------------------------------------------------------------------------
-		class xalias
-		{
-		public:
-			xalias ();
-			xalias (const char* alias, const char* aliasTarget);
-			xalias (const char* alias, ESourceType source, const char* remap=NULL);
-
-			const char*			alias() const								{ return mAliasStr; }
-			const char*			aliasTarget() const							{ return mAliasTargetStr; }
-			const char*			remap() const;
-			ESourceType			source() const;
-
-		private:
-			const char*         mAliasStr;									///< data
-			const char*         mAliasTargetStr;							///< d
-			mutable const char* mRemapStr;									///< e.g. "d:\project\data\bin.pc", data:\file.txt to d:\project\data\bin.pc\file.txt
-			ESourceType			mSource;
+				m_uPriority			= FS_PRIORITY_LOW;
+			}
 		};
 
-		extern void				ExitAlias();
-		extern void				AddAlias(xalias& alias);
-		extern const xalias*	FindAlias(const char* alias);
-		extern const xalias*	FindAliasFromFilename(const char* filename);
-		extern const xalias*	FindAndRemoveAliasFromFilename(xstring_buffer& ioFilename);
-		extern void				ReplaceAliasOfFilename(xstring_buffer& ioFilename, const xalias* inNewAlias);
+		extern void				setAllocator		( x_iallocator* allocator );
+		extern void*			heapAlloc			( s32 size, s32 alignment );
+		extern void				heapFree			( void* mem );
+
+		extern void 			initialise			( u32 uAsyncQueueSize, xbool boEnableCache = false );
+		extern void				shutdown			( void );
+
+		///< Alias
+		extern void				initAlias			( void );
+		extern void				exitAlias			( void );
+
+		///< Thread
+		extern void				setIoThread			( x_iothread* io_thread );
+		extern xbool			ioThreadLoop		( void );
+		extern void				ioThreadWait		( void );
+		extern void				ioThreadSignal		( void );
+
+		///< Common
+		extern void				initialiseCommon	( u32 uAsyncQueueSize, xbool boEnableCache );
+		extern void				shutdownCommon		( void );
+
+		extern xfiledevice*		createSystemPath	( const char* szFilename, char* outFilename, s32 inFilenameMaxLen );
+		extern const char*		getFileExtension	( const char* szFilename );
+
+		extern xfileinfo*		getFileInfo			( u32 uHandle );
+		extern u32				findFreeFileSlot	( void );
+
+		extern s32				asyncIONumFreeSlots	( void );
+		extern xfileasync*		getAsyncIOData		( u32 nSlot );
+		extern xfileasync*		freeAsyncIOPop		( void );
+		extern void				freeAsyncIOAddToTail( xfileasync* asyncIOInfo );
+		extern xfileasync*		asyncIORemoveHead	( void );
+		extern void				asyncIOAddToTail	( xfileasync* asyncIOInfo );
+
+		extern QueueItem*		freeAsyncQueuePop	( );
+		extern void				freeAsyncQueueAddToTail( QueueItem* asyncQueueItem );
+		extern QueueItem*		asyncQueueRemoveHead( u32 uPriority );
+		extern void				asyncQueueAddToTail	( u32 uPriority, QueueItem* asyncQueueItem );
+		extern void				asyncQueueAddToHead	( u32 uPriority, QueueItem* asyncQueueItem );
+		extern xbool			asyncQueueAdd		( const EFileQueueStatus uOperation, const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, const void* pSrc, AsyncQueueCallBack callbackFunc, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID );
+		extern xbool			asyncQueueUpdate	( void );
+
+		extern xbool			sync				( u32 uFlag = FS_SYNC_WAIT );
+
+		extern void				parseDir			( const char* szDir, xbool boRecursive, u32& ruFileList, char** pszFileList );
+
+		extern void				createFileCache		( void );
+		extern void				destroyFileCache	( void );
+		extern xfilecache*		getFileCache		( );
+
+		extern u32				findFileHandle		( const char* szName );
+		extern xbool			isPathUNIXStyle		( void );					///< UNIX = '/', Win32 = '\'
+
+		///< Error
+		extern void				setLastError		( EError error );
+
+		///< Async worker
+		extern void				asyncIOWorkerResume	( void );
+
+		///< Synchronous file operations
+		extern u32				syncOpen			( const char* szName, xbool boWrite = false, xbool boRetry = false );
+		extern uintfs			syncSize			( u32 uHandle );
+		extern void				syncRead			( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer, xbool boRetry = false );	
+		extern void				syncWrite			( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer, xbool boRetry = false );
+		extern void 			syncClose			( u32& uHandle );
+		extern void				syncDelete			( u32& uHandle );
+
 	};
 
-	
 	//==============================================================================
-	// xfiledevice
-	//==============================================================================
-
-	namespace xfilesystem
-	{
-		// Forward declares
-		class xfiledevice;
-
-		//------------------------------------------------------------------------------
-		// Description:
-		//     This class binds an alias to a filedevice.
-		//     This acts as an association and is used to add new filedevices
-		//
-		//     source:\folder\filename.ext, where source = c:\temp
-		//     data:\folder\filename.ext, where data = g:\
-		//     dvd:\folder\filename.ext, where dvd = g:\
-		//     
-		//------------------------------------------------------------------------------
-		extern void					UnregisterAllFileDevices();
-		extern void					RegisterFileDevice(xalias* alias, xfiledevice* device);
-		extern const xfiledevice*	FindFileDevice(xalias* alias);
-		extern const xfiledevice*	FindFileDeviceFromFilename(const char* filename);
-	};
-
-	//==============================================================================
-	// END xCore namespace
+	// END xcore namespace
 	//==============================================================================
 };
 

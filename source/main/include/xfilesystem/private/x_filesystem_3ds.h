@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_WII_H__
-#define __X_FILESYSTEM_WII_H__
+#ifndef __X_FILESYSTEM_3DS_H__
+#define __X_FILESYSTEM_3DS_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -18,8 +18,8 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		extern xfiledevice*	x_CreateFileDeviceWII(EDeviceType type);
-		extern void			x_DestroyFileDeviceWII(xfiledevice*);
+		extern xfiledevice*	x_CreateFileDevice3DS(EDeviceType type);
+		extern void			x_DestroyFileDevice3DS(xfiledevice*);
 	};
 
 	//==============================================================================
@@ -28,6 +28,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_WII_H__
+// END __X_FILESYSTEM_3DS_H__
 //==============================================================================
 #endif

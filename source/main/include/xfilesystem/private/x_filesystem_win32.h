@@ -9,24 +9,21 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
+#include "xfilesystem\private\x_filedevice.h"
 
 //==============================================================================
-// xCore namespace
+// xcore namespace
 //==============================================================================
 namespace xcore
 {
 	namespace xfilesystem
 	{
-		namespace __private
-		{
-
-
-		};
-
+		extern xfiledevice*	x_CreateFileDevicePC(EDeviceType type);
+		extern void			x_DestroyFileDevicePC(xfiledevice*);
 	};
 
 	//==============================================================================
-	// END xCore namespace
+	// END xcore namespace
 	//==============================================================================
 };
 

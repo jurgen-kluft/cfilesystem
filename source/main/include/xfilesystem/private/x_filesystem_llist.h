@@ -16,10 +16,11 @@ namespace xcore
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Linked List
 		//
-		template <class T> class llist_item
+		template <class T> 
+		class llist_item
 		{
-			llist_item*	mPrev;
-			llist_item*	mNext;
+			llist_item*		mPrev;
+			llist_item*		mNext;
 			T				mObject;
 
 		public:
@@ -36,7 +37,8 @@ namespace xcore
 			void			setNext			( llist_item* pNext )						{ mNext = pNext; }
 		};
 
-		template <class T> class llist_item_ptr
+		template <class T> 
+		class llist_item_ptr
 		{
 			llist_item_ptr*	mPrev;
 			llist_item_ptr*	mNext;
@@ -62,11 +64,12 @@ namespace xcore
 			void			setNext			( llist_item_ptr* pNext )					{ mNext = pNext; }
 		};
 
-		template <class T> class llist
+		template <class T>
+		class llist
 		{
 		public:
-			llist	();
-			~llist	();
+							llist	();
+							~llist	();
 
 			// Add an entry to the start of the list
 			void			addToHead		( T* pObject );
