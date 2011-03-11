@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_WII_H__
-#define __X_FILESYSTEM_WII_H__
+#ifndef __XFILESYSTEM_XFILESTREAM_H__
+#define __XFILESYSTEM_XFILESTREAM_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -9,7 +9,9 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
-#include "xfilesystem\private\x_filedevice.h"
+#include "xbase\x_debug.h"
+
+#include "xfilesystem\x_stream.h"
 
 //==============================================================================
 // xcore namespace
@@ -18,8 +20,23 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		extern xfiledevice*	x_CreateFileDeviceWII(EDeviceType type);
-		extern void			x_DestroyFileDeviceWII(xfiledevice*);
+		// Forward declares
+		class xfilepath;
+
+		class xfilestream : public xstream
+		{
+									xfilestream		(const xfilestream&);
+			xfilestream&			operator =		(const xfilestream&);
+
+		public:
+									xfilestream		(const xfilepath& filename, EFileMode mode, EFileAccess access);
+									~xfilestream	(void);
+		};
+
+
+		//==============================================================================
+		// END xfilesystem namespace
+		//==============================================================================
 	};
 
 	//==============================================================================
@@ -28,6 +45,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_WII_H__
+// END __XFILESYSTEM_XFILESTREAM_H__
 //==============================================================================
 #endif

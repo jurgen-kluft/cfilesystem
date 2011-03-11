@@ -1,40 +1,57 @@
 #include "xbase\x_target.h"
 #ifdef TARGET_360
 #include "xbase\x_system.h"
+
+#include "xfilesystem\private\x_filedevice.h"
 #include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem\private\x_filesystem_360.h"
+
 namespace xcore
 {
 	//------------------------------------------------------------------------------
 	namespace xfilesystem
 	{
+		static xfiledevice*	sSystemFileDevice = NULL;
 
-		void init(void)
+		void init(x_iothread* io_thread, x_iallocator* allocator)
 		{
-			xfilesystem::xalias dvd  ("dvd"  , xfilesystem::FS_SOURCE_DVD,  "GAME:\\");				///< DVD Drive (read-only)
-			xfilesystem::xalias host ("host" , xfilesystem::FS_SOURCE_HOST, "DEVKIT:\\");
-			xfilesystem::xalias save ("HDD" , xfilesystem::FS_SOURCE_MS, "HDD:\\");
+			xfilesystem::setAllocator(allocator);
+			xfilesystem::setIoThread(io_thread);
+			xfilesystem::initAlias();
 
-			xfilesystem::AddAlias(dvd);
-			xfilesystem::AddAlias(host);
-			xfilesystem::AddAlias(save);
+			sSystemFileDevice = x_CreateFileDevice360();
+
+			xfilesystem::xalias dvd  ("dvd"  , sSystemFileDevice, "GAME:\\");				///< DVD Drive (read-only)
+			xfilesystem::xalias host ("host" , sSystemFileDevice, "DEVKIT:\\");
+			xfilesystem::xalias save ("HDD"  , sSystemFileDevice, "HDD:\\");
+
+			xfilesystem::addAlias(dvd);
+			xfilesystem::addAlias(host);
+			xfilesystem::addAlias(save);
 
 			xfilesystem::xalias appdir( "appdir", "host" );
 			xfilesystem::xalias curdir( "curdir", "host" );
-			xfilesystem::AddAlias(appdir);
-			xfilesystem::AddAlias(curdir);
+			xfilesystem::addAlias(appdir);
+			xfilesystem::addAlias(curdir);
 
-			xfilesystem::Initialise(64, xTRUE);
+			xfilesystem::initialise(64, xTRUE);
 		}
-	//------------------------------------------------------------------------------
+
+		//------------------------------------------------------------------------------
 		void exit()
 		{
-			xfilesystem::Shutdown();
-			xfilesystem::ExitAlias();
+			xfilesystem::shutdown();
+			xfilesystem::exitAlias();
+
+			x_DestroyFileDevice360(sSystemFileDevice);
+
+			xfilesystem::setIoThread(NULL);
+			xfilesystem::setAllocator(NULL);
 		}
 	}
 
 //==============================================================================
-// END xCore namespace
+// END xcore namespace
 //==============================================================================
 };
 #endif // TARGET_360

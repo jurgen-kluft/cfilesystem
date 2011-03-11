@@ -9,19 +9,21 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
+#include "xfilesystem\private\x_filedevice.h"
 
 //==============================================================================
-// xCore namespace
+// xcore namespace
 //==============================================================================
 namespace xcore
 {
 	namespace xfilesystem
 	{
-
+		extern xfiledevice*	x_CreateFileDevicePS3(EDeviceType type);
+		extern void			x_DestroyFileDevicePS3(xfiledevice*);
 	};
 
 	//==============================================================================
-	// END xCore namespace
+	// END xcore namespace
 	//==============================================================================
 };
 

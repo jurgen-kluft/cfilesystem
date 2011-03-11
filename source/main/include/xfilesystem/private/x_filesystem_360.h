@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_360_H__
 #define __X_FILESYSTEM_360_H__
-#include "..\x_target.h"
+#include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,20 +8,22 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "..\x_types.h"
+#include "xbase\x_types.h"
+#include "xfilesystem\private\x_filedevice.h"
 
 //==============================================================================
-// xCore namespace
+// xcore namespace
 //==============================================================================
 namespace xcore
 {
 	namespace xfilesystem
 	{
-
+		extern xfiledevice*	x_CreateFileDevice360(EDeviceType type);
+		extern void			x_DestroyFileDevice360(xfiledevice*);
 	};
 
 	//==============================================================================
-	// END xCore namespace
+	// END xcore namespace
 	//==============================================================================
 };
 

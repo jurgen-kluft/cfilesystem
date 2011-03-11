@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_WII_H__
-#define __X_FILESYSTEM_WII_H__
+#ifndef __X_FILESYSTEM_IOTHREAD_H__
+#define __X_FILESYSTEM_IOTHREAD_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -9,7 +9,7 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
-#include "xfilesystem\private\x_filedevice.h"
+#include "xbase\x_debug.h"
 
 //==============================================================================
 // xcore namespace
@@ -18,8 +18,19 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		extern xfiledevice*	x_CreateFileDeviceWII(EDeviceType type);
-		extern void			x_DestroyFileDeviceWII(xfiledevice*);
+		//==============================================================================
+		// IO Thread
+		//==============================================================================
+		class x_iothread
+		{
+		public:
+			virtual				~x_iothread() {}
+
+			virtual bool		loop() const = 0;
+			virtual void		wait() = 0;
+			virtual void		signal() = 0;
+		};
+
 	};
 
 	//==============================================================================
@@ -28,6 +39,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_WII_H__
+// END __X_FILESYSTEM_IOTHREAD_H__
 //==============================================================================
 #endif

@@ -1,48 +1,41 @@
 #include "xbase\x_target.h"
-#ifdef TARGET_PSP
+#ifdef TARGET_3DS
 
 //==============================================================================
 // INCLUDES
 //==============================================================================
 
-#include <kernel.h>
-#include <kerror.h>
-#include <stdio.h>
-#include <mediaman.h>
-#include <psptypes.h>
-#include <psperror.h>
-#include <iofilemgr.h>
-#include <mediaman.h>
-#include <umddevctl.h>
-#include <kernelutils.h>
-#include <utility/utility_module.h>
-#include <np/np_drm.h>
-
+#include "xbase\x_types.h"
 #include "xbase\x_debug.h"
 #include "xbase\x_string_std.h"
 #include "xbase\x_va_list.h"
 
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_PSP.h"
+#include "xfilesystem\private\x_filesystem_3ds.h"
 
 namespace xcore
 {
+	//------------------------------------------------------------------------------
 	namespace xfilesystem
 	{
 		static xfiledevice*	sSystemFileDevice = NULL;
 
-		//------------------------------------------------------------------------------
 		void init(x_iothread* io_thread, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
 			xfilesystem::setIoThread(io_thread);
 			xfilesystem::initAlias();
 
-			sSystemFileDevice = x_CreateFileDevicePSP();
+			sSystemFileDevice = x_CreateFileDevice360();
 
-			xfilesystem::addAlias(xfilesystem::xalias("host", sSystemFileDevice, "host0:"));
-			xfilesystem::addAlias(xfilesystem::xalias("dvd" , sSystemFileDevice, "disc0:/PSP_GAME/USRDIR/" )); 
+			xfilesystem::xalias host ("host" , sSystemFileDevice, "/");
+			xfilesystem::xalias dvd  ("dvd"  , sSystemFileDevice, "/");
+			xfilesystem::xalias cache("cache", sSystemFileDevice, "/");
+
+			xfilesystem::addAlias(host);
+			xfilesystem::addAlias(dvd);
+			xfilesystem::addAlias(cache);
 
 			xfilesystem::xalias appdir( "appdir", "host" );
 			xfilesystem::xalias curdir( "curdir", "host" );
@@ -52,21 +45,21 @@ namespace xcore
 			xfilesystem::initialise(64, xTRUE);
 		}
 
+		//------------------------------------------------------------------------------
 		void exit()
 		{
 			xfilesystem::shutdown();
 			xfilesystem::exitAlias();
 
-			x_DestroyFileDevicePSP(sSystemFileDevice);
+			x_DestroyFileDevice360(sSystemFileDevice);
 
 			xfilesystem::setIoThread(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
-
 	}
 	//==============================================================================
 	// END xcore namespace
 	//==============================================================================
 };
 
-#endif // TARGET_PSP
+#endif // TARGET_3DS
