@@ -8,6 +8,8 @@
 using namespace xcore;
 using namespace xfilesystem;
 
+
+
 UNITTEST_SUITE_BEGIN(filestream)
 {
 	UNITTEST_FIXTURE(main)
@@ -17,8 +19,10 @@ UNITTEST_SUITE_BEGIN(filestream)
 
 		UNITTEST_TEST(open)
 		{
-			char filenameBuffer[256];
-			xfilestream fs(xfilepath(filenameBuffer, sizeof(filenameBuffer), "memory:\\file.txt"), FileMode_Open, FileAccess_Read);
+			/// @TODO: NEED A MEMORY FILE DEVICE MOCK OBJECT HERE!
+
+			//char filenameBuffer[256];
+			//xfilestream fs(xfilepath(filenameBuffer, sizeof(filenameBuffer), "memory:\\file.txt"), FileMode_Open, FileAccess_Read, FileOp_Sync);
 		}
 
 	}

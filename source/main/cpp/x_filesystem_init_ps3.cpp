@@ -25,17 +25,17 @@ namespace xcore
 			xfilesystem::xalias ms   ("ms"   , sSystemFileDevice, SYS_DEV_MS"/");
 			xfilesystem::xalias cache("cache", sSystemFileDevice, SYS_DEV_MS"/");
 
-			xfilesystem::addAlias(host);
-			xfilesystem::addAlias(dvd);
-			xfilesystem::addAlias(hdd0);
-			xfilesystem::addAlias(ms);
-			xfilesystem::addAlias(cache);
+			xfilesystem::gAddAlias(host);
+			xfilesystem::gAddAlias(dvd);
+			xfilesystem::gAddAlias(hdd0);
+			xfilesystem::gAddAlias(ms);
+			xfilesystem::gAddAlias(cache);
 
 			xfilesystem::xalias appdir( "appdir", "host" );
 			xfilesystem::xalias curdir( "curdir", "host" );
 
-			xfilesystem::addAlias(appdir);
-			xfilesystem::addAlias(curdir);
+			xfilesystem::gAddAlias(appdir);
+			xfilesystem::gAddAlias(curdir);
 			
 			xfilesystem::initialise(64, xTRUE);
 		}

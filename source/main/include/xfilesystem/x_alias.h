@@ -21,6 +21,7 @@ namespace xcore
 
 	namespace xfilesystem
 	{
+		class xfilepath;
 		class xfiledevice;
 
 		//------------------------------------------------------------------------------
@@ -53,11 +54,11 @@ namespace xcore
 			xfiledevice*		mFileDevice;
 		};
 
-		extern void				addAlias(xalias& inAlias);
-		extern const xalias*	findAlias(const char* inAlias);
-		extern const xalias*	findAliasFromFilename(const char* inFilename);
-		extern const xalias*	findAndRemoveAliasFromFilename(char* ioFilename);
-		extern void				replaceAliasOfFilename(char* ioFilename, s32 inFilenameMaxLength, const char* inNewAlias);
+		extern void				gAddAlias(xalias& inAlias);
+		extern const xalias*	gFindAlias(const char* inAlias);
+		extern const xalias*	gFindAliasFromFilename(const xfilepath& inFilename);
+		extern const xalias*	gFindAndRemoveAliasFromFilename(xfilepath& ioFilename);
+		extern void				gReplaceAliasOfFilename(xfilepath& ioFilename, const char* inNewAlias);
 	};
 
 	//==============================================================================

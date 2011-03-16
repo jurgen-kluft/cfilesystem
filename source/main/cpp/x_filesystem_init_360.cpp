@@ -2,7 +2,7 @@
 #ifdef TARGET_360
 #include "xbase\x_system.h"
 
-#include "xfilesystem\private\x_filedevice.h"
+#include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_360.h"
 
@@ -25,14 +25,14 @@ namespace xcore
 			xfilesystem::xalias host ("host" , sSystemFileDevice, "DEVKIT:\\");
 			xfilesystem::xalias save ("HDD"  , sSystemFileDevice, "HDD:\\");
 
-			xfilesystem::addAlias(dvd);
-			xfilesystem::addAlias(host);
-			xfilesystem::addAlias(save);
+			xfilesystem::gAddAlias(dvd);
+			xfilesystem::gAddAlias(host);
+			xfilesystem::gAddAlias(save);
 
 			xfilesystem::xalias appdir( "appdir", "host" );
 			xfilesystem::xalias curdir( "curdir", "host" );
-			xfilesystem::addAlias(appdir);
-			xfilesystem::addAlias(curdir);
+			xfilesystem::gAddAlias(appdir);
+			xfilesystem::gAddAlias(curdir);
 
 			xfilesystem::initialise(64, xTRUE);
 		}

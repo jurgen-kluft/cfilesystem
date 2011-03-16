@@ -6,6 +6,7 @@
 #include "xbase\x_string_std.h"
 
 #include "xfilesystem\x_alias.h"
+#include "xfilesystem\x_filepath.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 
 //==============================================================================
@@ -82,7 +83,7 @@ namespace xcore
 		{
 			if (mAliasTargetStr != NULL)
 			{
-				const xalias* a = findAlias(mAliasTargetStr);
+				const xalias* a = gFindAlias(mAliasTargetStr);
 				if (a == NULL)
 					return mRemapStr;
 				mRemapStr = a->remap();
@@ -96,7 +97,7 @@ namespace xcore
 		{
 			if (mAliasTargetStr != NULL)
 			{
-				const xalias* a = findAlias(mAliasTargetStr);
+				const xalias* a = gFindAlias(mAliasTargetStr);
 				if (a == NULL)
 					return NULL;
 				return a->device();
@@ -107,7 +108,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------
 
-		void            addAlias(xalias& alias)
+		void            gAddAlias(xalias& alias)
 		{
 			for (s32 i=0; i<sNumAliases; ++i)
 			{
@@ -132,7 +133,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------
 
-		const xalias* findAlias(const char* _alias)
+		const xalias*		gFindAlias(const char* _alias)
 		{
 			for (s32 i=0; i<sNumAliases; ++i)
 			{
@@ -146,97 +147,43 @@ namespace xcore
 
 		//------------------------------------------------------------------------------
 
-		const xalias* findAliasFromFilename(const char* inFilename)
+		const xalias*	gFindAliasFromFilename(const xfilepath& inFilename)
 		{
 			char deviceStrBuffer[32];
 
-			const char* pos = x_strFind(inFilename, ":\\");
-			if (pos!=NULL)
+			const s32 pos = inFilename.find(":\\");
+			if (pos >= 0)
 			{
-				char* dst = deviceStrBuffer;
-				const char* src = inFilename;
-				while (src < pos)
-					*dst++ = *src++;
-				*dst = '\0';
+				inFilename.subString(0, pos, deviceStrBuffer, sizeof(deviceStrBuffer)-1);
+				const xalias* alias = gFindAlias(deviceStrBuffer);
+				return alias;
 			}
 
-			const xalias* alias = findAlias(deviceStrBuffer);
+			return NULL;
+		}
+
+		//------------------------------------------------------------------------------
+
+		const xalias*		gFindAndRemoveAliasFromFilename(xfilepath& ioFilename)
+		{
+			const xalias* alias = gFindAliasFromFilename(ioFilename);
+			gReplaceAliasOfFilename(ioFilename, alias!=NULL ? alias->alias() : NULL);
 			return alias;
 		}
 
 		//------------------------------------------------------------------------------
 
-		const xalias*		findAndRemoveAliasFromFilename(char* ioFilename)
+		void				gReplaceAliasOfFilename(xfilepath& ioFilename, const char* inNewAlias)
 		{
-			const xalias* alias = findAliasFromFilename(ioFilename);
-			replaceAliasOfFilename(ioFilename, 0 /*x_strlen(ioFilename)*/, NULL);
-			return alias;
-		}
-
-		//------------------------------------------------------------------------------
-
-		void				replaceAliasOfFilename(char* ioFilename, s32 inFilenameMaxLength, const char* inNewAlias)
-		{
-			const char* pos1 = x_strFind(ioFilename, ":\\");
-			if (pos1!=NULL)
+			const s32 pos = ioFilename.find(":\\");
+			if (pos >= 0)
 			{
-				const s32 aliaslen1 = (s32)(pos1 - ioFilename);
-				const s32 aliaslen2 = inNewAlias!=NULL ? (s32)x_strlen(inNewAlias) : 0;
-
-				if (aliaslen1 >= aliaslen2 || inNewAlias==NULL)
-				{
-					const char* src = ioFilename + aliaslen1;
-					if (inNewAlias==NULL)
-						src += 2;	// Remove ':\'
-
-					char* dst = ioFilename + aliaslen2;
-					while (*src != '\0')
-						*dst++ = *src++;
-				}
-				else
-				{
-					const s32 len = x_strlen(ioFilename);
-
-					char* end1 = ioFilename + len;
-					char* end2 = ioFilename + len + (aliaslen2 - aliaslen1);
-
-					// Guard against maximum string length of ioFilename
-					if ((len + (aliaslen2 - aliaslen1)) > inFilenameMaxLength)
-						return;
-
-					while (end1 >= pos1)
-						*end2-- = *end1--;
-				}
+				ioFilename.replace(0, pos, inNewAlias);
 			}
 			else if (inNewAlias!=NULL)
 			{
-				// Make space for alias
-				const s32 len1 = x_strlen(ioFilename);
-				const s32 len2 = x_strlen(inNewAlias) + 2;
-
-				const char* end1 = ioFilename + len1;
-				char* end2 = ioFilename + len1 + len2;
-
-				// Guard against maximum string length of ioFilename
-				if ((len1 + len2) > inFilenameMaxLength)
-					return;
-
-				while (end1 >= pos1)
-					*end2-- = *end1--;
-
-				*end2-- = '\\';
-				*end2-- = ':';
+				ioFilename.replace(0, 0, inNewAlias);
 			}
-
-			// Copy in new alias
-			if (inNewAlias!=NULL)
-			{
-				const char* src = inNewAlias;
-				char* dst = ioFilename;
-				while (*src != '\0')
-					*dst++ = *src++;
-			}
-
 		}
 	};
 

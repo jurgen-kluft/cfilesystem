@@ -189,10 +189,10 @@ namespace xcore
 		extern void				asyncIOWorkerResume	( void );
 
 		///< Synchronous file operations
-		extern u32				syncOpen			( const char* szName, xbool boWrite = false, xbool boRetry = false );
+		extern u32				syncOpen			( const char* szName, xbool boRead = true, xbool boWrite = false );
 		extern uintfs			syncSize			( u32 uHandle );
-		extern void				syncRead			( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer, xbool boRetry = false );	
-		extern void				syncWrite			( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer, xbool boRetry = false );
+		extern void				syncRead			( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer );	
+		extern void				syncWrite			( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer );
 		extern void 			syncClose			( u32& uHandle );
 		extern void				syncDelete			( u32& uHandle );
 

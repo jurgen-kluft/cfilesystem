@@ -13,7 +13,8 @@
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\private\x_fileinfo.h"
 #include "xfilesystem\private\x_fileasync.h"
-#include "xfilesystem\private\x_filedevice.h"
+#include "xfilesystem\x_filedevice.h"
+#include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_alias.h"
 #include "xfilesystem\x_iothread.h"
 
@@ -70,9 +71,26 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					open ( const char* szFilename, xbool boWrite, xbool boRetry )
+		u32					open ( const char* szFilename, xbool boRead, xbool boWrite, xbool boAsync)
 		{
-			return syncOpen(szFilename, boWrite, boRetry);
+			if (boAsync)
+				return asyncOpen(szFilename, boRead, boWrite);
+			else
+				return syncOpen(szFilename, boRead, boWrite);
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		void				caps				( u32 uHandle, bool& can_read, bool& can_write, bool& can_seek, bool& can_async )
+		{
+			if (uHandle == (u32)INVALID_FILE_HANDLE)
+			{
+				xfileinfo* fileInfo = getFileInfo(uHandle);
+				can_read  = fileInfo->m_boReading;
+				can_write = fileInfo->m_boWriting;
+				can_seek  = fileInfo->m_pFileDevice->canSeek();
+				can_async = true;
+			}
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -84,16 +102,16 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				read (u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer, xbool boRetry)
+		void				read (u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer )
 		{
-			syncRead(uHandle, uOffset, uSize, pBuffer, boRetry);
+			syncRead(uHandle, uOffset, uSize, pBuffer);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				write( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer, xbool boRetry )
+		void				write( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer )
 		{
-			syncWrite(uHandle, uOffset, uSize, pBuffer, boRetry);
+			syncWrite(uHandle, uOffset, uSize, pBuffer);
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -114,8 +132,8 @@ namespace xcore
 
 		void*				loadAligned (const u32 uAlignment, const char* szFilename, uintfs* puFileSize, const u32 uFlags)
 		{
-			u32 nFileHandle = open(szFilename, false);
-			if (nFileHandle == (u32)INVALID_FILE_HANDLE)
+			u32 uHandle = open(szFilename, false);
+			if (uHandle == (u32)INVALID_FILE_HANDLE)
 			{
 				if (puFileSize)
 					*puFileSize = 0;
@@ -124,17 +142,9 @@ namespace xcore
 				return (NULL);
 			}
 
-			xfileinfo* fileInfo = getFileInfo(nFileHandle);
+			xfileinfo* fileInfo = getFileInfo(uHandle);
 
-			u64	u64FileSize;
-			if (fileInfo->m_uNumSectors==0)
-			{
-				u64FileSize = fileInfo->m_uByteSize;
-			}
-			else
-			{
-				u64FileSize = fileInfo->m_uNumSectors * fileInfo->m_uSectorSize;
-			}
+			u64	u64FileSize = fileInfo->m_uByteSize;
 
 			if (puFileSize)
 				*puFileSize	= u64FileSize;
@@ -159,8 +169,8 @@ namespace xcore
 				pData = heapAlloc((s32)u64FileSize, uAlignment);
 			}
 
-			read(nFileHandle, 0, u64FileSize, pData, false);
-			close(nFileHandle);
+			read(uHandle, 0, u64FileSize, pData);
+			close(uHandle);
 
 			if(	(uFlags & LOAD_FLAGS_CACHE) && (m_pCache != NULL) && (fileInfo->m_pFileDevice != NULL) )
 			{
@@ -196,7 +206,7 @@ namespace xcore
 			u32 uHandle = open(szFilename, xTRUE);
 			if (uHandle != (u32)INVALID_FILE_HANDLE)
 			{
-				write(uHandle, 0, uSize, pData, xFALSE);
+				write(uHandle, 0, uSize, pData);
 				close(uHandle);
 			}
 		}
@@ -226,9 +236,9 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					asyncOpen ( const char* szName, xbool boWrite, xbool boRetry )
+		u32					asyncOpen ( const char* szName, xbool boRead, xbool boWrite )
 		{
-			u32 uHandle = asyncPreOpen( szName, boWrite );
+			u32 uHandle = asyncPreOpen( szName, boRead, boWrite );
 			asyncOpen(uHandle);
 			return uHandle;
 		}
@@ -267,7 +277,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncRead			( const u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer, xbool boRetry  )
+		void				asyncRead			( const u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer  )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -302,7 +312,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncWrite			( const u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer, xbool boRetry  )
+		void				asyncWrite			( const u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -408,7 +418,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32 asyncPreOpen( const char* szFilename, xbool boWrite )
+		u32				asyncPreOpen( const char* szFilename, xbool boRead, xbool boWrite )
 		{
 			//-----------------------------
 			// File find a free file slot.
@@ -425,7 +435,13 @@ namespace xcore
 			char szFullName[FS_MAX_PATH];
 			xfiledevice* device = createSystemPath(szFilename, szFullName, FS_MAX_PATH);
 
-			if (device==NULL || (boWrite && device->IsReadOnly()))
+			if (device==NULL)
+			{
+				setLastError(FILE_ERROR_DEVICE);
+				return (u32)INVALID_FILE_HANDLE;
+			}
+
+			if (device==NULL || (boWrite && !device->canWrite()))
 			{
 				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Device is readonly!");
 
@@ -436,15 +452,12 @@ namespace xcore
 			xfileinfo* fileInfo = getFileInfo(uHandle);
 			fileInfo->m_uByteSize		= 0;
 
-			fileInfo->m_uSectorOffset	= 0;
-			fileInfo->m_uNumSectors		= 0;
-			fileInfo->m_uSectorSize		= 0;
-
 			fileInfo->m_nFileHandle		= (u32)PENDING_FILE_HANDLE;
 			fileInfo->m_nFileIndex		= uHandle;
 
 			x_strcpy(fileInfo->m_szFilename, FS_MAX_PATH, szFullName);
 
+			fileInfo->m_boReading		= boRead;
 			fileInfo->m_boWriting		= boWrite;
 			fileInfo->m_pFileDevice		= device;
 
@@ -499,23 +512,24 @@ namespace xcore
 		{
 			// Is file already cached?
 			xfileinfo* fileInfo = getFileInfo(uHandle);
-			if (fileInfo->m_pFileDevice->GetType() != FS_DEVICE_CACHE)
+			const xalias* alias = gFindAliasFromFilename(xfilepath(fileInfo->m_szFilename));
+			if (alias!=NULL && x_strCompare(alias->alias(), "cache")==0)
 			{
 				if (asyncIONumFreeSlots() >= 5)
 				{
 					// No - needs to be cached
-					char szFilename[FS_MAX_PATH];
-					szFilename[0] = '\0';
-					x_strcpy(szFilename, FS_MAX_PATH, fileInfo->m_szFilename);
-					const xalias* alias = findAndRemoveAliasFromFilename(szFilename);
+					char szFilenameBuffer[FS_MAX_PATH];
+					xfilepath szFilename(szFilenameBuffer, sizeof(szFilenameBuffer), fileInfo->m_szFilename);
+
+					const xalias* alias = gFindAndRemoveAliasFromFilename(szFilename);
 
 					asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
 
 					xfilecache* filecache = getFileCache();
-					if(	(filecache != NULL) && (filecache->SetCacheData( szFilename, pDest, uOffset, uSize, true )) )
+					if(	(filecache != NULL) && (filecache->SetCacheData( szFilename.c_str(), pDest, uOffset, uSize, true )) )
 					{
-						replaceAliasOfFilename(szFilename, FS_MAX_PATH, "cache");
-						s32	nWriteHandle = asyncPreOpen(szFilename, true);
+						gReplaceAliasOfFilename(szFilename, "cache");
+						s32	nWriteHandle = asyncPreOpen(szFilename.c_str(), true);
 
 						asyncQueueAdd (FILE_QUEUE_TO_OPEN,	nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
 						asyncQueueAdd (FILE_QUEUE_TO_WRITE, nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
@@ -545,22 +559,24 @@ namespace xcore
 			// Is file already cached?
 			xfilecache* filecache = getFileCache();
 			xfileinfo* fileInfo = getFileInfo(uHandle);
-			if ((filecache != NULL) && (fileInfo->m_pFileDevice->GetType() != FS_DEVICE_CACHE))
+			const xalias* alias = gFindAliasFromFilename(xfilepath(fileInfo->m_szFilename));
+			if (filecache != NULL && alias!=NULL && x_strCompare(alias->alias(), "cache")==0)
 			{
 				if ((asyncIONumFreeSlots() >= 5))
 				{
 					// No - needs to be cached
-					char szFilename[FS_MAX_PATH];
-					szFilename[0] = '\0';
-					x_strcpy(szFilename, FS_MAX_PATH, fileInfo->m_szFilename);
-					const xalias* alias = findAndRemoveAliasFromFilename(szFilename);
+					char szFilenameBuffer[FS_MAX_PATH];
+					xfilepath szFilename(szFilenameBuffer, sizeof(szFilenameBuffer), "");
+					szFilename += fileInfo->m_szFilename;
+
+					const xalias* alias = gFindAndRemoveAliasFromFilename(szFilename);
 
 					asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
 
-					if(filecache->SetCacheData( szFilename, pDest, uOffset, uSize, true ))
+					if(filecache->SetCacheData(szFilename.c_str(), pDest, uOffset, uSize, true))
 					{
-						replaceAliasOfFilename(szFilename, FS_MAX_PATH, "cache");
-						s32	nWriteHandle = asyncPreOpen(szFilename, true);
+						gReplaceAliasOfFilename(szFilename, "cache");
+						s32	nWriteHandle = asyncPreOpen(szFilename.c_str(), true);
 
 						asyncQueueAdd (FILE_QUEUE_TO_OPEN,	nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
 						asyncQueueAdd (FILE_QUEUE_TO_WRITE, nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
@@ -801,25 +817,25 @@ namespace xcore
 			//-------------------------------------------------------
 			for (u32 i=0; i<FS_PRIORITY_COUNT; ++i)
 			{
-				void* mem = heapAlloc(sizeof(spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>), X_CACHELINE_SIZE);
+				void* mem = heapAlloc(sizeof(spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>), CACHE_LINE_SIZE);
 				spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>* queue = new (mem) spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>();
 				m_pAsyncQueueList[i] = queue;
 			}
 			if (m_pFreeQueueItemList == NULL)
 			{
-				void* mem = heapAlloc(sizeof(spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>), X_CACHELINE_SIZE);
+				void* mem = heapAlloc(sizeof(spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>), CACHE_LINE_SIZE);
 				spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>* queue = new (mem) spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>();
 				m_pFreeQueueItemList = queue;
 			}
 			if (m_pFreeAsyncIOList == NULL)
 			{
-				void* mem = heapAlloc(sizeof(spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>), X_CACHELINE_SIZE);
+				void* mem = heapAlloc(sizeof(spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>), CACHE_LINE_SIZE);
 				spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>* queue = new (mem) spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>();
 				m_pFreeAsyncIOList = queue;
 			}
 			if (m_pAsyncIOList == NULL)
 			{
-				void* mem = heapAlloc(sizeof(spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>), X_CACHELINE_SIZE);
+				void* mem = heapAlloc(sizeof(spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>), CACHE_LINE_SIZE);
 				spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>* queue = new (mem) spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>();
 				m_pAsyncIOList = queue;
 			}
@@ -936,12 +952,12 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfiledevice*			createSystemPath( const char* szFilename, char* outFilename, s32 inFilenameMaxLen )
+		xfiledevice*			createSystemPath( const char* inFilename, char* outFilename, s32 inFilenameMaxLen )
 		{
-			x_strcpy(outFilename, inFilenameMaxLen, szFilename);
-
 			xfiledevice* device = NULL;
-			const xfilesystem::xalias* alias = xfilesystem::findAliasFromFilename(szFilename);
+
+			xfilepath szFilename(outFilename, inFilenameMaxLen, inFilename);
+			const xfilesystem::xalias* alias = xfilesystem::gFindAliasFromFilename(szFilename);
 
 			if (alias != NULL)
 			{
@@ -949,11 +965,11 @@ namespace xcore
 				device = alias->device();
 				if (alias->remap() != NULL)
 				{
-					replaceAliasOfFilename(outFilename, inFilenameMaxLen, alias->remap());
+					gReplaceAliasOfFilename(szFilename, alias->remap());
 				}
 				else
 				{
-					replaceAliasOfFilename(outFilename, inFilenameMaxLen, NULL);
+					gReplaceAliasOfFilename(szFilename, NULL);
 				}
 			}
 			else
@@ -1483,15 +1499,20 @@ namespace xcore
 		//------------------------------------------------------------------------------------------
 		///< Synchronous file operations
 
-		u32					syncOpen			( const char* szName, xbool boWrite, xbool boRetry)
+		u32					syncOpen			( const char* szName, xbool boRead, xbool boWrite)
 		{
-			u32 uHandle = asyncPreOpen(szName, boWrite);
+			u32 uHandle = asyncPreOpen(szName, boRead, boWrite);
 			xfileinfo* pxFileInfo = getFileInfo(uHandle);
-			if (!pxFileInfo->m_pFileDevice->OpenOrCreateFile(pxFileInfo))
+			u32 nFileHandle;
+			if (!pxFileInfo->m_pFileDevice->openOrCreateFile((u32)pxFileInfo->m_nFileIndex, pxFileInfo->m_szFilename, boRead, boWrite, nFileHandle))
 			{
-				x_printf ("device->OpenOrCreateFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("device->openOrCreateFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 				pxFileInfo->clear();
 				uHandle = (u32)INVALID_FILE_HANDLE;
+			}
+			else
+			{
+				pxFileInfo->m_nFileHandle = nFileHandle;
 			}
 			return uHandle;
 		}
@@ -1505,27 +1526,23 @@ namespace xcore
 
 			xfileinfo* pxFileInfo = getFileInfo(uHandle);
 			u64 length;
-			if (!pxFileInfo->m_pFileDevice->LengthOfFile(pxFileInfo, length))
+			if (!pxFileInfo->m_pFileDevice->lengthOfFile(pxFileInfo->m_nFileHandle, length))
 			{
-				x_printf ("device->LengthOfFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("device->lengthOfFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
 			return length;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				syncRead			( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer, xbool boRetry)
+		void				syncRead			( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
 
 			xfileinfo* pxFileInfo = getFileInfo(uHandle);
 			u64 numBytesRead;
-			if (!pxFileInfo->m_pFileDevice->SeekOrigin(pxFileInfo, uOffset, uOffset))
-			{
-				x_printf ("device->ReadFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
-			}
-			if (!pxFileInfo->m_pFileDevice->ReadFile(pxFileInfo, pBuffer, uSize, numBytesRead))
+			if (!pxFileInfo->m_pFileDevice->readFile(pxFileInfo->m_nFileHandle, uOffset, pBuffer, uSize, numBytesRead))
 			{
 				x_printf ("device->ReadFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
@@ -1533,19 +1550,14 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				syncWrite			( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer, xbool boRetry)
+		void				syncWrite			( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
 
 			xfileinfo* pxFileInfo = getFileInfo(uHandle);
-			u64 newOffset;
-			if (!pxFileInfo->m_pFileDevice->SeekOrigin(pxFileInfo, uOffset, newOffset))
-			{
-				x_printf ("device->Seek failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
-			}
 			u64 numBytesWritten;
-			if (!pxFileInfo->m_pFileDevice->WriteFile(pxFileInfo, pBuffer, uSize, numBytesWritten))
+			if (!pxFileInfo->m_pFileDevice->writeFile(pxFileInfo->m_nFileHandle, uOffset, pBuffer, uSize, numBytesWritten))
 			{
 				x_printf ("device->WriteFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
@@ -1555,15 +1567,6 @@ namespace xcore
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
-
-			/*
-			xfileinfo* pxFileInfo = getFileInfo(uHandle);
-
-			if (!pxFileInfo->m_pFileDevice->Flush(pxFileInfo))
-			{
-			x_printf ("__Flush failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
-			}
-			*/
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -1574,7 +1577,7 @@ namespace xcore
 				return;
 
 			xfileinfo* pxFileInfo = getFileInfo(uHandle);
-			if (!pxFileInfo->m_pFileDevice->CloseFile(pxFileInfo))
+			if (!pxFileInfo->m_pFileDevice->closeFile(pxFileInfo->m_nFileHandle))
 			{
 				x_printf ("device->CloseFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
@@ -1590,11 +1593,11 @@ namespace xcore
 				return;
 
 			xfileinfo* pxFileInfo = getFileInfo(uHandle);
-			if (!pxFileInfo->m_pFileDevice->CloseFile(pxFileInfo))
+			if (!pxFileInfo->m_pFileDevice->closeFile(pxFileInfo->m_nFileHandle))
 			{
 				x_printf ("device->CloseFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
-			pxFileInfo->m_pFileDevice->DeleteFile(pxFileInfo);
+			pxFileInfo->m_pFileDevice->deleteFile(pxFileInfo->m_nFileHandle, pxFileInfo->m_szFilename);
 			pxFileInfo->clear();
 			uHandle = (u32)INVALID_FILE_HANDLE;
 		}

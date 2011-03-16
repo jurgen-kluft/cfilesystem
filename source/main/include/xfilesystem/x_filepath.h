@@ -1,5 +1,5 @@
-#ifndef __X_FILEPATH_H__
-#define __X_FILEPATH_H__
+#ifndef __X_FILESYSTEM_FILEPATH_H__
+#define __X_FILESYSTEM_FILEPATH_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -22,16 +22,17 @@ namespace xcore
 		class xfilepath
 		{
 		private:
+			char const		*mString;
 			char			*mBuffer;
 			s32				mBufferSize;
 			s32				mLength;
 
 		public:
 							xfilepath();
+							xfilepath(const char* str);
 							xfilepath(const xfilepath& filepath);
-							xfilepath(char* buffer, s32 bufferSize);
-							xfilepath(char* buffer, s32 bufferSize, const xfilepath& filepath);
 							xfilepath(char* buffer, s32 bufferSize, const char* str);
+							xfilepath(char* buffer, s32 bufferSize, const xfilepath& filepath);
 
 			void			clear();
 
@@ -39,6 +40,10 @@ namespace xcore
 			s32				maxLength() const;
 			xbool			empty() const;
 
+			s32				find (const char* str) const;
+			void			replace(s32 pos, s32 count, const char* str);
+			void			subString(s32 pos, s32 count, char* str, s32 maxStrLen) const;
+			
 			xfilepath&		operator =  ( const char* str );
 			xfilepath&		operator += ( const char* str );
 
@@ -70,6 +75,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILEPATH_H__
+// END __X_FILESYSTEM_FILEPATH_H__
 //==============================================================================
 #endif

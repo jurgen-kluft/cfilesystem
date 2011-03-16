@@ -96,25 +96,26 @@ namespace xcore
 		};
 
 		///< Synchronous file operations
-		extern u32				open				( const char* szName, xbool boWrite = false, xbool boRetry = false );
+		extern u32				open				( const char* szFilename, xbool boRead = true, xbool boWrite = false, xbool boAsync = false );
+		extern void				caps				( u32 uHandle, bool& can_read, bool& can_write, bool& can_seek, bool& can_async );
 		extern void				seek				( u32 uHandle, uintfs uOffset );
 		extern uintfs			size				( u32 uHandle );
-		extern void				read				( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer, xbool boRetry = false );	
-		extern void				write				( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer, xbool boRetry = false );
+		extern void				read				( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer );	
+		extern void				write				( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer );
 		extern void 			close				( u32& uHandle );
 		extern void				closeAndDelete		( u32& uHandle );
 
-		extern void*			load				( const char* szName, uintfs* puSize, const u32 uFlags );
-		extern void*			loadAligned			( const u32 uAlignment, const char* szName, uintfs* puSize, const u32 uFlags );
-		extern void				save				( const char* szName, const void* pData, uintfs uSize );
+		extern void*			load				( const char* szFilename, uintfs* puSize, const u32 uFlags );
+		extern void*			loadAligned			( const u32 uAlignment, const char* szFilename, uintfs* puSize, const u32 uFlags );
+		extern void				save				( const char* szFilename, const void* pData, uintfs uSize );
 
 		///< Asynchronous file operations
 		extern xbool			asyncDone			( const u32 uHandle );
-		extern u32				asyncPreOpen		( const char* szFilename, xbool boWrite );
-		extern u32				asyncOpen			( const char* szName, xbool boWrite = false, xbool boRetry = false );
+		extern u32				asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
+		extern u32				asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
 		extern void				asyncOpen			( const u32 uHandle );
-		extern void				asyncRead			( const u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer, xbool boRetry = false );
-		extern void				asyncWrite			( const u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer, xbool boRetry = false );
+		extern void				asyncRead			( const u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer );
+		extern void				asyncWrite			( const u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer );
 		extern void				asyncClose			( const u32 uHandle );
 		extern void				asyncDelete			( const u32 uHandle );
 
@@ -147,7 +148,7 @@ namespace xcore
 
 		extern xbool			asyncQueueDone		( const u32 nHandle );
 
-		extern xbool			doesFileExist		( const char* szName );
+		extern xbool			doesFileExist		( const char* szFilename );
 		extern void				reSize				( u32 uHandle, u64 uNewSize );
 		extern u64				getFreeSize			( const char* szPath );
 

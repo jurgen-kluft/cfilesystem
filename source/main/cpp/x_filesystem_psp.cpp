@@ -254,7 +254,7 @@ namespace xfilesystem
 
 		// Register memory stick alias
 		xalias ms("ms", FS_SOURCE_MS, m_pszMemoryCardPath);
-		addAlias(ms);
+		gAddAlias(ms);
 	}
 
 	//------------------------------------------------------------------------------------------
