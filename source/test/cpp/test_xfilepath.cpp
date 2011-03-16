@@ -52,7 +52,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 		UNITTEST_TEST(constructor3)
 		{
 			char buffer1[256];
-			xfilepath p1(buffer1, sizeof(buffer1));
+			xfilepath p1(buffer1, sizeof(buffer1), "");
 
 			CHECK_TRUE(p1.empty());
 			CHECK_TRUE(p1.length() == 0);
@@ -94,6 +94,30 @@ UNITTEST_SUITE_BEGIN(filepath)
 			CHECK_TRUE(p1.empty());
 			CHECK_TRUE(p1.length() == 0);
 			CHECK_EQUAL(p1.maxLength(), sizeof(buffer1)-1);
+		}
+
+		UNITTEST_TEST(find)
+		{
+			const char* str = "memory:\\folder\\filename.ext";
+			char buffer1[256];
+			xfilepath p1(buffer1, sizeof(buffer1), str);
+
+			s32 pos1 = p1.find(":\\");
+			CHECK_EQUAL(6, pos1);
+			s32 pos2 = p1.find("AA");
+			CHECK_EQUAL(-1, pos2);
+		}
+
+		UNITTEST_TEST(replace)
+		{
+			const char* str = "memory:\\folder\\filename.ext";
+			char buffer1[256];
+			xfilepath p1(buffer1, sizeof(buffer1), str);
+
+			p1.replace(8, 6, "longerfolder");
+			CHECK_TRUE(x_strCompare(p1.c_str(), "memory:\\longerfolder\\filename.ext") == 0);
+			p1.replace(8, 12, "fldr");
+			CHECK_TRUE(x_strCompare(p1.c_str(), "memory:\\fldr\\filename.ext") == 0);
 		}
 
 		UNITTEST_TEST(assignment_operator)

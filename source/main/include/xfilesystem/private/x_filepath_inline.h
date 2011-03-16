@@ -9,3 +9,4 @@ inline char				xfilepath::operator [] (s32 index) const				{ ASSERT(index>=0 && 
 
 inline const char*		xfilepath::c_str() const								{ return mBuffer; }
 
+inline void				xfilepath::zeroTerminate()								{ mBuffer[mLength] = '\0'; }

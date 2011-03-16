@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_WII_H__
-#define __X_FILESYSTEM_WII_H__
+#ifndef __X_FILESYSTEM_DEVICE_H__
+#define __X_FILESYSTEM_DEVICE_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -17,13 +17,23 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		class xfiledevice;
+		class xfiledevice
+		{
+		protected:
+			virtual					~xfiledevice() {}
 
-		extern xfiledevice*	x_CreateFileDeviceWII();
-		extern void			x_DestroyFileDeviceWII(xfiledevice*);
+		public:
+			virtual bool			canWrite() const = 0;
+			virtual bool			canSeek() const = 0;
 
-		extern xfiledevice*	x_CreateNandDeviceWII();
-		extern xfiledevice*	x_DestroyNandDeviceWII();
+			virtual bool			openOrCreateFile(u32 nFileIndex, const char* szFilename, bool boRead, bool boWrite, u32& outFileHandle) = 0;
+			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength) = 0;
+			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength) = 0;
+			virtual bool			closeFile(u32 nFileHandle) = 0;
+			virtual bool			deleteFile(u32 nFileHandle, const char* szFilename) = 0;
+			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) = 0;
+			virtual bool			writeFile(u32 nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) = 0;
+		};
 	};
 
 	//==============================================================================
@@ -32,6 +42,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_WII_H__
+// END __X_FILESYSTEM_DEVICE_H__
 //==============================================================================
 #endif

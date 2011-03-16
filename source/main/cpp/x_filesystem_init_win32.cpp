@@ -14,11 +14,13 @@
 #include "xbase\x_string_std.h"
 #include "xbase\x_va_list.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\private\x_filedevice.h"
-#include "xfilesystem\x_alias.h"
+#include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_win32.h"
+
+#include "xfilesystem\x_alias.h"
+#include "xfilesystem\x_filesystem.h"
+#include "xfilesystem\x_filepath.h"
 
 //==============================================================================
 // xcore namespace
@@ -75,62 +77,57 @@ namespace xcore
 					drive_name[0] = '\0';
 					x_sprintf(drive_name, sizeof(drive_name)-1, "%s%s", x_va(driveLetter), x_va(":\\"));
 
-					EDeviceType eDeviceType = FS_DEVICE_UNDEFINED;
+					xbool boCanWrite = true;
 					EDriveTypes eDriveType = DRIVE_TYPE_UNKNOWN;
 					const u32 uDriveTypeWin32 = 1 << (GetDriveTypeA(drive_name));
 					if (uDriveTypeWin32 & (1<<DRIVE_TYPE_REMOVABLE))
 					{
 						eDriveType = DRIVE_TYPE_REMOVABLE;
-						eDeviceType = FS_DEVICE_MS;
 					}
 					else if (uDriveTypeWin32 & (1<<DRIVE_TYPE_CDROM))
 					{
 						eDriveType = DRIVE_TYPE_CDROM;
-						eDeviceType = FS_DEVICE_DVD;
+						boCanWrite = false;
 					}
 					else if (uDriveTypeWin32 & (1<<DRIVE_TYPE_REMOTE))
 					{
 						eDriveType = DRIVE_TYPE_REMOTE;
-						eDeviceType = FS_DEVICE_REMOTE;
 					}
 					else if (uDriveTypeWin32 & (1<<DRIVE_TYPE_FIXED))
 					{
 						eDriveType = DRIVE_TYPE_FIXED;
-						eDeviceType = FS_DEVICE_HDD;
 					}
 
-					if (eDeviceType != FS_DEVICE_UNDEFINED)
+					if (xfilesystem::gFindAlias(driveLetter) == NULL)
 					{
-						if (xfilesystem::findAlias(driveLetter) == NULL)
+						if (sFileDevices[eDriveType]==NULL)
+							sFileDevices[eDriveType] = x_CreateFileDevicePC(boCanWrite);
+						xfiledevice* device = sFileDevices[eDriveType];
+
+						char local_alias[1024];
+						local_alias[0] = '\0';
+						DWORD ret_val = ::QueryDosDeviceA(driveLetter, local_alias, sizeof(local_alias));
+						if (ret_val!=0 && x_strFind(local_alias, "\\??\\")!=0)
 						{
-							if (sFileDevices[eDriveType]==NULL)
-								sFileDevices[eDriveType] = x_CreateFileDevicePC(eDeviceType);
-							xfiledevice* device = sFileDevices[eDriveType];
-
-							char local_alias[1024];
-							local_alias[0] = '\0';
-							DWORD ret_val = ::QueryDosDeviceA(driveLetter, local_alias, sizeof(local_alias));
-							if (ret_val!=0 && x_strFind(local_alias, "\\??\\")!=0)
+							// Remove windows text crap.
+							char* alias = &local_alias[4];
+							s32 alias_len = x_strlen(alias);
+							if (alias_len>0 && alias[alias_len-1] != '\\')
 							{
-								// Remove windows text crap.
-								char* alias = &local_alias[4];
-								s32 alias_len = x_strlen(alias);
-								if (alias_len>0 && alias[alias_len-1] != '\\')
-								{
-									alias[alias_len  ] = '\\';
-									alias[alias_len+1] = '\0';
-									alias_len++;
-								}
+								alias[alias_len  ] = '\\';
+								alias[alias_len+1] = '\0';
+								alias_len++;
+							}
 
-								xfilesystem::addAlias(xfilesystem::xalias(driveLetter, device, sSystemDevicePaths[driveIdx]));
-							}
-							else
-							{
-								// Register system device.
-								xfilesystem::addAlias(xfilesystem::xalias(driveLetter, device, sSystemDevicePaths[driveIdx]));
-							}
+							xfilesystem::gAddAlias(xfilesystem::xalias(driveLetter, device, sSystemDevicePaths[driveIdx]));
+						}
+						else
+						{
+							// Register system device.
+							xfilesystem::gAddAlias(xfilesystem::xalias(driveLetter, device, sSystemDevicePaths[driveIdx]));
 						}
 					}
+
 				}
 				drives>>= 1;
 				driveIdx++;
@@ -179,16 +176,16 @@ namespace xcore
 			x_FileSystemRegisterSystemAliases();
 
 			// Determine the source type of the app and work dir
-			const xfilesystem::xalias* workDirAlias = xfilesystem::findAliasFromFilename(sAppDir);
-			const xfilesystem::xalias* appDirAlias  = xfilesystem::findAliasFromFilename(sWorkDir);
+			const xfilesystem::xalias* workDirAlias = xfilesystem::gFindAliasFromFilename(xfilepath(sAppDir));
+			const xfilesystem::xalias* appDirAlias  = xfilesystem::gFindAliasFromFilename(xfilepath(sWorkDir));
 
 			// After this, xsystem can initialize the aliases
-			xfilesystem::addAlias(xfilesystem::xalias("appdir", appDirAlias->device(), sAppDir));
-			xfilesystem::addAlias(xfilesystem::xalias("curdir", workDirAlias->device(), sWorkDir));
+			xfilesystem::gAddAlias(xfilesystem::xalias("appdir", appDirAlias->device(), sAppDir));
+			xfilesystem::gAddAlias(xfilesystem::xalias("curdir", workDirAlias->device(), sWorkDir));
 
-			xfilesystem::addAlias(xfilesystem::xalias("host", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
-			xfilesystem::addAlias(xfilesystem::xalias("dvd", sFileDevices[DRIVE_TYPE_CDROM], sWorkDir));
-			xfilesystem::addAlias(xfilesystem::xalias("HDD", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
+			xfilesystem::gAddAlias(xfilesystem::xalias("host", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
+			xfilesystem::gAddAlias(xfilesystem::xalias("dvd", sFileDevices[DRIVE_TYPE_CDROM], sWorkDir));
+			xfilesystem::gAddAlias(xfilesystem::xalias("HDD", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
 
 			xfilesystem::initialise(64, xTRUE);
 		}

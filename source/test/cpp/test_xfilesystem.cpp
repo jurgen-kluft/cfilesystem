@@ -54,6 +54,15 @@ namespace xcore
 		void		release()
 		{
 		}
+
+		void		stats(xmem_managed_size& stats)
+		{
+		}
+
+		u32			usable_size(void *ptr)
+		{
+			return 0;
+		}
 	};
 };
 
@@ -89,7 +98,7 @@ UNITTEST_SUITE_BEGIN(filesystem_init)
 
 		UNITTEST_TEST(init)
 		{
-			sHeapAllocator = TestHeapAllocator(sSystemAllocator);
+			sHeapAllocator = xcore::TestHeapAllocator(sSystemAllocator);
 			xfilesystem::init(&sThreadObject, &sHeapAllocator);
 		}
 	}
@@ -114,7 +123,7 @@ UNITTEST_SUITE_BEGIN(filesystem_exit)
 		UNITTEST_TEST(memory_leaks)
 		{
 			CHECK_TRUE(sHeapAllocator.mNumAllocations == 0);
-			sHeapAllocator = TestHeapAllocator(NULL);
+			sHeapAllocator = xcore::TestHeapAllocator(NULL);
 		}
 
 	}

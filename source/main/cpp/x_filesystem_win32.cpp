@@ -21,7 +21,7 @@
 #include "xfilesystem\private\x_filesystem_win32.h"
 
 #include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\private\x_filedevice.h"
+#include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_fileinfo.h"
 #include "xfilesystem\private\x_fileasync.h"
 
@@ -70,7 +70,7 @@ namespace xcore
 			xfileinfo* pInfo = getFileInfo(uHandle);
 
 			s32 nResult=-1;
-			nResult	= pInfo->m_pFileDevice->SetLengthOfFile(pInfo, uNewSize);
+			nResult	= pInfo->m_pFileDevice->setLengthOfFile(pInfo->m_nFileHandle, uNewSize);
 			if(nResult < 0)
 			{
 				x_printf("xfilesystem:"TARGET_PLATFORM_STR" ERROR ReSize %d\n", x_va_list(nResult));

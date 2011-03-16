@@ -9,7 +9,6 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
-#include "xfilesystem\private\x_filedevice.h"
 
 //==============================================================================
 // xcore namespace
@@ -18,7 +17,9 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		extern xfiledevice*	x_CreateFileDevice360(EDeviceType type);
+		class xfiledevice;
+
+		extern xfiledevice*	x_CreateFileDevice360(xbool boCanWrite);
 		extern void			x_DestroyFileDevice360(xfiledevice*);
 	};
 

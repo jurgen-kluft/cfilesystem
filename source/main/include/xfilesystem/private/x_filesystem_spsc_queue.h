@@ -38,9 +38,9 @@ namespace xcore
 
 		private:
 			volatile xcore::u32		mTail;											// input index
-			xcore::xbyte			padding1[X_CACHELINE_SIZE-sizeof(xcore::u32)];
+			xcore::xbyte			padding1[CACHE_LINE_SIZE-sizeof(xcore::u32)];
 			volatile xcore::u32		mHead;											// output index
-			xcore::xbyte			padding2[X_CACHELINE_SIZE-sizeof(xcore::u32)];
+			xcore::xbyte			padding2[CACHE_LINE_SIZE-sizeof(xcore::u32)];
 			volatile TElement		mArray[capacity];
 
 			xcore::u32				increment(xcore::u32 idx_) const;

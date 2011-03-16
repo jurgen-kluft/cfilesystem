@@ -21,12 +21,7 @@ namespace xcore
 
 		struct xfileinfo
 		{
-			u64 				m_uByteOffset;
 			u64 				m_uByteSize;
-
-			u64 				m_uSectorOffset;
-			u64 				m_uNumSectors;
-			u64 				m_uSectorSize;
 
 			s32 				m_nFileIndex;
 			s32 				m_nLastError;
@@ -34,8 +29,10 @@ namespace xcore
 			char*				m_szFilename;
 			s32					m_sFilenameMaxLen;
 
+			xbool				m_boReading;
 			xbool				m_boWriting;
 			xbool				m_boWaitAsync;
+			
 			xfiledevice*		m_pFileDevice;
 
 			// Async IO worker thread will write here:
@@ -43,12 +40,7 @@ namespace xcore
 
 			void				clear()
 			{
-				m_uByteOffset		= 0;
 				m_uByteSize			= 0;
-
-				m_uSectorOffset		= 0;
-				m_uNumSectors		= 0;
-				m_uSectorSize		= 0;
 
 				m_nFileIndex		= 0;
 				m_nLastError		= 0;
@@ -56,6 +48,7 @@ namespace xcore
 				m_szFilename		= NULL;
 				m_sFilenameMaxLen	= 0;
 
+				m_boReading			= true;
 				m_boWriting			= false;
 				m_boWaitAsync		= false;
 				m_pFileDevice		= NULL;

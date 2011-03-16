@@ -33,14 +33,14 @@ namespace xcore
 			xfilesystem::xalias dvd  ("dvd"  , sSystemFileDevice, "/");
 			xfilesystem::xalias cache("cache", sSystemFileDevice, "/");
 
-			xfilesystem::addAlias(host);
-			xfilesystem::addAlias(dvd);
-			xfilesystem::addAlias(cache);
+			xfilesystem::gAddAlias(host);
+			xfilesystem::gAddAlias(dvd);
+			xfilesystem::gAddAlias(cache);
 
 			xfilesystem::xalias appdir( "appdir", "host" );
 			xfilesystem::xalias curdir( "curdir", "host" );
-			xfilesystem::addAlias(appdir);
-			xfilesystem::addAlias(curdir);
+			xfilesystem::gAddAlias(appdir);
+			xfilesystem::gAddAlias(curdir);
 
 			xfilesystem::initialise(64, xTRUE);
 		}

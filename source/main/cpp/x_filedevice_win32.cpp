@@ -17,7 +17,7 @@
 
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_ps3.h"
-#include "xfilesystem\private\x_filedevice.h"
+#include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_fileinfo.h"
 #include "xfilesystem\private\x_fileasync.h"
 
@@ -30,246 +30,51 @@ namespace xcore
 	{
 		class FileDevice_PC_System : public xfiledevice
 		{
-			EDeviceType				mDeviceType;
+			xbool					mCanWrite;
 
 		public:
-			virtual bool			Init() { return true; }
-			virtual bool			Exit() { return true; }
+									FileDevice_PC_System(xbool boCanWrite)
+										: mCanWrite(boCanWrite)							{ } 
+			virtual					~FileDevice_PC_System()								{ }
 
-			void					SetType(EDeviceType type)							{ mDeviceType = type; }
-			virtual EDeviceType		GetType() const										{ return mDeviceType; }
-			virtual bool			IsReadOnly() const
-			{
-				switch (mDeviceType)
-				{
-					case FS_DEVICE_HOST			: return false; break;
-					case FS_DEVICE_BDVD			: return true; break;
-					case FS_DEVICE_DVD			: return true; break;
-					case FS_DEVICE_UMD			: return true; break;
-					case FS_DEVICE_HDD			: return false; break;
-					case FS_DEVICE_MS			: return false; break;
-					case FS_DEVICE_CACHE		: return false; break;
-					case FS_DEVICE_USB			: return false; break;
-				}
-				return true;
-			}
+			virtual bool			canSeek() const										{ return true; }
+			virtual bool			canWrite() const									{ return mCanWrite; }
 
-			virtual void			HandleAsync(xfileasync* pAsync, xfileinfo* pInfo);
+			virtual bool			openOrCreateFile(u32 nFileIndex, const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle);
+			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength);
+			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength);
+			virtual bool			closeFile(u32 nFileHandle);
+			virtual bool			deleteFile(u32 nFileHandle, const char* szFilename);
+			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead);
+			virtual bool			writeFile(u32 nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten);
 
-			virtual bool			OpenOrCreateFile(xfileinfo* pInfo);
-			virtual bool			SetLengthOfFile(xfileinfo* pInfo, u64 inLength);
-			virtual bool			LengthOfFile(xfileinfo* pInfo, u64& outLength);
-			virtual bool			CloseFile(xfileinfo* pInfo);
-			virtual bool			DeleteFile(xfileinfo* pInfo);
-			virtual bool			ReadFile(xfileinfo* pInfo, void* buffer, u64 count, u64& outNumBytesRead);
-			virtual bool			WriteFile(xfileinfo* pInfo, const void* buffer, u64 count, u64& outNumBytesWritten);
+			enum ESeekMode { __SEEK_ORIGIN = 1, __SEEK_CURRENT = 2, __SEEK_END = 3, };
+			bool					seek(u32 nFileHandle, ESeekMode mode, u64 pos, u64& newPos);
+			bool					seekOrigin(u32 nFileHandle, u64 pos, u64& newPos);
+			bool					seekCurrent(u32 nFileHandle, u64 pos, u64& newPos);
+			bool					seekEnd(u32 nFileHandle, u64 pos, u64& newPos);
 
-			virtual bool			SeekOrigin(xfileinfo* pInfo, u64 pos, u64& newPos);
-			virtual bool			SeekCurrent(xfileinfo* pInfo, u64 pos, u64& newPos);
-			virtual bool			SeekEnd(xfileinfo* pInfo, u64 pos, u64& newPos);
-
-			virtual bool			Sync(xfileinfo* pInfo);
-
-			enum EPcSeekMode
-			{
-				__SEEK_ORIGIN = 1,
-				__SEEK_CURRENT = 2,
-				__SEEK_END = 3,
-			};
-			virtual bool			Seek(xfileinfo* pInfo, EPcSeekMode mode, u64 pos, u64& newPos);
-			virtual bool			GetBlockSize(xfileinfo* pInfo, u64& outSectorSize);
-
-			void*					operator new (size_t size, void *p)					{ return p; }
-			void					operator delete(void* mem, void* )					{ }	
+			XFILESYSTEM_OBJECT_NEW_DELETE()
 		};
 
-		xfiledevice*		x_CreateFileDevicePC(EDeviceType type)
+		xfiledevice*		x_CreateFileDevicePC(xbool boCanWrite)
 		{
-			void* mem = heapAlloc(sizeof(FileDevice_PC_System), 16);
-			FileDevice_PC_System* file_device = new (mem) FileDevice_PC_System();
-			file_device->SetType(type);
-			file_device->Init();
+			FileDevice_PC_System* file_device = new FileDevice_PC_System(boCanWrite);
 			return file_device;
 		}
 
 		void			x_DestroyFileDevicePC(xfiledevice* device)
 		{
 			FileDevice_PC_System* file_device = (FileDevice_PC_System*)device;
-			file_device->Exit();
-			file_device->~FileDevice_PC_System();
-			heapFree(file_device);
+			delete file_device;
 		}
-
-		void FileDevice_PC_System::HandleAsync(xfileasync* pAsync, xfileinfo* pInfo)
-		{
-			if(pAsync==NULL || pInfo==NULL)
-				return;
-
-			if(pAsync->getStatus() == FILE_OP_STATUS_OPEN_PENDING)
-			{
-				pAsync->setStatus(FILE_OP_STATUS_OPENING);
-
-				bool boError   = false;
-				bool boSuccess = OpenOrCreateFile(pInfo);
-				if (!boSuccess)
-				{
-					x_printf ("OpenOrCreateFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-					boError = true;
-				}
-				else
-				{
-					u64 nPos;
-					boSuccess = Seek(pInfo, __SEEK_END, 0, nPos);
-					if ((!boSuccess) || ((pInfo->m_boWriting == false) && (nPos == 0)) )
-					{
-						x_printf ("Seek failed on file %s\n", x_va_list(pInfo->m_szFilename));
-						boError = true;
-					}
-					else
-					{
-						u64 uSize = nPos; 
-						boSuccess = Seek(pInfo, __SEEK_ORIGIN, 0, nPos);
-						if (!boSuccess)
-						{
-							x_printf ("Seek failed on file %s\n", x_va_list(pInfo->m_szFilename));
-							boError = true;
-						}
-						else
-						{
-							u64	uSectorSize = 4096;
-							{
-								u64 uPad = uSize % uSectorSize;
-								if (uPad != 0)
-								{
-									uPad = uSectorSize - uPad;
-								}
-
-								u32 uRoundedSize			= (u32)(uSize + uPad);
-								u32 uNumSectors 			= (u32)(uRoundedSize / uSectorSize);
-
-								pInfo->m_uByteOffset		= 0;
-								pInfo->m_uByteSize			= uSize;
-								pInfo->m_uSectorOffset		= 0;
-								pInfo->m_uNumSectors		= uNumSectors;
-								pInfo->m_uSectorSize		= uSectorSize;
-							}
-						}
-					}
-				}
-				if (boError)
-				{
-					if (pInfo->m_nFileHandle != (u32)INVALID_FILE_HANDLE)
-					{
-						bool boClose = CloseFile(pInfo);
-						if (!boClose)
-						{
-							x_printf ("CloseFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-						}
-						pInfo->m_nFileHandle = (u32)INVALID_FILE_HANDLE;
-					}
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_CLOSE_PENDING)
-			{
-				pAsync->setStatus(FILE_OP_STATUS_CLOSING);
-
-				bool boClose = CloseFile(pInfo);
-				if (!boClose)
-				{
-					x_printf ("CloseFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-							
-				pInfo->m_nFileHandle	= (u32)INVALID_FILE_HANDLE;
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_DELETE_PENDING)
-			{
-				pAsync->setStatus(FILE_OP_STATUS_DELETING);
-
-				bool boClose = CloseFile(pInfo);
-				if (!boClose)
-				{
-					x_printf ("CloseFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-				else
-				{
-					bool boDelete = DeleteFile(pInfo);
-					if (!boDelete)
-					{
-						x_printf ("DeleteFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-					}
-				}
-
-				pInfo->m_nFileHandle	= (u32)INVALID_FILE_HANDLE;
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_STAT_PENDING)
-			{
-				pAsync->setStatus(FILE_OP_STATUS_STATING);
-
-				//@TODO: use stats
-
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_READ_PENDING)
-			{
-				u64	nPos;
-				bool boSeek = Seek(pInfo, __SEEK_ORIGIN, pAsync->getReadWriteOffset(), nPos);
-				if (!boSeek)
-				{
-					x_printf ("Seek failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_READING);
-
-				u64 nReadSize;
-				bool boRead = ReadFile(pInfo, pAsync->getReadAddress(), (u32)pAsync->getReadWriteSize(), nReadSize);
-				if (!boRead)
-				{
-					x_printf ("ReadFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_WRITE_PENDING)
-			{
-				u64	nPos;
-				bool boSeek = Seek(pInfo, __SEEK_ORIGIN, pAsync->getReadWriteOffset(), nPos);
-				if (!boSeek)
-				{
-					x_printf ("Seek failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_WRITING);
-
-				u64 nWriteSize;
-				bool boWrite = WriteFile(pInfo, pAsync->getWriteAddress(), (u32)pAsync->getReadWriteSize(), nWriteSize);
-				if (!boWrite)
-				{
-					x_printf ("WriteFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-
-				if (pInfo->m_pFileDevice->GetType() != FS_DEVICE_HOST)
-				{
-					bool boSyncResult = Sync(pInfo);
-					if (!boSyncResult)
-					{
-						x_printf ("__Sync failed on file %s\n", x_va_list(pInfo->m_szFilename));
-					}
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-		}
-
-		bool FileDevice_PC_System::OpenOrCreateFile(xfileinfo* pInfo)
+		
+		bool FileDevice_PC_System::openOrCreateFile(u32 nFileIndex, const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle)
 		{
 			u32 shareType	= FILE_SHARE_READ;
 			u32 fileMode	= GENERIC_WRITE|GENERIC_READ;
 			u32 disposition	= 0;
-			if(pInfo->m_boWriting)
+			if(boWrite)
 			{
 				disposition	= CREATE_ALWAYS;
 			}
@@ -283,24 +88,24 @@ namespace xcore
 			// FILE_FLAG_NO_BUFFERING   -    No cached asynchronous I/O.
 			u32 attrFlags	= FILE_ATTRIBUTE_NORMAL;
 
-			HANDLE handle = ::CreateFile(pInfo->m_szFilename, fileMode, shareType, NULL, disposition, attrFlags, NULL);
-			pInfo->m_nFileHandle = (u32)handle;
-			return pInfo->m_nFileHandle != (u32)INVALID_HANDLE_VALUE;
+			HANDLE handle = ::CreateFile(szFilename, fileMode, shareType, NULL, disposition, attrFlags, NULL);
+			nFileHandle = (u32)handle;
+			return nFileHandle != (u32)INVALID_HANDLE_VALUE;
 		}
 
-		bool FileDevice_PC_System::SetLengthOfFile(xfileinfo* pInfo, u64 inLength)
+		bool FileDevice_PC_System::setLengthOfFile(u32 nFileHandle, u64 inLength)
 		{
 			xsize_t distanceLow = (xsize_t)inLength;
 			xsize_t distanceHigh = (xsize_t)(inLength >> 32);
-			::SetFilePointer((HANDLE)pInfo->m_nFileHandle, (LONG)distanceLow, (PLONG)&distanceHigh, FILE_BEGIN);
-			::SetEndOfFile((HANDLE)pInfo->m_nFileHandle);
+			::SetFilePointer((HANDLE)nFileHandle, (LONG)distanceLow, (PLONG)&distanceHigh, FILE_BEGIN);
+			::SetEndOfFile((HANDLE)nFileHandle);
 			return true;
 		}
 
-		bool FileDevice_PC_System::LengthOfFile(xfileinfo* pInfo, u64& outLength)
+		bool FileDevice_PC_System::lengthOfFile(u32 nFileHandle, u64& outLength)
 		{
 			DWORD lowSize, highSize;
-			lowSize = ::GetFileSize((HANDLE)pInfo->m_nFileHandle, &highSize);
+			lowSize = ::GetFileSize((HANDLE)nFileHandle, &highSize);
 			outLength = highSize;
 			outLength = outLength << 16;
 			outLength = outLength << 16;
@@ -308,81 +113,90 @@ namespace xcore
 			return true;
 		}
 
-		bool FileDevice_PC_System::CloseFile(xfileinfo* pInfo)
+		bool FileDevice_PC_System::closeFile(u32 nFileHandle)
 		{
-			if (!CloseHandle((HANDLE)pInfo->m_nFileHandle))
+			if (!CloseHandle((HANDLE)nFileHandle))
 				return false;
 			return true;
 		}
 
-		bool FileDevice_PC_System::DeleteFile(xfileinfo* pInfo)
+		bool FileDevice_PC_System::deleteFile(u32 nFileHandle, const char* szFilename)
 		{
-			if (!CloseFile(pInfo))
+			if (!closeFile(nFileHandle))
 				return false;
-			if (!::DeleteFile(pInfo->m_szFilename))
+			if (!::DeleteFile(szFilename))
 				return false;
 			return true;
 		}
 
-		bool FileDevice_PC_System::ReadFile(xfileinfo* pInfo, void* buffer, uintfs count, u64& outNumBytesRead)
+		bool FileDevice_PC_System::readFile(u32 nFileHandle, u64 pos, void* buffer, uintfs count, u64& outNumBytesRead)
 		{
-			DWORD numBytesRead;
-			xbool boSuccess = ::ReadFile((HANDLE)pInfo->m_nFileHandle, buffer, (DWORD)count, &numBytesRead, NULL); 
-
-			if (boSuccess)
+			u64 newPos;
+			if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
 			{
-				outNumBytesRead = numBytesRead;
-			}
+				DWORD numBytesRead;
+				xbool boSuccess = ::ReadFile((HANDLE)nFileHandle, buffer, (DWORD)count, &numBytesRead, NULL); 
 
-			if (!boSuccess) 
-			{ 
-				outNumBytesRead = -1;
-
-				DWORD dwError = ::GetLastError();
-				switch(dwError) 
-				{ 
-				case ERROR_HANDLE_EOF:	// We have reached the end of the FilePC during the call to ReadFile 
-					return false;
-				case ERROR_IO_PENDING: 
-					return false; 
-				default:
-					return false;
+				if (boSuccess)
+				{
+					outNumBytesRead = numBytesRead;
 				}
+
+				if (!boSuccess) 
+				{ 
+					outNumBytesRead = -1;
+
+					DWORD dwError = ::GetLastError();
+					switch(dwError) 
+					{ 
+					case ERROR_HANDLE_EOF:	// We have reached the end of the FilePC during the call to ReadFile 
+						return false;
+					case ERROR_IO_PENDING: 
+						return false; 
+					default:
+						return false;
+					}
+				}
+
+				return true;
 			}
-
-			return true;
-
+			return false;
 		}
-		bool FileDevice_PC_System::WriteFile(xfileinfo* pInfo, const void* buffer, uintfs count, u64& outNumBytesWritten)
+		bool FileDevice_PC_System::writeFile(u32 nFileHandle, u64 pos, const void* buffer, uintfs count, u64& outNumBytesWritten)
 		{
-			DWORD numBytesWritten;
-			xbool boSuccess = ::WriteFile((HANDLE)pInfo->m_nFileHandle, buffer, (DWORD)count, &numBytesWritten, NULL); 
-
-			if (boSuccess)
+			u64 newPos;
+			if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
 			{
-				outNumBytesWritten = numBytesWritten;
-			}
+				DWORD numBytesWritten;
+				xbool boSuccess = ::WriteFile((HANDLE)nFileHandle, buffer, (DWORD)count, &numBytesWritten, NULL); 
 
-			if (!boSuccess) 
-			{ 
-				outNumBytesWritten = -1;
-
-				DWORD dwError = ::GetLastError();
-				switch(dwError) 
-				{ 
-				case ERROR_HANDLE_EOF:											// We have reached the end of the FilePC during the call to WriteFile 
-					return false;
-				case ERROR_IO_PENDING: 
-					return false; 
-				default:
-					return false;
+				if (boSuccess)
+				{
+					outNumBytesWritten = numBytesWritten;
 				}
-			}
 
-			return true;
+				if (!boSuccess) 
+				{ 
+					outNumBytesWritten = -1;
+
+					DWORD dwError = ::GetLastError();
+					switch(dwError) 
+					{ 
+					case ERROR_HANDLE_EOF:											// We have reached the end of the FilePC during the call to WriteFile 
+						return false;
+					case ERROR_IO_PENDING: 
+						return false; 
+					default:
+						return false;
+					}
+				}
+
+				return true;
+			}
+			return false;
 		}
 
-		bool FileDevice_PC_System::Seek(xfileinfo* pInfo, EPcSeekMode mode, u64 pos, u64& newPos)
+		bool FileDevice_PC_System::seek(u32 nFileHandle, ESeekMode mode, u64 pos, u64& newPos)
 		{
 			s32 hardwareMode = 0;
 			switch(mode)
@@ -402,7 +216,7 @@ namespace xcore
 			newPos = pos;
 			position.LowPart  = (u32)pos;
 			position.HighPart = 0;
-			DWORD result = ::SetFilePointerEx((HANDLE)pInfo->m_nFileHandle, position, &newFilePointer, hardwareMode);
+			DWORD result = ::SetFilePointerEx((HANDLE)nFileHandle, position, &newFilePointer, hardwareMode);
 			if (!result)
 			{
 				if (result == INVALID_SET_FILE_POINTER) 
@@ -414,30 +228,19 @@ namespace xcore
 			newPos = newFilePointer.LowPart;
 			return true;
 		}
-		bool	FileDevice_PC_System::SeekOrigin(xfileinfo* pInfo, u64 pos, u64& newPos)
+		bool	FileDevice_PC_System::seekOrigin(u32 nFileHandle, u64 pos, u64& newPos)
 		{
-			return Seek(pInfo, __SEEK_ORIGIN, pos, newPos);
+			return seek(nFileHandle, __SEEK_ORIGIN, pos, newPos);
 		}
 
-		bool	FileDevice_PC_System::SeekCurrent(xfileinfo* pInfo, u64 pos, u64& newPos)
+		bool	FileDevice_PC_System::seekCurrent(u32 nFileHandle, u64 pos, u64& newPos)
 		{
-			return Seek(pInfo, __SEEK_CURRENT, pos, newPos);
+			return seek(nFileHandle, __SEEK_CURRENT, pos, newPos);
 		}
 
-		bool	FileDevice_PC_System::SeekEnd(xfileinfo* pInfo, u64 pos, u64& newPos)
+		bool	FileDevice_PC_System::seekEnd(u32 nFileHandle, u64 pos, u64& newPos)
 		{
-			return Seek(pInfo, __SEEK_END, pos, newPos);
-		}
-
-		bool FileDevice_PC_System::Sync(xfileinfo* pInfo)
-		{
-			return true;
-		}
-
-		bool FileDevice_PC_System::GetBlockSize(xfileinfo* pInfo, u64& outSectorSize)
-		{
-			outSectorSize = 2048;
-			return true;
+			return seek(nFileHandle, __SEEK_END, pos, newPos);
 		}
 
 		//==============================================================================

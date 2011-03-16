@@ -23,7 +23,7 @@
 
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_ps3.h"
-#include "xfilesystem\private\x_filedevice.h"
+#include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_fileinfo.h"
 #include "xfilesystem\private\x_fileasync.h"
 
@@ -36,249 +36,49 @@ namespace xcore
 	{
 		class FileDevice_PS3_System : public xfiledevice
 		{
-			EDeviceType				mDeviceType;
+			xbool					mCanWrite;
 
 		public:
-			virtual bool			Init();
-			virtual bool			Exit();
+									FileDevice_PS3_System(xbool boCanWrite) 
+										: mCanWrite(boCanWrite)							{ }
+			virtual					~FileDevice_PS3_System()							{ }
 
-			void					SetType(EDeviceType type)							{ mDeviceType = type; }
-			virtual EDeviceType		GetType() const										{ return mDeviceType; }
-			virtual bool			IsReadOnly() const
-			{
-				switch (mDeviceType)
-				{
-					case FS_DEVICE_HOST			: return false; break;
-					case FS_DEVICE_BDVD			: return true; break;
-					case FS_DEVICE_DVD			: return true; break;
-					case FS_DEVICE_UMD			: return true; break;
-					case FS_DEVICE_HDD			: return false; break;
-					case FS_DEVICE_MS			: return false; break;
-					case FS_DEVICE_CACHE		: return false; break;
-					case FS_DEVICE_USB			: return false; break;
-				}
-			}
+			virtual bool			canSeek() const										{ return true; }
+			virtual bool			canWrite() const									{ return mCanWrite; }
 
-			virtual void			HandleAsync(xfileasync* pAsync, xfileinfo* pInfo);
+			virtual bool			openOrCreateFile(u32 nFileIndex, const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle);
+			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength);
+			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength);
+			virtual bool			closeFile(u32 nFileHandle);
+			virtual bool			deleteFile(u32 nFileHandle, const char* szFilename);
+			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead);
+			virtual bool			writeFile(u32 nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten);
 
-			virtual bool			OpenOrCreateFile(xfileinfo* pInfo);
-			virtual bool			LengthOfFile(xfileinfo* pInfo, u64& outLength);
-			virtual bool			CloseFile(xfileinfo* pInfo);
-			virtual bool			DeleteFile(xfileinfo* pInfo);
-			virtual bool			ReadFile(xfileinfo* pInfo, void* buffer, u64 count, u64& outNumBytesRead);
-			virtual bool			WriteFile(xfileinfo* pInfo, const void* buffer, u64 count, u64& outNumBytesWritten);
-
-			virtual bool			SeekOrigin(xfileinfo* pInfo, u64 pos, u64& newPos);
-			virtual bool			SeekCurrent(xfileinfo* pInfo, u64 pos, u64& newPos);
-			virtual bool			SeekEnd(xfileinfo* pInfo, u64 pos, u64& newPos);
-
-			virtual bool			Sync(xfileinfo* pInfo);
-
-			enum EPs3SeekMode
-			{
-				__SEEK_ORIGIN = CELL_FS_SEEK_SET,
-				__SEEK_CURRENT = CELL_FS_SEEK_CUR,
-				__SEEK_END = CELL_FS_SEEK_END,
-			};
-			virtual bool			Seek(xfileinfo* pInfo, EPs3SeekMode mode, u64 pos, u64& newPos);
-
-			virtual bool			GetBlockSize(xfileinfo* pInfo, u64& outSectorSize);
-
-			void*					operator new (size_t size, void *p)					{ return p; }
-			void					operator delete(void* mem, void* )					{ }	
+			enum ESeekMode { __SEEK_ORIGIN = 1, __SEEK_CURRENT = 2, __SEEK_END = 3, };
+			bool					seek(u32 nFileHandle, ESeekMode mode, u64 pos, u64& newPos);
+			bool					seekOrigin(u32 nFileHandle, u64 pos, u64& newPos);
+			bool					seekCurrent(u32 nFileHandle, u64 pos, u64& newPos);
+			bool					seekEnd(u32 nFileHandle, u64 pos, u64& newPos);
+			
+			XFILESYSTEM_OBJECT_NEW_DELETE()
 		};
 
-		xfiledevice*		x_CreateFileDevicePS3(EDeviceType type)
+		xfiledevice*		x_CreateFileDevicePS3(xbool boCanWrite)
 		{
-			void* mem = heapAlloc(sizeof(FileDevice_PS3_System), 16);
-			FileDevice_PS3_System* file_device = new (mem) FileDevice_PS3_System();
-			file_device->SetType(type);
-			file_device->Init();
+			FileDevice_PS3_System* file_device = new FileDevice_PS3_System(boCanWrite);
 			return file_device;
 		}
 
 		void			x_DestroyFileDevicePS3(xfiledevice* device)
 		{
 			FileDevice_PS3_System* file_device = (FileDevice_PS3_System*)device;
-			file_device->Exit();
-			file_device->~FileDevice_PS3_System();
-			heapFree(file_device);
+			delete file_device;
 		}
 
-		bool FileDevice_PS3_System::Init()
-		{
-			return true;
-		}
-		bool FileDevice_PS3_System::Exit()
-		{
-			return true;
-		}
-
-		void FileDevice_PS3_System::HandleAsync(xfileasync* pAsync, xfileinfo* pInfo)
-		{
-			if(pAsync==NULL || pInfo==NULL)
-				return;
-
-			if(pAsync->getStatus() == FILE_OP_STATUS_OPEN_PENDING)
-			{
-				pAsync->setStatus(FILE_OP_STATUS_OPENING);
-
-				bool boError = false;
-				bool boSuccess = OpenOrCreateFile(pInfo);
-				if (!boSuccess)
-				{
-					x_printf ("OpenOrCreateFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-					boError = true;
-				}
-				else
-				{
-					u64 nPos;
-					boSuccess = Seek(pInfo, __SEEK_END, 0, nPos);
-					if ((!boSuccess) || ((pInfo->m_boWriting == false) && (nPos == 0)) )
-					{
-						x_printf ("Seek failed on file %s\n", x_va_list(pInfo->m_szFilename));
-						boError = true;
-					}
-					else
-					{
-						u64 uSize = nPos; 
-						boSuccess = Seek(pInfo, __SEEK_ORIGIN, 0, nPos);
-						if (!boSuccess)
-						{
-							x_printf ("Seek failed on file %s\n", x_va_list(pInfo->m_szFilename));
-							boError = true;
-						}
-						else
-						{
-							u64	uSectorSize = 4096;
-							boSuccess = GetBlockSize(pInfo, uSectorSize);
-							if (boSuccess)
-							{
-								u64 uPad = uSize % uSectorSize;
-								if (uPad != 0)
-								{
-									uPad = uSectorSize - uPad;
-								}
-
-								u32 uRoundedSize			= (u32)(uSize + uPad);
-								u32 uNumSectors 			= (u32)(uRoundedSize / uSectorSize);
-
-								pInfo->m_uByteOffset		= 0;
-								pInfo->m_uByteSize			= uSize;
-								pInfo->m_uSectorOffset		= 0;
-								pInfo->m_uNumSectors		= uNumSectors;
-								pInfo->m_uSectorSize		= uSectorSize;
-							}
-						}
-					}
-				}
-				if (boError)
-				{
-					if (pInfo->m_nFileHandle != (u32)INVALID_FILE_HANDLE)
-					{
-						CloseFile(pInfo);
-					}
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_CLOSE_PENDING)
-			{
-				pAsync->setStatus(FILE_OP_STATUS_CLOSING;
-
-				bool boClose = CloseFile(pInfo);
-				if (!boClose)
-				{
-					x_printf ("CloseFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-								
-				pInfo->m_nFileHandle	= (u32)INVALID_FILE_HANDLE;
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_DELETE_PENDING)
-			{
-				pAsync->setStatus(FILE_OP_STATUS_DELETING);
-
-				bool boClose = CloseFile(pInfo);
-				if (!boClose)
-				{
-					x_printf ("CloseFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-				else
-				{
-					bool boDelete = DeleteFile(pInfo);
-					if (!boDelete)
-					{
-						x_printf ("DeleteFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-					}
-				}
-
-				pInfo->m_nFileHandle	= (u32)INVALID_FILE_HANDLE;
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_STAT_PENDING)
-			{
-				pAsync->setStatus(FILE_OP_STATUS_STATING);
-
-				// Stats(pInfo);
-
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_READ_PENDING)
-			{
-				u64	nPos;
-				bool boSeek = Seek(pInfo, __SEEK_ORIGIN, pAsync->getReadWriteOffset(), nPos);
-				if (!boSeek)
-				{
-					x_printf ("Seek failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_READING);
-
-				u64 nReadSize;
-				bool boRead = ReadFile(pInfo, pAsync->getReadAddress(), (u32)pAsync->getReadWriteSize(), nReadSize);
-				if (!boRead)
-				{
-					x_printf ("ReadFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-			else if(pAsync->getStatus() == FILE_OP_STATUS_WRITE_PENDING)
-			{
-				u64	nPos;
-				bool boSeek = Seek(pInfo, __SEEK_ORIGIN, pAsync->getReadWriteOffset(), nPos);
-				if (!boSeek)
-				{
-					x_printf ("Seek failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_WRITING);
-
-				u64 nWriteSize;
-				bool boWrite = WriteFile(pInfo, pAsync->getWriteAddress(), (u32)pAsync->getReadWriteSize(), nWriteSize);
-				if (!boWrite)
-				{
-					x_printf ("WriteFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
-				}
-
-				if (pInfo->m_pFileDevice != NULL)
-				{
-					bool boSyncResult = Sync(pInfo);
-					if (!boSyncResult)
-					{
-						x_printf ("Sync failed on file %s\n", x_va_list(pInfo->m_szFilename));
-					}
-				}
-
-				pAsync->setStatus(FILE_OP_STATUS_DONE);
-			}
-		}
-
-		bool FileDevice_PS3_System::OpenOrCreateFile(xfileinfo* pInfo)
+		bool FileDevice_PS3_System::openOrCreateFile(u32 nFileIndex, const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle)
 		{
 			s32	nFlags;
-			if(pInfo->m_boWriting)
+			if(boWrite)
 			{
 				nFlags	= CELL_FS_O_CREAT | CELL_FS_O_RDWR;
 			}
@@ -288,17 +88,17 @@ namespace xcore
 			}
 
 			s32	hFile	= INVALID_FILE_HANDLE;
-			s32	nResult = cellFsOpen (pInfo->m_szFilename, nFlags, &hFile, NULL, 0);
-			pInfo->m_nFileHandle = (u32)hFile;
+			s32	nResult = cellFsOpen (szFilename, nFlags, &hFile, NULL, 0);
+			nFileHandle = (u32)hFile;
 
 			bool boSuccess = (nResult == CELL_OK);
 			return boSuccess;
 		}
 
-		bool FileDevice_PS3_System::LengthOfFile(xfileinfo* pInfo, u64& outLength)
+		bool FileDevice_PS3_System::lengthOfFile(u32 nFileHandle, u64& outLength)
 		{
 			CellFsStat stats;
-			CellFsErrno nResult = cellFsStat(pInfo->m_szFilename, &stats);
+			CellFsErrno nResult = cellFsStat(szFilename, &stats);
 			bool boSuccess = (nResult == CELL_OK);
 			if (boSuccess)
 				outLength = stats.st_size;
@@ -308,116 +108,97 @@ namespace xcore
 			return boSuccess;
 		}
 
-		bool FileDevice_PS3_System::CloseFile(xfileinfo* pInfo)
+		bool FileDevice_PS3_System::closeFile(u32 nFileHandle)
 		{
-			s32 nResult = cellFsClose (pInfo->m_nFileHandle);
+			s32 nResult = cellFsClose (nFileHandle);
 			bool boSuccess = false;
 			if (nResult == CELL_OK)
 			{
-				pInfo->m_nFileHandle = (u32)INVALID_FILE_HANDLE;
+				nFileHandle = (u32)INVALID_FILE_HANDLE;
 				boSuccess = true;
 			}
 			return boSuccess;
 		}
 
-		bool FileDevice_PS3_System::DeleteFile(xfileinfo* pInfo)
+		bool FileDevice_PS3_System::deleteFile(u32 nFileHandle, const char* szFilename)
 		{
-			s32 nResult = cellFsUnlink(pInfo->m_szFilename);
+			s32 nResult = cellFsUnlink(szFilename);
 			bool boSuccess = false;
 			if (nResult == CELL_OK)
 			{
-				pInfo->m_nFileHandle = (u32)INVALID_FILE_HANDLE;
+				nFileHandle = (u32)INVALID_FILE_HANDLE;
 				boSuccess = true;
 			}
 			return boSuccess;
 		}
 
-		bool FileDevice_PS3_System::ReadFile(xfileinfo* pInfo, void* buffer, uintfs count, u64& outNumBytesRead)
+		bool FileDevice_PS3_System::readFile(u32 nFileHandle, void* buffer, u64 pos, uintfs count, u64& outNumBytesRead)
 		{
-			u64 numBytesRead;
-			s32 nResult = cellFsRead (pInfo->m_nFileHandle, buffer, count, &numBytesRead);
-
-			bool boSuccess = (nResult == CELL_OK);
-			if (boSuccess)
+			u64 newPos;
+			if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
 			{
-				outNumBytesRead = (u32)numBytesRead;
-			}
-			else
-			{ 
-				outNumBytesRead = 0;
-			}
-			return boSuccess;
+				u64 numBytesRead;
+				s32 nResult = cellFsRead (nFileHandle, buffer, count, &numBytesRead);
 
+				bool boSuccess = (nResult == CELL_OK);
+				if (boSuccess)
+				{
+					outNumBytesRead = (u32)numBytesRead;
+				}
+				else
+				{ 
+					outNumBytesRead = 0;
+				}
+				return boSuccess;
+			}
+			return false;
 		}
-		bool FileDevice_PS3_System::WriteFile(xfileinfo* pInfo, const void* buffer, uintfs count, u64& outNumBytesWritten)
+		bool FileDevice_PS3_System::writeFile(u32 nFileHandle, const void* buffer, u64 pos, uintfs count, u64& outNumBytesWritten)
 		{
-			u64 numBytesWritten;
-			s32 nResult = cellFsWrite (pInfo->m_nFileHandle, buffer, count, &numBytesWritten);
-
-			bool boSuccess = (nResult == CELL_OK);
-			if (boSuccess)
+			u64 newPos;
+			if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
 			{
-				outNumBytesWritten = (u32)numBytesWritten;
+				u64 numBytesWritten;
+				s32 nResult = cellFsWrite (nFileHandle, buffer, count, &numBytesWritten);
+
+				bool boSuccess = (nResult == CELL_OK);
+				outNumBytesWritten = boSuccess ? 
+				if (boSuccess)
+				{
+					outNumBytesWritten = (u32)numBytesWritten;
+				}
+				else
+				{ 
+					outNumBytesWritten = 0;
+				}
+				return boSuccess;
 			}
-			else
-			{ 
-				outNumBytesWritten = 0;
-			}
-			return boSuccess;
+			return false;
 		}
 
-		bool FileDevice_PS3_System::Seek(xfileinfo* pInfo, EPs3SeekMode mode, u64 pos, u64& newPos)
+		bool FileDevice_PS3_System::seek(u32 nFileHandle, EPs3SeekMode mode, u64 pos, u64& newPos)
 		{
 			u64	nPos;
-			s32 nResult = cellFsLseek (pInfo->m_nFileHandle, pos, mode, &nPos);
+			s32 nResult = cellFsLseek (nFileHandle, pos, mode, &nPos);
 			bool boSuccess = (nResult == CELL_OK);
-			if (boSuccess)
-			{
-				newPos = nPos;
-			}
-			else
-			{ 
-				newPos = pos;
-			}
+			newPos = boSuccess ? nPos : pos;
 			return boSuccess;
 		}
-		bool	FileDevice_PS3_System::SeekOrigin(xfileinfo* pInfo, u64 pos, u64& newPos)
+		bool	FileDevice_PS3_System::seekOrigin(u32 nFileHandle, u64 pos, u64& newPos)
 		{
-			return Seek(pInfo, __SEEK_ORIGIN, pos, newPos);
+			return seek(pInfo, __SEEK_ORIGIN, pos, newPos);
 		}
 
-		bool	FileDevice_PS3_System::SeekCurrent(xfileinfo* pInfo, u64 pos, u64& newPos)
+		bool	FileDevice_PS3_System::seekCurrent(u32 nFileHandle, u64 pos, u64& newPos)
 		{
-			return Seek(pInfo, __SEEK_CURRENT, pos, newPos);
+			return seek(pInfo, __SEEK_CURRENT, pos, newPos);
 		}
 
-		bool	FileDevice_PS3_System::SeekEnd(xfileinfo* pInfo, u64 pos, u64& newPos)
+		bool	FileDevice_PS3_System::seekEnd(u32 nFileHandle, u64 pos, u64& newPos)
 		{
-			return Seek(pInfo, __SEEK_END, pos, newPos);
+			return seek(pInfo, __SEEK_END, pos, newPos);
 		}
 
-		bool FileDevice_PS3_System::Sync(xfileinfo* pInfo)
-		{
-			s32 nResult = cellFsFsync(pInfo->m_nFileHandle);
-			return nResult == CELL_OK;
-		}
-
-		bool FileDevice_PS3_System::GetBlockSize(xfileinfo* pInfo, u64& outSectorSize)
-		{
-			u64	uSectorSize;
-			u64	uBlockSize;
-			s32 nResult = cellFsFGetBlockSize(pInfo->m_nFileHandle, (std::uint64_t*)&uSectorSize, (std::uint64_t*)&uBlockSize);
-			bool boSuccess = (nResult == CELL_OK);
-			if (boSuccess)
-			{
-				outSectorSize = uSectorSize;
-			}
-			else
-			{ 
-				outSectorSize = 0;
-			}
-			return boSuccess;
-		}
 
 		//==============================================================================
 		// END xfilesystem namespace

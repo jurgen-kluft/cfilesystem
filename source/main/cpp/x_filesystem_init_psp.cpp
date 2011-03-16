@@ -41,13 +41,13 @@ namespace xcore
 
 			sSystemFileDevice = x_CreateFileDevicePSP();
 
-			xfilesystem::addAlias(xfilesystem::xalias("host", sSystemFileDevice, "host0:"));
-			xfilesystem::addAlias(xfilesystem::xalias("dvd" , sSystemFileDevice, "disc0:/PSP_GAME/USRDIR/" )); 
+			xfilesystem::gAddAlias(xfilesystem::xalias("host", sSystemFileDevice, "host0:"));
+			xfilesystem::gAddAlias(xfilesystem::xalias("dvd" , sSystemFileDevice, "disc0:/PSP_GAME/USRDIR/" )); 
 
 			xfilesystem::xalias appdir( "appdir", "host" );
 			xfilesystem::xalias curdir( "curdir", "host" );
-			xfilesystem::addAlias(appdir);
-			xfilesystem::addAlias(curdir);
+			xfilesystem::gAddAlias(appdir);
+			xfilesystem::gAddAlias(curdir);
 
 			xfilesystem::initialise(64, xTRUE);
 		}

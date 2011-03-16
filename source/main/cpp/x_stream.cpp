@@ -15,22 +15,10 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		class xiasync_result_null : public xiasync_result
-		{
-		public:
-			virtual bool			isCompleted()																	{ return true; }
-			virtual void			waitUntilCompleted()															{ }
-
-			virtual void			hold()																			{ }
-			virtual s32				release()																		{ return 1; }
-			virtual void			destroy()																		{ }
-		};
-		static xiasync_result_null	sNullAsyncResultImp;
-
 		class xstream_imp_empty : public xistream
 		{
 		public:
-			virtual					~xstream_imp_empty(void) {}
+			virtual					~xstream_imp_empty()															{ }
 
 			virtual void			hold()																			{ }
 			virtual s32				release()																		{ return 1; }
@@ -55,52 +43,16 @@ namespace xcore
 			virtual void			write(const xbyte* buffer, s32 offset, s32 count)								{ }
 			virtual void			writeByte(xbyte value)															{ }
 
-			virtual xasync_result	beginRead(xbyte* buffer, s32 offset, s32 count, AsyncCallback callback)			{ return xasync_result(&sNullAsyncResultImp); }
+			virtual xasync_result	beginRead(xbyte* buffer, s32 offset, s32 count, AsyncCallback callback)			{ return xasync_result(); }
 			virtual void			endRead(xasync_result& asyncResult)												{ }
-			virtual xasync_result	beginWrite(const xbyte* buffer, s32 offset, s32 count, AsyncCallback callback)	{ return xasync_result(&sNullAsyncResultImp); }
+			virtual xasync_result	beginWrite(const xbyte* buffer, s32 offset, s32 count, AsyncCallback callback)	{ return xasync_result(); }
 			virtual void			endWrite(xasync_result& asyncResult)											{ }
 
 			virtual void			copyTo(xistream* dst)															{ }
 			virtual void			copyTo(xistream* dst, s32 count)												{ }
 		};
+
 		static xstream_imp_empty	sNullStreamImp;
-
-
-
-		//------------------------------------------------------------------------------------------
-		xasync_result::xasync_result()
-			: mImplementation(&sNullAsyncResultImp)
-		{
-			mImplementation->hold();
-		}
-
-		xasync_result::xasync_result(xiasync_result* imp)
-			: mImplementation(imp)
-		{
-			mImplementation->hold();
-		}
-
-		xasync_result::xasync_result(const xasync_result& other)
-			: mImplementation(other.mImplementation)
-		{
-			mImplementation->hold();
-		}
-
-		xasync_result::~xasync_result()
-		{
-			if (mImplementation->release()==0)
-				mImplementation->destroy();
-		}
-
-		bool xasync_result::isCompleted() const
-		{
-			return mImplementation->isCompleted();
-		}
-
-		void xasync_result::waitUntilCompleted()
-		{
-			mImplementation->waitUntilCompleted();
-		}
 
 		//------------------------------------------------------------------------------------------
 		xstream::xstream()
@@ -118,6 +70,12 @@ namespace xcore
 			: mImplementation(imp)
 		{
 			imp->hold();
+		}
+
+		xstream::~xstream()
+		{
+			if (mImplementation->release() == 0)
+				mImplementation->destroy();
 		}
 
 		bool					xstream::canRead() const
