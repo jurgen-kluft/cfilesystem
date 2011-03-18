@@ -39,7 +39,7 @@ namespace xcore
 
 			virtual bool			openOrCreateFile(u32 nFileIndex, const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle);
 			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength);
-			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength);
+			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength) const;
 			virtual bool			closeFile(u32 nFileHandle);
 			virtual bool			deleteFile(u32 nFileHandle, const char* szFilename);
 			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead);
@@ -91,7 +91,7 @@ namespace xcore
 			return false;
 		}
 
-		bool FileDevice_3DS_System::lengthOfFile(u32 nFileHandle, u64& outLength)
+		bool FileDevice_3DS_System::lengthOfFile(u32 nFileHandle, u64& outLength) const
 		{
 			CellFsStat stats;
 			CellFsErrno nResult = cellFsStat(szFilename, &stats);
@@ -128,7 +128,7 @@ namespace xcore
 			return boSuccess;
 		}
 
-		bool FileDevice_3DS_System::readFile(u32 nFileHandle, void* buffer, u64 pos, uintfs count, u64& outNumBytesRead)
+		bool FileDevice_3DS_System::readFile(u32 nFileHandle, void* buffer, u64 pos, u64 count, u64& outNumBytesRead)
 		{
 			u64 newPos;
 			if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
@@ -149,7 +149,7 @@ namespace xcore
 			}
 			return false;
 		}
-		bool FileDevice_3DS_System::writeFile(u32 nFileHandle, const void* buffer, u64 pos, uintfs count, u64& outNumBytesWritten)
+		bool FileDevice_3DS_System::writeFile(u32 nFileHandle, const void* buffer, u64 pos, u64 count, u64& outNumBytesWritten)
 		{
 			u64 newPos;
 			if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))

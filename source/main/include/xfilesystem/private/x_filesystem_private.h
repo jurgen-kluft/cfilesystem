@@ -20,6 +20,8 @@ namespace xcore
 	// FORWARD DECLARES
 	//==============================================================================
 	class xdatetime;
+	class xiasync_result;
+	class xfilepath;
 
 	//==============================================================================
 	// CLASSES
@@ -32,26 +34,6 @@ namespace xcore
 			void*	operator new(xcore::xsize_t num_bytes, void* mem)	{ return mem; }											\
 			void	operator delete(void* mem)							{ heapFree(mem); }										\
 			void	operator delete(void* mem, void* )					{ }						
-
-
-#if defined(TARGET_PS3) || defined(TARGET_360) || defined(TARGET_PC)
-
-		typedef u64						uintfs;
-
-		typedef void (*AsyncQueueCallBack)	(u32 nHandle, s32 nID);
-		typedef void (*AsyncQueueCallBack2) (u32 nHandle, void* pClass, s32 nID);
-		typedef void (*AsyncQueueCallBack3) (u32 nHandle, void *pClass, s32 nID, void *pAddress, uintfs uSize);
-
-#elif defined(TARGET_PSP) || defined(TARGET_WII) || defined(TARGET_3DS)
-
-		typedef u32						uintfs;
-
-		typedef void (*AsyncQueueCallBack)  (u32 nHandle, s32 nID);
-		typedef void (*AsyncQueueCallBack2) (u32 nHandle, void *pClass, s32 nID);
-		typedef void (*AsyncQueueCallBack3) (u32 nHandle, void *pClass, s32 nID, void *pAddress, uintfs uSize);
-#else
-		#error "Error: Unsupported platform for xfilesystem"
-#endif
 
 		enum ELoadFlags
 		{
@@ -97,56 +79,31 @@ namespace xcore
 
 		///< Synchronous file operations
 		extern u32				open				( const char* szFilename, xbool boRead = true, xbool boWrite = false, xbool boAsync = false );
-		extern void				caps				( u32 uHandle, bool& can_read, bool& can_write, bool& can_seek, bool& can_async );
-		extern void				seek				( u32 uHandle, uintfs uOffset );
-		extern uintfs			size				( u32 uHandle );
-		extern void				read				( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer );	
-		extern void				write				( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer );
+		extern xbool			caps				( const xfilepath& szFilename, bool& can_read, bool& can_write, bool& can_seek, bool& can_async );
+		extern void				seek				( u32 uHandle, u64 uOffset );
+		extern u64				size				( u32 uHandle );
+		extern void				read				( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );	
+		extern void				write				( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
 		extern void 			close				( u32& uHandle );
 		extern void				closeAndDelete		( u32& uHandle );
 
-		extern void*			load				( const char* szFilename, uintfs* puSize, const u32 uFlags );
-		extern void*			loadAligned			( const u32 uAlignment, const char* szFilename, uintfs* puSize, const u32 uFlags );
-		extern void				save				( const char* szFilename, const void* pData, uintfs uSize );
+		extern void*			load				( const char* szFilename, u64* puSize, const u32 uFlags );
+		extern void*			loadAligned			( const u32 uAlignment, const char* szFilename, u64* puSize, const u32 uFlags );
+		extern void				save				( const char* szFilename, const void* pData, u64 uSize );
 
 		///< Asynchronous file operations
-		extern xbool			asyncDone			( const u32 uHandle );
 		extern u32				asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
 		extern u32				asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
 		extern void				asyncOpen			( const u32 uHandle );
-		extern void				asyncRead			( const u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer );
-		extern void				asyncWrite			( const u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer );
+		extern void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );
+		extern void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
 		extern void				asyncClose			( const u32 uHandle );
 		extern void				asyncDelete			( const u32 uHandle );
+		extern xbool			asyncDone			( const u32 uHandle );
+		extern xiasync_result*	asyncResult			( const u32 uHandle );
 
 		extern void				getOpenCreatedTime	( u32 uHandle, xdatetime& pTimeAndDate );
 		extern void				getOpenModifiedTime ( u32 uHandle, xdatetime& pTimeAndDate );
-
-		extern xbool			asyncQueueOpen		( const u32 nHandle, const u32 uPriority, AsyncQueueCallBack callbackFunc, s32 nCallbackID );
-		extern xbool			asyncQueueOpen		( const u32 nHandle, const u32 uPriority, AsyncQueueCallBack2 callbackFunc, void* pClass, s32 nCallbackID );
-
-		///< Asynchronous queue, file operations
-		extern xbool			asyncQueueClose		( const u32 nHandle, const u32 uPriority, AsyncQueueCallBack callbackFunc, s32 nCallbackID );
-		extern xbool			asyncQueueClose		( const u32 nHandle, const u32 uPriority, AsyncQueueCallBack2 callbackFunc, void* pClass, s32 nCallbackID );
-
-		extern xbool			asyncQueueRead		( const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, AsyncQueueCallBack callbackFunc, s32 nCallbackID );
-		extern xbool			asyncQueueRead		( const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, AsyncQueueCallBack2 callbackFunc, void* pClass, s32 nCallbackID );	
-		extern xbool			asyncQueueRead		( const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs nSize, void *pDest, AsyncQueueCallBack3 callbackFunc, void *pClass, s32 nCallbackID );	
-
-		extern xbool			asyncQueueWrite		( const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, const void* pSrc, AsyncQueueCallBack callbackFunc, s32 nCallbackID );
-		extern xbool			asyncQueueWrite		( const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, const void* pSrc, AsyncQueueCallBack2 callbackFunc, void* pClass, s32 nCallbackID );	
-
-		extern xbool			asyncQueueReadAndCache (const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, AsyncQueueCallBack callbackFunc, s32 nCallbackID);
-		extern xbool			asyncQueueReadAndCache (const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID);
-
-		extern xbool			asyncQueueDelete	( const u32 nHandle, const u32 uPriority, AsyncQueueCallBack callbackFunc, s32 nCallbackID );
-		extern xbool			asyncQueueDelete	( const u32 nHandle, const u32 uPriority, AsyncQueueCallBack2 callbackFunc, void* pClass, s32 nCallbackID );
-
-		extern void				asyncQueueCancel	( const u32 nHandle );
-		extern void				asyncQueueCancel	( const u32 nHandle, void* pClass );	
-		extern void				asyncQueueCancel	( void *pClass );
-
-		extern xbool			asyncQueueDone		( const u32 nHandle );
 
 		extern xbool			doesFileExist		( const char* szFilename );
 		extern void				reSize				( u32 uHandle, u64 uNewSize );

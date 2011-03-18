@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_H__
-#define __X_FILESYSTEM_H__
+#ifndef __XFILESYSTEM_IASYNC_RESULT_H__
+#define __XFILESYSTEM_IASYNC_RESULT_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -11,29 +11,33 @@
 #include "xbase\x_types.h"
 #include "xbase\x_debug.h"
 
+
 //==============================================================================
 // xcore namespace
 //==============================================================================
 namespace xcore
 {
-	///< Forward declares
-	class xthreading;
-	class x_iallocator;
-
 	namespace xfilesystem
 	{
-		///< Forward declares
-		class xiothread;
+		///< Async result implementation interface
+		class xiasync_result
+		{
+		public:
+			virtual					~xiasync_result()				{ }
 
-		///< Initialization
-		extern void				init				( xthreading* threading, x_iallocator* allocator );
-		extern void				exit				( void );
+			virtual bool			isCompleted() = 0;
+			virtual void			waitUntilCompleted() = 0;
 
-		///< IoThread, user has to call this from the IoThread
-		extern void				ioThreadWorker		( void );
+		protected:
+			friend class xasync_result;
+			virtual void			hold() = 0;
+			virtual s32				release() = 0;
+			virtual void			destroy() = 0;
+		};
 
-		///< Update, user has to call this from the 'main' thread, not from the IoThread
-		extern void				update				( void );
+		//==============================================================================
+		// END xfilesystem namespace
+		//==============================================================================
 	};
 
 	//==============================================================================
@@ -42,6 +46,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_H__
+// END __XFILESYSTEM_IASYNC_RESULT_H__
 //==============================================================================
 #endif

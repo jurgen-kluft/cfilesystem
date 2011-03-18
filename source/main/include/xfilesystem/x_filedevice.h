@@ -17,6 +17,13 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
+		///< File device
+		///< 
+		///< This interface exists to present a way to implement different types
+		///< of file devices. The most obvious one is a file device that uses the
+		///< system to manipulate files. To support HTTP based file manipulation
+		///< the user could implement a file device that is using HTTP for data
+		///< transfer.
 		class xfiledevice
 		{
 		protected:
@@ -28,7 +35,7 @@ namespace xcore
 
 			virtual bool			openOrCreateFile(u32 nFileIndex, const char* szFilename, bool boRead, bool boWrite, u32& outFileHandle) = 0;
 			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength) = 0;
-			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength) = 0;
+			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength) const = 0;
 			virtual bool			closeFile(u32 nFileHandle) = 0;
 			virtual bool			deleteFile(u32 nFileHandle, const char* szFilename) = 0;
 			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) = 0;
