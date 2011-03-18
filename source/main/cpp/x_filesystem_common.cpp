@@ -13,6 +13,7 @@
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\private\x_fileinfo.h"
 #include "xfilesystem\private\x_fileasync.h"
+#include "xfilesystem\x_iasync_result.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_alias.h"
@@ -30,6 +31,50 @@ namespace xcore
 	//------------------------------------------------------------------------------------------
 	namespace xfilesystem
 	{
+
+		//------------------------------------------------------------------------------------------
+
+		class xiasync_result_imp : public xiasync_result
+		{
+									xiasync_result_imp(u32 nFileHandle)
+										: mRefCount(0)
+										, mFileHandle(nFileHandle)			{ }
+		public:
+			virtual					~xiasync_result_imp()					{ }
+
+			virtual bool			isCompleted()
+			{
+				return asyncDone(mFileHandle) == xTRUE;
+			}
+
+			virtual void			waitUntilCompleted()
+			{
+				xfileinfo* pFileInfo = getFileInfo(mFileHandle);
+				getIoThread()->wait(pFileInfo->m_nFileIndex);
+			}
+
+			virtual void			hold()
+			{
+				++mRefCount;
+			}
+
+			virtual s32				release()
+			{
+				return --mRefCount;
+			}
+
+			virtual void			destroy()
+			{
+				
+			}
+
+		private:
+			s32				mRefCount;
+			u32				mFileHandle;
+		};
+
+		//------------------------------------------------------------------------------------------
+
 		struct FilenameBuffer
 		{
 			char		mFilename[FS_MAX_PATH];
@@ -37,15 +82,14 @@ namespace xcore
 
 		static FilenameBuffer			m_Filenames[FS_MAX_OPENED_FILES];
 
+		//------------------------------------------------------------------------------------------
+
+		static xiasync_result_imp		m_AsyncResults[FS_MAX_OPENED_FILES];
 		static xfileinfo				m_OpenAsyncFile[FS_MAX_OPENED_FILES];
-		static xfileasync				m_AsyncIOData[FS_MAX_ASYNC_IO_OPS];
-		static QueueItem				m_aAsyncQueue[FS_MAX_ASYNC_QUEUE_ITEMS];
+		static xfileasync				m_AsyncIOData[FS_MAX_OPENED_FILES];
 
 		static EError					m_eLastErrorStack[FS_MAX_ERROR_ITEMS];
 		static xfilecache*				m_pCache = NULL;
-
-		static spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>*	m_pAsyncQueueList[FS_PRIORITY_COUNT];
-		static spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>*	m_pFreeQueueItemList = NULL;
 
 		static spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>*		m_pFreeAsyncIOList = NULL;
 		static spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>*		m_pAsyncIOList = NULL;
@@ -55,7 +99,6 @@ namespace xcore
 		void				update( void )
 		{
 			sync(FS_SYNC_NOWAIT);
-			asyncQueueUpdate();
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -81,35 +124,39 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				caps				( u32 uHandle, bool& can_read, bool& can_write, bool& can_seek, bool& can_async )
+		xbool				caps				( const xfilepath& szFilename, bool& can_read, bool& can_write, bool& can_seek, bool& can_async )
 		{
-			if (uHandle == (u32)INVALID_FILE_HANDLE)
-			{
-				xfileinfo* fileInfo = getFileInfo(uHandle);
-				can_read  = fileInfo->m_boReading;
-				can_write = fileInfo->m_boWriting;
-				can_seek  = fileInfo->m_pFileDevice->canSeek();
-				can_async = true;
-			}
+			const xalias* alias = gFindAliasFromFilename(szFilename);
+			if (alias == NULL)
+				return xFALSE;
+
+			
+			const xfiledevice* file_device = alias->device();
+
+			can_read  = true;
+			can_write = file_device->canWrite();
+			can_seek  = file_device->canSeek();
+			can_async = true;
+			return xTRUE;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		uintfs				size				( u32 uHandle )
+		u64				size				( u32 uHandle )
 		{
 			return syncSize(uHandle);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				read (u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer )
+		void				read (u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer )
 		{
 			syncRead(uHandle, uOffset, uSize, pBuffer);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				write( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer )
+		void				write( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer )
 		{
 			syncWrite(uHandle, uOffset, uSize, pBuffer);
 		}
@@ -130,7 +177,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void*				loadAligned (const u32 uAlignment, const char* szFilename, uintfs* puFileSize, const u32 uFlags)
+		void*				loadAligned (const u32 uAlignment, const char* szFilename, u64* puFileSize, const u32 uFlags)
 		{
 			u32 uHandle = open(szFilename, false);
 			if (uHandle == (u32)INVALID_FILE_HANDLE)
@@ -187,7 +234,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void*				load (const char* szFilename, uintfs* puFileSize, const u32 uFlags)
+		void*				load (const char* szFilename, u64* puFileSize, const u32 uFlags)
 		{
 			u32	uAlignment = FS_MEM_ALIGNMENT;
 			if(uFlags & LOAD_FLAGS_VRAM)
@@ -198,7 +245,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				save (const char* szFilename, const void* pData, uintfs uSize)
+		void				save (const char* szFilename, const void* pData, u64 uSize)
 		{
 			ASSERTS (szFilename, "Save() : Pointer to name is NULL!");
 			ASSERTS (pData,	"Save() : Pointer to data is NULL!");
@@ -221,17 +268,9 @@ namespace xcore
 				return true;
 			}
 
-			bool boDone = true;
-			for(u32 nSlot = 0; nSlot < FS_MAX_ASYNC_IO_OPS; nSlot++)
-			{
-				xfileasync* pOperation = getAsyncIOData(nSlot);
-				if (pOperation->getFileIndex()>=0 && (u32)pOperation->getFileIndex()==uHandle)
-				{
-					boDone	= false;
-					break;
-				}
-			}
-			return boDone;
+			xfileinfo*  pInfo  = getFileInfo(uHandle);
+			xfileasync* pAsync = getAsyncIOData(pInfo->m_nFileIndex);
+			return pAsync->getStatus() == FILE_OP_STATUS_DONE;
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -277,7 +316,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncRead			( const u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer  )
+		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result*& async_result_imp )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -312,7 +351,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncWrite			( const u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer )
+		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -466,297 +505,9 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xbool asyncQueueOpen( const u32 uHandle, const u32 uPriority, AsyncQueueCallBack callbackFunc, s32 nCallbackID )
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_OPEN, uHandle, uPriority, 0, 0, NULL, NULL, callbackFunc, NULL, NULL, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueOpen( const u32 uHandle, const u32 uPriority, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID )
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_OPEN, uHandle, uPriority, 0, 0, NULL, NULL, NULL, callbackFunc2, pClass, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueClose( const u32 uHandle, const u32 uPriority, AsyncQueueCallBack callbackFunc, s32 nCallbackID )
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_CLOSE, uHandle, uPriority, 0, 0, NULL, NULL, callbackFunc, NULL, NULL, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueClose( const u32 uHandle, const u32 uPriority, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID )
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_CLOSE, uHandle, uPriority, 0, 0, NULL, NULL, NULL, callbackFunc2, pClass, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueRead (const u32 uHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, AsyncQueueCallBack callbackFunc, s32 nCallbackID)
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, callbackFunc, NULL, NULL, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueRead (const u32 uHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID)
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, callbackFunc2, pClass, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueReadAndCache (const u32 uHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, AsyncQueueCallBack callbackFunc, s32 nCallbackID)
-		{
-			// Is file already cached?
-			xfileinfo* fileInfo = getFileInfo(uHandle);
-			const xalias* alias = gFindAliasFromFilename(xfilepath(fileInfo->m_szFilename));
-			if (alias!=NULL && x_strCompare(alias->alias(), "cache")==0)
-			{
-				if (asyncIONumFreeSlots() >= 5)
-				{
-					// No - needs to be cached
-					char szFilenameBuffer[FS_MAX_PATH];
-					xfilepath szFilename(szFilenameBuffer, sizeof(szFilenameBuffer), fileInfo->m_szFilename);
-
-					const xalias* alias = gFindAndRemoveAliasFromFilename(szFilename);
-
-					asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
-
-					xfilecache* filecache = getFileCache();
-					if(	(filecache != NULL) && (filecache->SetCacheData( szFilename.c_str(), pDest, uOffset, uSize, true )) )
-					{
-						gReplaceAliasOfFilename(szFilename, "cache");
-						s32	nWriteHandle = asyncPreOpen(szFilename.c_str(), true);
-
-						asyncQueueAdd (FILE_QUEUE_TO_OPEN,	nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
-						asyncQueueAdd (FILE_QUEUE_TO_WRITE, nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
-						asyncQueueAdd (FILE_QUEUE_TO_CLOSE, nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
-
-						filecache->WriteCacheIndexFileAsync();
-					}
-
-					return asyncQueueAdd (FILE_QUEUE_TO_MARKER, uHandle, uPriority, uOffset, uSize, pDest, NULL, callbackFunc, NULL, NULL, nCallbackID);
-				}
-				else
-				{
-					setLastError(FILE_ERROR_MAX_ASYNC);
-					return asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, callbackFunc, NULL, NULL, nCallbackID);
-				}
-			}
-			else
-			{
-				return asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, callbackFunc, NULL, NULL, nCallbackID);
-			}
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueReadAndCache (const u32 uHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID)
-		{
-			// Is file already cached?
-			xfilecache* filecache = getFileCache();
-			xfileinfo* fileInfo = getFileInfo(uHandle);
-			const xalias* alias = gFindAliasFromFilename(xfilepath(fileInfo->m_szFilename));
-			if (filecache != NULL && alias!=NULL && x_strCompare(alias->alias(), "cache")==0)
-			{
-				if ((asyncIONumFreeSlots() >= 5))
-				{
-					// No - needs to be cached
-					char szFilenameBuffer[FS_MAX_PATH];
-					xfilepath szFilename(szFilenameBuffer, sizeof(szFilenameBuffer), "");
-					szFilename += fileInfo->m_szFilename;
-
-					const xalias* alias = gFindAndRemoveAliasFromFilename(szFilename);
-
-					asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
-
-					if(filecache->SetCacheData(szFilename.c_str(), pDest, uOffset, uSize, true))
-					{
-						gReplaceAliasOfFilename(szFilename, "cache");
-						s32	nWriteHandle = asyncPreOpen(szFilename.c_str(), true);
-
-						asyncQueueAdd (FILE_QUEUE_TO_OPEN,	nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
-						asyncQueueAdd (FILE_QUEUE_TO_WRITE, nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
-						asyncQueueAdd (FILE_QUEUE_TO_CLOSE, nWriteHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, NULL, NULL, 0);
-
-						filecache->WriteCacheIndexFileAsync();
-					}
-
-					return asyncQueueAdd (FILE_QUEUE_TO_MARKER, uHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, callbackFunc2, pClass, nCallbackID);
-				}
-				else
-				{
-					setLastError(FILE_ERROR_MAX_ASYNC);
-					return asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, callbackFunc2, pClass, nCallbackID);
-				}
-			}
-			else
-			{
-				return asyncQueueAdd (FILE_QUEUE_TO_READ, uHandle, uPriority, uOffset, uSize, pDest, NULL, NULL, callbackFunc2, pClass, nCallbackID);
-			}
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueDelete( const u32 uHandle, const u32 uPriority, AsyncQueueCallBack callbackFunc, s32 nCallbackID )
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_DELETE, uHandle, uPriority, 0, 0, NULL, NULL, callbackFunc, NULL, NULL, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueDelete( const u32 uHandle, const u32 uPriority, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID )
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_DELETE, uHandle, uPriority, 0, 0, NULL, NULL, NULL, callbackFunc2, pClass, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueWrite (const u32 uHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, const void* pSrc, AsyncQueueCallBack callbackFunc, s32 nCallbackID)
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_WRITE, uHandle, uPriority, uOffset, uSize, NULL, pSrc, callbackFunc, NULL, NULL, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool asyncQueueWrite (const u32 uHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, const void* pSrc, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID)
-		{
-			return asyncQueueAdd (FILE_QUEUE_TO_WRITE, uHandle, uPriority, uOffset, uSize, NULL, pSrc, NULL, callbackFunc2, pClass, nCallbackID);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void  asyncQueueCancel( const u32 uHandle )
-		{
-			for(u32 uPriority = 0; uPriority < (FS_PRIORITY_COUNT); uPriority++)
-			{
-				QueueItem* pItem		= asyncQueueRemoveHead(uPriority);
-				QueueItem* pStartItem	= pItem;
-
-				while(pItem)
-				{
-					if(	(pItem->m_uStatus != FILE_QUEUE_FREE) && (pItem->m_nHandle == uHandle) )
-					{
-						if(	(pItem->m_uStatus == FILE_QUEUE_OPENING) || 
-							(pItem->m_uStatus == FILE_QUEUE_CLOSING) || 
-							(pItem->m_uStatus == FILE_QUEUE_READING) || 
-							(pItem->m_uStatus == FILE_QUEUE_STATING) ||
-							(pItem->m_uStatus == FILE_QUEUE_WRITING) )
-						{
-							pItem->m_CallbackFunc	= NULL;
-							pItem->m_CallbackFunc2	= NULL;
-							pItem->m_CallbackFunc3	= NULL;
-							pItem->m_pCallbackClass	= NULL;
-							pItem->m_nCallbackID	= 0;
-						}
-						else
-						{
-							pItem->m_uStatus = FILE_QUEUE_CANCELLED;
-						}
-					}
-
-					asyncQueueAddToTail(uPriority, pItem);
-
-					// Terminate the loop when we encounter our start item
-					pItem = asyncQueueRemoveHead(uPriority);
-					if(pItem == pStartItem)
-					{
-						asyncQueueAddToHead(uPriority, pItem);
-						break;
-					}
-				}
-			}
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void asyncQueueCancel( const u32 uHandle, void* pClass )
-		{
-			for(u32 uPriority = 0; uPriority < (FS_PRIORITY_COUNT); uPriority++)
-			{
-				QueueItem* pItem		= asyncQueueRemoveHead(uPriority);
-				QueueItem* pStartItem	= pItem;
-
-				while(pItem)
-				{
-					if(	(pItem->m_uStatus != FILE_QUEUE_FREE) && (pItem->m_nHandle == uHandle) && (pItem->m_pCallbackClass == pClass) )
-					{
-						if(	(pItem->m_uStatus == FILE_QUEUE_OPENING) ||
-							(pItem->m_uStatus == FILE_QUEUE_CLOSING) ||
-							(pItem->m_uStatus == FILE_QUEUE_READING) ||
-							(pItem->m_uStatus == FILE_QUEUE_STATING) ||
-							(pItem->m_uStatus == FILE_QUEUE_WRITING) )
-						{
-							pItem->m_CallbackFunc	= NULL;
-							pItem->m_CallbackFunc2	= NULL;
-							pItem->m_CallbackFunc3	= NULL;
-							pItem->m_pCallbackClass	= NULL;
-							pItem->m_nCallbackID	= 0;
-						}
-						else
-						{
-							pItem->m_uStatus = FILE_QUEUE_CANCELLED;
-						}
-					}
-
-					asyncQueueAddToTail(uPriority, pItem);
-
-					// Terminate the loop when we encounter our start item
-					pItem = asyncQueueRemoveHead(uPriority);
-					if(pItem == pStartItem)
-					{
-						asyncQueueAddToHead(uPriority, pItem);
-						break;
-					}
-				}
-			}
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool				asyncQueueDone		( const u32 uHandle )
-		{
-			// Is the file handle still somewhere in the Queue?
-			for(u32 uPriority = 0; uPriority < (FS_PRIORITY_COUNT); uPriority++)
-			{
-				QueueItem* pItem		= asyncQueueRemoveHead(uPriority);
-				QueueItem* pStartItem	= pItem;
-
-				while(pItem)
-				{
-					if(	(pItem->m_uStatus != FILE_QUEUE_FREE) && (pItem->m_nHandle == uHandle))
-					{
-						return xFALSE;
-					}
-
-					asyncQueueAddToTail(uPriority, pItem);
-
-					// Terminate the loop when we encounter our start item
-					pItem = asyncQueueRemoveHead(uPriority);
-					if(pItem == pStartItem)
-					{
-						asyncQueueAddToHead(uPriority, pItem);
-						break;
-					}
-				}
-			}
-			return xTRUE;
-		}
-
-
-		//------------------------------------------------------------------------------------------
-
 		void			waitUntilIdle(void)
 		{
-			xbool boDone = asyncQueueUpdate();
-			while(!boDone)
-			{
-				sync(FS_SYNC_WAIT);
-				boDone = asyncQueueUpdate();
-			}
+			sync(FS_SYNC_WAIT);
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -802,7 +553,7 @@ namespace xcore
 			sAllocator = allocator;
 		}
 
-		void				initialiseCommon ( u32 uAsyncQueueSize, xbool boEnableCache )
+		void				initialiseCommon ( xbool boEnableCache )
 		{
 			x_printf ("xfilesystem:"TARGET_PLATFORM_STR" INFO initialise()\n");
 
@@ -815,18 +566,6 @@ namespace xcore
 			//-------------------------------------------------------
 			// Allocate all the spsc queues aligned on a cache line
 			//-------------------------------------------------------
-			for (u32 i=0; i<FS_PRIORITY_COUNT; ++i)
-			{
-				void* mem = heapAlloc(sizeof(spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>), CACHE_LINE_SIZE);
-				spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>* queue = new (mem) spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>();
-				m_pAsyncQueueList[i] = queue;
-			}
-			if (m_pFreeQueueItemList == NULL)
-			{
-				void* mem = heapAlloc(sizeof(spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>), CACHE_LINE_SIZE);
-				spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>* queue = new (mem) spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>();
-				m_pFreeQueueItemList = queue;
-			}
 			if (m_pFreeAsyncIOList == NULL)
 			{
 				void* mem = heapAlloc(sizeof(spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>), CACHE_LINE_SIZE);
@@ -839,21 +578,6 @@ namespace xcore
 				spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>* queue = new (mem) spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>();
 				m_pAsyncIOList = queue;
 			}
-
-			//--------------------------------
-			// Create the Async loading queue.
-			//--------------------------------
-			ASSERTS (uAsyncQueueSize > 0 && uAsyncQueueSize <= FS_MAX_ASYNC_QUEUE_ITEMS, "initialise() : Async Queue is 0 or to large!");
-
-			//--------------------------------------------------
-			// Fill in the status of the first element in queue.
-			//--------------------------------------------------
-			for (u32 uLoop = 0; uLoop < FS_MAX_ASYNC_QUEUE_ITEMS; uLoop++)
-			{
-				m_aAsyncQueue[uLoop].clear();
-				m_pFreeQueueItemList->push(&(m_aAsyncQueue[uLoop]));
-			}
-			ASSERT(m_pFreeQueueItemList->full());
 
 			//---------------------------------------
 			// Current there is no Async file loaded.
@@ -889,19 +613,6 @@ namespace xcore
 			//-------------------------------------------------------
 			// Free all the spsc queues
 			//-------------------------------------------------------
-			for (u32 i=0; i<FS_PRIORITY_COUNT; ++i)
-			{
-				m_pAsyncQueueList[i]->~spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>();
-				heapFree(m_pAsyncQueueList[i]);
-				m_pAsyncQueueList[i] = NULL;
-			}
-			if (m_pFreeQueueItemList != NULL)
-			{
-				m_pFreeQueueItemList->~spsc_cqueue<QueueItem*, FS_MAX_ASYNC_QUEUE_ITEMS>();
-				heapFree(m_pFreeQueueItemList);
-				m_pFreeQueueItemList = NULL;
-
-			}
 			if (m_pFreeAsyncIOList != NULL)
 			{
 				m_pFreeAsyncIOList->~spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>();
@@ -917,26 +628,38 @@ namespace xcore
 		}
 
 		//------------------------------------------------------------------------------------------
-		static x_iothread*	sIoThread = NULL;
+		class xsinglethread : public xthreading
+		{
+		public:
+			virtual bool		loop() const			{ return false; }
+			virtual void		wait()					{ }
+			virtual void		signal()				{ }
 
-		void				setIoThread			( x_iothread* io_thread )
+			virtual void		wait(u32 streamIndex)	{ }
+			virtual void		signal(u32 streamIndex)	{ }
+		};
+
+		static xsinglethread	sIoThreadSt;
+		static xthreading*		sIoThread = &sIoThreadSt;
+
+		void				setIoThread			( xthreading* io_thread )
 		{
 			sIoThread = io_thread;
+			if (sIoThread == NULL)
+				sIoThread = &sIoThreadSt;
 		}
 
 		//------------------------------------------------------------------------------------------
 
 		xbool				ioThreadLoop		( void )
 		{
-			return (sIoThread==NULL) ? xFALSE : sIoThread->loop();
+			return sIoThread->loop();
 		}
 
 		//------------------------------------------------------------------------------------------
 
 		void				ioThreadWait		( void )
 		{
-			if (sIoThread==NULL) 
-				return;
 			sIoThread->wait();
 		}
 
@@ -944,8 +667,6 @@ namespace xcore
 
 		void				ioThreadSignal		( void )
 		{
-			if (sIoThread==NULL) 
-				return;
 			sIoThread->signal();
 		}
 
@@ -961,7 +682,8 @@ namespace xcore
 
 			if (alias != NULL)
 			{
-				// Remove the device part
+				// Remove the device part and replace it with the remap part of the file device that matches the
+				// device part of the filename.
 				device = alias->device();
 				if (alias->remap() != NULL)
 				{
@@ -1031,7 +753,7 @@ namespace xcore
 
 		s32					asyncIONumFreeSlots()
 		{
-			return m_pFreeQueueItemList->size();
+			return m_pFreeAsyncIOList->size();
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -1076,271 +798,6 @@ namespace xcore
 		void				asyncIOAddToTail	( xfileasync* asyncIOInfo )
 		{
 			m_pAsyncIOList->push(asyncIOInfo);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		QueueItem*			freeAsyncQueuePop	( )
-		{
-			QueueItem* item;
-			if (m_pFreeQueueItemList->pop(item))
-				return item;
-			return NULL;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void				freeAsyncQueueAddToTail( QueueItem* asyncQueueItem )
-		{
-			m_pFreeQueueItemList->push(asyncQueueItem);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		QueueItem*			asyncQueueRemoveHead( u32 uPriority )
-		{
-			QueueItem* item;
-			if (m_pAsyncQueueList[uPriority]->pop(item))
-				return item;
-			return NULL;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void				asyncQueueAddToTail	( u32 uPriority, QueueItem* asyncQueueItem )
-		{
-			m_pAsyncQueueList[uPriority]->push(asyncQueueItem);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void				asyncQueueAddToHead	( u32 uPriority, QueueItem* asyncQueueItem )
-		{
-			m_pAsyncQueueList[uPriority]->push(asyncQueueItem);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		QueueItem*			__asyncQueueAdd (const EFileQueueStatus uOperation, const u32 uHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, const void* pSrc)
-		{
-			QueueItem*	pQueueItem			= freeAsyncQueuePop();
-			u32			uClampedPriority	= uPriority;
-
-			if(uClampedPriority > FS_PRIORITY_LOW)
-			{
-				setLastError(FILE_ERROR_PRIORITY);
-				uClampedPriority	= FS_PRIORITY_LOW;
-			}
-
-			if(pQueueItem)
-			{
-				//-----------------------------
-				// Add this file onto the queue
-				//-----------------------------
-				pQueueItem->m_nHandle			= uHandle;
-				pQueueItem->m_uStatus			= uOperation;
-				pQueueItem->m_uOffset			= uOffset;
-				pQueueItem->m_uSize				= uSize;
-				pQueueItem->m_pDestAddr			= pDest;
-				pQueueItem->m_pSrcAddr			= pSrc;
-
-				pQueueItem->m_CallbackFunc		= NULL;
-				pQueueItem->m_CallbackFunc2		= NULL;
-				pQueueItem->m_CallbackFunc3		= NULL;
-				pQueueItem->m_pCallbackClass	= NULL;
-				pQueueItem->m_nCallbackID		= 0;
-
-				pQueueItem->m_uPriority			= uClampedPriority;
-
-				return pQueueItem;
-			}
-
-			return NULL;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool				asyncQueueAdd (const EFileQueueStatus uOperation, const u32 uHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, const void* pSrc, AsyncQueueCallBack callbackFunc, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID)
-		{
-			QueueItem* item = __asyncQueueAdd(uOperation, uHandle, uPriority, uOffset, uSize, pDest, pSrc);
-			ASSERTS (item, "Async file could not be added to Queue. Not enough room!");
-
-			// Fill in more details
-			item->m_CallbackFunc	= callbackFunc;
-			item->m_CallbackFunc2	= callbackFunc2;
-			item->m_CallbackFunc3	= NULL;
-			item->m_pCallbackClass	= pClass;
-			item->m_nCallbackID		= nCallbackID;
-
-			// Add to queue
-			asyncQueueAddToTail(item->m_uPriority, item);
-
-			return item!=NULL;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool				asyncQueueAdd (const EFileQueueStatus uOperation, const u32 uHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, const void* pSrc, AsyncQueueCallBack callbackFunc, AsyncQueueCallBack2 callbackFunc2, AsyncQueueCallBack3 callbackFunc3, void* pClass, s32 nCallbackID)
-		{
-			QueueItem* item = __asyncQueueAdd(uOperation, uHandle, uPriority, uOffset, uSize, pDest, pSrc);
-			ASSERTS (item, "Async file could not be added to Queue. Not enough room!");
-
-			// Fill in more details
-			item->m_CallbackFunc	= callbackFunc;
-			item->m_CallbackFunc2	= callbackFunc2;
-			item->m_CallbackFunc3	= callbackFunc3;
-			item->m_pCallbackClass	= pClass;
-			item->m_nCallbackID		= nCallbackID;
-
-			// Add to queue
-			asyncQueueAddToTail(item->m_uPriority, item);
-
-			return item!=NULL;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool				asyncQueueUpdate (void)
-		{
-			bool boDone = true;
-
-			//---------------------------------
-			// Is the current Head file loaded?
-			//---------------------------------
-			for(u32 uPriority=0; uPriority<FS_PRIORITY_COUNT; uPriority++)
-			{
-				if(!boDone)
-				{
-					break;
-				}
-
-				QueueItem* pQueue = asyncQueueRemoveHead(uPriority);
-				if(	pQueue != NULL )
-				{
-					if( (pQueue->m_uStatus == FILE_QUEUE_OPENING)	||
-						(pQueue->m_uStatus == FILE_QUEUE_CLOSING)	||
-						(pQueue->m_uStatus == FILE_QUEUE_READING)	||
-						(pQueue->m_uStatus == FILE_QUEUE_WRITING)	||
-						(pQueue->m_uStatus == FILE_QUEUE_DELETING)	||
-						(pQueue->m_uStatus == FILE_QUEUE_STATING)	||
-						(pQueue->m_uStatus == FILE_QUEUE_MARKER) )
-					{
-						//-------------------------
-						// Has it finished loading?
-						//-------------------------
-						if (sync (FS_SYNC_NOWAIT))
-						{
-							if (pQueue->m_CallbackFunc != NULL)
-							{
-								pQueue->m_CallbackFunc (pQueue->m_nHandle, pQueue->m_nCallbackID);
-							}
-
-							if (pQueue->m_CallbackFunc2 != NULL)
-							{
-								pQueue->m_CallbackFunc2 (pQueue->m_nHandle, pQueue->m_pCallbackClass, pQueue->m_nCallbackID);
-							}			
-
-							if (pQueue->m_CallbackFunc3 != NULL)
-							{
-								pQueue->m_CallbackFunc3(pQueue->m_nHandle, pQueue->m_pCallbackClass, pQueue->m_nCallbackID, pQueue->m_pDestAddr, pQueue->m_uSize);
-							}			
-
-							pQueue->m_uStatus = FILE_QUEUE_FREE;
-
-							// Put item back to end of free list
-							freeAsyncQueueAddToTail(pQueue);
-						}
-						else
-						{
-							boDone = false;
-
-							// Put item back at head of list
-							asyncQueueAddToHead(uPriority, pQueue);
-						}
-					}
-					else
-					{
-						// Put item back at head of list
-						asyncQueueAddToHead(uPriority, pQueue);
-					}
-				}
-
-				pQueue = asyncQueueRemoveHead(uPriority);
-				if(pQueue != NULL)
-				{
-					//------------------------------------------
-					// Should we start loading the current file.
-					//------------------------------------------
-					if (pQueue->m_uStatus == FILE_QUEUE_TO_OPEN)
-					{
-						boDone = false;
-
-						asyncOpen( pQueue->m_nHandle );
-
-						pQueue->m_uStatus = FILE_QUEUE_OPENING;
-					}
-					else if (pQueue->m_uStatus == FILE_QUEUE_TO_CLOSE)
-					{
-						boDone = false;
-
-						asyncClose( pQueue->m_nHandle );
-
-						pQueue->m_uStatus = FILE_QUEUE_CLOSING;
-					}
-					else if (pQueue->m_uStatus == FILE_QUEUE_TO_READ)
-					{
-						boDone = false;
-
-						asyncRead( pQueue->m_nHandle, pQueue->m_uOffset, pQueue->m_uSize, pQueue->m_pDestAddr );
-
-						pQueue->m_uStatus = FILE_QUEUE_READING;
-					}
-					else if (pQueue->m_uStatus == FILE_QUEUE_TO_WRITE)
-					{
-						boDone = false;
-
-						asyncWrite( pQueue->m_nHandle, pQueue->m_uOffset, pQueue->m_uSize, pQueue->m_pDestAddr );
-
-						pQueue->m_uStatus = FILE_QUEUE_WRITING;
-					}
-					else if (pQueue->m_uStatus == FILE_QUEUE_TO_DELETE)
-					{
-						boDone = false;
-
-						asyncDelete( pQueue->m_nHandle );
-
-						pQueue->m_uStatus = FILE_QUEUE_DELETING;
-					}
-					else if (pQueue->m_uStatus == FILE_QUEUE_TO_STAT)
-					{
-						boDone = false;
-
-						//@TODO: schedule the stat request
-						// AsyncStat( pQueue->m_nHandle );
-
-						pQueue->m_uStatus = FILE_QUEUE_STATING;
-					}
-					else if (pQueue->m_uStatus == FILE_QUEUE_TO_MARKER)
-					{
-						boDone = false;
-
-						pQueue->m_uStatus = FILE_QUEUE_MARKER;
-					}
-
-					if(!boDone)
-					{
-						// Put item back at head of list
-						asyncQueueAddToHead(uPriority, pQueue);
-					}
-					else
-					{
-						// Put item back to end of free list
-						freeAsyncQueueAddToTail(pQueue);
-					}
-				}
-			}
-
-			return boDone;
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -1519,7 +976,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		uintfs				syncSize			( u32 uHandle )
+		u64				syncSize			( u32 uHandle )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return 0;
@@ -1535,7 +992,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				syncRead			( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer )
+		void				syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
@@ -1550,7 +1007,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				syncWrite			( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer )
+		void				syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;

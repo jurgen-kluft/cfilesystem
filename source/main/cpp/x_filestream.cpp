@@ -24,6 +24,15 @@ namespace xcore
 	namespace xfilesystem
 	{
 		//------------------------------------------------------------------------------------------
+		
+		class xasync_result_ctor : public xasync_result
+		{
+		public:
+			xasync_result_ctor(xiasync_result* imp) : xasync_result(imp) { }
+		};
+
+		//------------------------------------------------------------------------------------------
+
 		class xifilestream;
 
 		static xifilestream*	sConstructFileStream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
@@ -33,7 +42,7 @@ namespace xcore
 		{
 			s32						mRefCount;
 			u32						mFileHandle;
-			uintfs					mFileSeekPos;
+			s64						mFileSeekPos;
 
 			enum ECaps
 			{
@@ -41,8 +50,11 @@ namespace xcore
 				CAN_READ	= 0x0001,
 				CAN_SEEK	= 0x0002,
 				CAN_WRITE	= 0x0004,
-				CAN_ASYNC	= 0x1000,
-				USE_ASYNC	= 0x2000,
+				CAN_ASYNC	= 0x0008,
+				USE_READ	= 0x1000,
+				USE_SEEK	= 0x2000,
+				USE_WRITE	= 0x4000,
+				USE_ASYNC	= 0x8000,
 			};
 			x_bitfield<ECaps>		mCaps;
 
@@ -52,7 +64,7 @@ namespace xcore
 
 			virtual void			hold()																{ mRefCount++; }
 			virtual s32				release()															{ --mRefCount; return mRefCount; }
-			virtual void			destroy()															{ sDestructFileStream(this); }
+			virtual void			destroy()															{ close(); sDestructFileStream(this); }
 
 			virtual bool			canRead() const;													///< Gets a value indicating whether the current stream supports reading. (Overrides xstream.CanRead.)
 			virtual bool			canSeek() const;													///< Gets a value indicating whether the current stream supports seeking. (Overrides xstream.CanSeek.)
@@ -137,97 +149,113 @@ namespace xcore
 			, mFileSeekPos(0)
 			, mCaps(NONE)
 		{
-			mCaps.set(USE_ASYNC, op == FileOp_Async);
+			bool can_read, can_write, can_seek, can_async;
+			xfilesystem::caps(filename, can_read, can_write, can_seek, can_async);
+			mCaps.set(CAN_WRITE, can_write);
+			mCaps.set(CAN_READ, can_read);
+			mCaps.set(CAN_SEEK, can_seek);
+			mCaps.set(CAN_ASYNC, can_async);
+
+			mCaps.set(USE_READ, true);
+			mCaps.set(USE_SEEK, can_seek);
+			mCaps.set(USE_WRITE, can_write && ((access&FileAccess_Write)!=0));
+			mCaps.set(USE_ASYNC, can_async && (op == FileOp_Async));
 
 			switch(mode)
 			{
 				case FileMode_CreateNew:
 					{
-						if (xfilesystem::doesFileExist(filename.c_str()) == xFALSE)
+						if (mCaps.isSet(CAN_WRITE))
 						{
-							mFileHandle = xfilesystem::open(filename.c_str(), (access&FileAccess_Read), (access&FileAccess_Write), mCaps.isSet(USE_ASYNC));
+							if (xfilesystem::doesFileExist(filename.c_str()) == xFALSE)
+							{
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
+							}
 						}
 					} break;
 				case FileMode_Create:
 					{
-						if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
+						if (mCaps.isSet(CAN_WRITE))
 						{
-							mFileHandle = xfilesystem::open(filename.c_str(), (access&FileAccess_Read), (access&FileAccess_Write), mCaps.isSet(USE_ASYNC));
-							xfilesystem::reSize(mFileHandle, 0);
-						}
-						else
-						{
-							mFileHandle = xfilesystem::open(filename.c_str(), (access&FileAccess_Read), (access&FileAccess_Write), mCaps.isSet(USE_ASYNC));
+							if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
+							{
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
+								xfilesystem::reSize(mFileHandle, 0);
+							}
+							else
+							{
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
+							}
 						}
 					} break;
 				case FileMode_Open:
 					{
 						if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
 						{
-							mFileHandle = xfilesystem::open(filename.c_str(), (access&FileAccess_Read), (access&FileAccess_Write), mCaps.isSet(USE_ASYNC));
+							mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
 						}
 					} break;
 				case FileMode_OpenOrCreate:
 					{
-						mFileHandle = xfilesystem::open(filename.c_str(), (access&FileAccess_Read), (access&FileAccess_Write), mCaps.isSet(USE_ASYNC));
-					} break;
-				case FileMode_Append:
-					{
-						if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
-						{
-							mFileHandle = xfilesystem::open(filename.c_str(), (access&FileAccess_Read), (access&FileAccess_Write), mCaps.isSet(USE_ASYNC));
-							mFileSeekPos = xfilesystem::size(mFileHandle);
-						}
+						mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
 					} break;
 				case FileMode_Truncate:
 					{
-						if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
+						if (mCaps.isSet(CAN_WRITE))
 						{
-							mFileHandle = xfilesystem::open(filename.c_str(), (access&FileAccess_Read), (access&FileAccess_Write), mCaps.isSet(USE_ASYNC));
-							xfilesystem::reSize(mFileHandle, 0);
+							if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
+							{
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
+								if (mFileHandle != INVALID_FILE_HANDLE)
+								{
+									xfilesystem::reSize(mFileHandle, 0);
+								}
+							}
+						}
+					} break;
+				case FileMode_Append:
+					{
+						if (mCaps.isSet(CAN_WRITE))
+						{
+							if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
+							{
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
+								if (mFileHandle != INVALID_FILE_HANDLE)
+								{
+									mCaps.set(USE_READ, false);
+									mCaps.set(USE_SEEK, false);
+									mCaps.set(USE_WRITE, true);
+
+									mFileSeekPos = xfilesystem::size(mFileHandle);
+								}
+							}
 						}
 					} break;
 			}
-
-			if (mFileHandle != INVALID_FILE_HANDLE)
-			{
-				bool can_read,can_write,can_seek,can_async;
-				xfilesystem::caps(mFileHandle, can_read, can_write, can_seek, can_async);
-				mCaps.set(CAN_WRITE, can_write);
-				mCaps.set(CAN_READ, can_read);
-				mCaps.set(CAN_SEEK, can_seek);
-				mCaps.set(CAN_ASYNC, can_async);
-			}
 		}
+
 		xifilestream::~xifilestream(void)
 		{
-
 		}
 
 		bool			xifilestream::canRead() const
 		{
-			bool can_read, can_write, can_seek, can_async;
-			xfilesystem::caps(mFileHandle, can_read, can_write, can_seek, can_async);
-			return can_read;
+			return mCaps.isSet(CAN_READ);
 		}
 
 		bool			xifilestream::canSeek() const
 		{
-			bool can_read, can_write, can_seek, can_async;
-			xfilesystem::caps(mFileHandle, can_read, can_write, can_seek, can_async);
-			return can_seek;
+			return mCaps.isSet(CAN_SEEK);
 		}
 
 		bool			xifilestream::canWrite() const
 		{
-			bool can_read, can_write, can_seek, can_async;
-			xfilesystem::caps(mFileHandle, can_read, can_write, can_seek, can_async);
-			return can_write;
+			return mCaps.isSet(CAN_WRITE);
 		}
 
 		bool			xifilestream::isAsync() const
 		{
-			return false;
+			return mCaps.isSet(USE_ASYNC);
 		}
 
 		u64				xifilestream::length() const
@@ -237,7 +265,7 @@ namespace xcore
 
 		u64				xifilestream::position() const
 		{
-			return mFileSeekPos;
+			return (u64)mFileSeekPos;
 		}
 
 		void			xifilestream::position(u64 Pos)
@@ -245,15 +273,31 @@ namespace xcore
 			mFileSeekPos = Pos;
 		}
 
-
 		s64				xifilestream::seek(s64 offset, ESeekOrigin origin)
 		{
+			if (mCaps.isSet(USE_SEEK))
+			{
+				switch (origin)
+				{
+					case Seek_Begin: mFileSeekPos = offset; break;
+					case Seek_Current: mFileSeekPos += offset; break;
+					case Seek_End: mFileSeekPos = (s64)length() + offset; break;
+				}
+				
+				if (mFileSeekPos < 0)
+					mFileSeekPos = 0;
+
+				return mFileSeekPos;
+			}
 			return 0;
 		}
 
 		void			xifilestream::close()
 		{
-			xfilesystem::syncClose(mFileHandle);
+			if (mFileHandle != INVALID_FILE_HANDLE)
+			{
+				xfilesystem::syncClose(mFileHandle);
+			}
 		}
 
 		void			xifilestream::flush()
@@ -291,26 +335,26 @@ namespace xcore
 
 		xasync_result	xifilestream::beginRead(xbyte* buffer, s32 offset, s32 count, AsyncCallback callback)
 		{
-			xfilesystem::asyncRead(mFileHandle, mFileSeekPos, count, &buffer[offset]);
-			return xasync_result();
+			xiasync_result* async_result_imp;
+			xfilesystem::asyncRead(mFileHandle, mFileSeekPos, count, &buffer[offset], async_result_imp);
+			return xasync_result_ctor(async_result_imp);
 		}
 
 		void			xifilestream::endRead(xasync_result& asyncResult)
 		{
-			if (!asyncResult.isCompleted())
-				asyncResult.waitUntilCompleted();
+			asyncResult.waitUntilCompleted();
 		}
 
 		xasync_result	xifilestream::beginWrite(const xbyte* buffer, s32 offset, s32 count, AsyncCallback callback)
 		{
-			xfilesystem::asyncWrite(mFileHandle, mFileSeekPos, count, &buffer[offset]);
-			return xasync_result();
+			xiasync_result* async_result_imp;
+			xfilesystem::asyncWrite(mFileHandle, mFileSeekPos, count, &buffer[offset], async_result_imp);
+			return xasync_result_ctor(async_result_imp);
 		}
 
 		void			xifilestream::endWrite(xasync_result& asyncResult)
 		{
-			if (!asyncResult.isCompleted())
-				asyncResult.waitUntilCompleted();
+			asyncResult.waitUntilCompleted();
 		}
 
 		void			xifilestream::copyTo(xistream* dst)

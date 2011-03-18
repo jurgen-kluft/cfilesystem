@@ -21,14 +21,17 @@ namespace xcore
 		//==============================================================================
 		// IO Thread
 		//==============================================================================
-		class x_iothread
+		class xthreading
 		{
 		public:
-			virtual				~x_iothread() {}
+			virtual				~xthreading() {}
 
 			virtual bool		loop() const = 0;
 			virtual void		wait() = 0;
 			virtual void		signal() = 0;
+
+			virtual void		wait(u32 streamIndex) = 0;
+			virtual void		signal(u32 streamIndex) = 0;
 		};
 
 	};

@@ -19,21 +19,8 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		
-		///< Async result implementation interface
-		///< User doesn't deal with this object, it is meant for extendability
-		class xiasync_result
-		{
-		public:
-			virtual bool			isCompleted() = 0;
-			virtual void			waitUntilCompleted() = 0;
-
-		protected:
-			friend class xasync_result;
-			virtual void			hold() = 0;
-			virtual s32				release() = 0;
-			virtual void			destroy() = 0;
-		};
+		///< Forward declares
+		class xiasync_result;
 
 		///< Async result (Reference counted)
 		///< User can hold on to this object and use it to check for an async file operation
@@ -41,16 +28,22 @@ namespace xcore
 		///< stream object as well.
 		class xasync_result
 		{
-			xiasync_result*			mImplementation;
-
 		public:
 									xasync_result();
-									xasync_result(xiasync_result* imp);
 									xasync_result(const xasync_result&);
 									~xasync_result();
 
 			bool					isCompleted() const;
 			void					waitUntilCompleted();
+
+			void					operator =  (const xasync_result&);
+			bool					operator == (const xasync_result&) const;
+			bool					operator != (const xasync_result&) const;
+
+		protected:
+									xasync_result(xiasync_result* imp);
+
+			xiasync_result*			mImplementation;
 		};
 
 		//==============================================================================

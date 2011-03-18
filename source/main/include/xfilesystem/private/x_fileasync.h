@@ -20,6 +20,7 @@ namespace xcore
 		enum EFileOpStatus
 		{
 			FILE_OP_STATUS_FREE				= 0,
+			FILE_OP_STATUS_DONE				= 0,
 
 			FILE_OP_STATUS_OPEN_PENDING		= 10,
 			FILE_OP_STATUS_OPENING			= 11,
@@ -38,8 +39,6 @@ namespace xcore
 
 			FILE_OP_STATUS_DELETE_PENDING	= 510,
 			FILE_OP_STATUS_DELETING			= 511,
-
-			FILE_OP_STATUS_DONE				= 9999,
 		};
 
 		struct xfileasync

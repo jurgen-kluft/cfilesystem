@@ -24,7 +24,7 @@ namespace xcore
 	{
 		enum EFileSystemConfig
 		{
-			MAX_FILE_ALIASES = 32,
+			MAX_FILE_ALIASES = 64,
 		};
 
 
@@ -102,13 +102,12 @@ namespace xcore
 					return NULL;
 				return a->device();
 			}
-
 			return mFileDevice;
 		}
 
 		//------------------------------------------------------------------------------
 
-		void            gAddAlias(xalias& alias)
+		void				gAddAlias(xalias& alias)
 		{
 			for (s32 i=0; i<sNumAliases; ++i)
 			{
@@ -147,7 +146,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------
 
-		const xalias*	gFindAliasFromFilename(const xfilepath& inFilename)
+		const xalias*		gFindAliasFromFilename(const xfilepath& inFilename)
 		{
 			char deviceStrBuffer[32];
 

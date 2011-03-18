@@ -27,7 +27,7 @@ namespace xcore
 		//------------------------------------------------------------------------------
 		// Description:
 		//     This class maps an alias to a file device.
-		//     This acts as an indirection and is useful for defining folders
+		//     This can act as an re-direction and is useful for defining folders
 		//     as drives, remap drives etc..
 		//
 		//     source:\folder\filename.ext, where source = c:\temp

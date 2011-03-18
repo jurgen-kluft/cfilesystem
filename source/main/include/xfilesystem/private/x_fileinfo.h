@@ -18,6 +18,7 @@ namespace xcore
 	namespace xfilesystem
 	{
 		class xfiledevice;
+		class xfileasync;
 
 		struct xfileinfo
 		{
@@ -33,6 +34,7 @@ namespace xcore
 			xbool				m_boWriting;
 			xbool				m_boWaitAsync;
 			
+			xfileasync*			m_pFileAsync;
 			xfiledevice*		m_pFileDevice;
 
 			// Async IO worker thread will write here:

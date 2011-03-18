@@ -32,6 +32,7 @@ namespace xcore
 		class xfiledevice;
 		struct xfileinfo;
 		struct xfileasync;
+		class xthreading;
 
 		class xfilecache;
 
@@ -47,88 +48,11 @@ namespace xcore
 			FS_MEM_ALIGNMENT			= 128,
 		};
 
-		enum EFileQueueStatus
-		{	
-			FILE_QUEUE_FREE	= 0,
-			FILE_QUEUE_CANCELLED,
-
-			FILE_QUEUE_TO_OPEN,
-			FILE_QUEUE_OPENING,
-
-			FILE_QUEUE_TO_CLOSE,
-			FILE_QUEUE_CLOSING,
-
-			FILE_QUEUE_TO_READ,
-			FILE_QUEUE_READING,
-
-			FILE_QUEUE_TO_WRITE,
-			FILE_QUEUE_WRITING,
-
-			FILE_QUEUE_TO_STAT,
-			FILE_QUEUE_STATING,
-
-			FILE_QUEUE_TO_DELETE,
-			FILE_QUEUE_DELETING,
-
-			FILE_QUEUE_TO_MARKER,
-			FILE_QUEUE_MARKER
-		};
-
 
 		//////////////////////////////////////////////////////////////////////////
 		// Private xfilesystem functionality
 		//////////////////////////////////////////////////////////////////////////
-		class QueueItem
-		{
-			QueueItem*			m_pPrev;
-			QueueItem*			m_pNext;
-
-		public:
-			u32					m_nHandle;
-			void*				m_pDestAddr;
-			const void*			m_pSrcAddr;
-			uintfs				m_uOffset;
-			uintfs				m_uSize;
-			EFileQueueStatus	m_uStatus;
-
-			AsyncQueueCallBack	m_CallbackFunc;
-			AsyncQueueCallBack2	m_CallbackFunc2;
-			AsyncQueueCallBack3	m_CallbackFunc3;
-
-			void*				m_pCallbackClass;
-			s32					m_nCallbackID;
-
-			u32					m_uPriority;
-
-			QueueItem*			getPrev	()										{ return m_pPrev; }
-			QueueItem*			getNext	()										{ return m_pNext; }
-
-			void				setPrev	( QueueItem* pPrev )					{ m_pPrev = pPrev; }
-			void				setNext	( QueueItem* pNext )					{ m_pNext = pNext; }
-
-			void				clear	( )
-			{
-				m_pPrev				= NULL;
-				m_pNext				= NULL;
-
-				m_nHandle			= 0;
-				m_pDestAddr			= NULL;
-				m_pSrcAddr			= NULL;
-				m_uOffset			= 0;
-				m_uSize				= 0;
-				m_uStatus			= FILE_QUEUE_FREE;
-
-				m_CallbackFunc		= NULL;
-				m_CallbackFunc2		= NULL;
-				m_CallbackFunc3		= NULL;
-
-				m_pCallbackClass	= NULL;
-				m_nCallbackID		= 0;
-
-				m_uPriority			= FS_PRIORITY_LOW;
-			}
-		};
-
+		
 		extern void				setAllocator		( x_iallocator* allocator );
 		extern void*			heapAlloc			( s32 size, s32 alignment );
 		extern void				heapFree			( void* mem );
@@ -140,11 +64,9 @@ namespace xcore
 		extern void				initAlias			( void );
 		extern void				exitAlias			( void );
 
-		///< Thread
-		extern void				setIoThread			( x_iothread* io_thread );
-		extern xbool			ioThreadLoop		( void );
-		extern void				ioThreadWait		( void );
-		extern void				ioThreadSignal		( void );
+		///< Threading
+		extern void				setIoThread			( xthreading* io_thread );
+		extern xthreading*		getIoThread			( void );
 
 		///< Common
 		extern void				initialiseCommon	( u32 uAsyncQueueSize, xbool boEnableCache );
@@ -156,20 +78,12 @@ namespace xcore
 		extern xfileinfo*		getFileInfo			( u32 uHandle );
 		extern u32				findFreeFileSlot	( void );
 
-		extern s32				asyncIONumFreeSlots	( void );
 		extern xfileasync*		getAsyncIOData		( u32 nSlot );
+		extern s32				asyncIONumFreeSlots	( void );
 		extern xfileasync*		freeAsyncIOPop		( void );
 		extern void				freeAsyncIOAddToTail( xfileasync* asyncIOInfo );
 		extern xfileasync*		asyncIORemoveHead	( void );
 		extern void				asyncIOAddToTail	( xfileasync* asyncIOInfo );
-
-		extern QueueItem*		freeAsyncQueuePop	( );
-		extern void				freeAsyncQueueAddToTail( QueueItem* asyncQueueItem );
-		extern QueueItem*		asyncQueueRemoveHead( u32 uPriority );
-		extern void				asyncQueueAddToTail	( u32 uPriority, QueueItem* asyncQueueItem );
-		extern void				asyncQueueAddToHead	( u32 uPriority, QueueItem* asyncQueueItem );
-		extern xbool			asyncQueueAdd		( const EFileQueueStatus uOperation, const u32 nHandle, const u32 uPriority, uintfs uOffset, uintfs uSize, void* pDest, const void* pSrc, AsyncQueueCallBack callbackFunc, AsyncQueueCallBack2 callbackFunc2, void* pClass, s32 nCallbackID );
-		extern xbool			asyncQueueUpdate	( void );
 
 		extern xbool			sync				( u32 uFlag = FS_SYNC_WAIT );
 
@@ -190,9 +104,9 @@ namespace xcore
 
 		///< Synchronous file operations
 		extern u32				syncOpen			( const char* szName, xbool boRead = true, xbool boWrite = false );
-		extern uintfs			syncSize			( u32 uHandle );
-		extern void				syncRead			( u32 uHandle, uintfs uOffset, uintfs uSize, void* pBuffer );	
-		extern void				syncWrite			( u32 uHandle, uintfs uOffset, uintfs uSize, const void* pBuffer );
+		extern u64				syncSize			( u32 uHandle );
+		extern void				syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );	
+		extern void				syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
 		extern void 			syncClose			( u32& uHandle );
 		extern void				syncDelete			( u32& uHandle );
 

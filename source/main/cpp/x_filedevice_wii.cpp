@@ -47,7 +47,7 @@ namespace xcore
 
 			virtual bool			openOrCreateFile(u32 nFileIndex, const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle);
 			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength);
-			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength);
+			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength) const;
 			virtual bool			closeFile(u32 nFileHandle);
 			virtual bool			deleteFile(u32 nFileHandle, const char* szFilename);
 			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead);
@@ -82,7 +82,7 @@ namespace xcore
 			return boSuccess;
 		}
 
-		bool FileDevice_WII_DVD::lengthOfFile(u32 nFileHandle, u64& outLength)
+		bool FileDevice_WII_DVD::lengthOfFile(u32 nFileHandle, u64& outLength) const
 		{
 			DVDFileInfo* dvdFileInfo = reinterpret_cast<DVDFileInfo*>(nFileHandle);
 			u64 l = (u64)DVDGetLength(dvdFileInfo);
@@ -105,7 +105,7 @@ namespace xcore
 			return false;
 		}
 
-		bool FileDevice_WII_DVD::readFile(u32 nFileHandle, void* buffer, u64 pos, uintfs count, u64& outNumBytesRead)
+		bool FileDevice_WII_DVD::readFile(u32 nFileHandle, void* buffer, u64 pos, u64 count, u64& outNumBytesRead)
 		{
 			DVDFileInfo* dvdFileInfo = reinterpret_cast<DVDFileInfo*>(nFileHandle);
 			count = (count + 31) & 0xffffffe0;									///< DVDRead requires count to be a multiple of 32
@@ -118,7 +118,7 @@ namespace xcore
 			return boSuccess;
 		}
 
-		bool FileDevice_WII_DVD::writeFile(u32 nFileHandle, const void* buffer, u64 pos, uintfs count, u64& outNumBytesWritten)
+		bool FileDevice_WII_DVD::writeFile(u32 nFileHandle, const void* buffer, u64 pos, u64 count, u64& outNumBytesWritten)
 		{
 			DVDFileInfo* dvdFileInfo = reinterpret_cast<DVDFileInfo*>(nFileHandle);
 			// Unable to write
@@ -165,7 +165,7 @@ namespace xcore
 
 			virtual bool			openOrCreateFile(u32 nFileIndex, const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle);
 			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength);
-			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength);
+			virtual bool			lengthOfFile(u32 nFileHandle, u64& outLength) const;
 			virtual bool			closeFile(u32 nFileHandle);
 			virtual bool			deleteFile(u32 nFileHandle, const char* szFilename);
 			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead);
@@ -249,7 +249,7 @@ namespace xcore
 			return (result == NAND_RESULT_OK);
 		}
 
-		bool FileDevice_WII_NAND::lengthOfFile(u32 nFileHandle, u64& outLength)
+		bool FileDevice_WII_NAND::lengthOfFile(u32 nFileHandle, u64& outLength) const
 		{
 			NANDFileInfo* fileInfo = reinterpret_cast<NANDFileInfo*>(nFileHandle);
 
@@ -282,7 +282,7 @@ namespace xcore
 			return (result == NAND_RESULT_OK);
 		}
 
-		bool FileDevice_WII_NAND::readFile(u32 nFileHandle, void* buffer, u64 pos, uintfs count, u64& outNumBytesRead)
+		bool FileDevice_WII_NAND::readFile(u32 nFileHandle, void* buffer, u64 pos, u64 count, u64& outNumBytesRead)
 		{
 			NANDFileInfo* fileInfo = reinterpret_cast<NANDFileInfo*>(nFileHandle);
 
@@ -300,7 +300,7 @@ namespace xcore
 
 			return (outNumBytesRead != 0);
 		}
-		bool FileDevice_WII_NAND::writeFile(u32 nFileHandle, const void* buffer, u64 pos, uintfs count, u64& outNumBytesWritten)
+		bool FileDevice_WII_NAND::writeFile(u32 nFileHandle, const void* buffer, u64 pos, u64 count, u64& outNumBytesWritten)
 		{
 			NANDFileInfo* fileInfo = reinterpret_cast<NANDFileInfo*>(nFileHandle);
 
