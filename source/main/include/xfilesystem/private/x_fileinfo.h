@@ -20,7 +20,7 @@ namespace xcore
 		class xfiledevice;
 		class xfileasync;
 
-		struct xfileinfo
+		struct xfiledata
 		{
 			u64 				m_uByteSize;
 

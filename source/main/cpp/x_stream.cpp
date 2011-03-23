@@ -29,14 +29,13 @@ namespace xcore
 			virtual bool			canWrite() const																{ return false; }
 			virtual bool			isAsync() const																	{ return false; }
 			virtual u64				length() const																	{ return 0; }
+			virtual void			setLength(s64 length)															{ }
 			virtual u64				position() const																{ return 0; }
-			virtual void			position(u64 Pos)																{ }
+			virtual void			setPosition(u64 Pos)															{ }
 
 			virtual s64				seek(s64 offset, ESeekOrigin origin)											{ return 0; }
 			virtual void			close()																			{ }
 			virtual void			flush()																			{ }
-
-			virtual void			setLength(s64 length)															{ }
 
 			virtual void			read(xbyte* buffer, s32 offset, s32 count)										{ }
 			virtual s32				readByte()																		{ return 0; }
@@ -103,14 +102,19 @@ namespace xcore
 			return mImplementation->length();
 		}
 
+		void					xstream::setLength(s64 length)
+		{
+			mImplementation->setLength(length);
+		}
+
 		u64						xstream::position() const
 		{
 			return mImplementation->position();
 		}
 
-		void					xstream::position(u64 Pos)
+		void					xstream::setPosition(u64 Pos)
 		{
-			mImplementation->position(Pos);
+			mImplementation->setPosition(Pos);
 		}
 
 
@@ -127,12 +131,6 @@ namespace xcore
 		void					xstream::flush()
 		{
 			mImplementation->flush();
-		}
-
-
-		void					xstream::setLength(s64 length)
-		{
-			mImplementation->setLength(length);
 		}
 
 

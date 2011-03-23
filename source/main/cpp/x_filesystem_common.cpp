@@ -17,7 +17,7 @@
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_alias.h"
-#include "xfilesystem\x_iothread.h"
+#include "xfilesystem\x_threading.h"
 
 //==============================================================================
 // xcore namespace
@@ -49,7 +49,7 @@ namespace xcore
 
 			virtual void			waitUntilCompleted()
 			{
-				xfileinfo* pFileInfo = getFileInfo(mFileHandle);
+				xfiledata* pFileInfo = getFileInfo(mFileHandle);
 				getIoThread()->wait(pFileInfo->m_nFileIndex);
 			}
 
@@ -85,7 +85,7 @@ namespace xcore
 		//------------------------------------------------------------------------------------------
 
 		static xiasync_result_imp		m_AsyncResults[FS_MAX_OPENED_FILES];
-		static xfileinfo				m_OpenAsyncFile[FS_MAX_OPENED_FILES];
+		static xfiledata				m_OpenAsyncFile[FS_MAX_OPENED_FILES];
 		static xfileasync				m_AsyncIOData[FS_MAX_OPENED_FILES];
 
 		static EError					m_eLastErrorStack[FS_MAX_ERROR_ITEMS];
@@ -189,7 +189,7 @@ namespace xcore
 				return (NULL);
 			}
 
-			xfileinfo* fileInfo = getFileInfo(uHandle);
+			xfiledata* fileInfo = getFileInfo(uHandle);
 
 			u64	u64FileSize = fileInfo->m_uByteSize;
 
@@ -268,7 +268,7 @@ namespace xcore
 				return true;
 			}
 
-			xfileinfo*  pInfo  = getFileInfo(uHandle);
+			xfiledata*  pInfo  = getFileInfo(uHandle);
 			xfileasync* pAsync = getAsyncIOData(pInfo->m_nFileIndex);
 			return pAsync->getStatus() == FILE_OP_STATUS_DONE;
 		}
@@ -301,7 +301,7 @@ namespace xcore
 				pOpen = freeAsyncIOPop();
 			}
 
-			xfileinfo* pInfo = getFileInfo(uHandle);
+			xfiledata* pInfo = getFileInfo(uHandle);
 
 			pOpen->setFileIndex			(uHandle);
 			pOpen->setStatus			(FILE_OP_STATUS_OPEN_PENDING);
@@ -311,7 +311,7 @@ namespace xcore
 			pOpen->setReadWriteSize		(0);
 
 			asyncIOAddToTail(pOpen);
-			asyncIOWorkerResume();
+			ioThreadSignal();
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -336,7 +336,7 @@ namespace xcore
 				pRead = freeAsyncIOPop();
 			}
 
-			xfileinfo* pInfo = getFileInfo(uHandle);
+			xfiledata* pInfo = getFileInfo(uHandle);
 
 			pRead->setFileIndex			(uHandle);
 			pRead->setStatus 			(FILE_OP_STATUS_READ_PENDING);
@@ -346,7 +346,7 @@ namespace xcore
 			pRead->setReadWriteSize		(uSize);
 
 			asyncIOAddToTail(pRead);
-			asyncIOWorkerResume();
+			ioThreadSignal();
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -371,7 +371,7 @@ namespace xcore
 				pWrite = freeAsyncIOPop();
 			}
 
-			xfileinfo* pInfo = getFileInfo(uHandle);
+			xfiledata* pInfo = getFileInfo(uHandle);
 
 			pWrite->setFileIndex		(uHandle);
 			pWrite->setStatus 			(FILE_OP_STATUS_WRITE_PENDING);
@@ -381,7 +381,7 @@ namespace xcore
 			pWrite->setReadWriteSize	(uSize);
 
 			asyncIOAddToTail(pWrite);
-			asyncIOWorkerResume();
+			ioThreadSignal();
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -406,7 +406,7 @@ namespace xcore
 				pDelete = freeAsyncIOPop();
 			}
 
-			xfileinfo* pInfo = getFileInfo(uHandle);
+			xfiledata* pInfo = getFileInfo(uHandle);
 
 			pDelete->setFileIndex		(uHandle);
 			pDelete->setStatus 			(FILE_OP_STATUS_DELETE_PENDING);
@@ -416,7 +416,7 @@ namespace xcore
 			pDelete->setReadWriteSize	(0);
 
 			asyncIOAddToTail(pDelete);
-			asyncIOWorkerResume();
+			ioThreadSignal();
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -441,7 +441,7 @@ namespace xcore
 				pClose = freeAsyncIOPop();
 			}
 
-			xfileinfo* pInfo = getFileInfo(uHandle);
+			xfiledata* pInfo = getFileInfo(uHandle);
 
 			pClose->setFileIndex		(uHandle);
 			pClose->setStatus 			(FILE_OP_STATUS_CLOSE_PENDING);
@@ -451,7 +451,7 @@ namespace xcore
 			pClose->setReadWriteSize	(0);
 
 			asyncIOAddToTail(pClose);
-			asyncIOWorkerResume();
+			ioThreadSignal();
 		}
 
 
@@ -488,7 +488,7 @@ namespace xcore
 				return (u32)INVALID_FILE_HANDLE;
 			}
 
-			xfileinfo* fileInfo = getFileInfo(uHandle);
+			xfiledata* fileInfo = getFileInfo(uHandle);
 			fileInfo->m_uByteSize		= 0;
 
 			fileInfo->m_nFileHandle		= (u32)PENDING_FILE_HANDLE;
@@ -516,7 +516,7 @@ namespace xcore
 		{
 			for (u32 i=0; i<FS_MAX_OPENED_FILES; ++i)
 			{
-				xfileinfo* pInfo = getFileInfo(i);
+				xfiledata* pInfo = getFileInfo(i);
 				if (pInfo->m_nFileHandle != (u32)INVALID_FILE_HANDLE)
 				{
 					if (x_stricmp(pInfo->m_szFilename, szName) == 0)
@@ -731,7 +731,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfileinfo*			getFileInfo			( u32 uHandle )
+		xfiledata*			getFileInfo			( u32 uHandle )
 		{
 			ASSERT(uHandle<FS_MAX_OPENED_FILES);
 			return &m_OpenAsyncFile[uHandle];
@@ -947,19 +947,12 @@ namespace xcore
 		}
 
 		//------------------------------------------------------------------------------------------
-
-		void				asyncIOWorkerResume()
-		{
-			ioThreadSignal();
-		}
-
-		//------------------------------------------------------------------------------------------
 		///< Synchronous file operations
 
 		u32					syncOpen			( const char* szName, xbool boRead, xbool boWrite)
 		{
 			u32 uHandle = asyncPreOpen(szName, boRead, boWrite);
-			xfileinfo* pxFileInfo = getFileInfo(uHandle);
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u32 nFileHandle;
 			if (!pxFileInfo->m_pFileDevice->openOrCreateFile((u32)pxFileInfo->m_nFileIndex, pxFileInfo->m_szFilename, boRead, boWrite, nFileHandle))
 			{
@@ -981,7 +974,7 @@ namespace xcore
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return 0;
 
-			xfileinfo* pxFileInfo = getFileInfo(uHandle);
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u64 length;
 			if (!pxFileInfo->m_pFileDevice->lengthOfFile(pxFileInfo->m_nFileHandle, length))
 			{
@@ -997,7 +990,7 @@ namespace xcore
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
 
-			xfileinfo* pxFileInfo = getFileInfo(uHandle);
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u64 numBytesRead;
 			if (!pxFileInfo->m_pFileDevice->readFile(pxFileInfo->m_nFileHandle, uOffset, pBuffer, uSize, numBytesRead))
 			{
@@ -1012,7 +1005,7 @@ namespace xcore
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
 
-			xfileinfo* pxFileInfo = getFileInfo(uHandle);
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u64 numBytesWritten;
 			if (!pxFileInfo->m_pFileDevice->writeFile(pxFileInfo->m_nFileHandle, uOffset, pBuffer, uSize, numBytesWritten))
 			{
@@ -1033,7 +1026,7 @@ namespace xcore
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
 
-			xfileinfo* pxFileInfo = getFileInfo(uHandle);
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			if (!pxFileInfo->m_pFileDevice->closeFile(pxFileInfo->m_nFileHandle))
 			{
 				x_printf ("device->CloseFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
@@ -1049,7 +1042,7 @@ namespace xcore
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
 
-			xfileinfo* pxFileInfo = getFileInfo(uHandle);
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			if (!pxFileInfo->m_pFileDevice->closeFile(pxFileInfo->m_nFileHandle))
 			{
 				x_printf ("device->CloseFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));

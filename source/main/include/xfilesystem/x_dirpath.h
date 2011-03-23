@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_FILEPATH_H__
-#define __X_FILESYSTEM_FILEPATH_H__
+#ifndef __X_FILESYSTEM_DIRPATH_H__
+#define __X_FILESYSTEM_DIRPATH_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -18,25 +18,25 @@ namespace xcore
 	namespace xfilesystem
 	{
 		class xpath;
-		class xdirpath;
+		class xfilepath;
 
 		//==============================================================================
-		// xfilepath: 
-		//		- Relative:		Folder\Filename.Extension
-		//		- Absolute:		Device:\Folder\Folder\Filename.Extension
+		// xdirpath: 
+		//		- Relative:		FolderA\FolderB\
+		//		- Absolute:		Device:\FolderA\FolderB\
 		//==============================================================================
-		class xfilepath
+		class xdirpath
 		{
-		private:
+		protected:
+			friend class xfilepath;
 			xstring			mBuffer;
 
 		public:
-							xfilepath();
-							xfilepath(const char* str);
-			explicit		xfilepath(const xstring& str);
-							xfilepath(const xfilepath& filepath);
-			explicit		xfilepath(const xdirpath& dir, const xfilepath& filename);
-							~xfilepath();
+							xdirpath();
+							xdirpath(const char* str);
+			explicit		xdirpath(const xstring& str);
+							xdirpath(const xdirpath& dir);
+							~xdirpath();
 
 			void			clear();
 
@@ -44,29 +44,26 @@ namespace xcore
 			s32				maxLength() const;
 			xbool			empty() const;
 			xbool			isAbsolute() const;
-			const char*		extension() const;
-			const char*		relative() const;													///< Points just after device part
+			const char*		relative() const;
 
 			void			setDevicePart(const char* deviceName);
 			void			getDevicePart(char* deviceName, s32 deviceNameMaxLength) const;
 			
-			xfilepath&		operator =  ( const xfilepath& );
+			xdirpath&		operator =  ( const xdirpath& );
 
-			xfilepath&		operator =  ( const char* );
-			xfilepath&		operator += ( const char* );
+			xdirpath&		operator =  ( const char* );
+			xdirpath&		operator += ( const char* );
 
-			bool			operator == ( const xfilepath& rhs) const;
-			bool			operator != ( const xfilepath& rhs) const;
+			bool			operator == ( const xdirpath& rhs) const;
+			bool			operator != ( const xdirpath& rhs) const;
 
 			char			operator [] (s32 index) const;
 
 			const char*		c_str() const;
 
 		private:
-			void			fixSlashes();														///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
+			void			fixSlashes();									///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
 		};
-
-		extern xfilepath	operator + (xdirpath& dir, xfilepath& filename);
 
 		//==============================================================================
 		// END xfilesystem namespace
@@ -79,6 +76,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_FILEPATH_H__
+// END __X_FILESYSTEM_DIRPATH_H__
 //==============================================================================
 #endif

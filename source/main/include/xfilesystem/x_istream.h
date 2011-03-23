@@ -40,14 +40,13 @@ namespace xcore
 			virtual bool			canWrite() const = 0;												///< Gets a value indicating whether the current stream supports writing.
 			virtual bool			isAsync() const = 0;												///< Gets a value indicating whether the FileStream was opened asynchronously or synchronously.
 			virtual u64				length() const = 0;													///< Gets the length in bytes of the stream.
+			virtual void			setLength(s64 length) = 0;							 				///< When overridden in a derived class, sets the length of the current stream.
 			virtual u64				position() const = 0;												///< Gets the current position of this stream.
-			virtual void			position(u64 Pos) = 0;												///< Sets the current position of this stream.
+			virtual void			setPosition(u64 Pos) = 0;											///< Sets the current position of this stream.
 
 			virtual s64				seek(s64 offset, ESeekOrigin origin) = 0;		 					///< When overridden in a derived class, sets the position within the current stream.
 			virtual void			close() = 0; 														///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
 			virtual void			flush() = 0;														///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
-
-			virtual void			setLength(s64 length) = 0;							 				///< When overridden in a derived class, sets the length of the current stream.
 
 			virtual void			read(xbyte* buffer, s32 offset, s32 count) = 0; 					///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
 			virtual s32				readByte() = 0;										 				///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.

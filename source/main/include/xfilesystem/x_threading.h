@@ -19,17 +19,19 @@ namespace xcore
 	namespace xfilesystem
 	{
 		//==============================================================================
-		// IO Thread
+		// IO Thread and Stream synchronization
 		//==============================================================================
 		class xthreading
 		{
 		public:
 			virtual				~xthreading() {}
 
+			///< IO Thread
 			virtual bool		loop() const = 0;
 			virtual void		wait() = 0;
 			virtual void		signal() = 0;
 
+			///< Stream synchronization
 			virtual void		wait(u32 streamIndex) = 0;
 			virtual void		signal(u32 streamIndex) = 0;
 		};

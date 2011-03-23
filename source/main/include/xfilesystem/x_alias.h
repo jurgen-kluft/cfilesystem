@@ -50,7 +50,7 @@ namespace xcore
 		private:
 			const char*         mAliasStr;									///< data
 			const char*         mAliasTargetStr;							///< d
-			mutable const char* mRemapStr;									///< e.g. "d:\project\data\bin.pc", data:\file.txt to d:\project\data\bin.pc\file.txt
+			mutable const char* mRemapStr;									///< e.g. "d:\project\data\bin.pc\", data:\file.txt to d:\project\data\bin.pc\file.txt
 			xfiledevice*		mFileDevice;
 		};
 

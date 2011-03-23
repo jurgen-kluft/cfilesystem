@@ -14,7 +14,6 @@
 #include "xfilesystem\x_istream.h"
 
 #include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_private.h"
 
 //==============================================================================
 // xcore namespace
@@ -59,6 +58,13 @@ namespace xcore
 			x_bitfield<ECaps>		mCaps;
 
 		public:
+									xifilestream()
+										: mRefCount(2)
+										, mFileHandle(INVALID_FILE_HANDLE)
+										, mFileSeekPos(0)
+									{
+									}
+
 									xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
 									~xifilestream(void);
 
@@ -71,14 +77,13 @@ namespace xcore
 			virtual bool			canWrite() const;													///< Gets a value indicating whether the current stream supports writing. (Overrides xstream.CanWrite.)
 			virtual bool			isAsync() const;													///< Gets a value indicating whether the stream was opened asynchronously or synchronously.
 			virtual u64				length() const;														///< Gets the length in bytes of the stream. (Overrides xstream.Length.)
+			virtual void			setLength(s64 length);								 				///< When overridden in a derived class, sets the length of the current stream.
 			virtual u64				position() const;													///< Gets the current position of this stream. (Overrides xstream.Position.)
-			virtual void			position(u64 Pos);													///< Sets the current position of this stream. (Overrides xstream.Position.)
+			virtual void			setPosition(u64 Pos);												///< Sets the current position of this stream. (Overrides xstream.Position.)
 
 			virtual s64				seek(s64 offset, ESeekOrigin origin);			 					///< When overridden in a derived class, sets the position within the current stream.
 			virtual void			close(); 															///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
 			virtual void			flush();															///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
-
-			virtual void			setLength(s64 length);								 				///< When overridden in a derived class, sets the length of the current stream.
 
 			virtual void			read(xbyte* buffer, s32 offset, s32 count);		 					///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
 			virtual s32				readByte();											 				///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
@@ -106,7 +111,14 @@ namespace xcore
 			delete stream;
 		}
 
+		static xifilestream		sEmptyFileStream;
+
 		// -------------------------- xfilestream --------------------------
+
+		xfilestream::xfilestream()
+			: xstream(&sEmptyFileStream)
+		{
+		}
 
 		xfilestream::xfilestream(const xfilestream& other)
 			: xstream(other.mImplementation)
@@ -124,6 +136,9 @@ namespace xcore
 
 		xfilestream&			xfilestream::operator =			(const xfilestream& other)
 		{
+			if (other.mImplementation == mImplementation)
+				return *this;
+
 			if (mImplementation->release() == 0)
 				mImplementation->destroy();
 			mImplementation = other.mImplementation;
@@ -167,7 +182,7 @@ namespace xcore
 					{
 						if (mCaps.isSet(CAN_WRITE))
 						{
-							if (xfilesystem::doesFileExist(filename.c_str()) == xFALSE)
+							if (xfilesystem::exists(filename.c_str()) == xFALSE)
 							{
 								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
 							}
@@ -177,10 +192,10 @@ namespace xcore
 					{
 						if (mCaps.isSet(CAN_WRITE))
 						{
-							if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
+							if (xfilesystem::exists(filename.c_str()) == xTRUE)
 							{
 								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
-								xfilesystem::reSize(mFileHandle, 0);
+								xfilesystem::setLength(mFileHandle, 0);
 							}
 							else
 							{
@@ -190,7 +205,7 @@ namespace xcore
 					} break;
 				case FileMode_Open:
 					{
-						if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
+						if (xfilesystem::exists(filename.c_str()) == xTRUE)
 						{
 							mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
 						}
@@ -203,12 +218,12 @@ namespace xcore
 					{
 						if (mCaps.isSet(CAN_WRITE))
 						{
-							if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
+							if (xfilesystem::exists(filename.c_str()) == xTRUE)
 							{
 								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
 								if (mFileHandle != INVALID_FILE_HANDLE)
 								{
-									xfilesystem::reSize(mFileHandle, 0);
+									xfilesystem::setLength(mFileHandle, 0);
 								}
 							}
 						}
@@ -217,7 +232,7 @@ namespace xcore
 					{
 						if (mCaps.isSet(CAN_WRITE))
 						{
-							if (xfilesystem::doesFileExist(filename.c_str()) == xTRUE)
+							if (xfilesystem::exists(filename.c_str()) == xTRUE)
 							{
 								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), mCaps.isSet(USE_ASYNC));
 								if (mFileHandle != INVALID_FILE_HANDLE)
@@ -226,7 +241,7 @@ namespace xcore
 									mCaps.set(USE_SEEK, false);
 									mCaps.set(USE_WRITE, true);
 
-									mFileSeekPos = xfilesystem::size(mFileHandle);
+									mFileSeekPos = xfilesystem::getLength(mFileHandle);
 								}
 							}
 						}
@@ -260,7 +275,12 @@ namespace xcore
 
 		u64				xifilestream::length() const
 		{
-			return xfilesystem::size(mFileHandle);
+			return xfilesystem::getLength(mFileHandle);
+		}
+		
+		void			xifilestream::setLength(s64 length)
+		{
+			xfilesystem::setLength(mFileHandle, length);
 		}
 
 		u64				xifilestream::position() const
@@ -268,7 +288,7 @@ namespace xcore
 			return (u64)mFileSeekPos;
 		}
 
-		void			xifilestream::position(u64 Pos)
+		void			xifilestream::setPosition(u64 Pos)
 		{
 			mFileSeekPos = Pos;
 		}
@@ -302,11 +322,6 @@ namespace xcore
 
 		void			xifilestream::flush()
 		{
-		}
-
-		void			xifilestream::setLength(s64 length)
-		{
-			xfilesystem::reSize(mFileHandle, length);
 		}
 
 		void			xifilestream::read(xbyte* buffer, s32 offset, s32 count)

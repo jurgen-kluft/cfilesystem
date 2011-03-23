@@ -49,6 +49,7 @@ namespace xcore
 		class xfilestream : public xstream
 		{
 		public:
+									xfilestream		();
 									xfilestream		(const xfilestream&);
 									xfilestream		(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
 									~xfilestream	(void);

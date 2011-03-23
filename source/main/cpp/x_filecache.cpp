@@ -53,7 +53,7 @@ namespace xcore
 
 		void	xfilecache::initialise() 
 		{
-			if (xfilesystem::doesFileExist(CACHE_FILENAME))
+			if (xfilesystem::exists(CACHE_FILENAME))
 			{
 				m_nCacheHandle	= xfilesystem::open(CACHE_FILENAME, true);
 				xfilesystem::read(m_nCacheHandle, 0, sizeof(CacheHeader), &m_xHeader);
@@ -62,7 +62,7 @@ namespace xcore
 				{
 					if(m_xHeader.m_xCacheList[nFile].m_uFlags & CACHE_FILE_FLAGS_BUSY)
 					{
-						if(xfilesystem::doesFileExist(m_xHeader.m_xCacheList[nFile].m_szName))
+						if(xfilesystem::exists(m_xHeader.m_xCacheList[nFile].m_szName))
 						{
 							u32 h = xfilesystem::open(m_xHeader.m_xCacheList[nFile].m_szName, true, true, false);
 							xfilesystem::closeAndDelete(h);
@@ -153,7 +153,7 @@ namespace xcore
 
 		void xfilecache::InvalidateCacheIndexFile()
 		{
-			xfilesystem::xfileinfo* xInfo = getFileInfo(m_nCacheHandle);
+			xfilesystem::xfiledata* xInfo = getFileInfo(m_nCacheHandle);
 			u32 h = xfilesystem::open(xInfo->m_szFilename, false);
 			xfilesystem::closeAndDelete(h);
 		}
@@ -162,7 +162,7 @@ namespace xcore
 
 		void xfilecache::InvalidateCacheIndexFileAsync()
 		{
-			xfilesystem::asyncQueueDelete(m_nCacheHandle, 0, NULL, 0);
+			//xfilesystem::asyncQueueDelete(m_nCacheHandle, 0, NULL, 0);
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -194,7 +194,7 @@ namespace xcore
 				}
 			}
 
-			xfilesystem::asyncQueueWrite(m_nCacheHandle, xfilesystem::FS_PRIORITY_HIGH, 0, sizeof(CacheHeader), &m_xHeader, NULL, 0);
+			//xfilesystem::asyncWrite(m_nCacheHandle, xfilesystem::FS_PRIORITY_HIGH, 0, sizeof(CacheHeader), &m_xHeader, NULL, 0);
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -309,7 +309,7 @@ namespace xcore
 					}
 
 					char szPath[FS_MAX_PATH];
-					xfilepath filename(szPath, sizeof(szPath), "");
+					xfilepath filename;
 					if (uOffset != 0)
 					{
 						char szTempPath[FS_MAX_PATH];
@@ -324,9 +324,9 @@ namespace xcore
 					gReplaceAliasOfFilename(filename, alias!=NULL ? alias->alias() : NULL);
 
 					u32 nWriteHandle = xfilesystem::asyncPreOpen(szPath, xTRUE);
-					xfilesystem::asyncQueueOpen(nWriteHandle, xfilesystem::FS_PRIORITY_HIGH, NULL, 0);
-					xfilesystem::asyncQueueWrite(nWriteHandle, xfilesystem::FS_PRIORITY_HIGH, 0, uSize, pData, FileIOCallback, nCallback);
-					xfilesystem::asyncQueueClose(nWriteHandle, xfilesystem::FS_PRIORITY_HIGH, NULL, 0);
+					//xfilesystem::asyncQueueOpen(nWriteHandle, xfilesystem::FS_PRIORITY_HIGH, NULL, 0);
+					//xfilesystem::asyncQueueWrite(nWriteHandle, xfilesystem::FS_PRIORITY_HIGH, 0, uSize, pData, FileIOCallback, nCallback);
+					//xfilesystem::asyncQueueClose(nWriteHandle, xfilesystem::FS_PRIORITY_HIGH, NULL, 0);
 
 					x_strcpy(m_xHeader.m_xCacheList[nFile].m_szName, CACHED_FILE_NAME_LENGTH, filename.c_str());
 					m_xHeader.m_xCacheList[nFile].m_uOffset	= uOffset;
@@ -393,7 +393,7 @@ namespace xcore
 				}
 
 				char cacheFilenameBuffer[FS_MAX_PATH];
-				xfilepath cacheFilename(cacheFilenameBuffer, sizeof(cacheFilenameBuffer), m_xHeader.m_xCacheList[nIndex].m_szName);
+				xfilepath cacheFilename(m_xHeader.m_xCacheList[nIndex].m_szName);
 				const xalias* alias = xfilesystem::gFindAlias("cache");
 				xfilesystem::gReplaceAliasOfFilename(cacheFilename, alias!=NULL ? alias->alias() : NULL);
 				u32 h = xfilesystem::open(cacheFilename.c_str());
