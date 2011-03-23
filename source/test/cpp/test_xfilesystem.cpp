@@ -4,7 +4,7 @@
 #include "xunittest\xunittest.h"
 
 #include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_iothread.h"
+#include "xfilesystem\x_threading.h"
 
 using namespace xcore;
 

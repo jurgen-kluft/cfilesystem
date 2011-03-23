@@ -11,7 +11,6 @@
 #include "xbase\x_types.h"
 #include "xbase\x_debug.h"
 
-
 //==============================================================================
 // xcore namespace
 //==============================================================================
@@ -28,8 +27,6 @@ namespace xcore
 			virtual bool			isCompleted() = 0;
 			virtual void			waitUntilCompleted() = 0;
 
-		protected:
-			friend class xasync_result;
 			virtual void			hold() = 0;
 			virtual s32				release() = 0;
 			virtual void			destroy() = 0;

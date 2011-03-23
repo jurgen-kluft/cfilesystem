@@ -17,13 +17,12 @@
 namespace xcore
 {
 	///< Forward declares
-	class xthreading;
 	class x_iallocator;
 
 	namespace xfilesystem
 	{
 		///< Forward declares
-		class xiothread;
+		class xthreading;
 
 		///< Initialization
 		extern void				init				( xthreading* threading, x_iallocator* allocator );

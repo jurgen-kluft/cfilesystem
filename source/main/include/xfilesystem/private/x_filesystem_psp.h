@@ -23,9 +23,9 @@ namespace xcore
 		extern xfiledevice*	x_CreateFileDevicePSP(xbool boCanWrite);
 		extern void			x_DestroyFileDevicePSP(xfiledevice*);
 
-		extern void			SetDRMLicenseKey	( const u8* p8Key );
-		extern void			SetMemoryCardPath	( const char* szMemoryCardPath );
-		extern s32			SaveToMemoryStick	( const char* szPhotosDir, const char* szDirectory, char* szFilename, void* pData, s32 nSizeBytes );
+		extern void			setDRMLicenseKey	( const u8* p8Key );
+		extern void			setMemoryCardPath	( const char* szMemoryCardPath );
+		extern s32			saveToMemoryStick	( const char* szPhotosDir, const char* szDirectory, char* szFilename, void* pData, s32 nSizeBytes );
 	};
 
 	//==============================================================================

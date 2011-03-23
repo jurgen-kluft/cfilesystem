@@ -1,10 +1,13 @@
 #include "xbase\x_target.h"
 #include "xbase\x_types.h"
 #include "xbase\x_debug.h"
+#include "xbase\x_string.h"
 #include "xbase\x_string_std.h"
 
 #include "xfilesystem\x_alias.h"
 #include "xfilesystem\x_filepath.h"
+#include "xfilesystem\x_dirpath.h"
+#include "xfilesystem\private\x_filesystem_common.h"
 
 //==============================================================================
 namespace xcore
@@ -14,183 +17,100 @@ namespace xcore
 		//==============================================================================
 		// xfilepath: Device:\\Folder\Folder\Filename.Extension
 		//==============================================================================
-		/*
-		char			*mBuffer;
-		s32				mBufferSize;
-		s32				mLength;
-		*/
+
 		xfilepath::xfilepath()
-			: mString(NULL)
-			, mBuffer(NULL)
-			, mBufferSize(0)
-			, mLength(0)
 		{
+		}
+		xfilepath::xfilepath(const char* str)
+		{
+			mBuffer += str;
+			fixSlashes();
+		}
+		xfilepath::xfilepath(const xstring& str)
+			: mBuffer(str)
+		{
+			fixSlashes();
 		}
 		xfilepath::xfilepath(const xfilepath& filepath)
-			: mString(filepath.mBuffer)
-			, mBuffer(filepath.mBuffer)
-			, mBufferSize(filepath.mBufferSize)
-			, mLength(filepath.mLength)
+			: mBuffer(filepath.mBuffer)
+		{
+		}
+		xfilepath::xfilepath(const xdirpath& dir, const xfilepath& filename)
+		{
+			mBuffer  = dir.mBuffer;
+			mBuffer += filename.mBuffer;
+		}
+		xfilepath::~xfilepath()
 		{
 		}
 
-		xfilepath::xfilepath(const char* str)
-			: mString(str)
-			, mBuffer(NULL)
-			, mBufferSize(0)
-			, mLength(x_strlen(str))
+		void			xfilepath::clear()										{ mBuffer.clear(); }
+
+		s32				xfilepath::length() const								{ return mBuffer.getLength(); }
+		s32				xfilepath::maxLength() const							{ return mBuffer.getMaxLength(); }
+		xbool			xfilepath::empty() const								{ return mBuffer.isEmpty(); }
+		xbool			xfilepath::isAbsolute() const
 		{
-			mLength = x_strlen(str);
+			s32 pos = mBuffer.find(":\\");
+			return pos >= 0;
 		}
 
-		xfilepath::xfilepath(char* buffer, s32 bufferSize, const xfilepath& filepath)
-			: mString(buffer)
-			, mBuffer(buffer)
-			, mBufferSize(bufferSize)
-			, mLength(0)
+		const char*		xfilepath::extension() const
 		{
-			zeroTerminate();
-			if (filepath.mString!=NULL)
-				concat(filepath.mString, filepath.mLength);	
-			else
-				concat(filepath.mBuffer, filepath.mLength);	
+			s32 pos = mBuffer.rfind(".");
+			if (pos >= 0)
+				return mBuffer.c_str() + pos;
+			return "";
 		}
 
-		xfilepath::xfilepath(char* buffer, s32 bufferSize, const char* str)
-			: mString(buffer)
-			, mBuffer(buffer)
-			, mBufferSize(bufferSize)
-			, mLength(0)
+		const char*		xfilepath::relative() const
 		{
-			zeroTerminate();
-			concat(str, x_strlen(str));	
+			s32 pos = mBuffer.find(":\\");
+			if (pos < 0)
+				pos = 0;
+			return mBuffer.c_str() + pos;
 		}
 
-		s32				xfilepath::find (const char* str) const
+		const char*		xfilepath::c_str() const								{ return mBuffer.c_str(); }
+
+		void			xfilepath::setDevicePart(const char* deviceName)
 		{
-			const char* pos = x_strFind(mString, str);
-			if (pos == NULL)
-				return -1;
-			return reinterpret_cast<s32>(pos) - reinterpret_cast<s32>(mString);
+			char devicePartBuffer[64+1];
+			getDevicePart(devicePartBuffer, sizeof(devicePartBuffer)-1);
+			xcstring devicePart(devicePartBuffer, sizeof(devicePartBuffer));
+			mBuffer.replace(0, devicePart.getLength(), deviceName);
+			fixSlashes(); 
 		}
 
-		void			xfilepath::replace(s32 pos, s32 count, const char* str)
+		void			xfilepath::getDevicePart(char* deviceName, s32 deviceNameMaxLength) const
 		{
-			if (mBuffer == NULL)
-				return;
-
-			if ((pos + count) < mLength)
-			{
-				const s32 len1 = count;
-				const s32 len2 = str!=NULL ? (s32)x_strlen(str) : 0;
-
-				if (len1 >= len2)
-				{
-					// Filename becomes shorter since replacement is shorter
-					const char* end = mBuffer + mLength;
-					const char* src = mBuffer + pos + count;
-
-					char* dst = mBuffer + pos + len2;
-					while (src <= end)
-						*dst++ = *src++;
-				}
-				else
-				{
-					// Filename becomes longer since replacement is longer
-					char* end1 = mBuffer + mLength;
-					char* end2 = mBuffer + mLength + (len2 - len1);
-
-					// Guard against maximum string length of mBuffer
-					if ((mLength + (len2 - len1)) >= mBufferSize)
-						return;
-
-					const char* pos1 = mBuffer + pos + count;
-					while (end1 >= pos1)
-						*end2-- = *end1--;
-				}
-
-				if (str!=NULL)
-				{
-					const char* src = str;
-					char* dst = mBuffer + pos;
-					while (*src != '\0')
-						*dst++ = *src++;
-				}
-
-				mLength = x_strlen(mBuffer);
-			}
+			s32 pos = mBuffer.find(":\\");
+			xcstring devicePart(deviceName, deviceNameMaxLength+1);
+			mBuffer.left(pos, devicePart);
 		}
 
-		void			xfilepath::subString(s32 pos, s32 count, char* str, s32 maxStrLen) const
+		xfilepath&		xfilepath::operator =  ( const xfilepath& path )
 		{
-			const char* src = mString + pos;
-			const char* send = mString + pos + count;
-			char* dst = str;
-			char* dend = str + ((count < maxStrLen) ? count : maxStrLen);
-			while (src < send)
-				*dst++ = *src++;
-			*dst++ = '\0';
-		}
-
-		xfilepath&		xfilepath::operator =  ( const char* str )
-		{
-			if (mBuffer != NULL)
-			{
-				mLength = 0;
-				concat(str, x_strlen(str));
-			}
+			if (path.mBuffer == mBuffer)
+				return *this;
+			mBuffer = path.mBuffer;
 			return *this;
 		}
 
-		xfilepath&		xfilepath::operator += ( const char* str )
-		{
-			if (mBuffer != NULL)
-			{
-				concat(str, x_strlen(str));
-			}
-			return *this;
-		}
+		xfilepath&		xfilepath::operator =  ( const char* str )				{ mBuffer.clear(); mBuffer = mBuffer += str; fixSlashes(); return *this; }
+		xfilepath&		xfilepath::operator += ( const char* str )				{ mBuffer += str; fixSlashes(); return *this; }
 
-		bool			xfilepath::operator == ( const xfilepath& rhs) const
-		{
-			return (mLength == rhs.mLength) && x_strCompareNoCase(mString, rhs.mString) == 0;
-		}
+		bool			xfilepath::operator == ( const xfilepath& rhs) const	{ return (rhs.length() == length()) && x_strCompare(rhs.c_str(), c_str()) == 0; }
+		bool			xfilepath::operator != ( const xfilepath& rhs) const	{ return (rhs.length() != length()) || x_strCompare(rhs.c_str(), c_str()) != 0; }
 
-		bool			xfilepath::operator != ( const xfilepath& rhs) const
-		{
-			return (mLength != rhs.mLength) || x_strCompareNoCase(mString, rhs.mString) != 0;
-		}
+		char			xfilepath::operator [] (s32 index) const				{ return mBuffer[index]; }
 
-		void			xfilepath::concat(const char* str, s32 length)
-		{
-			char      * dst = &mBuffer[mLength];
-			const char* src = str;
-			for (s32 i=0; mLength<mBufferSize && i<length; ++i)
-			{
-				*dst++ = *src++;
-				++mLength;
-			}
-			mBuffer[mLength] = '\0';
-		}
+		void			xfilepath::fixSlashes()									{ bool UnixStyle = xfilesystem::isPathUNIXStyle(); mBuffer.replace(UnixStyle ? '\\' : '/', UnixStyle ? '/' : '\\'); }
 
-		void			xfilepath::fixSlashes(bool UnixStyle)
+		xfilepath		operator + (xdirpath& dir, xfilepath& filename)
 		{
-			for (s32 i=0; i<mLength; ++i)
-			{
-				char c = mBuffer[i];
-				if (UnixStyle)
-				{
-					if (c == '\\')
-						mBuffer[i] = '/';
-				}
-				else
-				{
-					if (c == '/')
-						mBuffer[i] = '\\';
-				}
-			}
+			return xfilepath(dir, filename);
 		}
-
 
 		//==============================================================================
 		// END xfilesystem namespace
