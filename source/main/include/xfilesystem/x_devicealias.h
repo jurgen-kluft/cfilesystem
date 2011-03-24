@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_ALIAS_H__
-#define __X_FILESYSTEM_ALIAS_H__
+#ifndef __X_FILESYSTEM_DEVICE_ALIAS_H__
+#define __X_FILESYSTEM_DEVICE_ALIAS_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -16,11 +16,12 @@
 namespace xcore
 {
 	//==============================================================================
-	// xalias
+	// xdevicealias
 	//==============================================================================
 
 	namespace xfilesystem
 	{
+		class xdirpath;
 		class xfilepath;
 		class xfiledevice;
 
@@ -35,30 +36,34 @@ namespace xcore
 		//     dvd:\folder\filename.ext, where dvd = g:\
 		//     
 		//------------------------------------------------------------------------------
-		class xalias
+		class xdevicealias
 		{
 		public:
-								xalias ();
-								xalias (const char* alias, const char* aliasTarget);
-								xalias (const char* alias, xfiledevice* device, const char* remap=NULL);
+										xdevicealias ();
+										xdevicealias (const char* alias, const char* aliasTarget);
+										xdevicealias (const char* alias, xfiledevice* device, const char* remap=NULL);
 
-			const char*			alias() const								{ return mAliasStr; }
-			const char*			aliasTarget() const							{ return mAliasTargetStr; }
-			const char*			remap() const;
-			xfiledevice*		device() const;
+			const char*					alias() const								{ return mAliasStr; }
+			const char*					aliasTarget() const							{ return mAliasTargetStr; }
+			const char*					remap() const;
+			xfiledevice*				device() const;
+
+			static void					sInit();
+			static void					sExit();
+
+			static void					sRegister(const xdevicealias& inAlias);
+
+			static const xdevicealias*	sFind(const char* inAlias);
+			static const xdevicealias*	sFind(const xfilepath& inAlias);
+			static const xdevicealias*	sFind(const xdirpath& inAlias);
 
 		private:
-			const char*         mAliasStr;									///< data
-			const char*         mAliasTargetStr;							///< d
-			mutable const char* mRemapStr;									///< e.g. "d:\project\data\bin.pc\", data:\file.txt to d:\project\data\bin.pc\file.txt
-			xfiledevice*		mFileDevice;
+			const char*					mAliasStr;									///< data
+			const char*					mAliasTargetStr;							///< d
+			mutable const char*			mRemapStr;									///< e.g. "d:\project\data\bin.pc\", data:\file.txt to d:\project\data\bin.pc\file.txt
+			xfiledevice*				mFileDevice;
 		};
 
-		extern void				gAddAlias(xalias& inAlias);
-		extern const xalias*	gFindAlias(const char* inAlias);
-		extern const xalias*	gFindAliasFromFilename(const xfilepath& inFilename);
-		extern const xalias*	gFindAndRemoveAliasFromFilename(xfilepath& ioFilename);
-		extern void				gReplaceAliasOfFilename(xfilepath& ioFilename, const char* inNewAlias);
 	};
 
 	//==============================================================================
@@ -67,6 +72,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_ALIAS_H__
+// END __X_FILESYSTEM_DEVICE_ALIAS_H__
 //==============================================================================
 #endif
