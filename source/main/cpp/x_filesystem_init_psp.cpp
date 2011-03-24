@@ -33,19 +33,19 @@ namespace xcore
 		static xfiledevice*	sSystemFileDevice = NULL;
 
 		//------------------------------------------------------------------------------
-		void init(x_iothread* io_thread, x_iallocator* allocator)
+		void init(xthreading* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setIoThread(io_thread);
+			xfilesystem::setThreading(threading);
 			xfilesystem::initAlias();
 
 			sSystemFileDevice = x_CreateFileDevicePSP();
 
-			xfilesystem::gAddAlias(xfilesystem::xalias("host", sSystemFileDevice, "host0:"));
-			xfilesystem::gAddAlias(xfilesystem::xalias("dvd" , sSystemFileDevice, "disc0:/PSP_GAME/USRDIR/" )); 
+			xfilesystem::gAddAlias(xfilesystem::xdevicealias("host", sSystemFileDevice, "host0:"));
+			xfilesystem::gAddAlias(xfilesystem::xdevicealias("dvd" , sSystemFileDevice, "disc0:/PSP_GAME/USRDIR/" )); 
 
-			xfilesystem::xalias appdir( "appdir", "host" );
-			xfilesystem::xalias curdir( "curdir", "host" );
+			xfilesystem::xdevicealias appdir( "appdir", "host" );
+			xfilesystem::xdevicealias curdir( "curdir", "host" );
 			xfilesystem::gAddAlias(appdir);
 			xfilesystem::gAddAlias(curdir);
 
@@ -59,7 +59,7 @@ namespace xcore
 
 			x_DestroyFileDevicePSP(sSystemFileDevice);
 
-			xfilesystem::setIoThread(NULL);
+			xfilesystem::setThreading(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 

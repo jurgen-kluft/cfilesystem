@@ -4,7 +4,7 @@
 #include "xbase\x_string.h"
 #include "xbase\x_string_std.h"
 
-#include "xfilesystem\x_alias.h"
+#include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_dirpath.h"
 #include "xfilesystem\private\x_filesystem_common.h"
@@ -31,80 +31,116 @@ namespace xcore
 		{
 		}
 		xdirpath::xdirpath(const char* str)
+			: mString(mStringBuffer, sizeof(mStringBuffer))
 		{
-			mBuffer += str;
+			mString = str;
 			fixSlashes();
 		}
 		xdirpath::xdirpath(const xdirpath& dirpath)
 		{
-			mBuffer = dirpath.mBuffer;
+			mString = dirpath.mString;
 		}
 		xdirpath::~xdirpath()
 		{
 		}
 
-		void			xdirpath::clear()										{ mBuffer.clear(); }
+		void			xdirpath::clear()										{ mString.clear(); }
 
-		s32				xdirpath::length() const								{ return mBuffer.getLength(); }
-		s32				xdirpath::maxLength() const								{ return mBuffer.getMaxLength(); }
-		xbool			xdirpath::empty() const									{ return mBuffer.isEmpty(); }
+		s32				xdirpath::length() const								{ return mString.getLength(); }
+		s32				xdirpath::maxLength() const								{ return mString.getMaxLength(); }
+		xbool			xdirpath::empty() const									{ return mString.isEmpty(); }
 		xbool			xdirpath::isAbsolute() const
 		{
-			s32 pos = mBuffer.find(":\\");
+			s32 pos = mString.find(":\\");
 			return pos >= 0;
 		}
 
 		const char*		xdirpath::relative() const
 		{
-			s32 pos = mBuffer.find(sGetDeviceEnd());
+			s32 pos = mString.find(sGetDeviceEnd());
 			if (pos < 0)
 				pos = 0;
-			return mBuffer.c_str() + pos;
+			return mString.c_str() + pos;
 		}
 
-		const char*		xdirpath::c_str() const										{ return mBuffer.c_str(); }
+		const char*		xdirpath::c_str() const										{ return mString.c_str(); }
 
-		void			xdirpath::setDevicePart(const char* deviceName)
-		{ 
+		void			xdirpath::setDeviceName(const char* deviceName)
+		{
+			char deviceNameBuffer[64+1];
+			getDeviceName(deviceNameBuffer, sizeof(deviceNameBuffer)-1);
+			s32 len = x_strlen(deviceNameBuffer);
+			if (deviceName!=NULL)
+				mString.replace(0, len, deviceName);
+			else if (len > 0)
+				mString.remove(0, len + 2);
+			fixSlashes(); 
+			mString.trimLeft(':');
+			mString.trimLeft(sGetSlashChar());
+		}
+
+		void			xdirpath::getDeviceName(char* deviceName, s32 deviceNameMaxLength) const
+		{
+			s32 pos = mString.find(sGetDeviceEnd());
+			if (pos >= 0)
+			{
+				xcstring devicePart(deviceName, deviceNameMaxLength+1);
+				mString.left(pos, devicePart);
+			}
+			else
+			{
+				deviceName[0] = '\0';
+			}
+		}
+
+		void			xdirpath::setDevicePart(const char* devicePart)
+		{
 			char devicePartBuffer[64+1];
 			getDevicePart(devicePartBuffer, sizeof(devicePartBuffer)-1);
-			xcstring devicePart(devicePartBuffer, sizeof(devicePartBuffer));
-			mBuffer.replace(0, devicePart.getLength(), deviceName);
+			s32 len = x_strlen(devicePartBuffer);
+			if (devicePart!=NULL)
+				mString.replace(0, len, devicePart);
+			else
+				mString.remove(0, len);
 			fixSlashes(); 
 		}
-		void			xdirpath::getDevicePart(char* str, s32 maxStrLen) const		
+
+		void			xdirpath::getDevicePart(char* deviceName, s32 deviceNameMaxLength) const
 		{
-			xcstring devicePart(str, maxStrLen + 1);
-			s32 pos = mBuffer.find(sGetDeviceEnd());
-			mBuffer.left(pos, devicePart);
+			s32 pos = mString.find(sGetDeviceEnd());
+			if (pos >= 0)
+			{
+				pos += 2;
+				xcstring devicePart(deviceName, deviceNameMaxLength+1);
+				mString.left(pos, devicePart);
+			}
+			else
+			{
+				deviceName[0] = '\0';
+			}
 		}
 
 		xdirpath&		xdirpath::operator =  ( const xdirpath& path )
 		{
-			if (path.mBuffer == mBuffer)
+			if (path.mString == mString)
 				return *this;
-			mBuffer = path.mBuffer;
+			mString = path.mString;
 			return *this;
 		}
 
-		xdirpath&		xdirpath::operator =  ( const char* str )					{ mBuffer.clear(); mBuffer += str; fixSlashes(); return *this; }
-		xdirpath&		xdirpath::operator += ( const char* str )					{ mBuffer += str; fixSlashes(); return *this; }
+		xdirpath&		xdirpath::operator =  ( const char* str )					{ mString.clear(); mString += str; fixSlashes(); return *this; }
+		xdirpath&		xdirpath::operator += ( const char* str )					{ mString += str; fixSlashes(); return *this; }
 
 		bool			xdirpath::operator == ( const xdirpath& rhs) const			{ return (rhs.length() == length()) && x_strCompare(rhs.c_str(), c_str()) == 0; }
 		bool			xdirpath::operator != ( const xdirpath& rhs) const			{ return (rhs.length() != length()) || x_strCompare(rhs.c_str(), c_str()) != 0; }
-		char			xdirpath::operator [] (s32 index) const						{ return mBuffer[index]; }
+		char			xdirpath::operator [] (s32 index) const						{ return mString[index]; }
 
 		void			xdirpath::fixSlashes()										
 		{ 
 			const char slash = sGetSlashChar();
-			mBuffer.replace(slash, slash=='\\' ? '/' : '\\');
-			if (mBuffer.getLength()>0 && mBuffer.lastChar()!=slash)
-				mBuffer += slash;
-		}
-
-		xfilepath		operator + (xdirpath& dir, xfilepath& filename)
-		{
-			return xfilepath(dir, filename);
+			mString.replace(slash=='\\' ? '/' : '\\', slash);
+			if (mString.getLength()>0 && mString.lastChar()!=slash)
+				mString += slash;
 		}
 
 		//==============================================================================

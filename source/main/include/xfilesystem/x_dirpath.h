@@ -29,12 +29,12 @@ namespace xcore
 		{
 		protected:
 			friend class xfilepath;
-			xstring			mBuffer;
+			char			mStringBuffer[256];
+			xcstring		mString;
 
 		public:
 							xdirpath();
 							xdirpath(const char* str);
-			explicit		xdirpath(const xstring& str);
 							xdirpath(const xdirpath& dir);
 							~xdirpath();
 
@@ -46,8 +46,10 @@ namespace xcore
 			xbool			isAbsolute() const;
 			const char*		relative() const;
 
-			void			setDevicePart(const char* deviceName);
-			void			getDevicePart(char* deviceName, s32 deviceNameMaxLength) const;
+			void			setDeviceName(const char* deviceName);
+			void			getDeviceName(char* deviceName, s32 deviceNameMaxLength) const;
+			void			setDevicePart(const char* devicePart);
+			void			getDevicePart(char* devicePart, s32 devicePartMaxLength) const;
 			
 			xdirpath&		operator =  ( const xdirpath& );
 

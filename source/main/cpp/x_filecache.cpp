@@ -14,7 +14,7 @@
 
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_alias.h"
+#include "xfilesystem\x_devicealias.h"
 
 //==============================================================================
 // xcore namespace
@@ -139,6 +139,7 @@ namespace xcore
 				m_xHeader.m_xCacheList[nFile].m_uFlags = CACHE_FILE_FLAGS_INVALID;
 			}
 
+			/*
 			xfilesystem::createFileList("cache:\\", true);
 			for(s32 nFile = 0; nFile < xfilesystem::getFileListLength(); nFile++)
 			{
@@ -147,6 +148,7 @@ namespace xcore
 				xfilesystem::closeAndDelete(h);
 			}
 			xfilesystem::destroyFileList();
+			*/
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -240,19 +242,18 @@ namespace xcore
 			{
 				if(m_xHeader.m_xCacheList[nFile].m_uFlags == CACHE_FILE_FLAGS_INVALID)
 				{
-					char szPath[FS_MAX_PATH];
-					xfilepath filename(szPath, sizeof(szPath), szFilename);
+					xfilepath filename(szFilename);
 
 					if (uOffset != 0)
 					{
 						char szTempOffset[xfilesystem::FS_MAX_PATH];
 						x_sprintf(szTempOffset, FS_MAX_PATH, "@%x", x_va((s32)uOffset));
-						x_strcat(szPath, FS_MAX_PATH, szTempOffset);
+						filename += szTempOffset;
 					}
 
 					char szCachePath[FS_MAX_PATH];
 
-					xfilesystem::gReplaceAliasOfFilename(filename, xfilesystem::gFindAliasFromFilename(filename)->alias());
+					filename.setDevicePart(xdevicealias::sFind(filename)->alias());
 
 					u32	nWriteHandle = xfilesystem::open(szCachePath, true);
 					xfilesystem::write(nWriteHandle, 0, uSize, pData);
@@ -320,8 +321,8 @@ namespace xcore
 					{
 						filename += szFilename;
 					}
-					const xalias* alias = gFindAlias("cache");
-					gReplaceAliasOfFilename(filename, alias!=NULL ? alias->alias() : NULL);
+					const xdevicealias* alias = xdevicealias::sFind("cache");
+					filename.setDevicePart(alias!=NULL ? alias->alias() : NULL);
 
 					u32 nWriteHandle = xfilesystem::asyncPreOpen(szPath, xTRUE);
 					//xfilesystem::asyncQueueOpen(nWriteHandle, xfilesystem::FS_PRIORITY_HIGH, NULL, 0);
@@ -392,10 +393,9 @@ namespace xcore
 				{
 				}
 
-				char cacheFilenameBuffer[FS_MAX_PATH];
 				xfilepath cacheFilename(m_xHeader.m_xCacheList[nIndex].m_szName);
-				const xalias* alias = xfilesystem::gFindAlias("cache");
-				xfilesystem::gReplaceAliasOfFilename(cacheFilename, alias!=NULL ? alias->alias() : NULL);
+				const xdevicealias* alias = xdevicealias::sFind("cache");
+				cacheFilename.setDevicePart(alias!=NULL ? alias->alias() : NULL);
 				u32 h = xfilesystem::open(cacheFilename.c_str());
 				xfilesystem::closeAndDelete(h);
 				m_xHeader.m_xCacheList[nIndex].m_uFlags = CACHE_FILE_FLAGS_INVALID;

@@ -22,9 +22,8 @@ namespace xcore
 		class xiasync_result;
 
 		///< Async result (Reference counted)
-		///< User can hold on to this object and use it to check for an async file operation
-		///< to complete. Holding on to this object means that you are holding on to the
-		///< stream object as well.
+		///< User can hold on to this object and use it to check for an async
+		///< file operations to complete. 
 		class xasync_result
 		{
 		public:

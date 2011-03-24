@@ -13,24 +13,24 @@ namespace xcore
 	{
 		static xfiledevice*	sSystemFileDevice = NULL;
 
-		void init(x_iothread* io_thread, x_iallocator* allocator)
+		void init(xthreading* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setIoThread(io_thread);
+			xfilesystem::setThreading(threading);
 			xfilesystem::initAlias();
 
 			sSystemFileDevice = x_CreateFileDevice360();
 
-			xfilesystem::xalias dvd  ("dvd"  , sSystemFileDevice, "GAME:\\");				///< DVD Drive (read-only)
-			xfilesystem::xalias host ("host" , sSystemFileDevice, "DEVKIT:\\");
-			xfilesystem::xalias save ("HDD"  , sSystemFileDevice, "HDD:\\");
+			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, "GAME:\\");				///< DVD Drive (read-only)
+			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, "DEVKIT:\\");
+			xfilesystem::xdevicealias save ("HDD"  , sSystemFileDevice, "HDD:\\");
 
 			xfilesystem::gAddAlias(dvd);
 			xfilesystem::gAddAlias(host);
 			xfilesystem::gAddAlias(save);
 
-			xfilesystem::xalias appdir( "appdir", "host" );
-			xfilesystem::xalias curdir( "curdir", "host" );
+			xfilesystem::xdevicealias appdir( "appdir", "host" );
+			xfilesystem::xdevicealias curdir( "curdir", "host" );
 			xfilesystem::gAddAlias(appdir);
 			xfilesystem::gAddAlias(curdir);
 
@@ -45,7 +45,7 @@ namespace xcore
 
 			x_DestroyFileDevice360(sSystemFileDevice);
 
-			xfilesystem::setIoThread(NULL);
+			xfilesystem::setThreading(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 	}

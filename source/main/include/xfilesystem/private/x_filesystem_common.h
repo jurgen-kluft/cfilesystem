@@ -122,8 +122,8 @@ namespace xcore
 		extern u32				asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
 		extern u32				asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
 		extern void				asyncOpen			( const u32 uHandle );
-		extern void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );
-		extern void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
+		extern void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result*& pAsyncResult );
+		extern void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result*& pAsyncResult );
 		extern void				asyncClose			( const u32 uHandle );
 		extern void				asyncDelete			( const u32 uHandle );
 		extern xbool			asyncDone			( const u32 uHandle );
@@ -133,11 +133,6 @@ namespace xcore
 		extern void				getOpenModifiedTime ( u32 uHandle, xdatetime& pTimeAndDate );
 
 		extern u64				getFreeSize			( const char* szPath );
-
-		extern void				createFileList		( const char* szPath, xbool boRecursive );
-		extern void				destroyFileList		( void );
-		extern s32				getFileListLength	( void );
-		extern const char*		getFileListData		( u32 nFile );
 
 		extern xbool			hasLastError		( void );
 		extern void				clearLastError		( void );
@@ -152,19 +147,15 @@ namespace xcore
 		extern void*			heapAlloc			( s32 size, s32 alignment );
 		extern void				heapFree			( void* mem );
 
-		extern void 			initialise			( u32 uAsyncQueueSize, xbool boEnableCache = false );
+		extern void 			initialise			( xbool boEnableCache = false );
 		extern void				shutdown			( void );
 
-		///< Alias
-		extern void				initAlias			( void );
-		extern void				exitAlias			( void );
-
 		///< Threading
-		extern void				setIoThread			( xthreading* io_thread );
-		extern xthreading*		getIoThread			( void );
+		extern void				setThreading		( xthreading* threading );
+		extern xthreading*		getThreading		( void );
 
 		///< Common
-		extern void				initialiseCommon	( u32 uAsyncQueueSize, xbool boEnableCache );
+		extern void				initialiseCommon	( xbool boEnableCache );
 		extern void				shutdownCommon		( void );
 
 		extern xfiledevice*		createSystemPath	( const char* szFilename, char* outFilename, s32 inFilenameMaxLen );

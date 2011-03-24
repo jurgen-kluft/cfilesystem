@@ -28,12 +28,13 @@ namespace xcore
 		class xfilepath
 		{
 		private:
-			xstring			mBuffer;
+			enum ESettings { MAX_FILEPATH = 255 };
+			char			mStringBuffer[MAX_FILEPATH + 1];
+			xcstring		mString;
 
 		public:
 							xfilepath();
 							xfilepath(const char* str);
-			explicit		xfilepath(const xstring& str);
 							xfilepath(const xfilepath& filepath);
 			explicit		xfilepath(const xdirpath& dir, const xfilepath& filename);
 							~xfilepath();
@@ -41,14 +42,17 @@ namespace xcore
 			void			clear();
 
 			s32				length() const;
+			static s32		sMaxLength()			{ return MAX_FILEPATH; }
 			s32				maxLength() const;
 			xbool			empty() const;
 			xbool			isAbsolute() const;
 			const char*		extension() const;
 			const char*		relative() const;													///< Points just after device part
 
-			void			setDevicePart(const char* deviceName);
-			void			getDevicePart(char* deviceName, s32 deviceNameMaxLength) const;
+			void			setDeviceName(const char* deviceName);
+			void			getDeviceName(char* deviceName, s32 deviceNameMaxLength) const;
+			void			setDevicePart(const char* devicePart);
+			void			getDevicePart(char* devicePart, s32 devicePartMaxLength) const;
 			
 			xfilepath&		operator =  ( const xfilepath& );
 
@@ -66,7 +70,7 @@ namespace xcore
 			void			fixSlashes();														///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
 		};
 
-		extern xfilepath	operator + (xdirpath& dir, xfilepath& filename);
+		inline xfilepath	operator + (const xdirpath& dir, const xfilepath& filename)	{ return xfilepath(dir, filename); }
 
 		//==============================================================================
 		// END xfilesystem namespace

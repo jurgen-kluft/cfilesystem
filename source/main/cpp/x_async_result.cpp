@@ -5,6 +5,7 @@
 #include "xbase\x_debug.h"
 
 #include "xfilesystem\x_async_result.h"
+#include "xfilesystem\x_iasync_result.h"
 
 //==============================================================================
 // xcore namespace
@@ -19,6 +20,7 @@ namespace xcore
 			virtual bool			isCompleted()																	{ return true; }
 			virtual void			waitUntilCompleted()															{ }
 
+			virtual void			clear()																			{ }
 			virtual void			hold()																			{ }
 			virtual s32				release()																		{ return 1; }
 			virtual void			destroy()																		{ }

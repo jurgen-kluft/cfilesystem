@@ -27,6 +27,7 @@ namespace xcore
 			virtual bool			isCompleted() = 0;
 			virtual void			waitUntilCompleted() = 0;
 
+			virtual void			clear() = 0;
 			virtual void			hold() = 0;
 			virtual s32				release() = 0;
 			virtual void			destroy() = 0;

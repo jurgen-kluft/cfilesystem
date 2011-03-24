@@ -22,7 +22,7 @@ namespace xcore
 	namespace xfilesystem
 	{
 		// Forward declares
-		class xalias;
+		class xdevicealias;
 		class xfileinfo;
 		class xdirinfo;
 		class xdirinfo_imp;
@@ -62,7 +62,7 @@ namespace xcore
 			void					enumerateFiles(enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories=false);
 			void					enumerateDirs(enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories=false);
 
-			const xalias*			getAlias() const;
+			const xdevicealias*			getAlias() const;
 			xdirinfo				getRoot() const;
 			xdirinfo				getParent() const;
 			xdirinfo				getSubdir(const char*) const;

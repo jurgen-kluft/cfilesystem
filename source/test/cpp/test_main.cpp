@@ -11,6 +11,7 @@ UNITTEST_SUITE_LIST(xFileUnitTest);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filesystem_init);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filepath);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filestream);
+UNITTEST_SUITE_DECLARE(xFileUnitTest, filesystem_common);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filesystem_exit);
 
 

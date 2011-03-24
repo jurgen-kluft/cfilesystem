@@ -18,7 +18,7 @@ namespace xcore
 	namespace xfilesystem
 	{
 		class xfiledevice;
-		class xfileasync;
+		struct xfileasync;
 
 		struct xfiledata
 		{
