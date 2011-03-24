@@ -66,12 +66,20 @@ namespace xcore
 	};
 };
 
-class FileSystemIoThreadObject : public xfilesystem::x_iothread
+class FileSystemIoThreadObject : public xfilesystem::xthreading
 {
 public:
 	virtual bool		loop() const 
 	{ 
 		return false; 
+	}
+
+	virtual void		wait(u32 index)
+	{
+	}
+
+	virtual void		signal(u32 index)
+	{
 	}
 
 	virtual void		wait()

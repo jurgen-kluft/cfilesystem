@@ -21,24 +21,24 @@ namespace xcore
 	{
 		static xfiledevice*	sSystemFileDevice = NULL;
 
-		void init(x_iothread* io_thread, x_iallocator* allocator)
+		void init(xthreading* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setIoThread(io_thread);
+			xfilesystem::setThreading(threading);
 			xfilesystem::initAlias();
 
 			sSystemFileDevice = x_CreateFileDeviceWII();
 
-			xfilesystem::xalias host ("host" , sSystemFileDevice, "/");
-			xfilesystem::xalias dvd  ("dvd"  , sSystemFileDevice, "/");
-			xfilesystem::xalias cache("cache", sSystemFileDevice, "/");
+			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, "/");
+			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, "/");
+			xfilesystem::xdevicealias cache("cache", sSystemFileDevice, "/");
 
 			xfilesystem::gAddAlias(host);
 			xfilesystem::gAddAlias(dvd);
 			xfilesystem::gAddAlias(cache);
 
-			xfilesystem::xalias appdir( "appdir", "host" );
-			xfilesystem::xalias curdir( "curdir", "host" );
+			xfilesystem::xdevicealias appdir( "appdir", "host" );
+			xfilesystem::xdevicealias curdir( "curdir", "host" );
 			xfilesystem::gAddAlias(appdir);
 			xfilesystem::gAddAlias(curdir);
 
@@ -53,7 +53,7 @@ namespace xcore
 
 			x_DestroyFileDeviceWII(sSystemFileDevice);
 
-			xfilesystem::setIoThread(NULL);
+			xfilesystem::setThreading(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 	}

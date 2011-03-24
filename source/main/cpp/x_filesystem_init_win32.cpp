@@ -18,7 +18,7 @@
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_win32.h"
 
-#include "xfilesystem\x_alias.h"
+#include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\x_filepath.h"
 
@@ -98,7 +98,7 @@ namespace xcore
 						eDriveType = DRIVE_TYPE_FIXED;
 					}
 
-					if (xfilesystem::gFindAlias(driveLetter) == NULL)
+					if (xdevicealias::sFind(driveLetter) == NULL)
 					{
 						if (sFileDevices[eDriveType]==NULL)
 							sFileDevices[eDriveType] = x_CreateFileDevicePC(boCanWrite);
@@ -119,12 +119,12 @@ namespace xcore
 								alias_len++;
 							}
 
-							xfilesystem::gAddAlias(xfilesystem::xalias(driveLetter, device, sSystemDevicePaths[driveIdx]));
+							xdevicealias::sRegister(xfilesystem::xdevicealias(driveLetter, device, sSystemDevicePaths[driveIdx]));
 						}
 						else
 						{
 							// Register system device.
-							xfilesystem::gAddAlias(xfilesystem::xalias(driveLetter, device, sSystemDevicePaths[driveIdx]));
+							xdevicealias::sRegister(xfilesystem::xdevicealias(driveLetter, device, sSystemDevicePaths[driveIdx]));
 						}
 					}
 
@@ -138,22 +138,22 @@ namespace xcore
 		// Author:
 		//     Virtuos
 		// Summary:
-		//     Initialize the stdio system
+		//     Initialize the filesystem
 		// Arguments:
 		//     void
 		// Returns:
 		//     void
 		// Description:
 		// See Also:
-		//      x_StdioExit()
+		//      xfilesystem::exit()
 		//------------------------------------------------------------------------------
 		static char sAppDir[1024] = { '\0' };										///< Needs to end with a backslash!
 		static char sWorkDir[1024] = { '\0' };										///< Needs to end with a backslash!
-		void init(x_iothread* io_thread, x_iallocator* allocator)
+		void init(xthreading* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setIoThread(io_thread);
-			xfilesystem::initAlias();
+			xfilesystem::setThreading(threading);
+			xdevicealias::sInit();
 
 			// Get the application directory (by removing the executable filename)
 			::GetModuleFileName(0, sAppDir, sizeof(sAppDir) - 1);
@@ -176,37 +176,37 @@ namespace xcore
 			x_FileSystemRegisterSystemAliases();
 
 			// Determine the source type of the app and work dir
-			const xfilesystem::xalias* workDirAlias = xfilesystem::gFindAliasFromFilename(xfilepath(sAppDir));
-			const xfilesystem::xalias* appDirAlias  = xfilesystem::gFindAliasFromFilename(xfilepath(sWorkDir));
+			const xfilesystem::xdevicealias* workDirAlias = xdevicealias::sFind(xfilepath(sAppDir));
+			const xfilesystem::xdevicealias* appDirAlias  = xdevicealias::sFind(xfilepath(sWorkDir));
 
-			// After this, xsystem can initialize the aliases
-			xfilesystem::gAddAlias(xfilesystem::xalias("appdir", appDirAlias->device(), sAppDir));
-			xfilesystem::gAddAlias(xfilesystem::xalias("curdir", workDirAlias->device(), sWorkDir));
+			// After this, user can initialize the aliases
+			xdevicealias::sRegister(xfilesystem::xdevicealias("appdir", appDirAlias->device(), sAppDir));
+			xdevicealias::sRegister(xfilesystem::xdevicealias("curdir", workDirAlias->device(), sWorkDir));
 
-			xfilesystem::gAddAlias(xfilesystem::xalias("host", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
-			xfilesystem::gAddAlias(xfilesystem::xalias("dvd", sFileDevices[DRIVE_TYPE_CDROM], sWorkDir));
-			xfilesystem::gAddAlias(xfilesystem::xalias("HDD", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
+			xdevicealias::sRegister(xfilesystem::xdevicealias("host", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
+			xdevicealias::sRegister(xfilesystem::xdevicealias("dvd", sFileDevices[DRIVE_TYPE_CDROM], sWorkDir));
+			xdevicealias::sRegister(xfilesystem::xdevicealias("HDD", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
 
-			xfilesystem::initialise(64, xTRUE);
+			xfilesystem::initialise(xTRUE);
 		}
 
 		//------------------------------------------------------------------------------
 		// Author:
 		//     Virtuos
 		// Summary:
-		//     Exit the stdio system.
+		//     Exit the filesystem.
 		// Arguments:
 		//     void
 		// Returns:
 		//     void
 		// Description:
 		// See Also:
-		//      x_StdioInit()
+		//      xfilesystem::init()
 		//------------------------------------------------------------------------------
 		void exit()
 		{
 			xfilesystem::shutdown();
-			xfilesystem::exitAlias();
+			xdevicealias::sExit();
 
 			for (s32 i=0; i<DRIVE_TYPE_NUM; ++i)
 			{
@@ -218,7 +218,7 @@ namespace xcore
 				}
 			}
 
-			xfilesystem::setIoThread(NULL);
+			xfilesystem::setThreading(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 	}

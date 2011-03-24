@@ -22,7 +22,7 @@ namespace xcore
 	namespace xfilesystem
 	{
 		// Forward declares
-		class xalias;
+		class xdevicealias;
 		class xdirinfo;
 		class xfilestream;
 		class xfileinfo_imp;
@@ -61,7 +61,7 @@ namespace xcore
 			void					copy(xfilepath& destFilename, xbool overwrite=xFALSE);
 			void					move(xfilepath& destFilename);
 
-			const xalias*			getAlias() const;
+			const xdevicealias*			getAlias() const;
 			void					getRoot(xdirinfo& outInfo) const;
 			void					getParent(xdirinfo& outInfo) const;
 

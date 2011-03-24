@@ -7,10 +7,11 @@
 #include "xbase\x_va_list.h"
 
 #include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\private\x_fileasync.h"
-#include "xfilesystem\private\x_fileinfo.h"
+#include "xfilesystem\x_threading.h"
 #include "xfilesystem\x_filedevice.h"
 
+#include "xfilesystem\private\x_fileasync.h"
+#include "xfilesystem\private\x_fileinfo.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 
 //==============================================================================
@@ -31,7 +32,7 @@ namespace xcore
 				{
 					if (pAsync->getFileIndex() >=  0)
 					{
-						xfileinfo* pInfo = getFileInfo(pAsync->getFileIndex());
+						xfiledata* pInfo = getFileInfo(pAsync->getFileIndex());
 						xfiledevice* pFileDevice = pInfo->m_pFileDevice;
 
 						// ========================================================================
@@ -147,9 +148,9 @@ namespace xcore
 				}
 				else
 				{
-					ioThreadWait();
+					getThreading()->wait();
 				}
-			} while (ioThreadLoop());
+			} while (getThreading()->loop());
 		}
 		
 	};

@@ -16,7 +16,7 @@
 #include "xfilesystem\x_iasync_result.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_alias.h"
+#include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_threading.h"
 
 //==============================================================================
@@ -36,31 +36,42 @@ namespace xcore
 
 		class xiasync_result_imp : public xiasync_result
 		{
-									xiasync_result_imp(u32 nFileHandle)
-										: mRefCount(0)
-										, mFileHandle(nFileHandle)			{ }
 		public:
+									xiasync_result_imp()
+										: mFileHandle(INVALID_FILE_HANDLE)	{ }
 			virtual					~xiasync_result_imp()					{ }
+
+			void					init(u32 nFileHandle)
+			{
+				mFileHandle = nFileHandle;
+			}
 
 			virtual bool			isCompleted()
 			{
-				return asyncDone(mFileHandle) == xTRUE;
+				return mFileHandle == INVALID_FILE_HANDLE || asyncDone(mFileHandle) == xTRUE;
 			}
 
 			virtual void			waitUntilCompleted()
 			{
-				xfiledata* pFileInfo = getFileInfo(mFileHandle);
-				getIoThread()->wait(pFileInfo->m_nFileIndex);
+				if (mFileHandle != INVALID_FILE_HANDLE)
+				{
+					xfiledata* fileInfo = getFileInfo(mFileHandle);
+					getThreading()->wait(fileInfo->m_nFileIndex);
+				}
+			}
+
+			virtual void			clear()
+			{
+				mFileHandle = INVALID_FILE_HANDLE;
 			}
 
 			virtual void			hold()
 			{
-				++mRefCount;
 			}
 
 			virtual s32				release()
 			{
-				return --mRefCount;
+				return 1;
 			}
 
 			virtual void			destroy()
@@ -69,7 +80,6 @@ namespace xcore
 			}
 
 		private:
-			s32				mRefCount;
 			u32				mFileHandle;
 		};
 
@@ -103,7 +113,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xbool				doesFileExist( const char* szName )
+		xbool				exists( const char* szName )
 		{
 			u32 uHandle = syncOpen(szName, false);
 			if (uHandle == (u32)INVALID_FILE_HANDLE)
@@ -126,7 +136,7 @@ namespace xcore
 
 		xbool				caps				( const xfilepath& szFilename, bool& can_read, bool& can_write, bool& can_seek, bool& can_async )
 		{
-			const xalias* alias = gFindAliasFromFilename(szFilename);
+			const xdevicealias* alias = xdevicealias::sFind(szFilename);
 			if (alias == NULL)
 				return xFALSE;
 
@@ -142,7 +152,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64				size				( u32 uHandle )
+		u64					getLength			( u32 uHandle )
 		{
 			return syncSize(uHandle);
 		}
@@ -311,12 +321,12 @@ namespace xcore
 			pOpen->setReadWriteSize		(0);
 
 			asyncIOAddToTail(pOpen);
-			ioThreadSignal();
+			getThreading()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result*& async_result_imp )
+		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result*& pAsyncResult )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -338,7 +348,11 @@ namespace xcore
 
 			xfiledata* pInfo = getFileInfo(uHandle);
 
-			pRead->setFileIndex			(uHandle);
+			xiasync_result_imp* pAsyncResultImp = &m_AsyncResults[pInfo->m_nFileIndex];
+			pAsyncResultImp->init(pInfo->m_nFileHandle);
+			pAsyncResult = pAsyncResultImp;
+
+			pRead->setFileIndex			(pInfo->m_nFileIndex);
 			pRead->setStatus 			(FILE_OP_STATUS_READ_PENDING);
 			pRead->setReadAddress		(pBuffer);
 			pRead->setWriteAddress		(NULL);
@@ -346,12 +360,12 @@ namespace xcore
 			pRead->setReadWriteSize		(uSize);
 
 			asyncIOAddToTail(pRead);
-			ioThreadSignal();
+			getThreading()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer )
+		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result*& pAsyncResult )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -373,6 +387,10 @@ namespace xcore
 
 			xfiledata* pInfo = getFileInfo(uHandle);
 
+			xiasync_result_imp* pAsyncResultImp = &m_AsyncResults[pInfo->m_nFileIndex];
+			pAsyncResultImp->init(pInfo->m_nFileHandle);
+			pAsyncResult = pAsyncResultImp;
+
 			pWrite->setFileIndex		(uHandle);
 			pWrite->setStatus 			(FILE_OP_STATUS_WRITE_PENDING);
 			pWrite->setReadAddress		(NULL);
@@ -381,7 +399,7 @@ namespace xcore
 			pWrite->setReadWriteSize	(uSize);
 
 			asyncIOAddToTail(pWrite);
-			ioThreadSignal();
+			getThreading()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -416,7 +434,7 @@ namespace xcore
 			pDelete->setReadWriteSize	(0);
 
 			asyncIOAddToTail(pDelete);
-			ioThreadSignal();
+			getThreading()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -451,7 +469,7 @@ namespace xcore
 			pClose->setReadWriteSize	(0);
 
 			asyncIOAddToTail(pClose);
-			ioThreadSignal();
+			getThreading()->signal();
 		}
 
 
@@ -639,37 +657,20 @@ namespace xcore
 			virtual void		signal(u32 streamIndex)	{ }
 		};
 
-		static xsinglethread	sIoThreadSt;
-		static xthreading*		sIoThread = &sIoThreadSt;
+		static xsinglethread	sIoThreadingSt;
+		static xthreading*		sIoThreading = &sIoThreadingSt;
 
-		void				setIoThread			( xthreading* io_thread )
+		void				setThreading( xthreading* io_thread )
 		{
-			sIoThread = io_thread;
-			if (sIoThread == NULL)
-				sIoThread = &sIoThreadSt;
+			sIoThreading = io_thread;
+			if (sIoThreading == NULL)
+				sIoThreading = &sIoThreadingSt;
 		}
 
-		//------------------------------------------------------------------------------------------
-
-		xbool				ioThreadLoop		( void )
+		xthreading*			getThreading()
 		{
-			return sIoThread->loop();
+			return sIoThreading;
 		}
-
-		//------------------------------------------------------------------------------------------
-
-		void				ioThreadWait		( void )
-		{
-			sIoThread->wait();
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void				ioThreadSignal		( void )
-		{
-			sIoThread->signal();
-		}
-
 
 		//------------------------------------------------------------------------------------------
 
@@ -677,41 +678,20 @@ namespace xcore
 		{
 			xfiledevice* device = NULL;
 
-			xfilepath szFilename(outFilename, inFilenameMaxLen, inFilename);
-			const xfilesystem::xalias* alias = xfilesystem::gFindAliasFromFilename(szFilename);
+			xfilepath szFilename(inFilename);
+			const xfilesystem::xdevicealias* alias = xdevicealias::sFind(szFilename);
 
-			if (alias != NULL)
+			if (alias == NULL)
 			{
-				// Remove the device part and replace it with the remap part of the file device that matches the
-				// device part of the filename.
-				device = alias->device();
-				if (alias->remap() != NULL)
-				{
-					gReplaceAliasOfFilename(szFilename, alias->remap());
-				}
-				else
-				{
-					gReplaceAliasOfFilename(szFilename, NULL);
-				}
-			}
-			else
-			{
-				setLastError(FILE_ERROR_DEVICE);
+				// Take the workdir
+				alias = xdevicealias::sFind("curdir");
 			}
 
-			//-----------------------------------------------------
-			// Fix the slash direction
-			//-----------------------------------------------------
-			const char c = isPathUNIXStyle() ? '\\' : '/';
-			const char w = isPathUNIXStyle() ? '/' : '\\';
-
-			char* src = outFilename;
-			while (*src != '\0')
-			{
-				if (*src == c)
-					*src = w;
-				++src;
-			}
+			// Remove the device part and replace it with the remap part of the file device that matches the
+			// device part of the filename.
+			device = alias->device();
+			szFilename.setDevicePart(alias->remap());
+			x_strcpy(outFilename, inFilenameMaxLen, szFilename.c_str());
 
 			return device;
 		}

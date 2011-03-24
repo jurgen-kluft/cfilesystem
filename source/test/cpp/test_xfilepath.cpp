@@ -5,6 +5,7 @@
 
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\x_filepath.h"
+#include "xfilesystem\x_dirpath.h"
 
 using namespace xcore;
 using namespace xfilesystem;
@@ -24,7 +25,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 			CHECK_FALSE(p.empty());
 			CHECK_TRUE(p.length() == x_strlen(str));
-			CHECK_EQUAL(p.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p.c_str(), str), 0);
 		}
 
@@ -36,14 +37,14 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 			CHECK_FALSE(p1.empty());
 			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str), 0);
 
 			xfilepath p2(p1);
 
 			CHECK_FALSE(p2.empty());
 			CHECK_TRUE(p2.length() == x_strlen(str));
-			CHECK_EQUAL(p2.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p2.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p2.c_str(), str), 0);
 		}
 
@@ -53,7 +54,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 			CHECK_TRUE(p1.empty());
 			CHECK_TRUE(p1.length() == 0);
-			CHECK_EQUAL(p1.maxLength(), 0);
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 		}
 
 		UNITTEST_TEST(constructor4)
@@ -64,14 +65,14 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 			CHECK_FALSE(p1.empty());
 			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str), 0);
 
 			xfilepath p2(p1);
 
 			CHECK_FALSE(p2.empty());
 			CHECK_TRUE(p2.length() == x_strlen(str));
-			CHECK_EQUAL(p2.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p2.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p2.c_str(), str), 0);
 		}
 
@@ -82,34 +83,45 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 			CHECK_FALSE(p1.empty());
 			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 
 			p1.clear();
 			CHECK_TRUE(p1.empty());
 			CHECK_TRUE(p1.length() == 0);
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 		}
 
-		UNITTEST_TEST(find)
+		UNITTEST_TEST(relative)
 		{
 			const char* str = "memory:\\folder\\filename.ext";
 			xfilepath p1(str);
 
-			s32 pos1 = p1.find(":\\");
-			CHECK_EQUAL(6, pos1);
-			s32 pos2 = p1.find("AA");
-			CHECK_EQUAL(-1, pos2);
+			const char* relative_p1 = p1.relative();
+			CHECK_EQUAL(0, x_strCompare(relative_p1, "folder\\filename.ext"));
 		}
 
-		UNITTEST_TEST(replace)
+		UNITTEST_TEST(setDeviceName)
 		{
 			const char* str = "memory:\\folder\\filename.ext";
 			xfilepath p1(str);
 
-			p1.replace(8, 6, "longerfolder");
-			CHECK_TRUE(x_strCompare(p1.c_str(), "memory:\\longerfolder\\filename.ext") == 0);
-			p1.replace(8, 12, "fldr");
-			CHECK_TRUE(x_strCompare(p1.c_str(), "memory:\\fldr\\filename.ext") == 0);
+			p1.setDeviceName("remotesource");
+			CHECK_EQUAL(0, x_strCompare(p1.c_str(), "remotesource:\\folder\\filename.ext"));
+			p1.setDeviceName("localcache");
+			CHECK_EQUAL(0, x_strCompare(p1.c_str(), "localcache:\\folder\\filename.ext"));
+			p1.setDeviceName(NULL);
+			CHECK_EQUAL(0, x_strCompare(p1.c_str(), "folder\\filename.ext"));
+		}
+
+		UNITTEST_TEST(setDevicePart)
+		{
+			const char* str = "memory:\\folder\\filename.ext";
+			xfilepath p1(str);
+
+			p1.setDevicePart("remotesource:\\");
+			CHECK_EQUAL(0, x_strCompare(p1.c_str(), "remotesource:\\folder\\filename.ext"));
+			p1.setDevicePart("localcache:\\");
+			CHECK_EQUAL(0, x_strCompare(p1.c_str(), "localcache:\\folder\\filename.ext"));
 		}
 
 		UNITTEST_TEST(assignment_operator)
@@ -119,13 +131,13 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 			CHECK_FALSE(p1.empty());
 			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 
 			const char* str2 = "Test2";
 			p1 = str2;
 			CHECK_FALSE(p1.empty());
 			CHECK_TRUE(p1.length() == x_strlen(str2));
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str2));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str2), 0);
 		}
 
@@ -136,7 +148,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 			CHECK_FALSE(p1.empty());
 			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str), 0);
 
 			const char* str2 = "Test2";
@@ -144,7 +156,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 			p1 += str2;
 			CHECK_FALSE(p1.empty());
 			CHECK_TRUE(p1.length() == x_strlen(str12));
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str12));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str12), 0);
 		}
 
@@ -155,7 +167,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 			CHECK_FALSE(p1.empty());
 			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str), 0);
 
 			xfilepath p2(p1);
@@ -172,14 +184,14 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 			CHECK_FALSE(p1.empty());
 			CHECK_TRUE(p1.length() == x_strlen(str1));
-			CHECK_EQUAL(p1.maxLength(), x_strlen(str1));
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str1), 0);
 
 			const char* str2 = "Test11";
 			xfilepath p2(str2);
 			CHECK_EQUAL(p1.empty(), p2.empty());
 			CHECK_NOT_EQUAL(p1.length(), p2.length());
-			CHECK_NOT_EQUAL(p1.maxLength(), p2.maxLength());
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p2.c_str(), str2), 0);
 			CHECK_NOT_EQUAL(x_strCompare(p1.c_str(), p2.c_str()), 0);
 		}
@@ -194,7 +206,18 @@ UNITTEST_SUITE_BEGIN(filepath)
 			CHECK_EQUAL(p1[2], 's');
 			CHECK_EQUAL(p1[3], 't');
 			CHECK_EQUAL(p1[4], '1');
-		}	
+		}
+
+		UNITTEST_TEST(global_add_operator)
+		{
+			const char* str1 = "C:\\temp\\folderA\\filename.ext";
+			xfilepath f1(str1);
+			const char* str2 = "C:\\temp\\folderB\\folderC";
+			xdirpath d1(str2);
+
+			xfilepath f2 = d1 + f1;
+			CHECK_EQUAL(x_strCompare(f2.c_str(), "C:\\temp\\folderB\\folderC\\temp\\folderA\\filename.ext"), 0);
+		}
 	}
 }
 UNITTEST_SUITE_END

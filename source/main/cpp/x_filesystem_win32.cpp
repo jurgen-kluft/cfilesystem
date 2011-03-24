@@ -89,9 +89,9 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				initialise ( u32 uAsyncQueueSize, xbool boEnableCache )
+		void				initialise ( xbool boEnableCache )
 		{
-			initialiseCommon(uAsyncQueueSize, boEnableCache);
+			initialiseCommon( boEnableCache );
 		}	
 
 		//------------------------------------------------------------------------------------------
