@@ -79,6 +79,20 @@ namespace xcore
 			return mString.c_str() + pos + 2;
 		}
 
+		void			xfilepath::getDirPath(xdirpath& outDirPath) const
+		{
+			// Remove the filename.ext part at the end
+			s32 lastSlashPos = mString.rfind(sGetSlashChar());
+			if (lastSlashPos>0)
+			{
+				mString.substring(0, outDirPath.mString, lastSlashPos+1);
+			}
+			else
+			{
+				outDirPath.clear();
+			}
+		}
+
 		const char*		xfilepath::c_str() const								{ return mString.c_str(); }
 
 		void			xfilepath::setDeviceName(const char* deviceName)

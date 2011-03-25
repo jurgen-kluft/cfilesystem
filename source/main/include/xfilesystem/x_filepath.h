@@ -46,8 +46,10 @@ namespace xcore
 			s32				maxLength() const;
 			xbool			empty() const;
 			xbool			isAbsolute() const;
+
 			const char*		extension() const;
 			const char*		relative() const;													///< Points just after device part
+			void			getDirPath(xdirpath& outDirPath) const;
 
 			void			setDeviceName(const char* deviceName);
 			void			getDeviceName(char* deviceName, s32 deviceNameMaxLength) const;

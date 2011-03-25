@@ -10,6 +10,8 @@
 //==============================================================================
 #include "xbase\x_types.h"
 
+#include "xfilesystem\private\x_filesystem_common.h"
+
 //==============================================================================
 // xcore namespace
 //==============================================================================
@@ -22,6 +24,10 @@ namespace xcore
 
 		struct xfiledata
 		{
+								xfiledata() { clear(); }
+
+			XFILESYSTEM_OBJECT_NEW_DELETE()
+
 			u64 				m_uByteSize;
 
 			s32 				m_nFileIndex;

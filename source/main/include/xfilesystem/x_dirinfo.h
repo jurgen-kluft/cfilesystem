@@ -12,6 +12,7 @@
 #include "xbase\x_debug.h"
 
 #include "xfilesystem\x_dirpath.h"
+#include "xfilesystem\x_enumerator.h"
 
 //==============================================================================
 namespace xcore
@@ -26,14 +27,6 @@ namespace xcore
 		class xfileinfo;
 		class xdirinfo;
 		class xdirinfo_imp;
-
-		template<typename _Arg>
-		struct enumerate_delegate
-		{
-			///< Return false to terminate the breadth first traversal
-			virtual bool operator () (s32 depth) = 0;
-			virtual void operator () (s32 depth, const _Arg& inf) = 0;
-		};
 
 		class xdirinfo
 		{
@@ -56,13 +49,13 @@ namespace xcore
 			void					remove();
 			void					refresh();
 
-			void					copy(xdirpath& sourceDirectory, xdirpath& destDirectory, xbool overwrite=xFALSE);
-			void					move(xdirpath& sourceDirectory, xdirpath& destDirectory);
+			void					copy(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite=xFALSE);
+			void					move(const xdirpath& sourceDirectory, const xdirpath& destDirectory);
 
-			void					enumerateFiles(enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories=false);
-			void					enumerateDirs(enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories=false);
+			void					enumerateFiles(enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories);
+			void					enumerateDirs(enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories);
 
-			const xdevicealias*			getAlias() const;
+			const xdevicealias*		getAlias() const;
 			xdirinfo				getRoot() const;
 			xdirinfo				getParent() const;
 			xdirinfo				getSubdir(const char*) const;
@@ -80,24 +73,23 @@ namespace xcore
 			bool					operator != (const xdirinfo&) const;
 
 			///< Static functions
-			static void				sCreate(xdirpath& directory);
-			static void				sDelete(xdirpath& directory);
-			static bool				sExists(xdirpath& directory);
+			static void				sCreate(const xdirpath& directory);
+			static void				sDelete(const xdirpath& directory);
+			static bool				sExists(const xdirpath& directory);
 
-			static void				sEnumerateFiles(xdirpath& directory, enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories=false);
-			static void				sEnumerateDirs(xdirpath& directory, enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories=false);
+			static void				sEnumerateFiles(const xdirpath& directory, enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories);
+			static void				sEnumerateDirs(const xdirpath& directory, enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories);
 
-			static void				sSetCreationTime(xdirpath& directory, const xdatetime& creationTime);
-			static void				sGetCreationTime(xdirpath& directory, xdatetime& outCreationTime);
-			static void				sSetLastAccessTime(xdirpath& directory, const xdatetime& lastAccessTime);
-			static void				sGetLastAccessTime(xdirpath& directory, xdatetime& outLastAccessTime);
-			static void				sSetLastWriteTime(xdirpath& directory, const xdatetime& lastWriteTime);
-			static void				sGetLastWriteTime(xdirpath& directory, xdatetime& outLastWriteTime);
+			static void				sGetCreationTime(const xdirpath& directory, xdatetime& outCreationTime);
+			static void				sSetLastAccessTime(const xdirpath& directory, const xdatetime& lastAccessTime);
+			static void				sGetLastAccessTime(const xdirpath& directory, xdatetime& outLastAccessTime);
+			static void				sSetLastWriteTime(const xdirpath& directory, const xdatetime& lastWriteTime);
+			static void				sGetLastWriteTime(const xdirpath& directory, xdatetime& outLastWriteTime);
 
 			///< Copies an existing directory to a new directory. Overwriting a directory of the same name is allowed.
-			static void				sCopy(xdirpath& sourceDirectory, xdirpath& destDirectory, xbool overwrite=xFALSE);
+			static void				sCopy(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite=xFALSE);
 			///< Moves a specified directory to a new location, providing the option to specify a new directory name.
-			static void				sMove(xdirpath& sourceDirectory, xdirpath& destDirectory);
+			static void				sMove(const xdirpath& sourceDirectory, const xdirpath& destDirectory);
 		};
 
 		//==============================================================================
