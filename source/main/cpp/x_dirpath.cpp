@@ -63,6 +63,11 @@ namespace xcore
 			return mString.c_str() + pos;
 		}
 
+		bool			xdirpath::getName(char* outName, s32 nameMaxLength) const
+		{
+			const char* re
+		}
+
 		const char*		xdirpath::c_str() const										{ return mString.c_str(); }
 
 		void			xdirpath::setDeviceName(const char* deviceName)

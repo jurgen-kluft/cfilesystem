@@ -8,7 +8,6 @@
 
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_spsc_queue.h"
-#include "xfilesystem\private\x_filecache.h"
 
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\private\x_fileinfo.h"
@@ -40,6 +39,8 @@ namespace xcore
 									xiasync_result_imp()
 										: mFileHandle(INVALID_FILE_HANDLE)	{ }
 			virtual					~xiasync_result_imp()					{ }
+
+			XFILESYSTEM_OBJECT_NEW_DELETE()
 
 			void					init(u32 nFileHandle)
 			{
@@ -84,25 +85,20 @@ namespace xcore
 		};
 
 		//------------------------------------------------------------------------------------------
+		static u32							m_uMaxOpenedFiles = 32;
+		static u32							m_uMaxAsyncOperations = 32;
+		static u32							m_uMaxErrorItems = 32;
 
-		struct FilenameBuffer
-		{
-			char		mFilename[FS_MAX_PATH];
-		};
+		static char*						*m_Filenames;
 
-		static FilenameBuffer			m_Filenames[FS_MAX_OPENED_FILES];
+		static xiasync_result_imp			*m_AsyncResults;
+		static xfiledata					*m_OpenAsyncFile;
+		static xfileasync					*m_AsyncIOData;
 
-		//------------------------------------------------------------------------------------------
+		static EError						*m_eLastErrorStack;
 
-		static xiasync_result_imp		m_AsyncResults[FS_MAX_OPENED_FILES];
-		static xfiledata				m_OpenAsyncFile[FS_MAX_OPENED_FILES];
-		static xfileasync				m_AsyncIOData[FS_MAX_OPENED_FILES];
-
-		static EError					m_eLastErrorStack[FS_MAX_ERROR_ITEMS];
-		static xfilecache*				m_pCache = NULL;
-
-		static spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>*		m_pFreeAsyncIOList = NULL;
-		static spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>*		m_pAsyncIOList = NULL;
+		static spsc_cqueue<xfileasync*>*	m_pFreeAsyncIOList = NULL;
+		static spsc_cqueue<xfileasync*>*	m_pAsyncIOList = NULL;
 
 		//------------------------------------------------------------------------------------------
 
@@ -183,74 +179,6 @@ namespace xcore
 		void				close ( u32 &uHandle )
 		{
 			syncClose(uHandle);
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void*				loadAligned (const u32 uAlignment, const char* szFilename, u64* puFileSize, const u32 uFlags)
-		{
-			u32 uHandle = open(szFilename, false);
-			if (uHandle == (u32)INVALID_FILE_HANDLE)
-			{
-				if (puFileSize)
-					*puFileSize = 0;
-
-				setLastError(FILE_ERROR_NO_FILE);
-				return (NULL);
-			}
-
-			xfiledata* fileInfo = getFileInfo(uHandle);
-
-			u64	u64FileSize = fileInfo->m_uByteSize;
-
-			if (puFileSize)
-				*puFileSize	= u64FileSize;
-
-			if (uFlags & LOAD_FLAGS_VRAM)
-			{
-				//pHeap	= Display::GetLocalHeap();
-			}
-			else
-			{
-				//pHeap	= HeapManager::GetHeap();
-			}
-
-			void* pData;
-			if (uFlags & LOAD_FLAGS_FROM_END)
-			{
-				// Allocate from the end of the heap
-				pData = heapAlloc((s32)u64FileSize, uAlignment);
-			}
-			else
-			{
-				pData = heapAlloc((s32)u64FileSize, uAlignment);
-			}
-
-			read(uHandle, 0, u64FileSize, pData);
-			close(uHandle);
-
-			if(	(uFlags & LOAD_FLAGS_CACHE) && (m_pCache != NULL) && (fileInfo->m_pFileDevice != NULL) )
-			{
-				// File Needs to be cached
-				if(m_pCache->GetCachedIndex(szFilename) < 0)
-				{
-					m_pCache->AddToCache( szFilename, pData, 0, u64FileSize, true );
-					m_pCache->WriteCacheIndexFile();
-				}
-			}
-
-			return pData;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void*				load (const char* szFilename, u64* puFileSize, const u32 uFlags)
-		{
-			u32	uAlignment = FS_MEM_ALIGNMENT;
-			if(uFlags & LOAD_FLAGS_VRAM)
-				uAlignment	= 128;
-
-			return (loadAligned(uAlignment, szFilename, puFileSize, uFlags));
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -528,23 +456,7 @@ namespace xcore
 			sync(FS_SYNC_WAIT);
 		}
 
-		//------------------------------------------------------------------------------------------
-
-		u32				findFileHandle		( const char* szName )
-		{
-			for (u32 i=0; i<FS_MAX_OPENED_FILES; ++i)
-			{
-				xfiledata* pInfo = getFileInfo(i);
-				if (pInfo->m_nFileHandle != (u32)INVALID_FILE_HANDLE)
-				{
-					if (x_stricmp(pInfo->m_szFilename, szName) == 0)
-						return i;
-				}
-			}
-			return (u32)INVALID_FILE_HANDLE;
-		}
-
-	};
+	}
 
 	namespace xfilesystem
 	{
@@ -575,10 +487,28 @@ namespace xcore
 		{
 			x_printf ("xfilesystem:"TARGET_PLATFORM_STR" INFO initialise()\n");
 
+			const u32 maxOpenedFiles = m_uMaxOpenedFiles;
+			const u32 maxAsyncOperations = m_uMaxAsyncOperations;
+
+			m_Filenames = (char**)heapAlloc(maxOpenedFiles * sizeof(char*), X_ALIGNMENT_DEFAULT);
+			for (u32 uFile = 0; uFile < maxOpenedFiles; uFile++)
+				m_Filenames[uFile] = (char*)heapAlloc(FS_MAX_PATH, X_ALIGNMENT_DEFAULT);
+
+			m_AsyncResults = (xiasync_result_imp*)heapAlloc(maxOpenedFiles * sizeof(xiasync_result_imp), X_ALIGNMENT_DEFAULT);
+			for (u32 uFile = 0; uFile < maxOpenedFiles; uFile++)
+				new (&m_AsyncResults[uFile]) xiasync_result_imp();
+			m_OpenAsyncFile = (xfiledata*)heapAlloc(maxOpenedFiles * sizeof(xfiledata), X_ALIGNMENT_DEFAULT);
+			for (u32 uFile = 0; uFile < maxOpenedFiles; uFile++)
+				new (&m_OpenAsyncFile[uFile]) xfiledata();
+			m_AsyncIOData = (xfileasync*)heapAlloc(maxOpenedFiles * sizeof(xfileasync), X_ALIGNMENT_DEFAULT);
+			for (u32 uFile = 0; uFile < maxOpenedFiles; uFile++)
+				new (&m_AsyncIOData[uFile]) xfileasync();
+			m_eLastErrorStack = (EError*)heapAlloc(m_uMaxErrorItems * sizeof(EError), X_ALIGNMENT_DEFAULT);
+
 			//--------------------------------
 			// Clear the error stack
 			//--------------------------------
-			for (u32 i=0; i<FS_MAX_ERROR_ITEMS; ++i)
+			for (u32 i=0; i<m_uMaxErrorItems; ++i)
 				m_eLastErrorStack[i] = FILE_ERROR_OK;
 
 			//-------------------------------------------------------
@@ -586,38 +516,37 @@ namespace xcore
 			//-------------------------------------------------------
 			if (m_pFreeAsyncIOList == NULL)
 			{
-				void* mem = heapAlloc(sizeof(spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>), CACHE_LINE_SIZE);
-				spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>* queue = new (mem) spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>();
+				void* mem1 = heapAlloc(sizeof(spsc_cqueue<xfileasync*>), CACHE_LINE_SIZE);
+				void* mem2 = heapAlloc(maxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
+				spsc_cqueue<xfileasync*>* queue = new (mem1) spsc_cqueue<xfileasync*>(maxAsyncOperations, (xfileasync* volatile*)mem2);
 				m_pFreeAsyncIOList = queue;
 			}
 			if (m_pAsyncIOList == NULL)
 			{
-				void* mem = heapAlloc(sizeof(spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>), CACHE_LINE_SIZE);
-				spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>* queue = new (mem) spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>();
+				void* mem1 = heapAlloc(sizeof(spsc_cqueue<xfileasync*>), CACHE_LINE_SIZE);
+				void* mem2 = heapAlloc(maxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
+				spsc_cqueue<xfileasync*>* queue = new (mem1) spsc_cqueue<xfileasync*>(maxAsyncOperations, (xfileasync* volatile*)mem2);
 				m_pAsyncIOList = queue;
 			}
 
 			//---------------------------------------
 			// Current there is no Async file loaded.
 			//---------------------------------------
-			for (u32 uFile = 0; uFile < FS_MAX_OPENED_FILES; uFile++)
+			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
 			{
 				m_OpenAsyncFile[uFile].clear();
 
-				m_OpenAsyncFile[uFile].m_szFilename = m_Filenames[uFile].mFilename;
+				m_OpenAsyncFile[uFile].m_szFilename = m_Filenames[uFile];
 				m_OpenAsyncFile[uFile].m_szFilename[0] = '\0';
-				m_OpenAsyncFile[uFile].m_sFilenameMaxLen = sizeof(m_Filenames[uFile].mFilename);
+				m_OpenAsyncFile[uFile].m_sFilenameMaxLen = FS_MAX_PATH-1;
 			}
 
-			for(u32 uSlot = 0; uSlot < FS_MAX_ASYNC_IO_OPS; uSlot++)	
+			for(u32 uSlot = 0; uSlot < maxAsyncOperations; uSlot++)	
 			{
 				m_AsyncIOData[uSlot].clear();
 				m_pFreeAsyncIOList->push(&m_AsyncIOData[uSlot]);
 			}
 			ASSERT(m_pFreeAsyncIOList->full());
-
-			if (boEnableCache)
-				createFileCache();
 		}	
 
 		//------------------------------------------------------------------------------------------
@@ -626,38 +555,54 @@ namespace xcore
 		{
 			x_printf ("xfilesystem:"TARGET_PLATFORM_STR" INFO shutdown()\n");
 
-			destroyFileCache();
-
 			//-------------------------------------------------------
 			// Free all the spsc queues
 			//-------------------------------------------------------
 			if (m_pFreeAsyncIOList != NULL)
 			{
-				m_pFreeAsyncIOList->~spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>();
+				heapFree((void*)m_pFreeAsyncIOList->getArray());
+				m_pFreeAsyncIOList->~spsc_cqueue<xfileasync*>();
 				heapFree(m_pFreeAsyncIOList);
 				m_pFreeAsyncIOList = NULL;
 			}
 			if (m_pAsyncIOList != NULL)
 			{
-				m_pAsyncIOList->~spsc_cqueue<xfileasync*, FS_MAX_ASYNC_IO_OPS>();
+				heapFree((void*)m_pAsyncIOList->getArray());
+				m_pAsyncIOList->~spsc_cqueue<xfileasync*>();
 				heapFree(m_pAsyncIOList);
 				m_pAsyncIOList = NULL;
 			}
+
+			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
+				heapFree(m_Filenames[uFile]);
+			heapFree(m_Filenames);
+
+			heapFree(m_AsyncResults);
+			heapFree(m_OpenAsyncFile);
+			heapFree(m_AsyncIOData);
+			heapFree(m_eLastErrorStack);
+
+			m_Filenames = NULL;
+			m_AsyncResults = NULL;
+			m_OpenAsyncFile = NULL;
+			m_AsyncIOData = NULL;
+			m_eLastErrorStack = NULL;
 		}
 
 		//------------------------------------------------------------------------------------------
-		class xsinglethread : public xthreading
+		class xsinglethreading : public xthreading
 		{
 		public:
-			virtual bool		loop() const			{ return false; }
-			virtual void		wait()					{ }
-			virtual void		signal()				{ }
+			virtual void		sleep(u32 ms)						{ }
+			virtual bool		loop() const						{ return false; }
+			virtual void		wait()								{ }
+			virtual void		signal()							{ }
 
-			virtual void		wait(u32 streamIndex)	{ }
-			virtual void		signal(u32 streamIndex)	{ }
+			virtual void		wait(u32 streamIndex)				{ }
+			virtual void		signal(u32 streamIndex)				{ }
 		};
 
-		static xsinglethread	sIoThreadingSt;
+		static xsinglethreading	sIoThreadingSt;
 		static xthreading*		sIoThreading = &sIoThreadingSt;
 
 		void				setThreading( xthreading* io_thread )
@@ -698,22 +643,9 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		const char*			getFileExtension( const char* szFilename )
-		{
-			const char* szExtension	= x_strrchr(szFilename, '.');
-			if (szExtension)
-			{
-				return &szExtension[1];
-			}
-			return NULL;
-		}
-
-
-		//------------------------------------------------------------------------------------------
-
 		xfiledata*			getFileInfo			( u32 uHandle )
 		{
-			ASSERT(uHandle<FS_MAX_OPENED_FILES);
+			ASSERT(uHandle<m_uMaxOpenedFiles);
 			return &m_OpenAsyncFile[uHandle];
 		}
 
@@ -721,7 +653,7 @@ namespace xcore
 
 		u32					findFreeFileSlot (void)
 		{
-			for (s32 nSlot = 0; nSlot < FS_MAX_OPENED_FILES; nSlot++)
+			for (u32 nSlot = 0; nSlot < m_uMaxOpenedFiles; nSlot++)
 			{
 				if (m_OpenAsyncFile[nSlot].m_nFileHandle == (u32)INVALID_FILE_HANDLE)
 					return (nSlot);
@@ -782,7 +714,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xbool				sync (u32 uFlag)
+		xbool				sync (ESyncMode mode)
 		{
 			bool boDone = true;
 
@@ -790,7 +722,7 @@ namespace xcore
 			{
 				boDone = true;
 
-				for(u32 nSlot = 0; nSlot < FS_MAX_ASYNC_IO_OPS; nSlot++)
+				for(u32 nSlot = 0; nSlot < m_uMaxAsyncOperations; nSlot++)
 				{
 					xfileasync* pOperation = getAsyncIOData(nSlot);
 
@@ -807,13 +739,13 @@ namespace xcore
 					{
 						boDone	= false;
 
-						if(uFlag != FS_SYNC_WAIT)
+						if (mode != FS_SYNC_WAIT)
 						{
 							return boDone;
 						}
 						else
 						{
-							// ?????? TODO x_Sleep(1);
+							getThreading()->sleep(1);
 						}
 					}
 					else if( pOperation->getStatus() == FILE_OP_STATUS_DONE )
@@ -825,46 +757,22 @@ namespace xcore
 					}
 				}
 
-			} while(!boDone && uFlag == FS_SYNC_WAIT);
+			} while (!boDone && mode == FS_SYNC_WAIT);
 
 			return boDone;
 		}
 
-		//------------------------------------------------------------------------------------------
-
-		void				createFileCache		( void )
-		{
-			void* mem = heapAlloc(sizeof(xfilecache), 16);
-			m_pCache = (xfilecache*)mem;
-			xfilecache* filecache = new(m_pCache) xfilecache;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void				destroyFileCache	( void )
-		{
-			m_pCache->~xfilecache();
-			heapFree(m_pCache);
-			m_pCache = NULL;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xfilecache*			getFileCache		( )
-		{
-			return m_pCache;
-		}
 
 		//------------------------------------------------------------------------------------------
 
 		void				setLastError		( EError error )
 		{
 			// Push everything up
-			for (s32 i=1; i<FS_MAX_ERROR_ITEMS; ++i)
+			for (u32 i=1; i<m_uMaxErrorItems; ++i)
 			{
 				m_eLastErrorStack[i-1] = m_eLastErrorStack[i];
 			}
-			m_eLastErrorStack[FS_MAX_ERROR_ITEMS-1] = error;
+			m_eLastErrorStack[m_uMaxErrorItems-1] = error;
 		}
 
 
@@ -872,7 +780,7 @@ namespace xcore
 
 		xbool					hasLastError		( void )
 		{
-			return m_eLastErrorStack[FS_MAX_ERROR_ITEMS-1] != FILE_ERROR_OK;
+			return m_eLastErrorStack[m_uMaxErrorItems-1] != FILE_ERROR_OK;
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -886,7 +794,7 @@ namespace xcore
 
 		EError					getLastError		( )
 		{
-			return m_eLastErrorStack[FS_MAX_ERROR_ITEMS-1];
+			return m_eLastErrorStack[m_uMaxErrorItems-1];
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -949,7 +857,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64				syncSize			( u32 uHandle )
+		u64					syncSize			( u32 uHandle )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return 0;
@@ -993,11 +901,6 @@ namespace xcore
 			}
 		}
 
-		void				syncFlush			( u32 uHandle )
-		{
-			if (uHandle==(u32)INVALID_FILE_HANDLE)
-				return;
-		}
 
 		//------------------------------------------------------------------------------------------
 

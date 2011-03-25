@@ -12,9 +12,6 @@
 
 #include "xfilesystem\x_filesystem.h"
 
-#include "xfilesystem\private\x_filesystem_spsc_queue.h"
-#include "xfilesystem\private\x_filesystem_llist.h"
-
 //==============================================================================
 // xcore namespace
 //==============================================================================
@@ -35,18 +32,17 @@ namespace xcore
 		struct xfiledata;
 		struct xfileasync;
 		class xthreading;
-		class xfilecache;
 		class xiasync_result;
 
-		enum ESettings
+		enum ESyncMode
 		{
 			FS_SYNC_WAIT				= 0x00,
 			FS_SYNC_NOWAIT				= 0x01,
+		};
+
+		enum ESettings
+		{
 			FS_MAX_PATH					= 256,
-			FS_MAX_OPENED_FILES 		= 32,
-			FS_MAX_ASYNC_IO_OPS			= 32,
-			FS_MAX_ASYNC_QUEUE_ITEMS	= 64,
-			FS_MAX_ERROR_ITEMS	 		= 32,
 			FS_MEM_ALIGNMENT			= 128,
 		};
 
@@ -55,24 +51,6 @@ namespace xcore
 			void*	operator new(xcore::xsize_t num_bytes, void* mem)	{ return mem; }											\
 			void	operator delete(void* mem)							{ heapFree(mem); }										\
 			void	operator delete(void* mem, void* )					{ }						
-
-		enum ELoadFlags
-		{
-			LOAD_FLAGS_MAIN				= 0x00,
-			LOAD_FLAGS_VRAM				= 0x01,
-			LOAD_FLAGS_FROM_END			= 0x02,
-			LOAD_FLAGS_CACHE			= 0x04,
-
-			LOAD_FLAGS_DEFAULT			= LOAD_FLAGS_MAIN,
-		};
-
-		enum EFilePriority
-		{
-			FS_PRIORITY_HIGH			= 0,
-			FS_PRIORITY_MEDIUM			= 1,
-			FS_PRIORITY_LOW				= 2,
-			FS_PRIORITY_COUNT,
-		};
 
 		enum EFileHandle
 		{
@@ -114,8 +92,6 @@ namespace xcore
 		extern void 			close				( u32& uHandle );
 		extern void				closeAndDelete		( u32& uHandle );
 
-		extern void*			load				( const char* szFilename, u64* puSize, const u32 uFlags );
-		extern void*			loadAligned			( const u32 uAlignment, const char* szFilename, u64* puSize, const u32 uFlags );
 		extern void				save				( const char* szFilename, const void* pData, u64 uSize );
 
 		///< Asynchronous file operations
@@ -159,7 +135,6 @@ namespace xcore
 		extern void				shutdownCommon		( void );
 
 		extern xfiledevice*		createSystemPath	( const char* szFilename, char* outFilename, s32 inFilenameMaxLen );
-		extern const char*		getFileExtension	( const char* szFilename );
 
 		extern xfiledata*		getFileInfo			( u32 uHandle );
 		extern u32				findFreeFileSlot	( void );
@@ -171,13 +146,8 @@ namespace xcore
 		extern xfileasync*		asyncIORemoveHead	( void );
 		extern void				asyncIOAddToTail	( xfileasync* asyncIOInfo );
 
-		extern xbool			sync				( u32 uFlag = FS_SYNC_WAIT );
+		extern xbool			sync				( ESyncMode mode );
 
-		extern void				createFileCache		( void );
-		extern void				destroyFileCache	( void );
-		extern xfilecache*		getFileCache		( );
-
-		extern u32				findFileHandle		( const char* szFilename );
 		extern xbool			isPathUNIXStyle		( void );					///< UNIX = '/', Win32 = '\'
 
 		///< Error

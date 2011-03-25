@@ -69,6 +69,10 @@ namespace xcore
 class FileSystemIoThreadObject : public xfilesystem::xthreading
 {
 public:
+	virtual void		sleep(u32 ms)
+	{
+	}
+
 	virtual bool		loop() const 
 	{ 
 		return false; 

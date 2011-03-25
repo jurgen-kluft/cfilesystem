@@ -46,6 +46,11 @@ namespace xcore
 			xbool			isAbsolute() const;
 			const char*		relative() const;
 
+			bool			getName(char* outName, s32 nameMaxLength) const;
+			bool			getRoot(xdirpath& outRootDirPath) const;
+			bool			getParent(xdirpath& outParentDirPath) const;
+			bool			getSubDir(const char* subDir, xdirpath& outSubDirPath) const;
+
 			void			setDeviceName(const char* deviceName);
 			void			getDeviceName(char* deviceName, s32 deviceNameMaxLength) const;
 			void			setDevicePart(const char* devicePart);

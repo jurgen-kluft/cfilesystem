@@ -58,17 +58,16 @@ namespace xcore
 			void					readAllBytes(xbyte* buffer, s32 offset, s32 count);
 			void					writeAllBytes(const xbyte* buffer, s32 offset, s32 count);
 
-			void					copy(xfilepath& destFilename, xbool overwrite=xFALSE);
-			void					move(xfilepath& destFilename);
+			void					copy(const xfilepath& destFilename, xbool overwrite);
+			void					move(const xfilepath& destFilename);
 
-			const xdevicealias*			getAlias() const;
+			const xdevicealias*		getAlias() const;
 			void					getRoot(xdirinfo& outInfo) const;
 			void					getParent(xdirinfo& outInfo) const;
 
 			void					getCreationTime  (xdatetime&) const;
 			void					getLastAccessTime(xdatetime&) const;
 			void					getLastWriteTime (xdatetime&) const;
-			void					setCreationTime  (const xdatetime&) const;
 			void					setLastAccessTime(const xdatetime&) const;
 			void					setLastWriteTime (const xdatetime&) const;
 
@@ -78,31 +77,30 @@ namespace xcore
 			bool					operator != (const xfileinfo&) const;
 
 			///< Static functions
-			static bool				sExists(xfilepath& filename);
-			static u64				sLength(xfilepath& filename);
-			static void				sCreate(xfilepath& filename, xfilestream& outFileStream);
-			static void				sDelete(xfilepath& filename);
+			static bool				sExists(const xfilepath& filename);
+			static u64				sLength(const xfilepath& filename);
+			static void				sCreate(const xfilepath& filename, xfilestream& outFileStream);
+			static void				sDelete(const xfilepath& filename);
 
-			static void				sOpen(xfilepath& filename, xfilestream& outFileStream);
-			static void				sOpenRead(xfilepath& filename, xfilestream& outFileStream);
-			static void				sOpenWrite(xfilepath& filename, xfilestream& outFileStream);
+			static void				sOpen(const xfilepath& filename, xfilestream& outFileStream);
+			static void				sOpenRead(const xfilepath& filename, xfilestream& outFileStream);
+			static void				sOpenWrite(const xfilepath& filename, xfilestream& outFileStream);
 			
 			///< Opens a binary file, reads the contents of the file into a byte buffer, and then closes the file.
-			static void				sReadAllBytes(xfilepath& filename, xbyte* buffer, s32 offset, s32 count);
+			static void				sReadAllBytes(const xfilepath& filename, xbyte* buffer, s32 offset, s32 count);
 			///< Creates a new file, writes the specified byte buffer to the file, and then closes the file. If the target file already exists, it is overwritten.
-			static void				sWriteAllBytes(xfilepath& filename, const xbyte* buffer, s32 offset, s32 count);
+			static void				sWriteAllBytes(const xfilepath& filename, const xbyte* buffer, s32 offset, s32 count);
 
-			static void				sSetCreationTime(xfilepath& filename, const xdatetime& creationTime);
-			static void				sGetCreationTime(xfilepath& filename, xdatetime& outCreationTime);
-			static void				sSetLastAccessTime(xfilepath& filename, const xdatetime& lastAccessTime);
-			static void				sGetLastAccessTime(xfilepath& filename, xdatetime& outLastAccessTime);
-			static void				sSetLastWriteTime(xfilepath& filename, const xdatetime& lastWriteTime);
-			static void				sGetLastWriteTime(xfilepath& filename, xdatetime& outLastWriteTime);
+			static void				sGetCreationTime(const xfilepath& filename, xdatetime& outCreationTime);
+			static void				sSetLastAccessTime(const xfilepath& filename, const xdatetime& lastAccessTime);
+			static void				sGetLastAccessTime(const xfilepath& filename, xdatetime& outLastAccessTime);
+			static void				sSetLastWriteTime(const xfilepath& filename, const xdatetime& lastWriteTime);
+			static void				sGetLastWriteTime(const xfilepath& filename, xdatetime& outLastWriteTime);
 
 			///< Copies an existing file to a new file. Overwriting a file of the same name is allowed.
-			static void				sCopy(xfilepath& sourceFilename, xfilepath& destFilename, xbool overwrite=xFALSE);
+			static void				sCopy(const xfilepath& sourceFilename, const xfilepath& destFilename, xbool overwrite);
 			///< Moves a specified file to a new location, providing the option to specify a new file name.
-			static void				sMove(xfilepath& sourceFilename, xfilepath& destFilename);
+			static void				sMove(const xfilepath& sourceFilename, const xfilepath& destFilename);
 		};
 
 		//==============================================================================

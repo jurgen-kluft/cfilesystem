@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_IOTHREAD_H__
-#define __X_FILESYSTEM_IOTHREAD_H__
+#ifndef __X_FILESYSTEM_ENUMERATOR_H__
+#define __X_FILESYSTEM_ENUMERATOR_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -9,34 +9,23 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
-#include "xbase\x_debug.h"
 
-//==============================================================================
-// xcore namespace
 //==============================================================================
 namespace xcore
 {
 	namespace xfilesystem
 	{
-		//==============================================================================
-		// IO Thread and Stream synchronization
-		//==============================================================================
-		class xthreading
+		template<typename _Arg>
+		struct enumerate_delegate
 		{
-		public:
-			virtual				~xthreading() {}
-
-			///< IO Thread
-			virtual void		sleep(u32 ms) = 0;
-			virtual bool		loop() const = 0;
-			virtual void		wait() = 0;
-			virtual void		signal() = 0;
-
-			///< Stream synchronization
-			virtual void		wait(u32 streamIndex) = 0;
-			virtual void		signal(u32 streamIndex) = 0;
+			///< Return false to terminate the breadth first traversal
+			virtual bool operator () (s32 depth) = 0;
+			virtual void operator () (s32 depth, const _Arg& inf) = 0;
 		};
 
+		//==============================================================================
+		// END xfilesystem namespace
+		//==============================================================================
 	};
 
 	//==============================================================================
@@ -45,6 +34,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_IOTHREAD_H__
+// END __X_FILESYSTEM_ENUMERATOR_H__
 //==============================================================================
 #endif

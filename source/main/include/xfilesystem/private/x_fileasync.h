@@ -10,6 +10,8 @@
 //==============================================================================
 #include "xbase\x_types.h"
 
+#include "xfilesystem\private\x_filesystem_common.h"
+
 //==============================================================================
 // xcore namespace
 //==============================================================================
@@ -43,6 +45,8 @@ namespace xcore
 
 		struct xfileasync
 		{
+			XFILESYSTEM_OBJECT_NEW_DELETE()
+
 			xfileasync*			getPrev	() const								{ return m_pPrev; }
 			xfileasync*			getNext	() const								{ return m_pNext; }
 

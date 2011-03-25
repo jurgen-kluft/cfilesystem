@@ -9,6 +9,7 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
+#include "xfilesystem\private\x_filesystem_common.h"
 
 namespace xcore
 {
@@ -16,15 +17,23 @@ namespace xcore
 	{
 		/// Circular Fifo (a.k.a. Circular Buffer) 
 		/// Thread safe for one reader, and one writer
-		template<typename TElement, xcore::u32 TSize>
+		template<typename TElement>
 		class spsc_cqueue
 		{
 		public:
-			enum
-			{
-				capacity = TSize
-			};
-									spsc_cqueue() : mTail(0), mHead(0)						{ }
+									spsc_cqueue()
+										: mTail(0)
+										, mHead(0)
+										, mCapacity(0)
+										, mArray(NULL)			{ }
+
+									spsc_cqueue(s32 _capacity, TElement volatile* _array) 
+										: mTail(0)
+										, mHead(0)
+										, mCapacity(_capacity)
+										, mArray(_array)		{ }
+
+			XFILESYSTEM_OBJECT_NEW_DELETE()
 
 			xcore::xbool			push(TElement item_);
 			xcore::xbool			pop(TElement& item_);
@@ -33,15 +42,16 @@ namespace xcore
 			xcore::xbool			full() const;
 			xcore::u32				size() const;
 
-			void*					operator new (size_t size, void *p)					{ return p; }
-			void					operator delete(void* mem, void* )					{ }	
+			TElement volatile*		getArray() const;
 
 		private:
 			volatile xcore::u32		mTail;											// input index
 			xcore::xbyte			padding1[CACHE_LINE_SIZE-sizeof(xcore::u32)];
 			volatile xcore::u32		mHead;											// output index
 			xcore::xbyte			padding2[CACHE_LINE_SIZE-sizeof(xcore::u32)];
-			volatile TElement		mArray[capacity];
+			volatile xcore::u32		mCapacity;										// capacity
+			xcore::xbyte			padding3[CACHE_LINE_SIZE-sizeof(xcore::u32)];
+			TElement volatile		*mArray;
 
 			xcore::u32				increment(xcore::u32 idx_) const;
 		};
@@ -52,8 +62,8 @@ namespace xcore
 		///
 		/// \param item_ copy by reference the input item
 		/// \return whether operation was successful or not
-		template<typename TElement, xcore::u32 TSize>
-		xcore::xbool spsc_cqueue<TElement, TSize>::push(TElement item_)
+		template<typename TElement>
+		xcore::xbool spsc_cqueue<TElement>::push(TElement item_)
 		{
 			xcore::s32 nextTail = increment(mTail);
 			if(nextTail != mHead)
@@ -73,8 +83,8 @@ namespace xcore
 		///
 		/// \param item_ return by reference the wanted item
 		/// \return whether operation was successful or not */
-		template<typename TElement, xcore::u32 TSize>
-		xcore::xbool spsc_cqueue<TElement, TSize>::pop(TElement& item_)
+		template<typename TElement>
+		xcore::xbool spsc_cqueue<TElement>::pop(TElement& item_)
 		{
 			if(mHead == mTail)
 				return false;  // empty queue
@@ -89,8 +99,8 @@ namespace xcore
 		/// as the Producer adds more items.
 		///
 		/// \return true if circular buffer is empty */
-		template<typename TElement, xcore::u32 TSize>
-		xcore::xbool spsc_cqueue<TElement, TSize>::empty() const
+		template<typename TElement>
+		xcore::xbool spsc_cqueue<TElement>::empty() const
 		{
 			return (mHead == mTail);
 		}
@@ -100,22 +110,22 @@ namespace xcore
 		/// as the Consumer catches up.
 		///
 		/// \return true if circular buffer is full.  */
-		template<typename TElement, xcore::u32 TSize>
-		xcore::xbool spsc_cqueue<TElement, TSize>::full() const
+		template<typename TElement>
+		xcore::xbool spsc_cqueue<TElement>::full() const
 		{
-			xcore::s32 tailCheck = (mTail+1) % capacity;
+			xcore::s32 tailCheck = (mTail+1) % mCapacity;
 			return (tailCheck == mHead);
 		}
 
 		/// Returns the number of items in the queue
 		///
 		/// \return size.  */
-		template<typename TElement, xcore::u32 TSize>
-		xcore::u32 spsc_cqueue<TElement, TSize>::size() const
+		template<typename TElement>
+		xcore::u32 spsc_cqueue<TElement>::size() const
 		{
 			xcore::s32 diff = mHead - mTail;
 			if (diff < 0) 
-				diff += TSize;
+				diff += mCapacity;
 			return (xcore::u32)diff;
 		}
 
@@ -124,8 +134,8 @@ namespace xcore
 		///
 		///  \param idx_ the index to the incremented/wrapped
 		///  \return new value for the index */
-		template<typename TElement, xcore::u32 TSize>
-		xcore::u32 spsc_cqueue<TElement, TSize>::increment(xcore::u32 idx_) const
+		template<typename TElement>
+		xcore::u32 spsc_cqueue<TElement>::increment(xcore::u32 idx_) const
 		{
 			// increment or wrap
 			// =================
@@ -134,10 +144,15 @@ namespace xcore
 			//
 			//or as written below:   
 			//    index = (index+1) % mArray.length
-			idx_ = (idx_+1) % capacity;
+			idx_ = (idx_+1) % mCapacity;
 			return idx_;
 		}
 
+		template<typename TElement>
+		TElement volatile* spsc_cqueue<TElement>::getArray() const
+		{
+			return mArray;
+		}
 	}
 }
 
