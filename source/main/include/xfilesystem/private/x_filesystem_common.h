@@ -17,6 +17,7 @@
 //==============================================================================
 namespace xcore
 {
+	class xcstring;
 	class xdatetime;
 
 	//==============================================================================
@@ -123,7 +124,7 @@ namespace xcore
 		extern void*			heapAlloc			( s32 size, s32 alignment );
 		extern void				heapFree			( void* mem );
 
-		extern void 			initialise			( xbool boEnableCache = false );
+		extern void 			initialise			( u32 uMaxOpenStreams );
 		extern void				shutdown			( void );
 
 		///< Threading
@@ -131,10 +132,10 @@ namespace xcore
 		extern xthreading*		getThreading		( void );
 
 		///< Common
-		extern void				initialiseCommon	( xbool boEnableCache );
+		extern void				initialiseCommon	( u32 uMaxOpenStreams );
 		extern void				shutdownCommon		( void );
 
-		extern xfiledevice*		createSystemPath	( const char* szFilename, char* outFilename, s32 inFilenameMaxLen );
+		extern xfiledevice*		createSystemPath	( const char* szFilename, xcstring& outFilename );
 
 		extern xfiledata*		getFileInfo			( u32 uHandle );
 		extern u32				findFreeFileSlot	( void );
@@ -154,10 +155,11 @@ namespace xcore
 		extern void				setLastError		( EError error );
 
 		///< Synchronous file operations
+		extern u32				syncCreate			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
 		extern u32				syncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
 		extern u64				syncSize			( u32 uHandle );
-		extern void				syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );	
-		extern void				syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
+		extern u64				syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );	
+		extern u64				syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
 		extern void 			syncClose			( u32& uHandle );
 		extern void				syncDelete			( u32& uHandle );
 

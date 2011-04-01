@@ -150,7 +150,8 @@ namespace xcore
 		const xdevicealias*		xdevicealias::sFind(const xfilepath& inFilename)
 		{
 			char deviceStrBuffer[64];
-			inFilename.getDeviceName(deviceStrBuffer, sizeof(deviceStrBuffer)-1);
+			xcstring deviceName(deviceStrBuffer, sizeof(deviceStrBuffer));
+			inFilename.getDeviceName(deviceName);
 			const xdevicealias* alias = sFind(deviceStrBuffer);
 			return alias;
 		}
@@ -160,7 +161,8 @@ namespace xcore
 		const xdevicealias*		xdevicealias::sFind(const xdirpath& inDirectory)
 		{
 			char deviceStrBuffer[64];
-			inDirectory.getDeviceName(deviceStrBuffer, sizeof(deviceStrBuffer)-1);
+			xcstring deviceName(deviceStrBuffer, sizeof(deviceStrBuffer));
+			inDirectory.getDeviceName(deviceName);
 			const xdevicealias* alias = sFind(deviceStrBuffer);
 			return alias;
 		}

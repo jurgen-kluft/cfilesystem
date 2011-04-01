@@ -22,7 +22,7 @@
 
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\private\x_fileinfo.h"
+#include "xfilesystem\private\x_filedata.h"
 #include "xfilesystem\private\x_fileasync.h"
 
 namespace xcore
@@ -89,9 +89,9 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				initialise ( xbool boEnableCache )
+		void				initialise ( u32 uMaxOpenStreams )
 		{
-			initialiseCommon( boEnableCache );
+			initialiseCommon( uMaxOpenStreams );
 		}	
 
 		//------------------------------------------------------------------------------------------

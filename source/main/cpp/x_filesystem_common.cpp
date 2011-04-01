@@ -10,7 +10,7 @@
 #include "xfilesystem\private\x_filesystem_spsc_queue.h"
 
 #include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\private\x_fileinfo.h"
+#include "xfilesystem\private\x_filedata.h"
 #include "xfilesystem\private\x_fileasync.h"
 #include "xfilesystem\x_iasync_result.h"
 #include "xfilesystem\x_filedevice.h"
@@ -239,8 +239,6 @@ namespace xcore
 				pOpen = freeAsyncIOPop();
 			}
 
-			xfiledata* pInfo = getFileInfo(uHandle);
-
 			pOpen->setFileIndex			(uHandle);
 			pOpen->setStatus			(FILE_OP_STATUS_OPEN_PENDING);
 			pOpen->setReadAddress		(NULL);
@@ -352,8 +350,6 @@ namespace xcore
 				pDelete = freeAsyncIOPop();
 			}
 
-			xfiledata* pInfo = getFileInfo(uHandle);
-
 			pDelete->setFileIndex		(uHandle);
 			pDelete->setStatus 			(FILE_OP_STATUS_DELETE_PENDING);
 			pDelete->setReadAddress		(NULL);
@@ -387,8 +383,6 @@ namespace xcore
 				pClose = freeAsyncIOPop();
 			}
 
-			xfiledata* pInfo = getFileInfo(uHandle);
-
 			pClose->setFileIndex		(uHandle);
 			pClose->setStatus 			(FILE_OP_STATUS_CLOSE_PENDING);
 			pClose->setReadAddress		(NULL);
@@ -417,8 +411,9 @@ namespace xcore
 				return (u32)INVALID_FILE_HANDLE;
 			}
 
-			char szFullName[FS_MAX_PATH];
-			xfiledevice* device = createSystemPath(szFilename, szFullName, FS_MAX_PATH);
+			char szSystemFilenameBuffer[FS_MAX_PATH + 2];
+			xcstring szSystemFilename(szSystemFilenameBuffer, sizeof(szSystemFilenameBuffer));
+			xfiledevice* device = createSystemPath(szFilename, szSystemFilename);
 
 			if (device==NULL)
 			{
@@ -440,7 +435,7 @@ namespace xcore
 			fileInfo->m_nFileHandle		= (u32)PENDING_FILE_HANDLE;
 			fileInfo->m_nFileIndex		= uHandle;
 
-			x_strcpy(fileInfo->m_szFilename, FS_MAX_PATH, szFullName);
+			xcstring fileInfoFilename(fileInfo->m_szFilename, fileInfo->m_sFilenameMaxLen, szSystemFilename.c_str());
 
 			fileInfo->m_boReading		= boRead;
 			fileInfo->m_boWriting		= boWrite;
@@ -483,25 +478,25 @@ namespace xcore
 			sAllocator = allocator;
 		}
 
-		void				initialiseCommon ( xbool boEnableCache )
+		void				initialiseCommon ( u32 uMaxOpenStreams )
 		{
 			x_printf ("xfilesystem:"TARGET_PLATFORM_STR" INFO initialise()\n");
 
-			const u32 maxOpenedFiles = m_uMaxOpenedFiles;
-			const u32 maxAsyncOperations = m_uMaxAsyncOperations;
+			m_uMaxOpenedFiles = uMaxOpenStreams;
+			m_uMaxAsyncOperations = uMaxOpenStreams;
 
-			m_Filenames = (char**)heapAlloc(maxOpenedFiles * sizeof(char*), X_ALIGNMENT_DEFAULT);
-			for (u32 uFile = 0; uFile < maxOpenedFiles; uFile++)
-				m_Filenames[uFile] = (char*)heapAlloc(FS_MAX_PATH, X_ALIGNMENT_DEFAULT);
+			m_Filenames = (char**)heapAlloc(m_uMaxOpenedFiles * sizeof(char*), X_ALIGNMENT_DEFAULT);
+			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
+				m_Filenames[uFile] = (char*)heapAlloc(FS_MAX_PATH + 2, X_ALIGNMENT_DEFAULT);
 
-			m_AsyncResults = (xiasync_result_imp*)heapAlloc(maxOpenedFiles * sizeof(xiasync_result_imp), X_ALIGNMENT_DEFAULT);
-			for (u32 uFile = 0; uFile < maxOpenedFiles; uFile++)
+			m_AsyncResults = (xiasync_result_imp*)heapAlloc(m_uMaxOpenedFiles * sizeof(xiasync_result_imp), X_ALIGNMENT_DEFAULT);
+			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
 				new (&m_AsyncResults[uFile]) xiasync_result_imp();
-			m_OpenAsyncFile = (xfiledata*)heapAlloc(maxOpenedFiles * sizeof(xfiledata), X_ALIGNMENT_DEFAULT);
-			for (u32 uFile = 0; uFile < maxOpenedFiles; uFile++)
+			m_OpenAsyncFile = (xfiledata*)heapAlloc(m_uMaxOpenedFiles * sizeof(xfiledata), X_ALIGNMENT_DEFAULT);
+			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
 				new (&m_OpenAsyncFile[uFile]) xfiledata();
-			m_AsyncIOData = (xfileasync*)heapAlloc(maxOpenedFiles * sizeof(xfileasync), X_ALIGNMENT_DEFAULT);
-			for (u32 uFile = 0; uFile < maxOpenedFiles; uFile++)
+			m_AsyncIOData = (xfileasync*)heapAlloc(m_uMaxOpenedFiles * sizeof(xfileasync), X_ALIGNMENT_DEFAULT);
+			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
 				new (&m_AsyncIOData[uFile]) xfileasync();
 			m_eLastErrorStack = (EError*)heapAlloc(m_uMaxErrorItems * sizeof(EError), X_ALIGNMENT_DEFAULT);
 
@@ -517,15 +512,15 @@ namespace xcore
 			if (m_pFreeAsyncIOList == NULL)
 			{
 				void* mem1 = heapAlloc(sizeof(spsc_cqueue<xfileasync*>), CACHE_LINE_SIZE);
-				void* mem2 = heapAlloc(maxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
-				spsc_cqueue<xfileasync*>* queue = new (mem1) spsc_cqueue<xfileasync*>(maxAsyncOperations, (xfileasync* volatile*)mem2);
+				void* mem2 = heapAlloc(m_uMaxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
+				spsc_cqueue<xfileasync*>* queue = new (mem1) spsc_cqueue<xfileasync*>(m_uMaxAsyncOperations, (xfileasync* volatile*)mem2);
 				m_pFreeAsyncIOList = queue;
 			}
 			if (m_pAsyncIOList == NULL)
 			{
 				void* mem1 = heapAlloc(sizeof(spsc_cqueue<xfileasync*>), CACHE_LINE_SIZE);
-				void* mem2 = heapAlloc(maxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
-				spsc_cqueue<xfileasync*>* queue = new (mem1) spsc_cqueue<xfileasync*>(maxAsyncOperations, (xfileasync* volatile*)mem2);
+				void* mem2 = heapAlloc(m_uMaxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
+				spsc_cqueue<xfileasync*>* queue = new (mem1) spsc_cqueue<xfileasync*>(m_uMaxAsyncOperations, (xfileasync* volatile*)mem2);
 				m_pAsyncIOList = queue;
 			}
 
@@ -535,13 +530,17 @@ namespace xcore
 			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
 			{
 				m_OpenAsyncFile[uFile].clear();
-
 				m_OpenAsyncFile[uFile].m_szFilename = m_Filenames[uFile];
+				m_OpenAsyncFile[uFile].m_sFilenameMaxLen = FS_MAX_PATH;
+
+				x_memset(m_OpenAsyncFile[uFile].m_szFilename, 0, FS_MAX_PATH);
 				m_OpenAsyncFile[uFile].m_szFilename[0] = '\0';
-				m_OpenAsyncFile[uFile].m_sFilenameMaxLen = FS_MAX_PATH-1;
+				m_OpenAsyncFile[uFile].m_szFilename[1] = '\0';
+				m_OpenAsyncFile[uFile].m_szFilename[FS_MAX_PATH+0] = '\0';
+				m_OpenAsyncFile[uFile].m_szFilename[FS_MAX_PATH+1] = '\0';
 			}
 
-			for(u32 uSlot = 0; uSlot < maxAsyncOperations; uSlot++)	
+			for(u32 uSlot = 0; uSlot < m_uMaxAsyncOperations; uSlot++)	
 			{
 				m_AsyncIOData[uSlot].clear();
 				m_pFreeAsyncIOList->push(&m_AsyncIOData[uSlot]);
@@ -598,6 +597,8 @@ namespace xcore
 			virtual void		wait()								{ }
 			virtual void		signal()							{ }
 
+			virtual void		lock(u32 streamIndex)				{ }
+			virtual void		unlock(u32 streamIndex)				{ }
 			virtual void		wait(u32 streamIndex)				{ }
 			virtual void		signal(u32 streamIndex)				{ }
 		};
@@ -619,13 +620,10 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfiledevice*			createSystemPath( const char* inFilename, char* outFilename, s32 inFilenameMaxLen )
+		xfiledevice*			createSystemPath( const char* inFilename, xcstring& outFilename )
 		{
-			xfiledevice* device = NULL;
-
 			xfilepath szFilename(inFilename);
 			const xfilesystem::xdevicealias* alias = xdevicealias::sFind(szFilename);
-
 			if (alias == NULL)
 			{
 				// Take the workdir
@@ -634,9 +632,9 @@ namespace xcore
 
 			// Remove the device part and replace it with the remap part of the file device that matches the
 			// device part of the filename.
-			device = alias->device();
+			xfiledevice* device = alias->device();
 			szFilename.setDevicePart(alias->remap());
-			x_strcpy(outFilename, inFilenameMaxLen, szFilename.c_str());
+			outFilename = szFilename.c_str();
 
 			return device;
 		}
@@ -836,15 +834,32 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 		///< Synchronous file operations
-
-		u32					syncOpen			( const char* szName, xbool boRead, xbool boWrite)
+		u32					syncCreate			( const char* szFilename, xbool boRead, xbool boWrite)
 		{
-			u32 uHandle = asyncPreOpen(szName, boRead, boWrite);
+			u32 uHandle = asyncPreOpen(szFilename, boRead, boWrite);
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u32 nFileHandle;
-			if (!pxFileInfo->m_pFileDevice->openOrCreateFile((u32)pxFileInfo->m_nFileIndex, pxFileInfo->m_szFilename, boRead, boWrite, nFileHandle))
+			if (!pxFileInfo->m_pFileDevice->createFile(szFilename, boRead, boWrite, nFileHandle))
 			{
-				x_printf ("device->openOrCreateFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("device->createFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				pxFileInfo->clear();
+				uHandle = (u32)INVALID_FILE_HANDLE;
+			}
+			else
+			{
+				pxFileInfo->m_nFileHandle = nFileHandle;
+			}
+			return uHandle;
+		}
+
+		u32					syncOpen			( const char* szFilename, xbool boRead, xbool boWrite)
+		{
+			u32 uHandle = asyncPreOpen(szFilename, boRead, boWrite);
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
+			u32 nFileHandle;
+			if (!pxFileInfo->m_pFileDevice->openFile(szFilename, boRead, boWrite, nFileHandle))
+			{
+				x_printf ("device->openFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 				pxFileInfo->clear();
 				uHandle = (u32)INVALID_FILE_HANDLE;
 			}
@@ -864,7 +879,7 @@ namespace xcore
 
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u64 length;
-			if (!pxFileInfo->m_pFileDevice->lengthOfFile(pxFileInfo->m_nFileHandle, length))
+			if (!pxFileInfo->m_pFileDevice->getLengthOfFile(pxFileInfo->m_nFileHandle, length))
 			{
 				x_printf ("device->lengthOfFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
@@ -873,10 +888,10 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer )
+		u64					syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
-				return;
+				return 0;
 
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u64 numBytesRead;
@@ -884,14 +899,15 @@ namespace xcore
 			{
 				x_printf ("device->ReadFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
+			return numBytesRead;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer )
+		u64					syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
-				return;
+				return 0;
 
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u64 numBytesWritten;
@@ -899,6 +915,7 @@ namespace xcore
 			{
 				x_printf ("device->WriteFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
+			return numBytesWritten;
 		}
 
 
@@ -930,7 +947,7 @@ namespace xcore
 			{
 				x_printf ("device->CloseFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
-			pxFileInfo->m_pFileDevice->deleteFile(pxFileInfo->m_nFileHandle, pxFileInfo->m_szFilename);
+			pxFileInfo->m_pFileDevice->deleteFile(pxFileInfo->m_szFilename);
 			pxFileInfo->clear();
 			uHandle = (u32)INVALID_FILE_HANDLE;
 		}

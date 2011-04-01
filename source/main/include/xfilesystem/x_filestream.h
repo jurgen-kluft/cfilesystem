@@ -26,8 +26,8 @@ namespace xcore
 		enum EFileMode
 		{
 			FileMode_CreateNew, 				///< Specifies that the operating system should create a new file. If the file already exists it will do nothing.
-			FileMode_Create,					///< Specifies that the operating system should create a new file. If the file already exists, it will be overwritten. FileMode.Create is equivalent to requesting that if the file does not exist, use CreateNew; otherwise, use Truncate. 
-			FileMode_Open, 						///< Specifies that the operating system should open an existing file. The ability to open the file is dependent on the value specified by FileAccess. Nothing is done if the file does not exist.
+			FileMode_Create,					///< Specifies that the operating system should create a new file. If the file already exists, it will be overwritten. EFileMode.Create is equivalent to requesting that if the file does not exist, use CreateNew; otherwise, use Truncate. 
+			FileMode_Open, 						///< Specifies that the operating system should open an existing file. The ability to open the file is dependent on the value specified by EFileAccess. Nothing is done if the file does not exist.
 			FileMode_OpenOrCreate, 				///< Specifies that the operating system should open a file if it exists; otherwise, a new file should be created.
 			FileMode_Truncate, 					///< Specifies that the operating system should open an existing file. Once opened, the file should be truncated so that its size is zero bytes. 
 			FileMode_Append 					///< Opens the file if it exists and seeks to the end of the file, or creates a new file. Attempting to seek to a position before the end of the file will do nothing and any attempt to read fails.

@@ -19,8 +19,16 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 		UNITTEST_TEST(constructor1)
 		{
-			const char* str = "This is a test string";
+			xfilepath p1;
 
+			CHECK_TRUE(p1.empty());
+			CHECK_TRUE(p1.length() == 0);
+			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+		}
+
+		UNITTEST_TEST(constructor2)
+		{
+			const char* str = "TEST:\\textfiles\\docs";
 			xfilepath p(str);
 
 			CHECK_FALSE(p.empty());
@@ -29,10 +37,9 @@ UNITTEST_SUITE_BEGIN(filepath)
 			CHECK_EQUAL(x_strCompare(p.c_str(), str), 0);
 		}
 
-		UNITTEST_TEST(constructor2)
+		UNITTEST_TEST(constructor3)
 		{
-			const char* str = "This is a test string";
-
+			const char* str = "TEST:\\textfiles\\docs";
 			xfilepath p1(str);
 
 			CHECK_FALSE(p1.empty());
@@ -46,21 +53,11 @@ UNITTEST_SUITE_BEGIN(filepath)
 			CHECK_TRUE(p2.length() == x_strlen(str));
 			CHECK_EQUAL(p2.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p2.c_str(), str), 0);
-		}
-
-		UNITTEST_TEST(constructor3)
-		{
-			xfilepath p1;
-
-			CHECK_TRUE(p1.empty());
-			CHECK_TRUE(p1.length() == 0);
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 		}
 
 		UNITTEST_TEST(constructor4)
 		{
-			const char* str = "This is a test 1 string";
-
+			const char* str = "TEST:\\docs\\readme.txt";
 			xfilepath p1(str);
 
 			CHECK_FALSE(p1.empty());
@@ -68,17 +65,19 @@ UNITTEST_SUITE_BEGIN(filepath)
 			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str), 0);
 
-			xfilepath p2(p1);
+			xdirpath d1("TEST:\\textfiles");
+			const char* res = "TEST:\\textfiles\\docs\\readme.txt";
+			xfilepath p2(d1, p1);
 
 			CHECK_FALSE(p2.empty());
-			CHECK_TRUE(p2.length() == x_strlen(str));
+			CHECK_TRUE(p2.length() == x_strlen(res));
 			CHECK_EQUAL(p2.maxLength(), xfilepath::sMaxLength());
-			CHECK_EQUAL(x_strCompare(p2.c_str(), str), 0);
+			CHECK_EQUAL(x_strCompare(p2.c_str(), res), 0);
 		}
 
 		UNITTEST_TEST(clear)
 		{
-			const char* str = "Test";
+			const char* str = "TEST:\\docs";
 			xfilepath p1(str);
 
 			CHECK_FALSE(p1.empty());
@@ -93,16 +92,17 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 		UNITTEST_TEST(relative)
 		{
-			const char* str = "memory:\\folder\\filename.ext";
+			const char* str = "TEST:\\folder\\filename.ext";
 			xfilepath p1(str);
 
-			const char* relative_p1 = p1.relative();
-			CHECK_EQUAL(0, x_strCompare(relative_p1, "folder\\filename.ext"));
+			xfilepath r1;
+			p1.relative(r1);
+			CHECK_EQUAL(0, x_strCompare(r1.c_str(), "folder\\filename.ext"));
 		}
 
 		UNITTEST_TEST(setDeviceName)
 		{
-			const char* str = "memory:\\folder\\filename.ext";
+			const char* str = "TEST:\\folder\\filename.ext";
 			xfilepath p1(str);
 
 			p1.setDeviceName("remotesource");
@@ -115,7 +115,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 		UNITTEST_TEST(setDevicePart)
 		{
-			const char* str = "memory:\\folder\\filename.ext";
+			const char* str = "TEST:\\folder\\filename.ext";
 			xfilepath p1(str);
 
 			p1.setDevicePart("remotesource:\\");
@@ -210,13 +210,13 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 		UNITTEST_TEST(global_add_operator)
 		{
-			const char* str1 = "C:\\temp\\folderA\\filename.ext";
+			const char* str1 = "TEST:\\temp\\folderA\\filename.ext";
 			xfilepath f1(str1);
-			const char* str2 = "C:\\temp\\folderB\\folderC";
+			const char* str2 = "TEST:\\temp\\folderB\\folderC";
 			xdirpath d1(str2);
 
 			xfilepath f2 = d1 + f1;
-			CHECK_EQUAL(x_strCompare(f2.c_str(), "C:\\temp\\folderB\\folderC\\temp\\folderA\\filename.ext"), 0);
+			CHECK_EQUAL(x_strCompare(f2.c_str(), "TEST:\\temp\\folderB\\folderC\\temp\\folderA\\filename.ext"), 0);
 		}
 	}
 }

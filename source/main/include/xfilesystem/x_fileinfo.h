@@ -25,53 +25,67 @@ namespace xcore
 		class xdevicealias;
 		class xdirinfo;
 		class xfilestream;
-		class xfileinfo_imp;
 
 		class xfileinfo
 		{
-			xfileinfo_imp*			mImplementation;
+			xfilepath				mFilePath;
+			
+			static
+			const xdevicealias*		sGetAlias(const xfilepath&);
 
 		public:
 									xfileinfo();
-									xfileinfo(xfileinfo& fileinfo);
+									xfileinfo(const xfileinfo& fileinfo);
 									xfileinfo(const char* filename);
-									xfileinfo(xfilepath& filename);
+									xfileinfo(const xfilepath& filename);
 
 			const xfilepath&		getFullName() const;
-			xbool					getName(char* outStr, s32 maxStrLength) const;
-			xbool					getExtension(char* outStr, s32 maxStrLength) const;
+			void					getName(xcstring& outName) const;
+			void					getExtension(xcstring& outExtension) const;
 			u64						getLength() const;
 
-			xbool					isValid() const;
-			xbool					isAbsolute() const;
-			xbool					isReadOnly() const;
+			bool					isValid() const;
+			bool					isRooted() const;
+			bool					isReadOnly() const;
 
-			xbool					exists() const;
-			void					create();
-			void					create(xfilestream& outFileStream);
-			void					remove();
+			bool					exists() const;
+			bool					create();
+			bool					create(xfilestream& outFileStream);
+			bool					remove();
 			void					refresh();
 
-			void					openRead(xfilestream& outFileStream);
-			void					openWrite(xfilestream& outFileStream);
+			bool					openRead(xfilestream& outFileStream);
+			bool					openWrite(xfilestream& outFileStream);
 
 			void					readAllBytes(xbyte* buffer, s32 offset, s32 count);
 			void					writeAllBytes(const xbyte* buffer, s32 offset, s32 count);
 
-			void					copy(const xfilepath& destFilename, xbool overwrite);
-			void					move(const xfilepath& destFilename);
+			bool					copy(const xfilepath& toFilename, bool overwrite);
+			bool					move(const xfilepath& toFilename);
 
 			const xdevicealias*		getAlias() const;
-			void					getRoot(xdirinfo& outInfo) const;
-			void					getParent(xdirinfo& outInfo) const;
+			void					getPath(xdirinfo& outInfo) const;
+			bool					getRoot(xdirinfo& outInfo) const;
+			bool					getParent(xdirinfo& outInfo) const;
+			void					getSubDir(const char* subDir, xdirinfo& outInfo) const;
+	
+			xfileinfo&				onlyFilename();
 
-			void					getCreationTime  (xdatetime&) const;
-			void					getLastAccessTime(xdatetime&) const;
-			void					getLastWriteTime (xdatetime&) const;
-			void					setLastAccessTime(const xdatetime&) const;
-			void					setLastWriteTime (const xdatetime&) const;
+			xfileinfo				getFilename() const;
+			void					up();
+			void					down(const char* subDir);
 
-			void					operator = (const xfileinfo&) const;
+			bool					getTime(xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
+			bool					getCreationTime  (xdatetime&) const;
+			bool					getLastAccessTime(xdatetime&) const;
+			bool					getLastWriteTime (xdatetime&) const;
+			bool					setTime(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
+			bool					setCreationTime(const xdatetime&);
+			bool					setLastAccessTime(const xdatetime&);
+			bool					setLastWriteTime (const xdatetime&);
+
+			xfileinfo&				operator = (const xfileinfo&);
+			xfileinfo&				operator = (const xfilepath&);
 
 			bool					operator == (const xfileinfo&) const;
 			bool					operator != (const xfileinfo&) const;
@@ -79,28 +93,31 @@ namespace xcore
 			///< Static functions
 			static bool				sExists(const xfilepath& filename);
 			static u64				sLength(const xfilepath& filename);
-			static void				sCreate(const xfilepath& filename, xfilestream& outFileStream);
-			static void				sDelete(const xfilepath& filename);
+			static bool				sCreate(const xfilepath& filename, xfilestream& outFileStream);
+			static bool				sDelete(const xfilepath& filename);
 
-			static void				sOpen(const xfilepath& filename, xfilestream& outFileStream);
-			static void				sOpenRead(const xfilepath& filename, xfilestream& outFileStream);
-			static void				sOpenWrite(const xfilepath& filename, xfilestream& outFileStream);
+			static bool				sOpen(const xfilepath& filename, xfilestream& outFileStream);
+			static bool				sOpenRead(const xfilepath& filename, xfilestream& outFileStream);
+			static bool				sOpenWrite(const xfilepath& filename, xfilestream& outFileStream);
 			
 			///< Opens a binary file, reads the contents of the file into a byte buffer, and then closes the file.
-			static void				sReadAllBytes(const xfilepath& filename, xbyte* buffer, s32 offset, s32 count);
+			static u64				sReadAllBytes(const xfilepath& filename, xbyte* buffer, u64 offset, u64 count);
 			///< Creates a new file, writes the specified byte buffer to the file, and then closes the file. If the target file already exists, it is overwritten.
-			static void				sWriteAllBytes(const xfilepath& filename, const xbyte* buffer, s32 offset, s32 count);
+			static u64				sWriteAllBytes(const xfilepath& filename, const xbyte* buffer, u64 offset, u64 count);
 
-			static void				sGetCreationTime(const xfilepath& filename, xdatetime& outCreationTime);
-			static void				sSetLastAccessTime(const xfilepath& filename, const xdatetime& lastAccessTime);
-			static void				sGetLastAccessTime(const xfilepath& filename, xdatetime& outLastAccessTime);
-			static void				sSetLastWriteTime(const xfilepath& filename, const xdatetime& lastWriteTime);
-			static void				sGetLastWriteTime(const xfilepath& filename, xdatetime& outLastWriteTime);
+			static bool				sSetTime(const xfilepath& filename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
+			static bool				sGetTime(const xfilepath& filename, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime);
+			static bool				sSetCreationTime(const xfilepath& filename, const xdatetime& creationTime);
+			static bool				sGetCreationTime(const xfilepath& filename, xdatetime& outCreationTime);
+			static bool				sSetLastAccessTime(const xfilepath& filename, const xdatetime& lastAccessTime);
+			static bool				sGetLastAccessTime(const xfilepath& filename, xdatetime& outLastAccessTime);
+			static bool				sSetLastWriteTime(const xfilepath& filename, const xdatetime& lastWriteTime);
+			static bool				sGetLastWriteTime(const xfilepath& filename, xdatetime& outLastWriteTime);
 
 			///< Copies an existing file to a new file. Overwriting a file of the same name is allowed.
-			static void				sCopy(const xfilepath& sourceFilename, const xfilepath& destFilename, xbool overwrite);
+			static bool				sCopy(const xfilepath& sourceFilename, const xfilepath& destFilename, bool overwrite);
 			///< Moves a specified file to a new location, providing the option to specify a new file name.
-			static void				sMove(const xfilepath& sourceFilename, const xfilepath& destFilename);
+			static bool				sMove(const xfilepath& sourceFilename, const xfilepath& destFilename);
 		};
 
 		//==============================================================================

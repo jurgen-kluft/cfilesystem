@@ -17,6 +17,8 @@ namespace xcore
 		class xiasync_result_null : public xiasync_result
 		{
 		public:
+			virtual					~xiasync_result_null()															{ }
+
 			virtual bool			isCompleted()																	{ return true; }
 			virtual void			waitUntilCompleted()															{ }
 
@@ -51,6 +53,7 @@ namespace xcore
 		{
 			if (mImplementation->release()==0)
 				mImplementation->destroy();
+			mImplementation = 0;
 		}
 
 		bool xasync_result::isCompleted() const
