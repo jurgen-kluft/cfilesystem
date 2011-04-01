@@ -84,9 +84,9 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				initialise ( u32 uAsyncQueueSize, xbool boEnableCache )
+		void				initialise ( u32 uMaxOpenStreams )
 		{
-			initialiseCommon(uAsyncQueueSize, boEnableCache);
+			initialiseCommon(uMaxOpenStreams);
 
 #ifndef TARGET_FINAL
 			HRESULT devkitDriveResult = DmMapDevkitDrive();

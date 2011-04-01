@@ -17,7 +17,7 @@
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_360.h"
 #include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\private\x_fileinfo.h"
+#include "xfilesystem\private\x_filedata.h"
 #include "xfilesystem\private\x_fileasync.h"
 
 namespace xcore

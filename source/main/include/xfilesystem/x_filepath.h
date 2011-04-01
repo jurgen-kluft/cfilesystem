@@ -19,6 +19,7 @@ namespace xcore
 	{
 		class xpath;
 		class xdirpath;
+		class xfiledevice;
 
 		//==============================================================================
 		// xfilepath: 
@@ -27,49 +28,64 @@ namespace xcore
 		//==============================================================================
 		class xfilepath
 		{
+		public:
+			enum ESettings { XFILE_MAX_PATH = 256 };
+
 		private:
-			enum ESettings { MAX_FILEPATH = 255 };
-			char			mStringBuffer[MAX_FILEPATH + 1];
-			xcstring		mString;
+			char					mStringBuffer[XFILE_MAX_PATH];
+			xcstring				mString;
 
 		public:
-							xfilepath();
-							xfilepath(const char* str);
-							xfilepath(const xfilepath& filepath);
-			explicit		xfilepath(const xdirpath& dir, const xfilepath& filename);
-							~xfilepath();
+									xfilepath();
+									xfilepath(const char* str);
+									xfilepath(const xfilepath& filepath);
+			explicit				xfilepath(const xdirpath& dir, const xfilepath& filename);
+									~xfilepath();
 
-			void			clear();
+			void					clear();
 
-			s32				length() const;
-			static s32		sMaxLength()			{ return MAX_FILEPATH; }
-			s32				maxLength() const;
-			xbool			empty() const;
-			xbool			isAbsolute() const;
+			s32						length() const;
+			static s32				sMaxLength()			{ return XFILE_MAX_PATH-2; }
+			s32						maxLength() const;
+			bool					empty() const;
+			bool					isRooted() const;
 
-			const char*		extension() const;
-			const char*		relative() const;													///< Points just after device part
-			void			getDirPath(xdirpath& outDirPath) const;
-
-			void			setDeviceName(const char* deviceName);
-			void			getDeviceName(char* deviceName, s32 deviceNameMaxLength) const;
-			void			setDevicePart(const char* devicePart);
-			void			getDevicePart(char* devicePart, s32 devicePartMaxLength) const;
+			void					relative(xfilepath&) const;
+			void					makeRelative();
 			
-			xfilepath&		operator =  ( const xfilepath& );
+			void					onlyFilename();
+			xfilepath				getFilename();
 
-			xfilepath&		operator =  ( const char* );
-			xfilepath&		operator += ( const char* );
+			void					up();
+			void					down(const char* subDir);
 
-			bool			operator == ( const xfilepath& rhs) const;
-			bool			operator != ( const xfilepath& rhs) const;
+			void					getName(xcstring& outName) const;
+			void					getExtension(xcstring& outExtension) const;
+			xfiledevice*			getSystem(xcstring& outSystemFilePath) const;
+			void					getDirPath(xdirpath& outDirPath) const;
+			bool					getRoot(xdirpath& outRootDirPath) const;
+			bool					getParent(xdirpath& outParentDirPath) const;
+			void					getSubDir(const char* subDir, xdirpath& outSubDirPath) const;
 
-			char			operator [] (s32 index) const;
+			void					setDeviceName(const char* deviceName);
+			void					getDeviceName(xcstring& outDeviceName) const;
+			void					setDevicePart(const char* devicePart);
+			void					getDevicePart(xcstring& outDevicePart) const;
+			
+			xfilepath&				operator =  (const char*);
+			xfilepath&				operator =  (const xfilepath&);
+			xfilepath&				operator += (const char*);
+			xfilepath&				operator += (const xfilepath&);
 
-			const char*		c_str() const;
+			bool					operator == (const xfilepath&) const;
+			bool					operator != (const xfilepath&) const;
+
+			char					operator [] (s32 index) const;
+
+			const char*				c_str() const;
 
 		private:
-			void			fixSlashes();														///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
+			void					fixSlashes();														///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
 		};
 
 		inline xfilepath	operator + (const xdirpath& dir, const xfilepath& filename)	{ return xfilepath(dir, filename); }

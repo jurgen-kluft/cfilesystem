@@ -55,10 +55,6 @@ namespace xcore
 		{
 		}
 
-		void		stats(xmem_managed_size& stats)
-		{
-		}
-
 		u32			usable_size(void *ptr)
 		{
 			return 0;
@@ -78,19 +74,27 @@ public:
 		return false; 
 	}
 
-	virtual void		wait(u32 index)
-	{
-	}
-
-	virtual void		signal(u32 index)
-	{
-	}
-
 	virtual void		wait()
 	{
 	}
 
 	virtual void		signal()
+	{
+	}
+
+	virtual void		lock(u32 index)
+	{
+	}
+
+	virtual void		unlock(u32 index)
+	{
+	}
+
+	virtual void		wait(u32 index)
+	{
+	}
+
+	virtual void		signal(u32 index)
 	{
 	}
 };
@@ -111,7 +115,7 @@ UNITTEST_SUITE_BEGIN(filesystem_init)
 		UNITTEST_TEST(init)
 		{
 			sHeapAllocator = xcore::TestHeapAllocator(sSystemAllocator);
-			xfilesystem::init(&sThreadObject, &sHeapAllocator);
+			xfilesystem::init(4, &sThreadObject, &sHeapAllocator);
 		}
 	}
 }

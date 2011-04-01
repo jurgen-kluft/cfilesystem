@@ -19,6 +19,7 @@ namespace xcore
 	{
 		class xpath;
 		class xfilepath;
+		class xfiledevice;
 
 		//==============================================================================
 		// xdirpath: 
@@ -27,49 +28,65 @@ namespace xcore
 		//==============================================================================
 		class xdirpath
 		{
+		public:
+			enum ESettings { XDIR_MAX_PATH = 256 };
+
 		protected:
 			friend class xfilepath;
-			char			mStringBuffer[256];
-			xcstring		mString;
+			char					mStringBuffer[XDIR_MAX_PATH];
+			xcstring				mString;
 
 		public:
-							xdirpath();
-							xdirpath(const char* str);
-							xdirpath(const xdirpath& dir);
-							~xdirpath();
+									xdirpath();
+									xdirpath(const char* str);
+									xdirpath(const xdirpath& dir);
+									~xdirpath();
 
-			void			clear();
+			void					clear();
 
-			s32				length() const;
-			s32				maxLength() const;
-			xbool			empty() const;
-			xbool			isAbsolute() const;
-			const char*		relative() const;
+			s32						getLength() const;
+			static s32				sMaxLength()			{ return XDIR_MAX_PATH-2; }
+			s32						getMaxLength() const;
+			bool					isEmpty() const;
 
-			bool			getName(char* outName, s32 nameMaxLength) const;
-			bool			getRoot(xdirpath& outRootDirPath) const;
-			bool			getParent(xdirpath& outParentDirPath) const;
-			bool			getSubDir(const char* subDir, xdirpath& outSubDirPath) const;
+			s32						getLevels() const;
 
-			void			setDeviceName(const char* deviceName);
-			void			getDeviceName(char* deviceName, s32 deviceNameMaxLength) const;
-			void			setDevicePart(const char* devicePart);
-			void			getDevicePart(char* devicePart, s32 devicePartMaxLength) const;
+			bool					isRoot() const;
+			bool					isRooted() const;
 			
-			xdirpath&		operator =  ( const xdirpath& );
+			void					relative(xdirpath& outRelative) const;
+			void					makeRelative();
 
-			xdirpath&		operator =  ( const char* );
-			xdirpath&		operator += ( const char* );
+			void					up();
+			void					down(const char* subDir);
+			void					split(s32 cnt, xdirpath& parent, xdirpath& subDir) const;	///< e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\; sub=="sub\\folder\\";
 
-			bool			operator == ( const xdirpath& rhs) const;
-			bool			operator != ( const xdirpath& rhs) const;
+			bool					getName(xcstring& outName) const;
+			bool					hasName(const char* inName) const;
+			xfiledevice*			getSystem(xcstring& outSystemDirPath) const;
+			bool					getRoot(xdirpath& outRootDirPath) const;
+			bool					getParent(xdirpath& outParentDirPath) const;
+			bool					getSubDir(const char* subDir, xdirpath& outSubDirPath) const;
 
-			char			operator [] (s32 index) const;
+			void					setDeviceName(const char* deviceName);
+			void					getDeviceName(xcstring& outDeviceName) const;
+			void					setDevicePart(const char* devicePart);
+			void					getDevicePart(xcstring& outDevicePart) const;
+			
+			xdirpath&				operator =  (const xdirpath&);
 
-			const char*		c_str() const;
+			xdirpath&				operator =  (const char*);
+			xdirpath&				operator += (const char*);
+
+			bool					operator == (const xdirpath& rhs) const;
+			bool					operator != (const xdirpath& rhs) const;
+
+			char					operator [] (s32 index) const;
+
+			const char*				c_str() const;
 
 		private:
-			void			fixSlashes();									///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
+			void					fixSlashes();									///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
 		};
 
 		//==============================================================================

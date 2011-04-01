@@ -3,6 +3,7 @@
 //==============================================================================
 #include "xbase\x_target.h"
 #include "xbase\x_debug.h"
+#include "xbase\x_limits.h"
 #include "xbase\x_string_std.h"
 #include "xbase\x_va_list.h"
 #include "xbase\x_bit_field.h"
@@ -31,11 +32,6 @@ namespace xcore
 		};
 
 		//------------------------------------------------------------------------------------------
-
-		class xifilestream;
-
-		static xifilestream*	sConstructFileStream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
-		static void				sDestructFileStream(xifilestream* stream);
 
 		class xifilestream : public xistream
 		{
@@ -68,48 +64,39 @@ namespace xcore
 									xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
 									~xifilestream(void);
 
+			XFILESYSTEM_OBJECT_NEW_DELETE()
+
 			virtual void			hold()																{ mRefCount++; }
 			virtual s32				release()															{ --mRefCount; return mRefCount; }
-			virtual void			destroy()															{ close(); sDestructFileStream(this); }
+			virtual void			destroy()															{ close(); delete this; }
 
 			virtual bool			canRead() const;													///< Gets a value indicating whether the current stream supports reading. (Overrides xstream.CanRead.)
 			virtual bool			canSeek() const;													///< Gets a value indicating whether the current stream supports seeking. (Overrides xstream.CanSeek.)
 			virtual bool			canWrite() const;													///< Gets a value indicating whether the current stream supports writing. (Overrides xstream.CanWrite.)
+			virtual bool			isOpen() const;														///< Gets a value indicating whether the stream is open or closed
 			virtual bool			isAsync() const;													///< Gets a value indicating whether the stream was opened asynchronously or synchronously.
-			virtual u64				length() const;														///< Gets the length in bytes of the stream. (Overrides xstream.Length.)
-			virtual void			setLength(s64 length);								 				///< When overridden in a derived class, sets the length of the current stream.
-			virtual u64				position() const;													///< Gets the current position of this stream. (Overrides xstream.Position.)
+			virtual u64				getLength() const;													///< Gets the length in bytes of the stream. (Overrides xstream.Length.)
+			virtual void			setLength(u64 length);								 				///< When overridden in a derived class, sets the length of the current stream.
+			virtual u64				getPosition() const;												///< Gets the current position of this stream. (Overrides xstream.Position.)
 			virtual void			setPosition(u64 Pos);												///< Sets the current position of this stream. (Overrides xstream.Position.)
 
-			virtual s64				seek(s64 offset, ESeekOrigin origin);			 					///< When overridden in a derived class, sets the position within the current stream.
+			virtual u64				seek(s64 offset, ESeekOrigin origin);			 					///< When overridden in a derived class, sets the position within the current stream.
 			virtual void			close(); 															///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
 			virtual void			flush();															///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
 
-			virtual void			read(xbyte* buffer, s32 offset, s32 count);		 					///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
+			virtual u64				read(xbyte* buffer, u64 offset, u64 count);		 					///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
 			virtual s32				readByte();											 				///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
-			virtual void			write(const xbyte* buffer, s32 offset, s32 count);					///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
+			virtual u64				write(const xbyte* buffer, u64 offset, u64 count);					///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 			virtual void			writeByte(xbyte value);								 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
-			virtual xasync_result	beginRead(xbyte* buffer, s32 offset, s32 count, AsyncCallback callback);	  	///< Begins an asynchronous read operation.
+			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	  	///< Begins an asynchronous read operation.
 			virtual void			endRead(xasync_result& asyncResult);											///< Waits for the pending asynchronous read to complete.
-			virtual xasync_result	beginWrite(const xbyte* buffer, s32 offset, s32 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
+			virtual xasync_result	beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
 			virtual void			endWrite(xasync_result& asyncResult);											///< Ends an asynchronous write operation.
 
 			virtual void			copyTo(xistream* dst);												///< Reads the bytes from the current stream and writes them to the destination stream.
-			virtual void			copyTo(xistream* dst, s32 count);									///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
-
-			XFILESYSTEM_OBJECT_NEW_DELETE()
+			virtual void			copyTo(xistream* dst, u64 count);									///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
 		};
-
-		static xifilestream*	sConstructFileStream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
-		{
-			xifilestream* fs = new xifilestream(filename, mode, access, op);
-			return fs;
-		}
-		static void				sDestructFileStream(xifilestream* stream)
-		{
-			delete stream;
-		}
 
 		static xifilestream		sEmptyFileStream;
 
@@ -127,7 +114,7 @@ namespace xcore
 
 		xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
 		{
-			mImplementation = sConstructFileStream(filename, mode, access, op);
+			mImplementation = new xifilestream(filename, mode, access, op);
 		}
 
 		xfilestream::~xfilestream()
@@ -136,7 +123,7 @@ namespace xcore
 
 		xfilestream&			xfilestream::operator =			(const xfilestream& other)
 		{
-			if (other.mImplementation == mImplementation)
+			if (this == &other)
 				return *this;
 
 			if (mImplementation->release() == 0)
@@ -268,22 +255,27 @@ namespace xcore
 			return mCaps.isSet(CAN_WRITE);
 		}
 
+		bool			xifilestream::isOpen() const
+		{
+			return mFileHandle != INVALID_FILE_HANDLE;
+		}
+
 		bool			xifilestream::isAsync() const
 		{
 			return mCaps.isSet(USE_ASYNC);
 		}
 
-		u64				xifilestream::length() const
+		u64				xifilestream::getLength() const
 		{
 			return xfilesystem::getLength(mFileHandle);
 		}
 		
-		void			xifilestream::setLength(s64 length)
+		void			xifilestream::setLength(u64 length)
 		{
 			xfilesystem::setLength(mFileHandle, length);
 		}
 
-		u64				xifilestream::position() const
+		u64				xifilestream::getPosition() const
 		{
 			return (u64)mFileSeekPos;
 		}
@@ -293,7 +285,7 @@ namespace xcore
 			mFileSeekPos = Pos;
 		}
 
-		s64				xifilestream::seek(s64 offset, ESeekOrigin origin)
+		u64				xifilestream::seek(s64 offset, ESeekOrigin origin)
 		{
 			if (mCaps.isSet(USE_SEEK))
 			{
@@ -301,13 +293,13 @@ namespace xcore
 				{
 					case Seek_Begin: mFileSeekPos = offset; break;
 					case Seek_Current: mFileSeekPos += offset; break;
-					case Seek_End: mFileSeekPos = (s64)length() + offset; break;
+					case Seek_End: mFileSeekPos = (s64)getLength() + offset; break;
 				}
 				
 				if (mFileSeekPos < 0)
 					mFileSeekPos = 0;
 
-				return mFileSeekPos;
+				return (u64)mFileSeekPos;
 			}
 			return 0;
 		}
@@ -318,15 +310,16 @@ namespace xcore
 			{
 				xfilesystem::syncClose(mFileHandle);
 			}
+			mFileSeekPos = X_S64_MIN;
 		}
 
 		void			xifilestream::flush()
 		{
 		}
 
-		void			xifilestream::read(xbyte* buffer, s32 offset, s32 count)
+		u64				xifilestream::read(xbyte* buffer, u64 offset, u64 count)
 		{
-			xfilesystem::syncRead(mFileHandle, mFileSeekPos, count, &buffer[offset]);
+			return xfilesystem::syncRead(mFileHandle, mFileSeekPos, count, &buffer[offset]);
 		}
 
 		s32				xifilestream::readByte()
@@ -336,9 +329,9 @@ namespace xcore
 			return (s32)data[0];
 		}
 
-		void			xifilestream::write(const xbyte* buffer, s32 offset, s32 count)
+		u64				xifilestream::write(const xbyte* buffer, u64 offset, u64 count)
 		{
-			xfilesystem::syncWrite(mFileHandle, mFileSeekPos, count, &buffer[offset]);
+			return xfilesystem::syncWrite(mFileHandle, mFileSeekPos, count, &buffer[offset]);
 		}
 
 		void			xifilestream::writeByte(xbyte value)
@@ -348,7 +341,7 @@ namespace xcore
 			xfilesystem::syncWrite(mFileHandle, mFileSeekPos, 1, data);
 		}
 
-		xasync_result	xifilestream::beginRead(xbyte* buffer, s32 offset, s32 count, AsyncCallback callback)
+		xasync_result	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			xiasync_result* async_result_imp;
 			xfilesystem::asyncRead(mFileHandle, mFileSeekPos, count, &buffer[offset], async_result_imp);
@@ -360,7 +353,7 @@ namespace xcore
 			asyncResult.waitUntilCompleted();
 		}
 
-		xasync_result	xifilestream::beginWrite(const xbyte* buffer, s32 offset, s32 count, AsyncCallback callback)
+		xasync_result	xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			xiasync_result* async_result_imp;
 			xfilesystem::asyncWrite(mFileHandle, mFileSeekPos, count, &buffer[offset], async_result_imp);
@@ -374,9 +367,10 @@ namespace xcore
 
 		void			xifilestream::copyTo(xistream* dst)
 		{
+			
 		}
 
-		void			xifilestream::copyTo(xistream* dst, s32 count)
+		void			xifilestream::copyTo(xistream* dst, u64 count)
 		{
 		}
 

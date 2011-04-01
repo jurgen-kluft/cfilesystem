@@ -33,6 +33,8 @@ namespace xcore
 			virtual void		signal() = 0;
 
 			///< Stream synchronization
+			virtual void		lock(u32 streamIndex) = 0;
+			virtual void		unlock(u32 streamIndex) = 0;
 			virtual void		wait(u32 streamIndex) = 0;
 			virtual void		signal(u32 streamIndex) = 0;
 		};

@@ -33,7 +33,7 @@ namespace xcore
 		static xfiledevice*	sSystemFileDevice = NULL;
 
 		//------------------------------------------------------------------------------
-		void init(xthreading* threading, x_iallocator* allocator)
+		void init(u32 max_open_streams, xthreading* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
 			xfilesystem::setThreading(threading);
@@ -49,7 +49,7 @@ namespace xcore
 			xfilesystem::gAddAlias(appdir);
 			xfilesystem::gAddAlias(curdir);
 
-			xfilesystem::initialise(64, xTRUE);
+			xfilesystem::initialise(max_open_streams);
 		}
 
 		void exit()

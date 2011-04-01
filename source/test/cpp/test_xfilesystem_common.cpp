@@ -1,5 +1,6 @@
 #include "xbase\x_types.h"
 #include "xbase\x_allocator.h"
+#include "xbase\x_string.h"
 #include "xbase\x_string_std.h"
 
 #include "xunittest\xunittest.h"
@@ -21,12 +22,15 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 		// main 
 		UNITTEST_TEST(createSystemPath)
 		{
-			char systemFilename1[512];
-			xfilesystem::createSystemPath("sdfsfsa:\\app.config", systemFilename1, sizeof(systemFilename1) - 1);
-			char systemFilename2[512];
-			xfilesystem::createSystemPath("curdir:\\app.config", systemFilename2, sizeof(systemFilename2) - 1);
+			char systemFilenameBuffer1[512];
+			xcstring systemFilename1(systemFilenameBuffer1, sizeof(systemFilenameBuffer1));
+			xfilesystem::createSystemPath("sdfsfsa:\\app.config", systemFilename1);
 
-			CHECK_EQUAL(0, x_strCompare(systemFilename1, systemFilename2));
+			char systemFilenameBuffer2[512];
+			xcstring systemFilename2(systemFilenameBuffer2, sizeof(systemFilenameBuffer2));
+			xfilesystem::createSystemPath("curdir:\\app.config", systemFilename2);
+
+			CHECK_EQUAL(0, x_strCompare(systemFilename1.c_str(), systemFilename2.c_str()));
 		}
 	}
 }

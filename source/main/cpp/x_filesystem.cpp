@@ -11,7 +11,7 @@
 #include "xfilesystem\x_filedevice.h"
 
 #include "xfilesystem\private\x_fileasync.h"
-#include "xfilesystem\private\x_fileinfo.h"
+#include "xfilesystem\private\x_filedata.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 
 //==============================================================================
@@ -45,7 +45,7 @@ namespace xcore
 
 								bool boError   = false;
 								u32 nFileHandle;
-								bool boSuccess = pFileDevice->openOrCreateFile(pInfo->m_nFileIndex, pInfo->m_szFilename, pInfo->m_boReading, pInfo->m_boWriting, nFileHandle);
+								bool boSuccess = pFileDevice->openFile(pInfo->m_szFilename, pInfo->m_boReading, pInfo->m_boWriting, nFileHandle);
 								if (!boSuccess)
 								{
 									x_printf ("openOrCreateFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
@@ -54,7 +54,7 @@ namespace xcore
 								else
 								{
 									pInfo->m_nFileHandle = nFileHandle;
-									pFileDevice->lengthOfFile(nFileHandle, pInfo->m_uByteSize);
+									pFileDevice->getLengthOfFile(nFileHandle, pInfo->m_uByteSize);
 								}
 
 								if (boError)
@@ -96,7 +96,7 @@ namespace xcore
 								}
 								else
 								{
-									bool boDelete = pFileDevice->deleteFile(pInfo->m_nFileHandle, pInfo->m_szFilename);
+									bool boDelete = pFileDevice->deleteFile(pInfo->m_szFilename);
 									if (!boDelete)
 									{
 										x_printf ("DeleteFile failed on file %s\n", x_va_list(pInfo->m_szFilename));

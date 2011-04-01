@@ -149,7 +149,7 @@ namespace xcore
 		//------------------------------------------------------------------------------
 		static char sAppDir[1024] = { '\0' };										///< Needs to end with a backslash!
 		static char sWorkDir[1024] = { '\0' };										///< Needs to end with a backslash!
-		void init(xthreading* threading, x_iallocator* allocator)
+		void init(u32 max_open_streams, xthreading* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
 			xfilesystem::setThreading(threading);
@@ -187,7 +187,7 @@ namespace xcore
 			xdevicealias::sRegister(xfilesystem::xdevicealias("dvd", sFileDevices[DRIVE_TYPE_CDROM], sWorkDir));
 			xdevicealias::sRegister(xfilesystem::xdevicealias("HDD", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
 
-			xfilesystem::initialise(xTRUE);
+			xfilesystem::initialise(max_open_streams);
 		}
 
 		//------------------------------------------------------------------------------

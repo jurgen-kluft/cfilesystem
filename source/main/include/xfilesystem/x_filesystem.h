@@ -25,7 +25,7 @@ namespace xcore
 		class xthreading;
 
 		///< Initialization
-		extern void				init				( xthreading* threading, x_iallocator* allocator );
+		extern void				init				( u32 max_open_streams, xthreading* threading, x_iallocator* allocator );
 		extern void				exit				( void );
 
 		///< IoThread, user has to call this from the IoThread
