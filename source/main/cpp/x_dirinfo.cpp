@@ -151,6 +151,11 @@ namespace xcore
 			return sGetLastWriteTime(mDirPath, outTime);
 		}
 
+		bool					xdirinfo::setCreationTime(const xdatetime& inTime) const
+		{
+			return sSetCreationTime(mDirPath, inTime);
+		}
+
 		bool					xdirinfo::setLastAccessTime(const xdatetime& inTime) const
 		{
 			return sSetLastAccessTime(mDirPath, inTime);
@@ -159,6 +164,12 @@ namespace xcore
 		bool					xdirinfo::setLastWriteTime (const xdatetime& inTime) const
 		{
 			return sSetLastWriteTime(mDirPath, inTime);
+		}
+
+		xdirinfo&				xdirinfo::operator = (const char* other)
+		{
+			mDirPath = other;
+			return *this;
 		}
 
 		xdirinfo&				xdirinfo::operator = (const xdirinfo& other)
@@ -177,6 +188,26 @@ namespace xcore
 
 			mDirPath = other;
 			return *this;
+		}
+
+		bool					xdirinfo::operator == (const char* other) const
+		{
+			return mDirPath == other;
+		}
+
+		bool					xdirinfo::operator != (const char* other) const
+		{
+			return mDirPath != other;
+		}
+
+		bool					xdirinfo::operator == (const xdirpath& other) const
+		{
+			return mDirPath == other;
+		}
+
+		bool					xdirinfo::operator != (const xdirpath& other) const
+		{
+			return mDirPath != other;
 		}
 
 		bool					xdirinfo::operator == (const xdirinfo& other) const
@@ -205,15 +236,14 @@ namespace xcore
 		bool					xdirinfo::sCreate(const xdirpath& directory)
 		{
 			const xdevicealias* _alias = sGetAlias(directory);
-			u32 nFileHandle;
 			
 			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			directory.getSystem(systemDir);
 
-			if (_alias!=NULL && _alias->device()->createFile(systemDir.c_str(), true, true, nFileHandle))
+			if (_alias!=NULL && _alias->device()->createDir(systemDir.c_str()))
 			{
-				return _alias->device()->closeFile(nFileHandle);
+				return true;
 			}
 			return false;
 		}

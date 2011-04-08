@@ -19,8 +19,7 @@ namespace xcore
 		struct enumerate_delegate
 		{
 			///< Return false to terminate the breadth first traversal
-			virtual bool operator () (s32 depth) = 0;
-			virtual void operator () (s32 depth, const _Arg& inf) = 0;
+			virtual void operator () (s32 depth, const _Arg& inf, bool& terminate) = 0;
 		protected:
 			virtual ~enumerate_delegate() {}
 		};

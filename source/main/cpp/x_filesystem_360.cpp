@@ -30,7 +30,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				GetOpenCreatedTime (u32 uHandle, xdatetime& pTimeAndDate)
+		void				getOpenCreatedTime (u32 uHandle, xdatetime& pTimeAndDate)
 		{
 			ASSERTS (pTimeAndDate, "GetOpenCreatedTime() : Pointer to xsystem::TimeAndDate is NULL!");
 
@@ -42,7 +42,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				GetOpenModifiedTime (u32 uHandle, xdatetime& pTimeAndDate)
+		void				getOpenModifiedTime (u32 uHandle, xdatetime& pTimeAndDate)
 		{
 			ASSERTS (pTimeAndDate, "GetOpenModifiedTime() : Pointer to xsystem::TimeAndDate is NULL!");
 
