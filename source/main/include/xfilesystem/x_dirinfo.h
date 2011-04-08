@@ -36,8 +36,8 @@ namespace xcore
 		public:
 									xdirinfo();
 									xdirinfo(const xdirinfo& dirinfo);
-									xdirinfo(const char* dir);
-									xdirinfo(const xdirpath& dir);
+			explicit				xdirinfo(const char* dir);
+			explicit				xdirinfo(const xdirpath& dir);
 
 			const xdirpath&			getFullName() const;
 			bool					getName(xcstring& outName) const;
@@ -69,8 +69,15 @@ namespace xcore
 			bool					setLastAccessTime(const xdatetime&) const;
 			bool					setLastWriteTime (const xdatetime&) const;
 
+			xdirinfo&				operator = (const char*);
 			xdirinfo&				operator = (const xdirinfo&);
 			xdirinfo&				operator = (const xdirpath&);
+
+			bool					operator == (const char*) const;
+			bool					operator != (const char*) const;
+
+			bool					operator == (const xdirpath&) const;
+			bool					operator != (const xdirpath&) const;
 
 			bool					operator == (const xdirinfo&) const;
 			bool					operator != (const xdirinfo&) const;

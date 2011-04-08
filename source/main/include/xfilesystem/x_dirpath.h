@@ -12,6 +12,8 @@
 #include "xbase\x_debug.h"
 #include "xbase\x_string.h"
 
+#include "xfilesystem\x_enumerator.h"
+
 //==============================================================================
 namespace xcore
 {
@@ -20,6 +22,7 @@ namespace xcore
 		class xpath;
 		class xfilepath;
 		class xfiledevice;
+		class xdevicealias;
 
 		//==============================================================================
 		// xdirpath: 
@@ -49,13 +52,18 @@ namespace xcore
 			s32						getMaxLength() const;
 			bool					isEmpty() const;
 
+			void					enumLevels(enumerate_delegate<const char*>& folder_enumerator, bool right_to_left = false) const;
 			s32						getLevels() const;
+			s32						getLevelOf(const char* folderName, s32 numChars=-1) const;
+			s32						getLevelOf(const xdirpath& parent) const;
 
 			bool					isRoot() const;
 			bool					isRooted() const;
+			bool					isSubDirOf(const xdirpath&) const;
 			
 			void					relative(xdirpath& outRelative) const;
 			void					makeRelative();
+			void					makeRelativeTo(const xdirpath& parent);
 
 			void					up();
 			void					down(const char* subDir);
@@ -63,6 +71,8 @@ namespace xcore
 
 			bool					getName(xcstring& outName) const;
 			bool					hasName(const char* inName) const;
+			const xdevicealias*		getAlias() const;
+			xfiledevice*			getDevice() const;
 			xfiledevice*			getSystem(xcstring& outSystemDirPath) const;
 			bool					getRoot(xdirpath& outRootDirPath) const;
 			bool					getParent(xdirpath& outParentDirPath) const;
@@ -86,6 +96,9 @@ namespace xcore
 			const char*				c_str() const;
 
 		private:
+			void					setOrReplaceDeviceName(xcstring&, const char*) const;
+			void					setOrReplaceDevicePart(xcstring&, const char*) const;
+
 			void					fixSlashes();									///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
 		};
 

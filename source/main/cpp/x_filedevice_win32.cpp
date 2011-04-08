@@ -353,12 +353,9 @@ namespace xcore
 
 		struct enumerate_delegate_files_delete_dir : public enumerate_delegate<xfileinfo>
 		{
-			virtual bool operator () (s32 depth)
+			virtual void operator () (s32 depth, const xfileinfo& inf, bool& terminate)
 			{
-				return true;
-			}
-			virtual void operator () (s32 depth, const xfileinfo& inf)
-			{
+				terminate = false;
 				DWORD dwFileAttributes = ::GetFileAttributes((LPCTSTR)inf.getFullName().c_str());
 				if (dwFileAttributes & FILE_ATTRIBUTE_READONLY)	// change read-only file mode
 					::SetFileAttributes((LPCTSTR)inf.getFullName().c_str(), dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
@@ -368,12 +365,9 @@ namespace xcore
 
 		struct enumerate_delegate_dirs_delete_dir : public enumerate_delegate<xdirinfo>
 		{
-			virtual bool operator () (s32 depth)
+			virtual void operator () (s32 depth, const xdirinfo& inf, bool& terminate)
 			{
-				return true;
-			}
-			virtual void operator () (s32 depth, const xdirinfo& inf)
-			{
+				terminate = false;
 				::RemoveDirectory((LPCTSTR)inf.getFullName().c_str()); // remove the empty directory
 			}
 		};
@@ -463,7 +457,7 @@ namespace xcore
 
 					if ((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 					{
-						if (dir_enumerator==NULL || (*dir_enumerator)(depth))
+						if (dir_enumerator==NULL)
 						{
 							// We have found a directory, recurse
 							if (!enumerate(FileName.c_str(), boSearchSubDirectories, file_enumerator, dir_enumerator, depth+1))
@@ -474,7 +468,9 @@ namespace xcore
 							if (dir_enumerator!=NULL)
 							{
 								xdirinfo di(FileName.c_str());
-								(*dir_enumerator)(depth, di);
+								bool terminate;
+								(*dir_enumerator)(depth, di, terminate);
+								bSearch = !terminate;
 							}
 						}
 						FileName = DirPath;
@@ -483,7 +479,11 @@ namespace xcore
 					{
 						xfileinfo fi(FileName.c_str());
 						if (file_enumerator!=NULL)
-							(*file_enumerator)(depth, fi);
+						{
+							bool terminate;
+							(*file_enumerator)(depth, fi, terminate);
+							bSearch = !terminate;
+						}
 						FileName = DirPath;
 					}
 				}
@@ -507,7 +507,9 @@ namespace xcore
 			if (dir_enumerator!=NULL)
 			{
 				xdirinfo di(FileName.c_str());
-				(*dir_enumerator)(depth, di);
+				bool terminate;
+				(*dir_enumerator)(depth, di, terminate);
+				bSearch = !terminate;
 			}
 
 			return true;
