@@ -259,20 +259,14 @@ namespace xcore
 		void			xdirpath::makeRelativeTo(const xdirpath& parent)
 		{
 			makeRelative();
-			s32 parentDevicePos = parent.mString.find(sGetDeviceEnd());
-			if (parentDevicePos>=0)
-			{
-				parentDevicePos += 2;
-				mString.insert(parent.mString.c_str(), parentDevicePos);
-			}
-			else
-			{
-				parentDevicePos = 0;
-			}
 
-			s32 thisDevicePos = mString.find(sGetDeviceEnd());
-			if (thisDevicePos==-1)	thisDevicePos = 0;
-			else					thisDevicePos += 2;
+			s32 parentStartPos = parent.mString.find(sGetDeviceEnd());
+			if (parentStartPos>=0)	parentStartPos += 2;
+			else					parentStartPos = 0;
+
+			s32 thisStartPos = mString.find(sGetDeviceEnd());
+			if (thisStartPos==-1)	thisStartPos = 0;
+			else					thisStartPos += 2;
 
 			// PARENT:   a\b\c\d\e\f
 			// THIS:     c\d\e\f
@@ -280,35 +274,56 @@ namespace xcore
 			// 1. Need to find 'c' from THIS in PARENT
 			// 2. Get next level from THIS which is d and see if it comes after the level where 'c' was found in PARENT
 
+			// Find the overlap
 
-			// Find branch in path
-			bool has_overlap = false;
-			s32 split = 0;
-			while (true)
+			const char* thisSrc = mString.c_str() + thisStartPos;
+			const char* thisEnd = mString.c_str() + mString.getLength();
+
+			const char* parentSrc = parent.mString.c_str() + parentStartPos;
+			const char* parentEnd = parent.mString.c_str() + parent.mString.getLength();
+
+			s32 level = -1;
+			const char slash = sGetSlashChar();
+			const char* folder_start = NULL;
+			const char* folder_end = parentSrc;
+			bool terminate = false;
+			while (parentSrc < parentEnd && !terminate)
 			{
-				if (x_isEqualNoCase(mString[thisDevicePos + split], parent.mString[parentDevicePos + split]) == true)
+				if (*parentSrc == slash)
 				{
-					break;
+					level++;
+
+					folder_start = folder_end;
+					folder_end = parentSrc;
+
+					// See if thisSrc-thisEnd equals the rest of the parentSrc-parentEnd
+					bool match = true;
+					const char* thisSrc1 = thisSrc;
+					const char* parentSrc1 = folder_start;
+					while (parentSrc1 < parentEnd && match)
+					{
+						if (thisSrc1 < thisEnd)
+							match = (*thisSrc1++ == *parentSrc1++);
+						else
+							match = false;
+					}
+					folder_end+=1;
+					terminate = match;
 				}
-				++split;
-				if ((thisDevicePos + split)>=mString.getLength() || (parentDevicePos + split)>=parent.mString.getLength())
-					break;
+				++parentSrc;
 			}
-
-			while (true)
+			
+			if (terminate)
 			{
-				if (x_isEqualNoCase(mString[thisDevicePos + split], parent.mString[parentDevicePos + split]) == false)
-					break;
-				++split;
-				if ((thisDevicePos + split)>=mString.getLength() || (parentDevicePos + split)>=parent.mString.getLength())
-					break;
+				mString.insert(parent.mString.c_str(), folder_start - parent.mString.c_str());
+				fixSlashes();
+			}
+			else
+			{
+				level = -1;
 			}
 
-			mString.remove(thisDevicePos + split, mString.getLength() - split);
-			if ((parentDevicePos + split)<parent.mString.getLength())
-				mString += parent.mString.c_str() + parentDevicePos + split;
-
-			fixSlashes();
+			//return level;
 		}
 
 		void			xdirpath::up()
