@@ -392,20 +392,9 @@ namespace xcore
 
 		bool			xdirpath::hasName(const char* inName) const
 		{
-			const s32 endPos = mString.lastChar()==sGetSlashChar() ? mString.getLength() - 1 : mString.getLength();
-			const s32 slashPos = mString.rfind(sGetSlashChar(), endPos - 1);
-			const char* src1 = mString.c_str() + ((slashPos >= 0) ? slashPos + 1 : 0);
-			{
-				const char* end1 = mString.c_str() + endPos;
-				const char* src2 = inName;
-				while (*src2 != '\0' && src1<end1)
-				{
-					if (*src1++ != *src2++)
-						return false;
-				}
-				return src1 == end1;
-			}
-			return false;
+			folder_search_enumerator e(inName, x_strlen(inName));
+			enumLevels(e);
+			return e.mLevel != -1;
 		}
 
 		const xdevicealias*	xdirpath::getAlias() const
@@ -481,17 +470,12 @@ namespace xcore
 			fixSlashes(); 
 		}
 
-		void			xdirpath::getDeviceName(xcstring& outDeviceName) const
+		bool			xdirpath::getDeviceName(xcstring& outDeviceName) const
 		{
 			s32 pos = mString.find(sGetDeviceEnd());
 			if (pos >= 0)
-			{
 				mString.left(pos, outDeviceName);
-			}
-			else
-			{
-				outDeviceName.clear();
-			}
+			return (pos >= 0);
 		}
 
 		void			xdirpath::setDevicePart(const char* inDevicePart)
@@ -500,18 +484,12 @@ namespace xcore
 			fixSlashes(); 
 		}
 
-		void			xdirpath::getDevicePart(xcstring& outDevicePart) const
+		bool			xdirpath::getDevicePart(xcstring& outDevicePart) const
 		{
 			s32 pos = mString.find(sGetDeviceEnd());
 			if (pos >= 0)
-			{
-				pos += 2;
-				mString.left(pos, outDevicePart);
-			}
-			else
-			{
-				outDevicePart.clear();
-			}
+				mString.left(pos + 2, outDevicePart);
+			return (pos >= 0);
 		}
 
 		xdirpath&		xdirpath::operator =  ( const xdirpath& path )
@@ -534,8 +512,12 @@ namespace xcore
 
 		xdirpath&		xdirpath::operator += ( const char* str )					{ mString += str; fixSlashes(); return *this; }
 
-		bool			xdirpath::operator == ( const xdirpath& rhs) const			{ return (rhs.getLength() == getLength()) && x_strCompare(rhs.c_str(), c_str()) == 0; }
-		bool			xdirpath::operator != ( const xdirpath& rhs) const			{ return (rhs.getLength() != getLength()) || x_strCompare(rhs.c_str(), c_str()) != 0; }
+		bool			xdirpath::operator == ( const char* rhs) const				{ return x_strCompareNoCase(rhs, c_str()) == 0; }
+		bool			xdirpath::operator != ( const char* rhs) const				{ return x_strCompareNoCase(rhs, c_str()) != 0; }
+
+		bool			xdirpath::operator == ( const xdirpath& rhs) const			{ return (rhs.getLength() == getLength()) && x_strCompareNoCase(rhs.c_str(), c_str()) == 0; }
+		bool			xdirpath::operator != ( const xdirpath& rhs) const			{ return (rhs.getLength() != getLength()) || x_strCompareNoCase(rhs.c_str(), c_str()) != 0; }
+
 		char			xdirpath::operator [] (s32 index) const						{ return mString[index]; }
 
 		void			xdirpath::setOrReplaceDeviceName(xcstring& ioStr, const char* inDeviceName) const
