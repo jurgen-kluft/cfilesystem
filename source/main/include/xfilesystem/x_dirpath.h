@@ -79,14 +79,17 @@ namespace xcore
 			bool					getSubDir(const char* subDir, xdirpath& outSubDirPath) const;
 
 			void					setDeviceName(const char* deviceName);
-			void					getDeviceName(xcstring& outDeviceName) const;
+			bool					getDeviceName(xcstring& outDeviceName) const;
 			void					setDevicePart(const char* devicePart);
-			void					getDevicePart(xcstring& outDevicePart) const;
+			bool					getDevicePart(xcstring& outDevicePart) const;
 			
 			xdirpath&				operator =  (const xdirpath&);
 
 			xdirpath&				operator =  (const char*);
 			xdirpath&				operator += (const char*);
+
+			bool					operator == (const char* rhs) const;
+			bool					operator != (const char* rhs) const;
 
 			bool					operator == (const xdirpath& rhs) const;
 			bool					operator != (const xdirpath& rhs) const;

@@ -187,34 +187,34 @@ namespace xcore
 
 	static TestFile					sFiles[] = 
 	{
-		{ "textfiles\\readme1st.txt"		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "textfiles\\authors.txt"			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "textfiles\\docs\\tech.txt"		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "textfiles\\tech\\install.txt"	, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("textfiles\\readme1st.txt")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("textfiles\\authors.txt")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("textfiles\\docs\\tech.txt")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("textfiles\\tech\\install.txt")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
 
-		{ "binfiles\\texture1.bin"			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "binfiles\\texture2.bin"			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "binfiles\\objects\\object1.bin"	, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "binfiles\\objects\\object2.bin"	, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "binfiles\\tracks\\track1.bin"	, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "binfiles\\tracks\\track2.bin"	, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\texture1.bin")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\texture2.bin")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\objects\\object1.bin")	, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\objects\\object2.bin")	, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\tracks\\track1.bin")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\tracks\\track2.bin")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
 
-		{ "readonly_files\\readme.txt"		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "readonly_files\\data.bin"		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("readonly_files\\readme.txt")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("readonly_files\\data.bin")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
 
-		{ "writeable_files\\file.txt"		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ "writeable_files\\file.bin"		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("writeable_files\\file.txt")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("writeable_files\\file.bin")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
 
 		// Room for creating files
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__NULL__" }
+		{ xfilepath("__EMPTY__") },
+		{ xfilepath("__EMPTY__") },
+		{ xfilepath("__EMPTY__") },
+		{ xfilepath("__EMPTY__") },
+		{ xfilepath("__EMPTY__") },
+		{ xfilepath("__EMPTY__") },
+		{ xfilepath("__EMPTY__") },
+		{ xfilepath("__EMPTY__") },
+		{ xfilepath("__NULL__") }
 	};
 
 	static FileDataCopy				sFileData[] =
@@ -242,23 +242,23 @@ namespace xcore
 
 	static TestDir	sDirs[] = 
 	{
-		{ "textfiles"					, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ "textfiles\\docs"				, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ "textfiles\\help"				, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ "binfiles"					, xdatetime(2011, 3, 10, 15, 30, 10), xdatetime(2011, 3, 12, 16, 00, 20), xdatetime(2011, 3, 11, 10, 46, 20) },
-		{ "binfiles\\objects"			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ "binfiles\\tracks"			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ "readonly_files"				, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
-		{ "writeable_files"				, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__EMPTY__" },
-		{ "__NULL__" }
+		{ xdirpath("textfiles")					, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ xdirpath("textfiles\\docs")			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ xdirpath("textfiles\\help")			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ xdirpath("binfiles")					, xdatetime(2011, 3, 10, 15, 30, 10), xdatetime(2011, 3, 12, 16, 00, 20), xdatetime(2011, 3, 11, 10, 46, 20) },
+		{ xdirpath("binfiles\\objects")			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ xdirpath("binfiles\\tracks")			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ xdirpath("readonly_files")			, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
+		{ xdirpath("writeable_files")			, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
+		{ xdirpath("__EMPTY__") },
+		{ xdirpath("__EMPTY__") },
+		{ xdirpath("__EMPTY__") },
+		{ xdirpath("__EMPTY__") },
+		{ xdirpath("__EMPTY__") },
+		{ xdirpath("__EMPTY__") },
+		{ xdirpath("__EMPTY__") },
+		{ xdirpath("__EMPTY__") },
+		{ xdirpath("__NULL__") }
 	};
 
 	namespace xfilesystem
@@ -307,14 +307,17 @@ namespace xcore
 			xdirpath dp(szDir);
 			dp.makeRelative();
 
-			TestDir* testDir = sDirs;
+			s32 i=0;
 			while (true)
 			{
+				TestDir* testDir = &sDirs[i];
+
 				if (dp == testDir->mName)
 					return testDir;
-				if (testDir->mName == "__NULL__")
+				if (testDir->mName == "__NULL__\\")
 					break;
-				testDir++;
+
+				i++;
 			}
 			return NULL;
 		}
@@ -324,9 +327,9 @@ namespace xcore
 			TestDir* t = sDirs;
 			while (true)
 			{
-				if (t->mName == "__EMPTY__")
+				if (t->mName == "__EMPTY__\\")
 					return t;
-				if (t->mName == "__NULL__")
+				if (t->mName == "__NULL__\\")
 					break;
 				t++;
 			}

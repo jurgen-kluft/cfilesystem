@@ -295,7 +295,7 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 
 		UNITTEST_TEST(equality_operator1)
 		{
-			const char* str1 = "TEST:\\textfiles1";
+			const char* str1 = "TEST:\\textfiles1\\";
 			xdirinfo di1(str1);
 
 			CHECK_EQUAL(true, di1 == str1);
@@ -322,7 +322,7 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 
 		UNITTEST_TEST(non_equality_operator1)
 		{
-			const char* str1 = "TEST:\\textfiles1";
+			const char* str1 = "TEST:\\textfiles1\\";
 			xdirinfo di1(str1);
 
 			CHECK_EQUAL(false, di1 != str1);

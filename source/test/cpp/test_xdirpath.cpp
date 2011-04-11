@@ -5,6 +5,8 @@
 
 #include "xfilesystem\x_enumerator.h"
 #include "xfilesystem\x_filesystem.h"
+#include "xfilesystem\x_filedevice.h"
+#include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_dirpath.h"
 #include "xfilesystem\x_dirinfo.h"
@@ -288,6 +290,254 @@ UNITTEST_SUITE_BEGIN(dirpath)
 			CHECK_EQUAL(0, x_strcmp(parent.c_str(), "TEST:\\the\\"));
 			CHECK_EQUAL(0, x_strcmp(sub.c_str(), "name\\is\\johhnywalker\\"));
 		}
+
+		UNITTEST_TEST(getName)
+		{
+			const char* str1 = "TEST:\\the\\name\\is\\johhnywalker";
+			xdirpath di1(str1);
+
+			char strBuffer[64];
+			xcstring str(strBuffer, sizeof(strBuffer));
+
+			CHECK_EQUAL(true, di1.getName(str));
+			CHECK_EQUAL(true, str == "johhnywalker");
+		}
+
+		UNITTEST_TEST(hasName)
+		{
+			const char* str1 = "TEST:\\the\\name\\is\\johhnywalker";
+			xdirpath di1(str1);
+
+			CHECK_EQUAL(true, di1.hasName("the"));
+			CHECK_EQUAL(true, di1.hasName("name"));
+			CHECK_EQUAL(true, di1.hasName("is"));
+			CHECK_EQUAL(true, di1.hasName("johhnywalker"));
+
+			CHECK_EQUAL(false, di1.hasName("not"));
+		}
+
+		UNITTEST_TEST(getAlias)
+		{
+			const char* str1 = "TEST:\\the\\name\\is\\johhnywalker";
+			xdirpath di1(str1);
+
+			CHECK_EQUAL(xdevicealias::sFind("TEST"), di1.getAlias());
+			CHECK_EQUAL(xdevicealias::sFind("TEST"), di1.getAlias());
+
+			const char* str2 = "INVALID:\\the\\name\\is\\johhnywalker";
+			xdirpath di2(str2);
+			CHECK_EQUAL(xdevicealias::sFind("curdir"), di2.getAlias());
+
+			const char* str3 = "the\\name\\is\\johhnywalker";
+			xdirpath di3(str3);
+			CHECK_EQUAL(xdevicealias::sFind("curdir"), di3.getAlias());
+		}
+
+		UNITTEST_TEST(getDevice)
+		{
+			const char* str1 = "TEST:\\the\\name\\is\\johhnywalker";
+			xdirpath di1(str1);
+
+			CHECK_EQUAL(di1.getAlias()->device(), di1.getDevice());
+
+			const char* str2 = "INVALID:\\the\\name\\is\\johhnywalker";
+			xdirpath di2(str2);
+			CHECK_EQUAL(xdevicealias::sFind("curdir")->device(), di2.getDevice());
+
+			const char* str3 = "the\\name\\is\\johhnywalker";
+			xdirpath di3(str3);
+			CHECK_EQUAL(xdevicealias::sFind("curdir")->device(), di3.getDevice());
+		}
+
+		UNITTEST_TEST(getSystem)
+		{
+			const char* str1 = "TEST:\\textfiles\\";
+			xdirpath di1(str1);
+
+			char strBuffer[256];
+			xcstring str(strBuffer, sizeof(strBuffer));
+			xfiledevice* device = di1.getSystem(str);
+			CHECK_NOT_NULL(device);
+			CHECK_EQUAL(0, x_strCompare(str1, str.c_str()));
+		}
+
+		UNITTEST_TEST(getRoot)
+		{
+			const char* str1 = "TEST:\\textfiles\\";
+			xdirpath di1(str1);
+
+			xdirpath root;
+			di1.getRoot(root);
+			CHECK_EQUAL(true, root == "TEST:\\");
+		}
+
+		UNITTEST_TEST(getParent)
+		{
+			const char* str1 = "TEST:\\textfiles\\subdir\\";
+			xdirpath di1(str1);
+
+			xdirpath parent;
+			di1.getParent(parent);
+			CHECK_EQUAL(true, parent == "TEST:\\textfiles\\");
+		}
+
+		UNITTEST_TEST(getSubDir)
+		{
+			const char* str1 = "TEST:\\textfiles\\subdir\\";
+			xdirpath di1(str1);
+
+			xdirpath sub;
+			CHECK_TRUE(di1.getSubDir("subdir2", sub));
+			CHECK_EQUAL(true, sub == "TEST:\\textfiles\\subdir\\subdir2\\");
+		}
+
+
+		UNITTEST_TEST(get_set_DeviceName)
+		{
+			const char* str1 = "TEST:\\textfiles\\subdir\\";
+			xdirpath di1(str1);
+
+			char deviceStrBuffer[256];
+			xcstring deviceStr(deviceStrBuffer, sizeof(deviceStrBuffer));
+
+			CHECK_TRUE(di1.getDeviceName(deviceStr));
+			CHECK_TRUE(deviceStr == "TEST");
+
+			di1.setDeviceName("USB");
+
+			CHECK_TRUE(di1.getDeviceName(deviceStr));
+			CHECK_TRUE(deviceStr == "USB");
+		}
+
+		UNITTEST_TEST(get_set_DevicePart)
+		{
+			const char* str1 = "TEST:\\textfiles\\subdir\\";
+			xdirpath di1(str1);
+
+			char deviceStrBuffer[256];
+			xcstring deviceStr(deviceStrBuffer, sizeof(deviceStrBuffer));
+
+			CHECK_TRUE(di1.getDevicePart(deviceStr));
+			CHECK_TRUE(deviceStr == "TEST:\\");
+
+			di1.setDevicePart("USB:\\");
+
+			CHECK_TRUE(di1.getDevicePart(deviceStr));
+			CHECK_TRUE(deviceStr == "USB:\\");
+		}
+
+		UNITTEST_TEST(asignment_operator1)
+		{
+			const char* str1 = "TEST:\\textfiles\\subdir\\";
+			xdirpath di1(str1);
+			CHECK_TRUE(di1 == str1);
+
+			const char* str2 = "TEST:\\binfiles\\tracks\\";
+			di1 = str2;
+			CHECK_TRUE(di1 == str2);
+		}
+
+		UNITTEST_TEST(asignment_operator2)
+		{
+			const char* str1 = "TEST:\\textfiles\\subdir\\";
+			xdirpath di1(str1);
+			CHECK_TRUE(di1 == str1);
+
+			const char* str2 = "TEST:\\binfiles\\tracks\\";
+			xdirpath di2(str2);
+			di1 = di2;
+			CHECK_TRUE(di1 == str2);
+		}
+
+
+		UNITTEST_TEST(add_asign_operator)
+		{
+			const char* str1 = "TEST:\\textfiles\\";
+			xdirpath di1(str1);
+			CHECK_TRUE(di1 == str1);
+
+			di1 += "subdir";
+			const char* str2 = "TEST:\\textfiles\\subdir\\";
+			CHECK_TRUE(di1 == str2);
+		}
+
+		UNITTEST_TEST(equal_operator1)
+		{
+			const char* str1 = "TEST:\\textfiles\\";
+			xdirpath di1(str1);
+			bool equal1 = di1 == str1;
+			CHECK_TRUE(equal1);
+
+			const char* str2 = "TEST:\\textfiles\\subdir\\";
+			di1 = str2;
+			bool equal2 = di1 == str2;
+			CHECK_TRUE(equal2);
+
+			bool equal3 = di1 == "bogus";
+			CHECK_FALSE(equal3);
+		}
+
+		UNITTEST_TEST(not_equal_operator1)
+		{
+			const char* str1 = "TEST:\\textfiles\\";
+			xdirpath di1(str1);
+			bool equal1 = di1 != str1;
+			CHECK_FALSE(equal1);
+
+			const char* str2 = "TEST:\\textfiles\\subdir\\";
+			di1 = str2;
+			bool equal2 = di1 != str2;
+			CHECK_FALSE(equal2);
+
+			bool equal3 = di1 != "bogus";
+			CHECK_TRUE(equal3);
+		}
+
+		UNITTEST_TEST(equal_operator2)
+		{
+			const char* str1 = "TEST:\\textfiles\\";
+			xdirpath di1(str1);
+			bool equal1 = di1 == xdirpath(str1);
+			CHECK_TRUE(equal1);
+
+			const char* str2 = "TEST:\\textfiles\\subdir\\";
+			di1 = str2;
+			bool equal2 = di1 == xdirpath(str2);
+			CHECK_TRUE(equal2);
+
+			bool equal3 = di1 == xdirpath("bogus");
+			CHECK_FALSE(equal3);
+		}
+
+		UNITTEST_TEST(not_equal_operator2)
+		{
+			const char* str1 = "TEST:\\textfiles\\";
+			xdirpath di1(str1);
+			bool equal1 = di1 != xdirpath(str1);
+			CHECK_FALSE(equal1);
+
+			const char* str2 = "TEST:\\textfiles\\subdir\\";
+			di1 = str2;
+			bool equal2 = di1 != xdirpath(str2);
+			CHECK_FALSE(equal2);
+
+			bool equal3 = di1 != xdirpath("bogus");
+			CHECK_TRUE(equal3);
+		}
+
+		UNITTEST_TEST(index_operator)
+		{
+			const char* str1 = "TEST:\\textfiles\\";
+			xdirpath di1(str1);
+
+			CHECK_EQUAL('T', di1[0]);
+			CHECK_EQUAL(':', di1[4]);
+			CHECK_EQUAL('\\', di1[15]);
+			CHECK_EQUAL('\0', di1[16]);
+			CHECK_EQUAL('\0', di1[100]);
+			CHECK_EQUAL('\0', di1[1000]);
+		}
+
 	}
 }
 UNITTEST_SUITE_END
