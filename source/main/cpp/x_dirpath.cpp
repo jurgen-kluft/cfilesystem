@@ -454,7 +454,7 @@ namespace xcore
 
 		bool			xdirpath::getSubDir(const char* subDir, xdirpath& outSubDirPath) const
 		{
-			char subDirPathBuffer[XDIR_MAX_PATH];
+			char subDirPathBuffer[XDIRPATH_BUFFER_SIZE];
 			xcstring subDirPath(subDirPathBuffer, sizeof(subDirPathBuffer), subDir);
 
 			outSubDirPath = *this;

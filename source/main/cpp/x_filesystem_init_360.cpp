@@ -23,16 +23,16 @@ namespace xcore
 
 			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, "GAME:\\");				///< DVD Drive (read-only)
 			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, "DEVKIT:\\");
-			xfilesystem::xdevicealias save ("HDD"  , sSystemFileDevice, "HDD:\\");
+			xfilesystem::xdevicealias save ("hdd"  , sSystemFileDevice, "HDD:\\");
 
-			xfilesystem::gAddAlias(dvd);
-			xfilesystem::gAddAlias(host);
-			xfilesystem::gAddAlias(save);
+			xfilesystem::sRegister(dvd);
+			xfilesystem::sRegister(host);
+			xfilesystem::sRegister(save);
 
 			xfilesystem::xdevicealias appdir( "appdir", "host" );
 			xfilesystem::xdevicealias curdir( "curdir", "host" );
-			xfilesystem::gAddAlias(appdir);
-			xfilesystem::gAddAlias(curdir);
+			xfilesystem::sRegister(appdir);
+			xfilesystem::sRegister(curdir);
 
 			xfilesystem::initialise(max_open_streams);
 		}

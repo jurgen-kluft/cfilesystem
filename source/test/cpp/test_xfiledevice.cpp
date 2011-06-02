@@ -4,13 +4,14 @@
 
 #include "xunittest\xunittest.h"
 
+#include "xfilesystem\x_attributes.h"
+#include "xfilesystem\x_devicealias.h"
+#include "xfilesystem\x_dirpath.h"
+#include "xfilesystem\x_dirinfo.h"
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_fileinfo.h"
-#include "xfilesystem\x_dirpath.h"
-#include "xfilesystem\x_dirinfo.h"
-#include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_threading.h"
 
 #include "xfilesystem\private\x_filesystem_common.h"
@@ -33,12 +34,13 @@ namespace xcore
 		xdatetime					mCreationTime;
 		xdatetime					mLastAccessTime;
 		xdatetime					mLastWriteTime;
+		xattributes					mAttr;
 	};
 
 	struct TestFile
 	{
 		xfilepath					mName;
-		s32							mFlags;
+		xattributes					mAttr;
 		xdatetime					mCreationTime;
 		xdatetime					mLastAccessTime;
 		xdatetime					mLastWriteTime;
@@ -183,27 +185,34 @@ namespace xcore
 													0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74 };
 
 	static xbyte					sData10[] = "This is readme.txt which is marked as readonly.";
-	static xbyte					sData11[] = "This is the content of file.txt that is part of the writeable files.";
+	static xbyte					sData11[] = {	0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc,
+													0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08 };
+
+	static xbyte					sData12[] = "This is the content of file.txt that is part of the writeable files.";
+	static xbyte					sData13[] = {	0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3,
+													0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61,
+													0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a,
+													0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40 };
 
 	static TestFile					sFiles[] = 
 	{
-		{ xfilepath("textfiles\\readme1st.txt")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("textfiles\\authors.txt")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("textfiles\\docs\\tech.txt")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("textfiles\\tech\\install.txt")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("textfiles\\readme1st.txt")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("textfiles\\authors.txt")			, xattributes(true ,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("textfiles\\docs\\tech.txt")		, xattributes(false,false,true ,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("textfiles\\tech\\install.txt")		, xattributes(false,false,false,true ), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		 
+		{ xfilepath("binfiles\\texture1.bin")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\texture2.bin")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\objects\\object1.bin")	, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\objects\\object2.bin")	, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\tracks\\track1.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\tracks\\track2.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
 
-		{ xfilepath("binfiles\\texture1.bin")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\texture2.bin")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\objects\\object1.bin")	, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\objects\\object2.bin")	, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\tracks\\track1.bin")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\tracks\\track2.bin")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("readonly_files\\readme.txt")		, xattributes(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("readonly_files\\data.bin")			, xattributes(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
 
-		{ xfilepath("readonly_files\\readme.txt")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("readonly_files\\data.bin")			, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-
-		{ xfilepath("writeable_files\\file.txt")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("writeable_files\\file.bin")		, 0, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("writeable_files\\file.txt")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("writeable_files\\file.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
 
 		// Room for creating files
 		{ xfilepath("__EMPTY__") },
@@ -226,18 +235,16 @@ namespace xcore
 
 		FileDataCopy(&sFiles[4], sTexture1, sizeof(sTexture1)),
 		FileDataCopy(&sFiles[5], sTexture2, sizeof(sTexture2)),
-
 		FileDataCopy(&sFiles[6], sObject1, sizeof(sObject1)),
 		FileDataCopy(&sFiles[7], sObject2, sizeof(sObject2)),
-
 		FileDataCopy(&sFiles[8], sTrack1, sizeof(sTrack1)),
 		FileDataCopy(&sFiles[9], sTrack2, sizeof(sTrack2)),
 
 		FileDataCopy(&sFiles[10], sData10, sizeof(sData10)),
 		FileDataCopy(&sFiles[11], sData11, sizeof(sData11)),
 
-		FileDataCopy(&sFiles[12]),
-		FileDataCopy(&sFiles[13]),
+		FileDataCopy(&sFiles[12], sData12, sizeof(sData12)),
+		FileDataCopy(&sFiles[13], sData13, sizeof(sData13)),
 	};
 
 	static TestDir	sDirs[] = 
@@ -288,6 +295,8 @@ namespace xcore
 			virtual bool			getLengthOfFile(u32 nFileHandle, u64& outLength) const;
 			virtual bool			setFileTime(const char* szFilename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const;
 			virtual bool			getFileTime(const char* szFilename, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
+			virtual bool			setFileAttr(const char* szFilename, const xattributes& attr) const;
+			virtual bool			getFileAttr(const char* szFilename, xattributes& attr) const;
 
 			virtual bool			hasDir(const char* szDirPath) const;
 			virtual bool			createDir(const char* szDirPath) const;
@@ -296,6 +305,8 @@ namespace xcore
 			virtual bool			deleteDir(const char* szDirPath) const;
 			virtual bool			setDirTime(const char* szDirPath, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const;
 			virtual bool			getDirTime(const char* szDirPath, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
+			virtual bool			setDirAttr(const char* szDirPath, const xattributes& attr) const;
+			virtual bool			getDirAttr(const char* szDirPath, xattributes& attr) const;
 
 			virtual bool			enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth) const;
 
@@ -353,10 +364,44 @@ namespace xcore
 			return NULL;
 		}
 
+		static TestFile*	sNewTestFile(const char* szFilename, void* data, u32 dataSize)
+		{
+			TestFile* t = sFiles;
+			while (true)
+			{
+				if (t->mName == "__EMPTY__")
+				{
+					// filename copy
+					// init creation time
+					// init last write time
+					// data copy
+					t->mName = szFilename;
+					t->mName.makeRelative();
+
+					t->mFileLength = dataSize;
+					if (t->mFileLength>sizeof(t->mFileData))
+						t->mFileLength = sizeof(t->mFileData);
+
+					if (data!=NULL)
+						x_memcopy(t->mFileData, data, dataSize);
+					else
+						x_memclr(t->mFileData, sizeof(t->mFileData));
+
+					return t;
+				}
+
+				if (t->mName == "__NULL__")
+					break;
+
+				t++;
+			}
+			return NULL;
+		}
+
 		static TestFile*		sFindEmptyTestFile()
 		{
 			TestFile* t = sFiles;
-			while (t->mName!=NULL)
+			while (true)
 			{
 				if (t->mName == "__EMPTY__")
 					return t;
@@ -381,7 +426,15 @@ namespace xcore
 
 		bool xfiledevice_TEST::createFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const
 		{
-			return false;
+			TestFile* testFile = sFindTestFile(szFilename);
+			if (testFile!=NULL)
+				return false;
+
+			testFile = sNewTestFile(szFilename, NULL, 0);
+			if (testFile==NULL)
+				return false;
+
+			return openFile(szFilename, boRead, boWrite, nFileHandle);
 		}
 
 		u64	xfiledevice_TEST::seekFile(u32 nFileHandle, u64 pos) const
@@ -410,23 +463,74 @@ namespace xcore
 			TestFile* testFile = static_cast<TestFile*>((void*)nFileHandle);
 			if (testFile!=NULL)
 			{
+				if (pos >= testFile->mFileLength)
+				{
+					outNumBytesRead = 0;
+					return true;
+				}
 
+				u64 bytesToRead = testFile->mFileLength - pos;
+				if (count < bytesToRead)
+					bytesToRead = count;
+
+				x_memcopy(buffer, testFile->mFileData + pos, (xcore::s32)bytesToRead);
+				outNumBytesRead = bytesToRead;
+				return true;
 			}
 			return false;
 		}
+
 		bool xfiledevice_TEST::writeFile(u32 nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) const
 		{
-			
+			TestFile* testFile = static_cast<TestFile*>((void*)nFileHandle);
+			if (testFile!=NULL)
+			{
+				u64 bytesToWrite = testFile->mMaxFileLength;
+				if (count < bytesToWrite)
+					bytesToWrite = count;
+				if ((pos + count) > testFile->mFileLength)
+					testFile->mFileLength = (pos + count);
+
+				// Clamp against the maximum file size that this device has
+				if (testFile->mFileLength > testFile->mMaxFileLength)
+				{
+					bytesToWrite -= (testFile->mFileLength - testFile->mMaxFileLength);
+					testFile->mFileLength = testFile->mMaxFileLength;
+				}
+
+				x_memcopy(testFile->mFileData + pos, buffer, bytesToWrite);
+				outNumBytesWritten = bytesToWrite;
+				return true;
+			}
 			return false;
 		}
 
 		bool xfiledevice_TEST::moveFile(const char* szFilename, const char* szToFilename) const
 		{
+			TestFile* testFile = sFindTestFile(szFilename);
+			if (testFile!=NULL)
+			{
+				testFile->mName = szToFilename;
+			}
 			return false;
 		}
 
 		bool xfiledevice_TEST::copyFile(const char* szFilename, const char* szToFilename, bool boOverwrite) const
 		{
+			TestFile* srcTestFile = sFindTestFile(szFilename);
+			if (srcTestFile!=NULL)
+			{
+				TestFile* dstTestFile = sFindTestFile(szFilename);
+				if (dstTestFile==NULL)
+					dstTestFile = sNewTestFile(szFilename, NULL, 0);
+
+				if (dstTestFile!=NULL)
+				{
+					x_memcpy(dstTestFile->mFileData, srcTestFile->mFileData, sizeof(dstTestFile->mFileData));
+					dstTestFile->mFileLength = srcTestFile->mFileLength;
+					return true;
+				}
+			}
 			return false;
 		}
 
@@ -437,6 +541,12 @@ namespace xcore
 
 		bool xfiledevice_TEST::deleteFile(const char* szFilename) const
 		{
+			TestFile* testFile = sFindTestFile(szFilename);
+			if (testFile!=NULL)
+			{
+				testFile->mName = "__EMPTY__";
+				return true;
+			}
 			return false;
 		}
 
@@ -481,6 +591,28 @@ namespace xcore
 				outLastWriteTime = testFile->mLastWriteTime;
 			}
 			return testFile!=NULL;
+		}
+
+		bool			xfiledevice_TEST::setFileAttr(const char* szFilename, const xattributes& attr) const
+		{
+			TestFile* testFile = sFindTestFile(szFilename);
+			if (testFile!=NULL)
+			{
+				testFile->mAttr = attr;
+				return true;
+			}
+			return false;
+		}
+
+		bool			xfiledevice_TEST::getFileAttr(const char* szFilename, xattributes& attr) const
+		{
+			TestFile* testFile = sFindTestFile(szFilename);
+			if (testFile!=NULL)
+			{
+				attr = testFile->mAttr;
+				return true;
+			}
+			return false;
 		}
 
 		bool xfiledevice_TEST::hasDir(const char* szDirPath) const
@@ -552,6 +684,27 @@ namespace xcore
 			return testDir!=NULL;
 		}
 
+		bool			xfiledevice_TEST::setDirAttr(const char* szDirPath, const xattributes& attr) const
+		{
+			TestDir* testDir = sFindTestDir(szDirPath);
+			if (testDir!=NULL)
+			{
+				testDir->mAttr = attr;
+				return true;
+			}
+			return false;
+		}
+
+		bool			xfiledevice_TEST::getDirAttr(const char* szDirPath, xattributes& attr) const
+		{
+			TestDir* testDir = sFindTestDir(szDirPath);
+			if (testDir!=NULL)
+			{
+				attr = testDir->mAttr;
+				return true;
+			}
+			return false;
+		}
 
 		bool xfiledevice_TEST::enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth) const
 		{

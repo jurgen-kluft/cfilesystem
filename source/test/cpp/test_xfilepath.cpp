@@ -21,9 +21,8 @@ UNITTEST_SUITE_BEGIN(filepath)
 		{
 			xfilepath p1;
 
-			CHECK_TRUE(p1.empty());
-			CHECK_TRUE(p1.length() == 0);
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_TRUE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == 0);
 		}
 
 		UNITTEST_TEST(constructor2)
@@ -31,9 +30,8 @@ UNITTEST_SUITE_BEGIN(filepath)
 			const char* str = "TEST:\\textfiles\\docs";
 			xfilepath p(str);
 
-			CHECK_FALSE(p.empty());
-			CHECK_TRUE(p.length() == x_strlen(str));
-			CHECK_EQUAL(p.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p.isEmpty());
+			CHECK_TRUE(p.getLength() == x_strlen(str));
 			CHECK_EQUAL(x_strCompare(p.c_str(), str), 0);
 		}
 
@@ -42,16 +40,14 @@ UNITTEST_SUITE_BEGIN(filepath)
 			const char* str = "TEST:\\textfiles\\docs";
 			xfilepath p1(str);
 
-			CHECK_FALSE(p1.empty());
-			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == x_strlen(str));
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str), 0);
 
 			xfilepath p2(p1);
 
-			CHECK_FALSE(p2.empty());
-			CHECK_TRUE(p2.length() == x_strlen(str));
-			CHECK_EQUAL(p2.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p2.isEmpty());
+			CHECK_TRUE(p2.getLength() == x_strlen(str));
 			CHECK_EQUAL(x_strCompare(p2.c_str(), str), 0);
 		}
 
@@ -60,18 +56,16 @@ UNITTEST_SUITE_BEGIN(filepath)
 			const char* str = "TEST:\\docs\\readme.txt";
 			xfilepath p1(str);
 
-			CHECK_FALSE(p1.empty());
-			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == x_strlen(str));
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str), 0);
 
 			xdirpath d1("TEST:\\textfiles");
 			const char* res = "TEST:\\textfiles\\docs\\readme.txt";
 			xfilepath p2(d1, p1);
 
-			CHECK_FALSE(p2.empty());
-			CHECK_TRUE(p2.length() == x_strlen(res));
-			CHECK_EQUAL(p2.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p2.isEmpty());
+			CHECK_TRUE(p2.getLength() == x_strlen(res));
 			CHECK_EQUAL(x_strCompare(p2.c_str(), res), 0);
 		}
 
@@ -80,14 +74,29 @@ UNITTEST_SUITE_BEGIN(filepath)
 			const char* str = "TEST:\\docs";
 			xfilepath p1(str);
 
-			CHECK_FALSE(p1.empty());
-			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == x_strlen(str));
 
 			p1.clear();
-			CHECK_TRUE(p1.empty());
-			CHECK_TRUE(p1.length() == 0);
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_TRUE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == 0);
+		}
+		
+		UNITTEST_TEST(getLength)
+		{
+			const char* str = "TEST:\\docs";
+			xfilepath p1(str);
+
+			CHECK_EQUAL(x_strlen(str), p1.getLength());
+		}
+
+		UNITTEST_TEST(getMaxLength)
+		{
+			const char* str = "TEST:\\docs";
+			xfilepath p1(str);
+
+			CHECK_EQUAL(xfilepath::XFILEPATH_MAX, p1.getMaxLength());
+			CHECK_NOT_EQUAL(x_strlen(str), p1.getMaxLength());
 		}
 
 		UNITTEST_TEST(relative)
@@ -129,15 +138,13 @@ UNITTEST_SUITE_BEGIN(filepath)
 			const char* str = "Test";
 			xfilepath p1(str);
 
-			CHECK_FALSE(p1.empty());
-			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == x_strlen(str));
 
 			const char* str2 = "Test2";
 			p1 = str2;
-			CHECK_FALSE(p1.empty());
-			CHECK_TRUE(p1.length() == x_strlen(str2));
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == x_strlen(str2));
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str2), 0);
 		}
 
@@ -146,17 +153,15 @@ UNITTEST_SUITE_BEGIN(filepath)
 			const char* str = "Test1";
 			xfilepath p1(str);
 
-			CHECK_FALSE(p1.empty());
-			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == x_strlen(str));
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str), 0);
 
 			const char* str2 = "Test2";
 			const char* str12 = "Test1Test2";
 			p1 += str2;
-			CHECK_FALSE(p1.empty());
-			CHECK_TRUE(p1.length() == x_strlen(str12));
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == x_strlen(str12));
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str12), 0);
 		}
 
@@ -165,15 +170,14 @@ UNITTEST_SUITE_BEGIN(filepath)
 			const char* str = "Test1";
 			xfilepath p1(str);
 
-			CHECK_FALSE(p1.empty());
-			CHECK_TRUE(p1.length() == x_strlen(str));
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == x_strlen(str));
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str), 0);
 
 			xfilepath p2(p1);
-			CHECK_EQUAL(p1.empty(), p2.empty());
-			CHECK_EQUAL(p1.length(), p2.length());
-			CHECK_EQUAL(p1.maxLength(), p2.maxLength());
+			CHECK_EQUAL(p1.isEmpty(), p2.isEmpty());
+			CHECK_EQUAL(p1.getLength(), p2.getLength());
+			CHECK_EQUAL(p1.getMaxLength(), p2.getMaxLength());
 			CHECK_EQUAL(x_strCompare(p1.c_str(), p2.c_str()), 0);
 		}
 
@@ -182,16 +186,14 @@ UNITTEST_SUITE_BEGIN(filepath)
 			const char* str1 = "Test1";
 			xfilepath p1(str1);
 
-			CHECK_FALSE(p1.empty());
-			CHECK_TRUE(p1.length() == x_strlen(str1));
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_FALSE(p1.isEmpty());
+			CHECK_TRUE(p1.getLength() == x_strlen(str1));
 			CHECK_EQUAL(x_strCompare(p1.c_str(), str1), 0);
 
 			const char* str2 = "Test11";
 			xfilepath p2(str2);
-			CHECK_EQUAL(p1.empty(), p2.empty());
-			CHECK_NOT_EQUAL(p1.length(), p2.length());
-			CHECK_EQUAL(p1.maxLength(), xfilepath::sMaxLength());
+			CHECK_EQUAL(p1.isEmpty(), p2.isEmpty());
+			CHECK_NOT_EQUAL(p1.getLength(), p2.getLength());
 			CHECK_EQUAL(x_strCompare(p2.c_str(), str2), 0);
 			CHECK_NOT_EQUAL(x_strCompare(p1.c_str(), p2.c_str()), 0);
 		}

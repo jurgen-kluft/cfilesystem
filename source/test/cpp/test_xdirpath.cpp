@@ -50,16 +50,11 @@ UNITTEST_SUITE_BEGIN(dirpath)
 			CHECK_EQUAL(0, di.getLength());
 		}
 
-		UNITTEST_TEST(sMaxLength)
-		{
-			CHECK_EQUAL(xdirpath::XDIR_MAX_PATH-2, xdirpath::sMaxLength());
-		}
-
 		UNITTEST_TEST(getMaxLength)
 		{
 			const char* str = "TEST:\\the\\name\\is\\johhnywalker";
 			xdirpath di(str);
-			CHECK_EQUAL(xdirpath::sMaxLength(), di.getMaxLength());
+			CHECK_EQUAL(xdirpath::XDIRPATH_MAX, di.getMaxLength());
 		}
 
 		UNITTEST_TEST(isEmpty)

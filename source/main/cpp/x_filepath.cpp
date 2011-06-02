@@ -56,9 +56,9 @@ namespace xcore
 
 		void			xfilepath::clear()										{ mString.clear(); }
 
-		s32				xfilepath::length() const								{ return mString.getLength(); }
-		s32				xfilepath::maxLength() const							{ return mString.getMaxLength(); }
-		bool			xfilepath::empty() const								{ return mString.isEmpty(); }
+		s32				xfilepath::getLength() const							{ return mString.getLength(); }
+		s32				xfilepath::getMaxLength() const							{ return mString.getMaxLength(); }
+		bool			xfilepath::isEmpty() const								{ return mString.isEmpty(); }
 		bool			xfilepath::isRooted() const
 		{
 			s32 pos = mString.find(sGetDeviceEnd());
@@ -248,8 +248,8 @@ namespace xcore
 		xfilepath&		xfilepath::operator += ( const char* str )				{ mString += str; fixSlashes(); return *this; }
 		xfilepath&		xfilepath::operator += ( const xfilepath& str )			{ mString += str.c_str(); fixSlashes(); return *this; }
 
-		bool			xfilepath::operator == ( const xfilepath& rhs) const	{ return (rhs.length() == length()) && x_strCompare(rhs.c_str(), c_str()) == 0; }
-		bool			xfilepath::operator != ( const xfilepath& rhs) const	{ return (rhs.length() != length()) || x_strCompare(rhs.c_str(), c_str()) != 0; }
+		bool			xfilepath::operator == ( const xfilepath& rhs) const	{ return (rhs.getLength() == getLength()) && x_strCompare(rhs.c_str(), c_str()) == 0; }
+		bool			xfilepath::operator != ( const xfilepath& rhs) const	{ return (rhs.getLength() != getLength()) || x_strCompare(rhs.c_str(), c_str()) != 0; }
 
 		char			xfilepath::operator [] (s32 index) const				{ return mString[index]; }
 

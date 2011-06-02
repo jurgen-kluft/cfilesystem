@@ -37,7 +37,9 @@ namespace xcore
 		{
 			s32						mRefCount;
 			u32						mFileHandle;
-			s64						mFileSeekPos;
+			s64						mFilePos;
+
+			s64						mFilePosAfterAsyncOp;
 
 			enum ECaps
 			{
@@ -57,7 +59,8 @@ namespace xcore
 									xifilestream()
 										: mRefCount(2)
 										, mFileHandle(INVALID_FILE_HANDLE)
-										, mFileSeekPos(0)
+										, mFilePos(0)
+										, mFilePosAfterAsyncOp(0)
 									{
 									}
 
@@ -87,7 +90,7 @@ namespace xcore
 			virtual u64				read(xbyte* buffer, u64 offset, u64 count);		 					///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
 			virtual s32				readByte();											 				///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count);					///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
-			virtual void			writeByte(xbyte value);								 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
+			virtual u64				writeByte(xbyte value);								 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
 			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	  	///< Begins an asynchronous read operation.
 			virtual void			endRead(xasync_result& asyncResult);											///< Waits for the pending asynchronous read to complete.
@@ -98,12 +101,10 @@ namespace xcore
 			virtual void			copyTo(xistream* dst, u64 count);									///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
 		};
 
-		static xifilestream		sEmptyFileStream;
-
 		// -------------------------- xfilestream --------------------------
 
-		xfilestream::xfilestream()
-			: xstream(&sEmptyFileStream)
+		xfilestream::xfilestream() 
+			: xstream()
 		{
 		}
 
@@ -114,6 +115,7 @@ namespace xcore
 
 		xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
 		{
+			
 			mImplementation = new xifilestream(filename, mode, access, op);
 		}
 
@@ -148,7 +150,7 @@ namespace xcore
 		xifilestream::xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
 			: mRefCount(1)
 			, mFileHandle(INVALID_FILE_HANDLE)
-			, mFileSeekPos(0)
+			, mFilePos(0)
 			, mCaps(NONE)
 		{
 			bool can_read, can_write, can_seek, can_async;
@@ -228,7 +230,7 @@ namespace xcore
 									mCaps.set(USE_SEEK, false);
 									mCaps.set(USE_WRITE, true);
 
-									mFileSeekPos = xfilesystem::getLength(mFileHandle);
+									mFilePos = xfilesystem::getLength(mFileHandle);
 								}
 							}
 						}
@@ -277,12 +279,12 @@ namespace xcore
 
 		u64				xifilestream::getPosition() const
 		{
-			return (u64)mFileSeekPos;
+			return (u64)mFilePos;
 		}
 
 		void			xifilestream::setPosition(u64 Pos)
 		{
-			mFileSeekPos = Pos;
+			mFilePos = Pos;
 		}
 
 		u64				xifilestream::seek(s64 offset, ESeekOrigin origin)
@@ -291,15 +293,15 @@ namespace xcore
 			{
 				switch (origin)
 				{
-					case Seek_Begin: mFileSeekPos = offset; break;
-					case Seek_Current: mFileSeekPos += offset; break;
-					case Seek_End: mFileSeekPos = (s64)getLength() + offset; break;
+					case Seek_Begin: mFilePos = offset; break;
+					case Seek_Current: mFilePos += offset; break;
+					case Seek_End: mFilePos = (s64)getLength() + offset; break;
 				}
 				
-				if (mFileSeekPos < 0)
-					mFileSeekPos = 0;
+				if (mFilePos < 0)
+					mFilePos = 0;
 
-				return (u64)mFileSeekPos;
+				return (u64)mFilePos;
 			}
 			return 0;
 		}
@@ -310,7 +312,7 @@ namespace xcore
 			{
 				xfilesystem::syncClose(mFileHandle);
 			}
-			mFileSeekPos = X_S64_MIN;
+			mFilePos = X_S64_MIN;
 		}
 
 		void			xifilestream::flush()
@@ -319,50 +321,65 @@ namespace xcore
 
 		u64				xifilestream::read(xbyte* buffer, u64 offset, u64 count)
 		{
-			return xfilesystem::syncRead(mFileHandle, mFileSeekPos, count, &buffer[offset]);
+			u64 n = xfilesystem::syncRead(mFileHandle, mFilePos, count, &buffer[offset]);
+			if (n != X_U64_MAX)
+				mFilePos += n;
+			return n;
 		}
 
 		s32				xifilestream::readByte()
 		{
 			xbyte data[4];
-			xfilesystem::syncRead(mFileHandle, mFileSeekPos, 1, data);
+			u64 n = xfilesystem::syncRead(mFileHandle, mFilePos, 1, data);
+			if (n != X_U64_MAX)
+				mFilePos += n;
 			return (s32)data[0];
 		}
 
 		u64				xifilestream::write(const xbyte* buffer, u64 offset, u64 count)
 		{
-			return xfilesystem::syncWrite(mFileHandle, mFileSeekPos, count, &buffer[offset]);
+			u64 n = xfilesystem::syncWrite(mFileHandle, mFilePos, count, &buffer[offset]);
+			if (n != X_U64_MAX)
+				mFilePos += n;
+			return n;
 		}
 
-		void			xifilestream::writeByte(xbyte value)
+		u64				xifilestream::writeByte(xbyte value)
 		{
 			xbyte data[4];
 			data[0] = value;
-			xfilesystem::syncWrite(mFileHandle, mFileSeekPos, 1, data);
+			u64 n = xfilesystem::syncWrite(mFileHandle, mFilePos, 1, data);
+			if (n != X_U64_MAX)
+				mFilePos += n;
+			return n;
 		}
 
 		xasync_result	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			xiasync_result* async_result_imp;
-			xfilesystem::asyncRead(mFileHandle, mFileSeekPos, count, &buffer[offset], async_result_imp);
+			xfilesystem::asyncRead(mFileHandle, mFilePos, count, &buffer[offset], async_result_imp);
+			mFilePosAfterAsyncOp = mFilePos + count;
 			return xasync_result_ctor(async_result_imp);
 		}
 
 		void			xifilestream::endRead(xasync_result& asyncResult)
 		{
 			asyncResult.waitUntilCompleted();
+			mFilePos = mFilePosAfterAsyncOp;
 		}
 
 		xasync_result	xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			xiasync_result* async_result_imp;
-			xfilesystem::asyncWrite(mFileHandle, mFileSeekPos, count, &buffer[offset], async_result_imp);
+			xfilesystem::asyncWrite(mFileHandle, mFilePos, count, &buffer[offset], async_result_imp);
+			mFilePosAfterAsyncOp = mFilePos + count;
 			return xasync_result_ctor(async_result_imp);
 		}
 
 		void			xifilestream::endWrite(xasync_result& asyncResult)
 		{
 			asyncResult.waitUntilCompleted();
+			mFilePos = mFilePosAfterAsyncOp;
 		}
 
 		void			xifilestream::copyTo(xistream* dst)

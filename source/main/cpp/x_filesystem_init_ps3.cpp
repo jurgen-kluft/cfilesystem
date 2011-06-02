@@ -21,21 +21,17 @@ namespace xcore
 
 			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, SYS_APP_HOME"/");
 			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, SYS_DEV_BDVD"/PS3_GAME/USRDIR/");
-			xfilesystem::xdevicealias hdd0 ("hdd0" , sSystemFileDevice, SYS_DEV_HDD0"/game/TEST12345/USRDIR/");		//[hj]: hack directory
-			xfilesystem::xdevicealias ms   ("ms"   , sSystemFileDevice, SYS_DEV_MS"/");
-			xfilesystem::xdevicealias cache("cache", sSystemFileDevice, SYS_DEV_MS"/");
+			xfilesystem::xdevicealias hdd0 ("hdd"  , sSystemFileDevice, SYS_DEV_HDD0"/game/TEST12345/USRDIR/");		//[hj]: hack directory
 
-			xfilesystem::gAddAlias(host);
-			xfilesystem::gAddAlias(dvd);
-			xfilesystem::gAddAlias(hdd0);
-			xfilesystem::gAddAlias(ms);
-			xfilesystem::gAddAlias(cache);
+			xfilesystem::sRegister(host);
+			xfilesystem::sRegister(dvd);
+			xfilesystem::sRegister(hdd0);
 
 			xfilesystem::xdevicealias appdir( "appdir", "host" );
 			xfilesystem::xdevicealias curdir( "curdir", "host" );
 
-			xfilesystem::gAddAlias(appdir);
-			xfilesystem::gAddAlias(curdir);
+			xfilesystem::sRegister(appdir);
+			xfilesystem::sRegister(curdir);
 			
 			xfilesystem::initialise(max_open_streams);
 		}

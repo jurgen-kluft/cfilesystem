@@ -115,7 +115,7 @@ namespace xcore
 				if (x_stricmp(sAliasList[i].alias(), alias.alias()) == 0)
 				{
 					sAliasList[i] = alias;
-					xconsole::writeLine("INFO replaced alias %s", x_va_list(alias.alias()));
+					xconsole::writeLine("INFO replaced xdevicealias %s", x_va_list(alias.alias()));
 					return;
 				}
 			}
@@ -127,7 +127,7 @@ namespace xcore
 			}
 			else
 			{
-				xconsole::writeLine("ERROR cannot add another xfilesystem alias, maximum amount of aliases reached");
+				xconsole::writeLine("ERROR cannot add another xdevicealias, maximum amount of aliases reached");
 			}
 		}
 

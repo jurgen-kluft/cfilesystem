@@ -41,7 +41,7 @@ namespace xcore
 			virtual u64				read(xbyte* buffer, u64 offset, u64 count)										{ return 0; }
 			virtual s32				readByte()																		{ return 0; }
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count)								{ return 0; }
-			virtual void			writeByte(xbyte value)															{ }
+			virtual u64				writeByte(xbyte value)															{ return 0; }
 
 			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)			{ return xasync_result(); }
 			virtual void			endRead(xasync_result& asyncResult)												{ }
@@ -133,6 +133,11 @@ namespace xcore
 		void					xstream::close()
 		{
 			mImplementation->close();
+
+			if (mImplementation->release() == 0)
+				mImplementation->destroy();
+
+			mImplementation = &sNullStreamImp;
 		}
 
 		void					xstream::flush()
@@ -156,9 +161,9 @@ namespace xcore
 			return mImplementation->write(buffer, offset, count);
 		}
 
-		void					xstream::writeByte(xbyte value)
+		u64						xstream::writeByte(xbyte value)
 		{
-			mImplementation->writeByte(value);
+			return mImplementation->writeByte(value);
 		}
 
 

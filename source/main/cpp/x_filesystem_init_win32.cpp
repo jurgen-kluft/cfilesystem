@@ -176,16 +176,16 @@ namespace xcore
 			x_FileSystemRegisterSystemAliases();
 
 			// Determine the source type of the app and work dir
-			const xfilesystem::xdevicealias* workDirAlias = xdevicealias::sFind(xfilepath(sAppDir));
-			const xfilesystem::xdevicealias* appDirAlias  = xdevicealias::sFind(xfilepath(sWorkDir));
+			const xfilesystem::xdevicealias* workDirAlias = xdevicealias::sFind(xfilepath(sWorkDir));
+			const xfilesystem::xdevicealias* appDirAlias  = xdevicealias::sFind(xfilepath(sAppDir));
 
 			// After this, user can initialize the aliases
 			xdevicealias::sRegister(xfilesystem::xdevicealias("appdir", appDirAlias->device(), sAppDir));
 			xdevicealias::sRegister(xfilesystem::xdevicealias("curdir", workDirAlias->device(), sWorkDir));
 
-			xdevicealias::sRegister(xfilesystem::xdevicealias("host", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
-			xdevicealias::sRegister(xfilesystem::xdevicealias("dvd", sFileDevices[DRIVE_TYPE_CDROM], sWorkDir));
-			xdevicealias::sRegister(xfilesystem::xdevicealias("HDD", sFileDevices[DRIVE_TYPE_FIXED], sWorkDir));
+			xdevicealias::sRegister(xfilesystem::xdevicealias("host", sFileDevices[DRIVE_TYPE_FIXED], ""));
+			xdevicealias::sRegister(xfilesystem::xdevicealias("dvd", sFileDevices[DRIVE_TYPE_CDROM], ""));
+			xdevicealias::sRegister(xfilesystem::xdevicealias("hdd", sFileDevices[DRIVE_TYPE_FIXED], ""));
 
 			xfilesystem::initialise(max_open_streams);
 		}

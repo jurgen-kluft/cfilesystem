@@ -41,17 +41,29 @@ namespace xcore
 
 			sSystemFileDevice = x_CreateFileDevicePSP();
 
-			xfilesystem::gAddAlias(xfilesystem::xdevicealias("host", sSystemFileDevice, "host0:"));
-			xfilesystem::gAddAlias(xfilesystem::xdevicealias("dvd" , sSystemFileDevice, "disc0:/PSP_GAME/USRDIR/" )); 
+			xfilesystem::sRegister(xfilesystem::xdevicealias("host", sSystemFileDevice, "host0:"));
+			xfilesystem::sRegister(xfilesystem::xdevicealias("dvd" , sSystemFileDevice, "disc0:/PSP_GAME/USRDIR/" )); 
 
 			xfilesystem::xdevicealias appdir( "appdir", "host" );
 			xfilesystem::xdevicealias curdir( "curdir", "host" );
-			xfilesystem::gAddAlias(appdir);
-			xfilesystem::gAddAlias(curdir);
+			xfilesystem::sRegister(appdir);
+			xfilesystem::sRegister(curdir);
 
 			xfilesystem::initialise(max_open_streams);
 		}
 
+		//------------------------------------------------------------------------------------------
+		static char		m_pszMemoryCardPath[FS_MAX_PATH];
+		void setMemoryCardPath	( const char* szMemoryCardPath )
+		{
+			xcstring mscardpath(m_pszMemoryCardPath, sizeof(m_pszMemoryCardPath), szMemoryCardPath);
+
+			// Register memory stick alias
+			xdevicealias ms("ms", sSystemFileDevice, mscardpath.c_str());
+			xdevicealias::sRegister(ms);
+		}
+
+		//------------------------------------------------------------------------------------------
 		void exit()
 		{
 			xfilesystem::shutdown();

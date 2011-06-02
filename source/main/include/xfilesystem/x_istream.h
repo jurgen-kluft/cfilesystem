@@ -52,7 +52,7 @@ namespace xcore
 			virtual u64				read(xbyte* buffer, u64 offset, u64 count) = 0; 					///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
 			virtual s32				readByte() = 0;										 				///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count) = 0;				///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
-			virtual void			writeByte(xbyte value) = 0;							 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
+			virtual u64				writeByte(xbyte value) = 0;							 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
 			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback) = 0;  		///< Begins an asynchronous read operation.
 			virtual void			endRead(xasync_result& asyncResult) = 0;											///< Waits for the pending asynchronous read to complete.

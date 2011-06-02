@@ -6,9 +6,10 @@
 #include "xbase\x_string_std.h"
 #include "xtime\x_time.h"
 
+#include "xfilesystem\x_attributes.h"
+#include "xfilesystem\x_dirinfo.h"
 #include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\x_dirinfo.h"
 #include "xfilesystem\x_fileinfo.h"
 #include "xfilesystem\x_filestream.h"
 #include "xfilesystem\private\x_filesystem_common.h"
@@ -19,7 +20,7 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		const xdevicealias*		xfileinfo::sGetAlias(const xfilepath& filepath)
+		static const xdevicealias*	sGetAlias(const xfilepath& filepath)
 		{
 			char deviceStrBuffer[64];
 			xcstring deviceName(deviceStrBuffer, sizeof(deviceStrBuffer));
@@ -62,6 +63,16 @@ namespace xcore
 			return mFilePath.getExtension(outExtension);
 		}
 
+		u64						xfileinfo::getLength() const
+		{
+			return sGetLength(mFilePath);
+		}
+
+		void					xfileinfo::setLength(u64 length)
+		{
+			sSetLength(mFilePath, length);
+		}
+
 		bool					xfileinfo::isValid() const
 		{
 			return sGetAlias(mFilePath) != NULL;
@@ -72,6 +83,25 @@ namespace xcore
 			return mFilePath.isRooted();
 		}
 
+		bool					xfileinfo::isArchive() const
+		{
+			return sIsArchive(mFilePath);			
+		}
+
+		bool					xfileinfo::isReadOnly() const
+		{
+			return sIsReadOnly(mFilePath);			
+		}
+
+		bool					xfileinfo::isHidden() const
+		{
+			return sIsHidden(mFilePath);			
+		}
+
+		bool					xfileinfo::isSystem() const
+		{
+			return sIsSystem(mFilePath);			
+		}
 
 		bool					xfileinfo::exists() const
 		{
@@ -90,6 +120,12 @@ namespace xcore
 			return false;
 		}
 
+		bool					xfileinfo::create(xfilestream& outFilestream)
+		{
+			outFilestream.close();
+			return (sCreate(mFilePath, outFilestream));
+		}
+
 		bool					xfileinfo::remove()
 		{
 			return sDelete(mFilePath);
@@ -99,6 +135,25 @@ namespace xcore
 		{
 		}
 
+		bool					xfileinfo::openRead(xfilestream& outFileStream)
+		{
+			return sOpenRead(mFilePath, outFileStream);
+		}
+
+		bool					xfileinfo::openWrite(xfilestream& outFileStream)
+		{
+			return sOpenWrite(mFilePath, outFileStream);
+		}
+
+		u64						xfileinfo::readAllBytes(xbyte* buffer, u64 count)
+		{
+			return sReadAllBytes(mFilePath, buffer, 0, count);
+		}
+
+		u64					xfileinfo::writeAllBytes(const xbyte* buffer, u64 count)
+		{
+			return sWriteAllBytes(mFilePath, buffer, 0, count);
+		}
 
 		bool					xfileinfo::copy(const xfilepath& toFilename, bool overwrite)
 		{
@@ -241,17 +296,87 @@ namespace xcore
 		///< Static functions
 		bool					xfileinfo::sExists(const xfilepath& filename)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 			return device!=NULL && device->hasFile(systemFile.c_str());
 		}
 
-		u64						xfileinfo::sLength(const xfilepath& filename)
+		bool				sGetFileAttributes(const xfilepath& filename, xattributes& outAttr)
+		{
+			xdevicealias const* da = sGetAlias(filename);
+			if (da == NULL)
+				return false;
+			xfiledevice* device = da->device();
+			if (device == NULL)
+				return false;
+			xattributes attr;
+			if (device->getFileAttr(filename.c_str(), attr))
+			{
+				outAttr = attr;
+				return true;
+			}
+			return false;
+		}
+
+		bool					xfileinfo::sIsArchive(const xfilepath& filename)
+		{
+			xattributes a;
+			if (sGetFileAttributes(filename, a))
+				return a.isArchive();
+			return false;
+		}
+
+		bool					xfileinfo::sIsReadOnly(const xfilepath& filename)
+		{
+			xattributes a;
+			if (sGetFileAttributes(filename, a))
+				return a.isReadOnly();
+			return false;
+		}
+
+		bool					xfileinfo::sIsHidden(const xfilepath& filename)
+		{
+			xattributes a;
+			if (sGetFileAttributes(filename, a))
+				return a.isHidden();
+			return false;
+		}
+
+		bool					xfileinfo::sIsSystem(const xfilepath& filename)
+		{
+			xattributes a;
+			if (sGetFileAttributes(filename, a))
+				return a.isSystem();
+			return false;
+		}
+
+		bool					xfileinfo::sCreate(const xfilepath& filename, xfilestream& outFileStream)
+		{
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
+			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
+			xfiledevice* device = filename.getSystem(systemFile);
+
+			u32 nFileHandle;
+			if (device!=NULL && device->createFile(systemFile.c_str(), true, true, nFileHandle))
+				return true;
+			return false;
+		}
+
+		bool					xfileinfo::sDelete(const xfilepath& filename)
+		{
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
+			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
+			xfiledevice* device = filename.getSystem(systemFile);
+			return device!=NULL && device->deleteFile(systemFile.c_str());
+		}
+
+
+		u64						xfileinfo::sGetLength(const xfilepath& filename)
 		{
 			u64 fileLength = X_U64_MAX;
-			
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 
@@ -267,26 +392,21 @@ namespace xcore
 			return fileLength;
 		}
 
-		bool					xfileinfo::sCreate(const xfilepath& filename, xfilestream& outFileStream)
+		void					xfileinfo::sSetLength(const xfilepath& filename, u64 length)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 
-			u32 nFileHandle;
-			if (device!=NULL && device->createFile(systemFile.c_str(), true, true, nFileHandle))
+			if (device!=NULL)
 			{
-				return device->closeFile(nFileHandle);
+				u32 nFileHandle;
+				if (device->openFile(systemFile.c_str(), true, false, nFileHandle))
+				{
+					device->setLengthOfFile(nFileHandle, length);
+					device->closeFile(nFileHandle);
+				}
 			}
-			return false;
-		}
-
-		bool					xfileinfo::sDelete(const xfilepath& filename)
-		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
-			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
-			xfiledevice* device = filename.getSystem(systemFile);
-			return device!=NULL && device->deleteFile(systemFile.c_str());
 		}
 
 		bool					xfileinfo::sOpen(const xfilepath& filename, xfilestream& outFileStream)
@@ -309,30 +429,32 @@ namespace xcore
 
 		u64						xfileinfo::sReadAllBytes(const xfilepath& filename, xbyte* buffer, u64 offset, u64 count)
 		{
+			u64 rc = 0;
 			xfilestream fs(filename, FileMode_Open, FileAccess_Read, FileOp_Sync);
 			if (fs.isOpen())
 			{
-				fs.read(buffer, offset, count);
+				rc = fs.read(buffer, 0, count);
 				fs.close();
 			}
-			return 0;
+			return rc;
 		}
 
 		u64						xfileinfo::sWriteAllBytes(const xfilepath& filename, const xbyte* buffer, u64 offset, u64 count)
 		{
+			u64 rc = 0;
 			xfilestream fs(filename, FileMode_Open, FileAccess_Write, FileOp_Sync);
 			if (fs.isOpen())
 			{
-				u64 numBytesWritten = fs.write(buffer, offset, count);
+				fs.setLength(0);
+				rc = fs.write(buffer, 0, count);
 				fs.close();
-				return numBytesWritten;
 			}
-			return 0;
+			return rc;
 		}
 
 		bool					xfileinfo::sSetTime(const xfilepath& filename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 			if (device!=NULL)
@@ -344,7 +466,7 @@ namespace xcore
 
 		bool					xfileinfo::sGetTime(const xfilepath& filename, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 
@@ -359,7 +481,7 @@ namespace xcore
 
 		bool					xfileinfo::sSetCreationTime(const xfilepath& filename, const xdatetime& creationTime)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 			if (device!=NULL)
@@ -373,7 +495,7 @@ namespace xcore
 
 		bool					xfileinfo::sGetCreationTime(const xfilepath& filename, xdatetime& outCreationTime)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 
@@ -386,7 +508,7 @@ namespace xcore
 
 		bool					xfileinfo::sSetLastAccessTime(const xfilepath& filename, const xdatetime& lastAccessTime)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 			if (device!=NULL)
@@ -400,7 +522,7 @@ namespace xcore
 
 		bool					xfileinfo::sGetLastAccessTime(const xfilepath& filename, xdatetime& outLastAccessTime)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 
@@ -413,7 +535,7 @@ namespace xcore
 
 		bool					xfileinfo::sSetLastWriteTime(const xfilepath& filename, const xdatetime& lastWriteTime)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 
@@ -428,7 +550,7 @@ namespace xcore
 
 		bool					xfileinfo::sGetLastWriteTime(const xfilepath& filename, xdatetime& outLastWriteTime)
 		{
-			char systemDirBuffer[xfilepath::XFILE_MAX_PATH];
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = filename.getSystem(systemFile);
 
@@ -442,10 +564,10 @@ namespace xcore
 
 		bool					xfileinfo::sCopy(const xfilepath& filename, const xfilepath& toFilename, bool overwrite)
 		{
-			char srcSystemFileBuffer[xdirpath::XDIR_MAX_PATH];
+			char srcSystemFileBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring srcSystemFile(srcSystemFileBuffer, sizeof(srcSystemFileBuffer));
 			xfiledevice* src_device = filename.getSystem(srcSystemFile);
-			char dstSystemFileBuffer[xdirpath::XDIR_MAX_PATH];
+			char dstSystemFileBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring dstSystemFile(dstSystemFileBuffer, sizeof(dstSystemFileBuffer));
 			xfiledevice* dst_device = toFilename.getSystem(dstSystemFile);
 
@@ -457,10 +579,10 @@ namespace xcore
 
 		bool					xfileinfo::sMove(const xfilepath& filename, const xfilepath& toFilename)
 		{
-			char srcSystemFileBuffer[xdirpath::XDIR_MAX_PATH];
+			char srcSystemFileBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring srcSystemFile(srcSystemFileBuffer, sizeof(srcSystemFileBuffer));
 			xfiledevice* src_device = filename.getSystem(srcSystemFile);
-			char dstSystemFileBuffer[xdirpath::XDIR_MAX_PATH];
+			char dstSystemFileBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
 			xcstring dstSystemFile(dstSystemFileBuffer, sizeof(dstSystemFileBuffer));
 			xfiledevice* dst_device = toFilename.getSystem(dstSystemFile);
 
