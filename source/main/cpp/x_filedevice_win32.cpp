@@ -22,6 +22,7 @@
 
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_ps3.h"
+#include "xfilesystem\x_attributes.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_fileinfo.h"
 #include "xfilesystem\x_dirinfo.h"
@@ -61,6 +62,8 @@ namespace xcore
 			virtual bool			getLengthOfFile(u32 nFileHandle, u64& outLength) const;
 			virtual bool			setFileTime(const char* szFilename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const;
 			virtual bool			getFileTime(const char* szFilename, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
+			virtual bool			setFileAttr(const char* szFilename, const xattributes& attr) const;
+			virtual bool			getFileAttr(const char* szFilename, xattributes& attr) const;
 
 			virtual bool			hasDir(const char* szDirPath) const;
 			virtual bool			createDir(const char* szDirPath) const;
@@ -69,6 +72,8 @@ namespace xcore
 			virtual bool			deleteDir(const char* szDirPath) const;
 			virtual bool			setDirTime(const char* szDirPath, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const;
 			virtual bool			getDirTime(const char* szDirPath, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
+			virtual bool			setDirAttr(const char* szDirPath, const xattributes& attr) const;
+			virtual bool			getDirAttr(const char* szDirPath, xattributes& attr) const;
 
 			virtual bool			enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth) const;
 
@@ -304,6 +309,37 @@ namespace xcore
 			return false;
 		}
 
+		bool FileDevice_PC_System::setFileAttr(const char* szFilename, const xattributes& attr) const
+		{
+			DWORD dwFileAttributes = 0;
+			if (attr.isArchive())
+				dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_ARCHIVE;
+			if (attr.isReadOnly())
+				dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_READONLY;
+			if (attr.isHidden())
+				dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_HIDDEN;
+			if (attr.isSystem())
+				dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_SYSTEM;
+
+			return ::SetFileAttributes(szFilename, dwFileAttributes) == TRUE;
+		}
+
+		bool FileDevice_PC_System::getFileAttr(const char* szFilename, xattributes& attr) const
+		{
+			DWORD dwFileAttributes = 0;
+			dwFileAttributes = ::GetFileAttributes(szFilename);
+			if (dwFileAttributes == INVALID_FILE_ATTRIBUTES)
+				return false;
+
+			attr.setArchive(dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE);
+			attr.setReadOnly(dwFileAttributes & FILE_ATTRIBUTE_READONLY);
+			attr.setHidden(dwFileAttributes & FILE_ATTRIBUTE_HIDDEN);
+			attr.setSystem(dwFileAttributes & FILE_ATTRIBUTE_SYSTEM);
+
+			return true;
+		}
+
+
 		static HANDLE	sOpenDir(const char* szDirPath)
 		{
 			u32 shareType	= FILE_SHARE_READ;
@@ -424,6 +460,35 @@ namespace xcore
 			return false;
 		}
 
+		bool FileDevice_PC_System::setDirAttr(const char* szDirPath, const xattributes& attr) const
+		{
+			DWORD dwFileAttributes = 0;
+			if (attr.isArchive())
+				dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_ARCHIVE;
+			if (attr.isReadOnly())
+				dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_READONLY;
+			if (attr.isHidden())
+				dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_HIDDEN;
+			if (attr.isSystem())
+				dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_SYSTEM;
+
+			return ::SetFileAttributes(szDirPath, dwFileAttributes) == TRUE;
+		}
+
+		bool FileDevice_PC_System::getDirAttr(const char* szDirPath, xattributes& attr) const
+		{
+			DWORD dwFileAttributes = 0;
+			dwFileAttributes = ::GetFileAttributes(szDirPath);
+			if (dwFileAttributes == INVALID_FILE_ATTRIBUTES)
+				return false;
+
+			attr.setArchive(dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE);
+			attr.setReadOnly(dwFileAttributes & FILE_ATTRIBUTE_READONLY);
+			attr.setHidden(dwFileAttributes & FILE_ATTRIBUTE_HIDDEN);
+			attr.setSystem(dwFileAttributes & FILE_ATTRIBUTE_SYSTEM);
+
+			return true;
+		}
 
 		bool FileDevice_PC_System::enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth) const
 		{

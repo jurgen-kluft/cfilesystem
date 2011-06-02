@@ -49,7 +49,7 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 			const char* str = "TEST:\\textfiles\\docs\\the_folder";
 			xdirinfo di(str);
 
-			char nameBuffer[xdirpath::XDIR_MAX_PATH];
+			char nameBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring name(nameBuffer, sizeof(nameBuffer));
 			di.getName(name);
 

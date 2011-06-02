@@ -30,9 +30,6 @@ namespace xcore
 		{
 			xdirpath				mDirPath;
 
-			static
-			const xdevicealias*		sGetAlias(const xdirpath&);
-
 		public:
 									xdirinfo();
 									xdirinfo(const xdirinfo& dirinfo);

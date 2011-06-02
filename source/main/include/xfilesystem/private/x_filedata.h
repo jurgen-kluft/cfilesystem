@@ -24,7 +24,13 @@ namespace xcore
 
 		struct xfiledata
 		{
-								xfiledata() { clear(); }
+								xfiledata() 
+									: m_nFileIndex(0)
+									, m_szFilename(NULL)
+									, m_sFilenameMaxLen(0)
+								{
+									clear();
+								}
 
 			XFILESYSTEM_OBJECT_NEW_DELETE()
 
@@ -50,11 +56,7 @@ namespace xcore
 			{
 				m_uByteSize			= 0;
 
-				m_nFileIndex		= 0;
 				m_nLastError		= 0;
-
-				m_szFilename		= NULL;
-				m_sFilenameMaxLen	= 0;
 
 				m_boReading			= true;
 				m_boWriting			= false;

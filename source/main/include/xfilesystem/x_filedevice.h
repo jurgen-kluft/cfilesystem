@@ -22,6 +22,7 @@ namespace xcore
 	{
 		class xfileinfo;
 		class xdirinfo;
+		struct xattributes;
 
 		///< File device
 		///< 
@@ -53,6 +54,8 @@ namespace xcore
 			virtual bool			getLengthOfFile(u32 nFileHandle, u64& outLength) const = 0;
 			virtual bool			setFileTime(const char* szFilename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const = 0;
 			virtual bool			getFileTime(const char* szFilename, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const = 0;
+			virtual bool			setFileAttr(const char* szFilename, const xattributes& attr) const = 0;
+			virtual bool			getFileAttr(const char* szFilename, xattributes& attr) const = 0;
 
 			virtual bool			hasDir(const char* szDirPath) const = 0;
 			virtual bool			createDir(const char* szDirPath) const = 0;
@@ -61,6 +64,8 @@ namespace xcore
 			virtual bool			deleteDir(const char* szDirPath) const = 0;
 			virtual bool			setDirTime(const char* szDirPath, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const = 0;
 			virtual bool			getDirTime(const char* szDirPath, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const = 0;
+			virtual bool			setDirAttr(const char* szDirPath, const xattributes& attr) const = 0;
+			virtual bool			getDirAttr(const char* szDirPath, xattributes& attr) const = 0;
 
 			virtual bool			enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth=0) const = 0;
 		

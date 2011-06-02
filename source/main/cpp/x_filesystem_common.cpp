@@ -28,6 +28,26 @@ namespace xcore
 	//----------------------- xfilesystem Common Implementations -------------------------------
 	//------------------------------------------------------------------------------------------
 	//------------------------------------------------------------------------------------------
+
+	/*
+
+	Ok, so we have the IO thread which pops xfileasync items from a spsc queue, this all works
+	fine. But now we need a mechanism where preferably one thread (the IO thread) can also push
+	back the xfiledata on the unused queue. Currently this is done by the Sync() function which
+	checks for xfiledata items that are done but this should be refactored.
+
+	The change that we need is a spsc queue for the 'unused' xfiledata and the IO thread can push
+	the xfiledata object back on this queue (the xfileasync will contain a flag to request this).
+
+	When the xfilesystem pops a xfiledata from the spsc queue to open a file, upon handling a close
+	file request it will inform the xfileasync operation to push the xfiledata object on the spsc
+	queue for 'unused' xfiledata items.
+
+	Note: If we replace the spsc queue with a spmc queue then xfilesystem requests can originate
+	      from more than one thread.
+		  Or the xfilesystem can be locked/unlocked when doing file operations.
+	*/
+
 	namespace xfilesystem
 	{
 
@@ -89,16 +109,18 @@ namespace xcore
 		static u32							m_uMaxAsyncOperations = 32;
 		static u32							m_uMaxErrorItems = 32;
 
-		static char*						*m_Filenames;
+		static char*						*m_Filenames = NULL;
 
-		static xiasync_result_imp			*m_AsyncResults;
-		static xfiledata					*m_OpenAsyncFile;
-		static xfileasync					*m_AsyncIOData;
+		static xiasync_result_imp			*m_AsyncResults = NULL;
 
-		static EError						*m_eLastErrorStack;
+		static xfiledata					*m_OpenAsyncFileArray = NULL;
+		static spsc_cqueue<xfiledata*>		*m_FreeAsyncFile = NULL;
 
-		static spsc_cqueue<xfileasync*>*	m_pFreeAsyncIOList = NULL;
-		static spsc_cqueue<xfileasync*>*	m_pAsyncIOList = NULL;
+		static xfileasync					*m_AsyncIOData = NULL;
+		static spsc_cqueue<xfileasync*>		*m_pFreeAsyncIOList = NULL;
+		static spsc_cqueue<xfileasync*>		*m_pAsyncIOList = NULL;
+
+		static EError						*m_eLastErrorStack = NULL;
 
 		//------------------------------------------------------------------------------------------
 
@@ -431,9 +453,7 @@ namespace xcore
 
 			xfiledata* fileInfo = getFileInfo(uHandle);
 			fileInfo->m_uByteSize		= 0;
-
 			fileInfo->m_nFileHandle		= (u32)PENDING_FILE_HANDLE;
-			fileInfo->m_nFileIndex		= uHandle;
 
 			xcstring fileInfoFilename(fileInfo->m_szFilename, fileInfo->m_sFilenameMaxLen, szSystemFilename.c_str());
 
@@ -485,21 +505,64 @@ namespace xcore
 			m_uMaxOpenedFiles = uMaxOpenStreams;
 			m_uMaxAsyncOperations = uMaxOpenStreams;
 
-			m_Filenames = (char**)heapAlloc(m_uMaxOpenedFiles * sizeof(char*), X_ALIGNMENT_DEFAULT);
-			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
-				m_Filenames[uFile] = (char*)heapAlloc(FS_MAX_PATH + 2, X_ALIGNMENT_DEFAULT);
+			if (m_Filenames == NULL)
+			{
+				m_Filenames = (char**)heapAlloc(m_uMaxOpenedFiles * sizeof(char*), X_ALIGNMENT_DEFAULT);
+				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
+					m_Filenames[uFile] = (char*)heapAlloc(FS_MAX_PATH + 2, X_ALIGNMENT_DEFAULT);
+			}
 
-			m_AsyncResults = (xiasync_result_imp*)heapAlloc(m_uMaxOpenedFiles * sizeof(xiasync_result_imp), X_ALIGNMENT_DEFAULT);
-			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
-				new (&m_AsyncResults[uFile]) xiasync_result_imp();
-			m_OpenAsyncFile = (xfiledata*)heapAlloc(m_uMaxOpenedFiles * sizeof(xfiledata), X_ALIGNMENT_DEFAULT);
-			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
-				new (&m_OpenAsyncFile[uFile]) xfiledata();
-			m_AsyncIOData = (xfileasync*)heapAlloc(m_uMaxOpenedFiles * sizeof(xfileasync), X_ALIGNMENT_DEFAULT);
-			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
-				new (&m_AsyncIOData[uFile]) xfileasync();
-			m_eLastErrorStack = (EError*)heapAlloc(m_uMaxErrorItems * sizeof(EError), X_ALIGNMENT_DEFAULT);
+			if (m_AsyncResults == NULL)
+			{
+				m_AsyncResults = (xiasync_result_imp*)heapAlloc(m_uMaxOpenedFiles * sizeof(xiasync_result_imp), X_ALIGNMENT_DEFAULT);
+				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
+					new (&m_AsyncResults[uFile]) xiasync_result_imp();
+			}
 
+			if (m_OpenAsyncFileArray == NULL)
+			{
+				m_OpenAsyncFileArray = (xfiledata*)heapAlloc(m_uMaxOpenedFiles * sizeof(xfiledata), X_ALIGNMENT_DEFAULT);
+
+				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
+				{
+					new (&m_OpenAsyncFileArray[uFile]) xfiledata();
+
+					m_OpenAsyncFileArray[uFile].clear();
+					m_OpenAsyncFileArray[uFile].m_nFileIndex = uFile;
+					m_OpenAsyncFileArray[uFile].m_szFilename = m_Filenames[uFile];
+					m_OpenAsyncFileArray[uFile].m_sFilenameMaxLen = FS_MAX_PATH;
+
+					x_memset(m_OpenAsyncFileArray[uFile].m_szFilename, 0, FS_MAX_PATH);
+					m_OpenAsyncFileArray[uFile].m_szFilename[0] = '\0';
+					m_OpenAsyncFileArray[uFile].m_szFilename[1] = '\0';
+					m_OpenAsyncFileArray[uFile].m_szFilename[FS_MAX_PATH+0] = '\0';
+					m_OpenAsyncFileArray[uFile].m_szFilename[FS_MAX_PATH+1] = '\0';
+				}
+			}
+
+			if (m_FreeAsyncFile == NULL)
+			{
+				void* mem1 = heapAlloc(sizeof(spsc_cqueue<xfiledata*>), CACHE_LINE_SIZE);
+				void* mem2 = heapAlloc(m_uMaxOpenedFiles * sizeof(xfiledata*), CACHE_LINE_SIZE);
+				spsc_cqueue<xfiledata*>* queue = new (mem1) spsc_cqueue<xfiledata*>(m_uMaxOpenedFiles, (xfiledata* volatile*)mem2);
+				m_FreeAsyncFile = queue;
+
+				// Populate the unused xfiledata queue
+				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
+					m_FreeAsyncFile->push(&m_OpenAsyncFileArray[uFile]);
+			}
+			
+			if (m_AsyncIOData == NULL)
+			{
+				m_AsyncIOData = (xfileasync*)heapAlloc(m_uMaxOpenedFiles * sizeof(xfileasync), X_ALIGNMENT_DEFAULT);
+				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
+					new (&m_AsyncIOData[uFile]) xfileasync();
+			}
+
+			if (m_eLastErrorStack == NULL)
+			{
+				m_eLastErrorStack = (EError*)heapAlloc(m_uMaxErrorItems * sizeof(EError), X_ALIGNMENT_DEFAULT);
+			}
 			//--------------------------------
 			// Clear the error stack
 			//--------------------------------
@@ -522,22 +585,6 @@ namespace xcore
 				void* mem2 = heapAlloc(m_uMaxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
 				spsc_cqueue<xfileasync*>* queue = new (mem1) spsc_cqueue<xfileasync*>(m_uMaxAsyncOperations, (xfileasync* volatile*)mem2);
 				m_pAsyncIOList = queue;
-			}
-
-			//---------------------------------------
-			// Current there is no Async file loaded.
-			//---------------------------------------
-			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
-			{
-				m_OpenAsyncFile[uFile].clear();
-				m_OpenAsyncFile[uFile].m_szFilename = m_Filenames[uFile];
-				m_OpenAsyncFile[uFile].m_sFilenameMaxLen = FS_MAX_PATH;
-
-				x_memset(m_OpenAsyncFile[uFile].m_szFilename, 0, FS_MAX_PATH);
-				m_OpenAsyncFile[uFile].m_szFilename[0] = '\0';
-				m_OpenAsyncFile[uFile].m_szFilename[1] = '\0';
-				m_OpenAsyncFile[uFile].m_szFilename[FS_MAX_PATH+0] = '\0';
-				m_OpenAsyncFile[uFile].m_szFilename[FS_MAX_PATH+1] = '\0';
 			}
 
 			for(u32 uSlot = 0; uSlot < m_uMaxAsyncOperations; uSlot++)	
@@ -564,27 +611,35 @@ namespace xcore
 				heapFree(m_pFreeAsyncIOList);
 				m_pFreeAsyncIOList = NULL;
 			}
+
 			if (m_pAsyncIOList != NULL)
 			{
 				heapFree((void*)m_pAsyncIOList->getArray());
 				m_pAsyncIOList->~spsc_cqueue<xfileasync*>();
 				heapFree(m_pAsyncIOList);
 				m_pAsyncIOList = NULL;
+				heapFree(m_AsyncIOData);
+				m_AsyncIOData = NULL;
+			}
+
+			if (m_FreeAsyncFile != NULL)
+			{
+				heapFree((void*)m_FreeAsyncFile->getArray());
+				m_FreeAsyncFile->~spsc_cqueue<xfiledata*>();
+				m_FreeAsyncFile = NULL;
+				heapFree(m_OpenAsyncFileArray);
+				m_OpenAsyncFileArray = NULL;
 			}
 
 			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
 				heapFree(m_Filenames[uFile]);
 			heapFree(m_Filenames);
+			m_Filenames = NULL;
 
 			heapFree(m_AsyncResults);
-			heapFree(m_OpenAsyncFile);
-			heapFree(m_AsyncIOData);
 			heapFree(m_eLastErrorStack);
 
-			m_Filenames = NULL;
 			m_AsyncResults = NULL;
-			m_OpenAsyncFile = NULL;
-			m_AsyncIOData = NULL;
 			m_eLastErrorStack = NULL;
 		}
 
@@ -644,19 +699,18 @@ namespace xcore
 		xfiledata*			getFileInfo			( u32 uHandle )
 		{
 			ASSERT(uHandle<m_uMaxOpenedFiles);
-			return &m_OpenAsyncFile[uHandle];
+			return &m_OpenAsyncFileArray[uHandle];
 		}
 
 		//------------------------------------------------------------------------------------------
 
 		u32					findFreeFileSlot (void)
 		{
-			for (u32 nSlot = 0; nSlot < m_uMaxOpenedFiles; nSlot++)
-			{
-				if (m_OpenAsyncFile[nSlot].m_nFileHandle == (u32)INVALID_FILE_HANDLE)
-					return (nSlot);
-			}
-			return (u32)-1;
+			xfiledata* f;
+			if (m_FreeAsyncFile->pop(f))
+				return f->m_nFileIndex;
+
+			return -1;
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -763,7 +817,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				setLastError		( EError error )
+		void					setLastError		( EError error )
 		{
 			// Push everything up
 			for (u32 i=1; i<m_uMaxErrorItems; ++i)

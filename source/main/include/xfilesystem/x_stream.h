@@ -64,7 +64,7 @@ namespace xcore
 			u64					read(xbyte* buffer, u64 offset, u64 count); 									///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
 			s32					readByte();										 								///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
 			u64					write(const xbyte* buffer, u64 offset, u64 count);								///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
-			void				writeByte(xbyte value);							 								///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
+			u64					writeByte(xbyte value);							 								///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
 			xasync_result		beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);  		///< Begins an asynchronous read operation.
 			void				endRead(xasync_result& asyncResult);											///< Waits for the pending asynchronous read to complete.

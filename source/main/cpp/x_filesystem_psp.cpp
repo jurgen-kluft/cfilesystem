@@ -31,13 +31,6 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-
-		//---------
-		// Forward declares
-		//---------
-		static char		m_pszMemoryCardPath[FS_MAX_PATH];
-
-
 		//---------------
 		// Public Methods
 		//---------------
@@ -128,17 +121,6 @@ namespace xfilesystem
 // 			{
 // 				x_printf ("sceNpDrmSetLicenseeKey Error 0x%lx\n", x_va_list(nError));
 // 			}
-	}
-
-	//------------------------------------------------------------------------------------------
-
-	void			setMemoryCardPath	( const char* szMemoryCardPath )
-	{
-		x_strcpy(m_pszMemoryCardPath, FS_MAX_PATH, szMemoryCardPath);
-
-		// Register memory stick alias
-		xdevicealias ms("ms", FS_SOURCE_MS, m_pszMemoryCardPath);
-		gAddAlias(ms);
 	}
 
 	//------------------------------------------------------------------------------------------

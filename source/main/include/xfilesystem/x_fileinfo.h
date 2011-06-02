@@ -30,9 +30,6 @@ namespace xcore
 		{
 			xfilepath				mFilePath;
 			
-			static
-			const xdevicealias*		sGetAlias(const xfilepath&);
-
 		public:
 									xfileinfo();
 									xfileinfo(const xfileinfo& fileinfo);
@@ -42,11 +39,17 @@ namespace xcore
 			const xfilepath&		getFullName() const;
 			void					getName(xcstring& outName) const;
 			void					getExtension(xcstring& outExtension) const;
+			
 			u64						getLength() const;
+			void					setLength(u64 length);
 
 			bool					isValid() const;
 			bool					isRooted() const;
+			
+			bool					isArchive() const;
 			bool					isReadOnly() const;
+			bool					isHidden() const;
+			bool					isSystem() const;
 
 			bool					exists() const;
 			bool					create();
@@ -57,13 +60,14 @@ namespace xcore
 			bool					openRead(xfilestream& outFileStream);
 			bool					openWrite(xfilestream& outFileStream);
 
-			void					readAllBytes(xbyte* buffer, s32 offset, s32 count);
-			void					writeAllBytes(const xbyte* buffer, s32 offset, s32 count);
+			u64						readAllBytes(xbyte* buffer, u64 count);
+			u64						writeAllBytes(const xbyte* buffer, u64 count);
 
 			bool					copy(const xfilepath& toFilename, bool overwrite);
 			bool					move(const xfilepath& toFilename);
 
 			const xdevicealias*		getAlias() const;
+
 			void					getPath(xdirinfo& outInfo) const;
 			bool					getRoot(xdirinfo& outInfo) const;
 			bool					getParent(xdirinfo& outInfo) const;
@@ -92,9 +96,16 @@ namespace xcore
 
 			///< Static functions
 			static bool				sExists(const xfilepath& filename);
-			static u64				sLength(const xfilepath& filename);
 			static bool				sCreate(const xfilepath& filename, xfilestream& outFileStream);
 			static bool				sDelete(const xfilepath& filename);
+
+			static u64				sGetLength(const xfilepath& filename);
+			static void				sSetLength(const xfilepath& filename, u64 length);
+
+			static bool				sIsArchive(const xfilepath& filename);
+			static bool				sIsReadOnly(const xfilepath& filename);
+			static bool				sIsHidden(const xfilepath& filename);
+			static bool				sIsSystem(const xfilepath& filename);
 
 			static bool				sOpen(const xfilepath& filename, xfilestream& outFileStream);
 			static bool				sOpenRead(const xfilepath& filename, xfilestream& outFileStream);

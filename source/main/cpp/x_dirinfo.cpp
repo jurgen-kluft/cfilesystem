@@ -18,7 +18,7 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		const xdevicealias*		xdirinfo::sGetAlias(const xdirpath& dirpath)
+		static const xdevicealias* sGetAlias(const xdirpath& dirpath)
 		{
 			char deviceStrBuffer[64];
 			xcstring deviceName(deviceStrBuffer, sizeof(deviceStrBuffer));
@@ -237,7 +237,7 @@ namespace xcore
 		{
 			const xdevicealias* _alias = sGetAlias(directory);
 			
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			directory.getSystem(systemDir);
 
@@ -252,7 +252,7 @@ namespace xcore
 		{
 			const xdevicealias* _alias = sGetAlias(directory);
 
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			directory.getSystem(systemDir);
 
@@ -261,7 +261,7 @@ namespace xcore
 
 		bool					xdirinfo::sExists(const xdirpath& directory)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			return device!=NULL && device->hasDir(systemDir.c_str());
@@ -269,7 +269,7 @@ namespace xcore
 
 		void					xdirinfo::sEnumerate(const xdirpath& directory, enumerate_delegate<xfileinfo>& file_enumerator, enumerate_delegate<xdirinfo>& dir_enumerator, bool searchSubDirectories)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			if (device!=NULL)
@@ -278,7 +278,7 @@ namespace xcore
 
 		void					xdirinfo::sEnumerateFiles(const xdirpath& directory, enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			if (device!=NULL)
@@ -287,7 +287,7 @@ namespace xcore
 
 		void					xdirinfo::sEnumerateDirs(const xdirpath& directory, enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			if (device!=NULL)
@@ -296,7 +296,7 @@ namespace xcore
 
 		bool					xdirinfo::sSetTime(const xdirpath& directory, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			if (device!=NULL)
@@ -306,7 +306,7 @@ namespace xcore
 
 		bool					xdirinfo::sGetTime(const xdirpath& directory, xdatetime& creationTime, xdatetime& lastAccessTime, xdatetime& lastWriteTime)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			if (device!=NULL && device->getDirTime(systemDir.c_str(), creationTime, lastAccessTime, lastWriteTime))
@@ -319,7 +319,7 @@ namespace xcore
 
 		bool					xdirinfo::sSetCreationTime(const xdirpath& directory, const xdatetime& creationTime)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			if (device!=NULL)
@@ -334,7 +334,7 @@ namespace xcore
 
 		bool					xdirinfo::sGetCreationTime(const xdirpath& directory, xdatetime& outCreationTime)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			xdatetime _lastAccessTime, _lastWriteTime;
@@ -346,7 +346,7 @@ namespace xcore
 
 		bool					xdirinfo::sSetLastAccessTime(const xdirpath& directory, const xdatetime& lastAccessTime)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			if (device!=NULL)
@@ -361,7 +361,7 @@ namespace xcore
 
 		bool					xdirinfo::sGetLastAccessTime(const xdirpath& directory, xdatetime& outLastAccessTime)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			xdatetime _creationTime, _lastWriteTime;
@@ -373,7 +373,7 @@ namespace xcore
 
 		bool					xdirinfo::sSetLastWriteTime(const xdirpath& directory, const xdatetime& lastWriteTime)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			if (device!=NULL)
@@ -388,7 +388,7 @@ namespace xcore
 
 		bool					xdirinfo::sGetLastWriteTime(const xdirpath& directory, xdatetime& outLastWriteTime)
 		{
-			char systemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			xdatetime _creationTime, _lastAccessTime;
@@ -401,10 +401,10 @@ namespace xcore
 
 		bool					xdirinfo::sCopy(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite)
 		{
-			char srcSystemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char srcSystemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring srcSystemDir(srcSystemDirBuffer, sizeof(srcSystemDirBuffer));
 			xfiledevice* src_device = sourceDirectory.getSystem(srcSystemDir);
-			char dstSystemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char dstSystemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring dstSystemDir(dstSystemDirBuffer, sizeof(dstSystemDirBuffer));
 			xfiledevice* dst_device = destDirectory.getSystem(dstSystemDir);
 
@@ -416,10 +416,10 @@ namespace xcore
 
 		bool					xdirinfo::sMove(const xdirpath& sourceDirectory, const xdirpath& destDirectory)
 		{
-			char srcSystemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char srcSystemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring srcSystemDir(srcSystemDirBuffer, sizeof(srcSystemDirBuffer));
 			xfiledevice* src_device = sourceDirectory.getSystem(srcSystemDir);
-			char dstSystemDirBuffer[xdirpath::XDIR_MAX_PATH];
+			char dstSystemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring dstSystemDir(dstSystemDirBuffer, sizeof(dstSystemDirBuffer));
 			xfiledevice* dst_device = destDirectory.getSystem(dstSystemDir);
 

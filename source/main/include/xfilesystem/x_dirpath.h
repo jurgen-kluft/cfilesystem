@@ -32,11 +32,11 @@ namespace xcore
 		class xdirpath
 		{
 		public:
-			enum ESettings { XDIR_MAX_PATH = 256 };
+			enum ESettings { XDIRPATH_BUFFER_SIZE = 256, XDIRPATH_MAX = XDIRPATH_BUFFER_SIZE-2 };
 
 		protected:
 			friend class xfilepath;
-			char					mStringBuffer[XDIR_MAX_PATH];
+			char					mStringBuffer[XDIRPATH_BUFFER_SIZE];
 			xcstring				mString;
 
 		public:
@@ -48,7 +48,6 @@ namespace xcore
 			void					clear();
 
 			s32						getLength() const;
-			static s32				sMaxLength()			{ return XDIR_MAX_PATH-2; }
 			s32						getMaxLength() const;
 			bool					isEmpty() const;
 

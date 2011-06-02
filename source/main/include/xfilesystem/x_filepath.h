@@ -29,10 +29,10 @@ namespace xcore
 		class xfilepath
 		{
 		public:
-			enum ESettings { XFILE_MAX_PATH = 256 };
+			enum ESettings { XFILEPATH_BUFFER_SIZE = 256, XFILEPATH_MAX = XFILEPATH_BUFFER_SIZE-2 };
 
 		private:
-			char					mStringBuffer[XFILE_MAX_PATH];
+			char					mStringBuffer[XFILEPATH_BUFFER_SIZE];
 			xcstring				mString;
 
 		public:
@@ -44,10 +44,9 @@ namespace xcore
 
 			void					clear();
 
-			s32						length() const;
-			static s32				sMaxLength()			{ return XFILE_MAX_PATH-2; }
-			s32						maxLength() const;
-			bool					empty() const;
+			s32						getLength() const;
+			s32						getMaxLength() const;
+			bool					isEmpty() const;
 			bool					isRooted() const;
 
 			void					relative(xfilepath&) const;
