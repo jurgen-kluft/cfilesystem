@@ -11,8 +11,6 @@
 #include "xbase\x_types.h"
 #include "xbase\x_debug.h"
 
-#include "xfilesystem\x_async_result.h"
-
 //==============================================================================
 // xcore namespace
 //==============================================================================
@@ -23,6 +21,9 @@ namespace xcore
 		// Forward declares
 		class xfilepath;
 		class xistream;
+
+		///< Types
+		typedef		u64			xasync_id;
 
 		///< Callback prototype
 		typedef void(*AsyncCallback)(void);
@@ -66,10 +67,10 @@ namespace xcore
 			u64					write(const xbyte* buffer, u64 offset, u64 count);								///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 			u64					writeByte(xbyte value);							 								///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
-			xasync_result		beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);  		///< Begins an asynchronous read operation.
-			void				endRead(xasync_result& asyncResult);											///< Waits for the pending asynchronous read to complete.
-			xasync_result		beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
-			void				endWrite(xasync_result& asyncResult);											///< Ends an asynchronous write operation.
+			xasync_id			beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);  		///< Begins an asynchronous read operation.
+			void				endRead(xasync_id& asyncResult);												///< Waits for the pending asynchronous read to complete.
+			xasync_id			beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
+			void				endWrite(xasync_id& asyncResult);												///< Ends an asynchronous write operation.
 
 			void				copyTo(xstream& dst);															///< Reads the bytes from the current stream and writes them to the destination stream.
 			void				copyTo(xstream& dst, u64 count);												///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.

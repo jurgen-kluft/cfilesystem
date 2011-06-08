@@ -24,14 +24,6 @@ namespace xcore
 	namespace xfilesystem
 	{
 		//------------------------------------------------------------------------------------------
-		
-		class xasync_result_ctor : public xasync_result
-		{
-		public:
-			xasync_result_ctor(xiasync_result* imp) : xasync_result(imp) { }
-		};
-
-		//------------------------------------------------------------------------------------------
 
 		class xifilestream : public xistream
 		{
@@ -92,10 +84,10 @@ namespace xcore
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count);					///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 			virtual u64				writeByte(xbyte value);								 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
-			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	  	///< Begins an asynchronous read operation.
-			virtual void			endRead(xasync_result& asyncResult);											///< Waits for the pending asynchronous read to complete.
-			virtual xasync_result	beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
-			virtual void			endWrite(xasync_result& asyncResult);											///< Ends an asynchronous write operation.
+			virtual xasync_id		beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	  	///< Begins an asynchronous read operation.
+			virtual void			endRead(xasync_id& asyncResult);												///< Waits for the pending asynchronous read to complete.
+			virtual xasync_id		beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
+			virtual void			endWrite(xasync_id& asyncResult);												///< Ends an asynchronous write operation.
 
 			virtual void			copyTo(xistream* dst);												///< Reads the bytes from the current stream and writes them to the destination stream.
 			virtual void			copyTo(xistream* dst, u64 count);									///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
@@ -115,7 +107,6 @@ namespace xcore
 
 		xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
 		{
-			
 			mImplementation = new xifilestream(filename, mode, access, op);
 		}
 
@@ -354,31 +345,31 @@ namespace xcore
 			return n;
 		}
 
-		xasync_result	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		xasync_id		xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
-			xiasync_result* async_result_imp;
-			xfilesystem::asyncRead(mFileHandle, mFilePos, count, &buffer[offset], async_result_imp);
+			xasync_id async;
+			xfilesystem::asyncRead(mFileHandle, mFilePos, count, &buffer[offset], async);
 			mFilePosAfterAsyncOp = mFilePos + count;
-			return xasync_result_ctor(async_result_imp);
+			return async;
 		}
 
-		void			xifilestream::endRead(xasync_result& asyncResult)
+		void			xifilestream::endRead(xasync_id& asyncResult)
 		{
-			asyncResult.waitUntilCompleted();
+			//asyncResult.waitUntilCompleted();
 			mFilePos = mFilePosAfterAsyncOp;
 		}
 
-		xasync_result	xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		xasync_id		xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
-			xiasync_result* async_result_imp;
-			xfilesystem::asyncWrite(mFileHandle, mFilePos, count, &buffer[offset], async_result_imp);
+			xasync_id async;
+			xfilesystem::asyncWrite(mFileHandle, mFilePos, count, &buffer[offset], async);
 			mFilePosAfterAsyncOp = mFilePos + count;
-			return xasync_result_ctor(async_result_imp);
+			return async;
 		}
 
-		void			xifilestream::endWrite(xasync_result& asyncResult)
+		void			xifilestream::endWrite(xasync_id& asyncResult)
 		{
-			asyncResult.waitUntilCompleted();
+			//asyncResult.waitUntilCompleted();
 			mFilePos = mFilePosAfterAsyncOp;
 		}
 

@@ -11,7 +11,6 @@
 #include "xbase\x_types.h"
 #include "xbase\x_debug.h"
 
-#include "xfilesystem\x_async_result.h"
 #include "xfilesystem\x_stream.h"
 
 //==============================================================================
@@ -23,6 +22,9 @@ namespace xcore
 	{
 		// Forward declares
 		class xfilepath;
+
+		///< Types
+		typedef		u64			xasync_id;
 
 		///< xstream implementation interface
 		///< User doesn't deal with this object, it is meant for extendability
@@ -54,10 +56,10 @@ namespace xcore
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count) = 0;				///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 			virtual u64				writeByte(xbyte value) = 0;							 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
-			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback) = 0;  		///< Begins an asynchronous read operation.
-			virtual void			endRead(xasync_result& asyncResult) = 0;											///< Waits for the pending asynchronous read to complete.
-			virtual xasync_result	beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback) = 0;	///< Begins an asynchronous write operation.
-			virtual void			endWrite(xasync_result& asyncResult) = 0;											///< Ends an asynchronous write operation.
+			virtual xasync_id		beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback) = 0;  		///< Begins an asynchronous read operation.
+			virtual void			endRead(xasync_id& asyncResult) = 0;												///< Waits for the pending asynchronous read to complete.
+			virtual xasync_id		beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback) = 0;	///< Begins an asynchronous write operation.
+			virtual void			endWrite(xasync_id& asyncResult) = 0;												///< Ends an asynchronous write operation.
 
 			virtual void			copyTo(xistream* dst) = 0;											///< Reads the bytes from the current stream and writes them to the destination stream.
 			virtual void			copyTo(xistream* dst, u64 count) = 0;								///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.

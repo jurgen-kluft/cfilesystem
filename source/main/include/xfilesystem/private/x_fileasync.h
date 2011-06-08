@@ -57,6 +57,8 @@ namespace xcore
 			u64					getReadWriteOffset() const						{ return m_uReadWriteOffset; }
 			u64					getReadWriteSize() const						{ return m_uReadWriteSize; }
 
+			bool				getPushFileDataOnFreeQueue() const				{ return m_nFileDataCmd == 1; }
+
 			void				setPrev	( xfileasync* pPrev )					{ m_pPrev = pPrev; }
 			void				setNext	( xfileasync* pNext )					{ m_pNext = pNext; }
 
@@ -67,12 +69,15 @@ namespace xcore
 			void				setReadWriteOffset(u64 uOffset) 				{ m_uReadWriteOffset = uOffset; }
 			void				setReadWriteSize(u64 uSize) 					{ m_uReadWriteSize = uSize; }
 
+			void				setPushFileDataOnFreeQueue(bool flag)			{ if (flag) m_nFileDataCmd |= 1; else m_nFileDataCmd &= 1; }
+
 			void				clear()
 			{
 				m_pPrev			= NULL;
 				m_pNext			= NULL;
 
 				m_nFileIndex	= -1;
+				m_nFileDataCmd	= 0;
 				m_nStatus		= FILE_OP_STATUS_FREE;
 					
 				m_pWriteAddress	= NULL;
@@ -87,6 +92,7 @@ namespace xcore
 			xfileasync*			m_pNext;
 
 			s32					m_nFileIndex;
+			s32					m_nFileDataCmd;
 			s32					m_nStatus;
 			const void*			m_pWriteAddress;
 			void*				m_pReadAddress;

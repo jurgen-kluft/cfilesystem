@@ -25,7 +25,6 @@ namespace xcore
 		class xthreading;
 
 		///< Initialization
-		extern void				init				( u32 max_open_streams, x_iallocator* allocator );
 		extern void				init				( u32 max_open_streams, xthreading* threading, x_iallocator* allocator );
 		extern void				exit				( void );
 
@@ -33,9 +32,6 @@ namespace xcore
 		///< This call will block the calling thread and it will stay in a do-while
 		///< until threading->loop() is false.
 		extern void				doIO				( void );
-
-		///< update; user has to call this from the 'main' thread, not from the Io thread!
-		extern void				update				( void );
 	};
 
 	//==============================================================================

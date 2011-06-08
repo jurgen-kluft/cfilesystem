@@ -12,7 +12,6 @@
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\private\x_filedata.h"
 #include "xfilesystem\private\x_fileasync.h"
-#include "xfilesystem\x_iasync_result.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_devicealias.h"
@@ -36,7 +35,7 @@ namespace xcore
 	back the xfiledata on the unused queue. Currently this is done by the Sync() function which
 	checks for xfiledata items that are done but this should be refactored.
 
-	The change that we need is a spsc queue for the 'unused' xfiledata and the IO thread can push
+	The change that we need is a spsc queue for the 'done' xfiledata and the IO thread can push
 	the xfiledata object back on this queue (the xfileasync will contain a flag to request this).
 
 	When the xfilesystem pops a xfiledata from the spsc queue to open a file, upon handling a close
@@ -50,68 +49,12 @@ namespace xcore
 
 	namespace xfilesystem
 	{
-
-		//------------------------------------------------------------------------------------------
-
-		class xiasync_result_imp : public xiasync_result
-		{
-		public:
-									xiasync_result_imp()
-										: mFileHandle(INVALID_FILE_HANDLE)	{ }
-			virtual					~xiasync_result_imp()					{ }
-
-			XFILESYSTEM_OBJECT_NEW_DELETE()
-
-			void					init(u32 nFileHandle)
-			{
-				mFileHandle = nFileHandle;
-			}
-
-			virtual bool			isCompleted()
-			{
-				return mFileHandle == INVALID_FILE_HANDLE || asyncDone(mFileHandle) == xTRUE;
-			}
-
-			virtual void			waitUntilCompleted()
-			{
-				if (mFileHandle != INVALID_FILE_HANDLE)
-				{
-					xfiledata* fileInfo = getFileInfo(mFileHandle);
-					getThreading()->wait(fileInfo->m_nFileIndex);
-				}
-			}
-
-			virtual void			clear()
-			{
-				mFileHandle = INVALID_FILE_HANDLE;
-			}
-
-			virtual void			hold()
-			{
-			}
-
-			virtual s32				release()
-			{
-				return 1;
-			}
-
-			virtual void			destroy()
-			{
-				
-			}
-
-		private:
-			u32				mFileHandle;
-		};
-
 		//------------------------------------------------------------------------------------------
 		static u32							m_uMaxOpenedFiles = 32;
 		static u32							m_uMaxAsyncOperations = 32;
 		static u32							m_uMaxErrorItems = 32;
 
 		static char*						*m_Filenames = NULL;
-
-		static xiasync_result_imp			*m_AsyncResults = NULL;
 
 		static xfiledata					*m_OpenAsyncFileArray = NULL;
 		static spsc_cqueue<xfiledata*>		*m_FreeAsyncFile = NULL;
@@ -121,13 +64,6 @@ namespace xcore
 		static spsc_cqueue<xfileasync*>		*m_pAsyncIOList = NULL;
 
 		static EError						*m_eLastErrorStack = NULL;
-
-		//------------------------------------------------------------------------------------------
-
-		void				update( void )
-		{
-			sync(FS_SYNC_NOWAIT);
-		}
 
 		//------------------------------------------------------------------------------------------
 
@@ -158,7 +94,6 @@ namespace xcore
 			if (alias == NULL)
 				return xFALSE;
 
-			
 			const xfiledevice* file_device = alias->device();
 
 			can_read  = true;
@@ -249,16 +184,13 @@ namespace xcore
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
 
-			xfileasync* pOpen = freeAsyncIOPop();
-
-			if(pOpen == 0)
+			xfileasync* pOpen = popFreeAsyncIO(false);
+			if (pOpen == 0)
 			{
 				ASSERTS(0, "xfilesystem: " TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				setLastError(FILE_ERROR_MAX_ASYNC);
-
-				sync(FS_SYNC_WAIT);
-				pOpen = freeAsyncIOPop();
+				pOpen = popFreeAsyncIO(true);
 			}
 
 			pOpen->setFileIndex			(uHandle);
@@ -268,13 +200,13 @@ namespace xcore
 			pOpen->setReadWriteOffset	(0);
 			pOpen->setReadWriteSize		(0);
 
-			asyncIOAddToTail(pOpen);
+			pushAsyncIO(pOpen);
 			getThreading()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result*& pAsyncResult )
+		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xasync_id& nAsyncId )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -282,23 +214,16 @@ namespace xcore
 				return;
 			}
 
-			xfileasync* pRead = freeAsyncIOPop();
-
+			xfileasync* pRead = popFreeAsyncIO();
 			if(pRead == 0)
 			{
 				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				setLastError(FILE_ERROR_MAX_ASYNC);
-
-				sync(FS_SYNC_WAIT);
-				pRead = freeAsyncIOPop();
+				pRead = popFreeAsyncIO(true);
 			}
 
 			xfiledata* pInfo = getFileInfo(uHandle);
-
-			xiasync_result_imp* pAsyncResultImp = &m_AsyncResults[pInfo->m_nFileIndex];
-			pAsyncResultImp->init(pInfo->m_nFileHandle);
-			pAsyncResult = pAsyncResultImp;
 
 			pRead->setFileIndex			(pInfo->m_nFileIndex);
 			pRead->setStatus 			(FILE_OP_STATUS_READ_PENDING);
@@ -307,13 +232,13 @@ namespace xcore
 			pRead->setReadWriteOffset	(uOffset);
 			pRead->setReadWriteSize		(uSize);
 
-			asyncIOAddToTail(pRead);
+			pushAsyncIO(pRead);
 			getThreading()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result*& pAsyncResult )
+		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xasync_id& nAsyncId )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -321,23 +246,16 @@ namespace xcore
 				return;
 			}
 
-			xfileasync* pWrite = freeAsyncIOPop();
-
+			xfileasync* pWrite = popFreeAsyncIO(false);
 			if(pWrite == 0)
 			{
 				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				setLastError(FILE_ERROR_MAX_ASYNC);
-
-				sync(FS_SYNC_WAIT);
-				pWrite = freeAsyncIOPop();
+				pWrite = popFreeAsyncIO(true);
 			}
 
 			xfiledata* pInfo = getFileInfo(uHandle);
-
-			xiasync_result_imp* pAsyncResultImp = &m_AsyncResults[pInfo->m_nFileIndex];
-			pAsyncResultImp->init(pInfo->m_nFileHandle);
-			pAsyncResult = pAsyncResultImp;
 
 			pWrite->setFileIndex		(uHandle);
 			pWrite->setStatus 			(FILE_OP_STATUS_WRITE_PENDING);
@@ -346,7 +264,7 @@ namespace xcore
 			pWrite->setReadWriteOffset	(uOffset);
 			pWrite->setReadWriteSize	(uSize);
 
-			asyncIOAddToTail(pWrite);
+			pushAsyncIO(pWrite);
 			getThreading()->signal();
 		}
 
@@ -360,16 +278,13 @@ namespace xcore
 				return;
 			}
 
-			xfileasync* pDelete = freeAsyncIOPop();
-
-			if(pDelete == 0)
+			xfileasync* pDelete = popFreeAsyncIO(false);
+			if (NULL == pDelete)
 			{
 				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				setLastError(FILE_ERROR_MAX_ASYNC);
-
-				sync(FS_SYNC_WAIT);
-				pDelete = freeAsyncIOPop();
+				pDelete = popFreeAsyncIO(true);
 			}
 
 			pDelete->setFileIndex		(uHandle);
@@ -379,7 +294,7 @@ namespace xcore
 			pDelete->setReadWriteOffset	(0);
 			pDelete->setReadWriteSize	(0);
 
-			asyncIOAddToTail(pDelete);
+			pushAsyncIO(pDelete);
 			getThreading()->signal();
 		}
 
@@ -393,16 +308,14 @@ namespace xcore
 				return;
 			}
 
-			xfileasync* pClose = freeAsyncIOPop();
-
-			if(pClose == 0)
+			xfileasync* pClose = popFreeAsyncIO(false);
+			if (pClose == 0)
 			{
 				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
 
 				setLastError(FILE_ERROR_MAX_ASYNC);
 
-				sync(FS_SYNC_WAIT);
-				pClose = freeAsyncIOPop();
+				pClose = popFreeAsyncIO(true);
 			}
 
 			pClose->setFileIndex		(uHandle);
@@ -412,7 +325,7 @@ namespace xcore
 			pClose->setReadWriteOffset	(0);
 			pClose->setReadWriteSize	(0);
 
-			asyncIOAddToTail(pClose);
+			pushAsyncIO(pClose);
 			getThreading()->signal();
 		}
 
@@ -424,7 +337,7 @@ namespace xcore
 			//-----------------------------
 			// File find a free file slot.
 			//-----------------------------
-			u32 uHandle = findFreeFileSlot ();
+			u32 uHandle = popFreeFileSlot ();
 			if(uHandle == (u32)INVALID_FILE_HANDLE)
 			{
 				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Too many files opened!");
@@ -462,13 +375,6 @@ namespace xcore
 			fileInfo->m_pFileDevice		= device;
 
 			return uHandle;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void			waitUntilIdle(void)
-		{
-			sync(FS_SYNC_WAIT);
 		}
 
 	}
@@ -510,13 +416,6 @@ namespace xcore
 				m_Filenames = (char**)heapAlloc(m_uMaxOpenedFiles * sizeof(char*), X_ALIGNMENT_DEFAULT);
 				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
 					m_Filenames[uFile] = (char*)heapAlloc(FS_MAX_PATH + 2, X_ALIGNMENT_DEFAULT);
-			}
-
-			if (m_AsyncResults == NULL)
-			{
-				m_AsyncResults = (xiasync_result_imp*)heapAlloc(m_uMaxOpenedFiles * sizeof(xiasync_result_imp), X_ALIGNMENT_DEFAULT);
-				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
-					new (&m_AsyncResults[uFile]) xiasync_result_imp();
 			}
 
 			if (m_OpenAsyncFileArray == NULL)
@@ -636,10 +535,7 @@ namespace xcore
 			heapFree(m_Filenames);
 			m_Filenames = NULL;
 
-			heapFree(m_AsyncResults);
 			heapFree(m_eLastErrorStack);
-
-			m_AsyncResults = NULL;
 			m_eLastErrorStack = NULL;
 		}
 
@@ -704,25 +600,27 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					findFreeFileSlot (void)
+		u32					popFreeFileSlot			(void)
 		{
 			xfiledata* f;
 			if (m_FreeAsyncFile->pop(f))
 				return f->m_nFileIndex;
-
 			return -1;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		s32					asyncIONumFreeSlots()
+		bool				pushFreeFileSlot		(u32 nFileIndex)
 		{
-			return m_pFreeAsyncIOList->size();
+			xfiledata* f = &m_OpenAsyncFileArray[nFileIndex];
+			if (m_FreeAsyncFile->push(f))
+				return true;
+			return false;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		xfileasync*			getAsyncIOData		( u32 nSlot )
+		xfileasync*			getAsyncIOData			( u32 nSlot )
 		{
 			xfileasync* asyncIOInfo = &m_AsyncIOData[nSlot];
 			return asyncIOInfo;
@@ -730,18 +628,22 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfileasync*			freeAsyncIOPop		( void )
+		xfileasync*			popFreeAsyncIO			( bool wait )
 		{
-			xfileasync* asyncIOInfo;
-			if (m_pFreeAsyncIOList->pop(asyncIOInfo))
-				return asyncIOInfo;
-			else
-				return NULL;
+			do
+			{
+				xfileasync* asyncIOInfo;
+				if (m_pFreeAsyncIOList->pop(asyncIOInfo))
+					return asyncIOInfo;
+
+				getThreading()->wait();
+			} while (wait);
+			return NULL;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				freeAsyncIOAddToTail( xfileasync* asyncIOInfo )
+		void				pushFreeAsyncIO			( xfileasync* asyncIOInfo )
 		{
 			asyncIOInfo->setFileIndex(INVALID_FILE_HANDLE);
 			m_pFreeAsyncIOList->push(asyncIOInfo);
@@ -749,7 +651,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfileasync*			asyncIORemoveHead	( void )
+		xfileasync*			popAsyncIO				( void )
 		{
 			xfileasync* item;
 			if (m_pAsyncIOList->pop(item))
@@ -759,61 +661,10 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncIOAddToTail	( xfileasync* asyncIOInfo )
+		void				pushAsyncIO				( xfileasync* asyncIOInfo )
 		{
 			m_pAsyncIOList->push(asyncIOInfo);
 		}
-
-		//------------------------------------------------------------------------------------------
-
-		xbool				sync (ESyncMode mode)
-		{
-			bool boDone = true;
-
-			do
-			{
-				boDone = true;
-
-				for(u32 nSlot = 0; nSlot < m_uMaxAsyncOperations; nSlot++)
-				{
-					xfileasync* pOperation = getAsyncIOData(nSlot);
-
-					if(	( pOperation->getStatus() == FILE_OP_STATUS_OPEN_PENDING )	||
-						( pOperation->getStatus() == FILE_OP_STATUS_OPENING )		||
-						( pOperation->getStatus() == FILE_OP_STATUS_CLOSE_PENDING )	||
-						( pOperation->getStatus() == FILE_OP_STATUS_CLOSING )		||
-						( pOperation->getStatus() == FILE_OP_STATUS_READ_PENDING )	||
-						( pOperation->getStatus() == FILE_OP_STATUS_READING )		||
-						( pOperation->getStatus() == FILE_OP_STATUS_STAT_PENDING )	||
-						( pOperation->getStatus() == FILE_OP_STATUS_STATING )		||
-						( pOperation->getStatus() == FILE_OP_STATUS_WRITE_PENDING )	||
-						( pOperation->getStatus() == FILE_OP_STATUS_WRITING ))
-					{
-						boDone	= false;
-
-						if (mode != FS_SYNC_WAIT)
-						{
-							return boDone;
-						}
-						else
-						{
-							getThreading()->sleep(1);
-						}
-					}
-					else if( pOperation->getStatus() == FILE_OP_STATUS_DONE )
-					{
-						pOperation->setStatus(FILE_OP_STATUS_FREE);
-						pOperation->setFileIndex(-1);
-
-						freeAsyncIOAddToTail(pOperation);
-					}
-				}
-
-			} while (!boDone && mode == FS_SYNC_WAIT);
-
-			return boDone;
-		}
-
 
 		//------------------------------------------------------------------------------------------
 

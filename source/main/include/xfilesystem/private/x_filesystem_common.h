@@ -33,7 +33,9 @@ namespace xcore
 		struct xfiledata;
 		struct xfileasync;
 		class xthreading;
-		class xiasync_result;
+
+		/// Typedefs
+		typedef		u64			xasync_id;
 
 		enum ESyncMode
 		{
@@ -99,12 +101,11 @@ namespace xcore
 		extern u32				asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
 		extern u32				asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
 		extern void				asyncOpen			( const u32 uHandle );
-		extern void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result*& pAsyncResult );
-		extern void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result*& pAsyncResult );
+		extern void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xasync_id& nAsyncId );
+		extern void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xasync_id& nAsyncId );
 		extern void				asyncClose			( const u32 uHandle );
 		extern void				asyncDelete			( const u32 uHandle );
 		extern xbool			asyncDone			( const u32 uHandle );
-		extern xiasync_result*	asyncResult			( const u32 uHandle );
 
 		extern void				getOpenCreatedTime	( u32 uHandle, xdatetime& pTimeAndDate );
 		extern void				getOpenModifiedTime ( u32 uHandle, xdatetime& pTimeAndDate );
@@ -138,16 +139,15 @@ namespace xcore
 		extern xfiledevice*		createSystemPath	( const char* szFilename, xcstring& outFilename );
 
 		extern xfiledata*		getFileInfo			( u32 uHandle );
-		extern u32				findFreeFileSlot	( void );
+		extern u32				popFreeFileSlot		( void );
+		extern bool				pushFreeFileSlot	( u32 uHandle );
 
 		extern xfileasync*		getAsyncIOData		( u32 nSlot );
-		extern s32				asyncIONumFreeSlots	( void );
-		extern xfileasync*		freeAsyncIOPop		( void );
-		extern void				freeAsyncIOAddToTail( xfileasync* asyncIOInfo );
-		extern xfileasync*		asyncIORemoveHead	( void );
-		extern void				asyncIOAddToTail	( xfileasync* asyncIOInfo );
+		extern xfileasync*		popFreeAsyncIO		( bool wait = false );
+		extern void				pushFreeAsyncIO		( xfileasync* asyncIOInfo );
 
-		extern xbool			sync				( ESyncMode mode );
+		extern xfileasync*		popAsyncIO			( void );
+		extern void				pushAsyncIO			( xfileasync* asyncIOInfo );
 
 		extern xbool			isPathUNIXStyle		( void );					///< UNIX = '/', Win32 = '\'
 
