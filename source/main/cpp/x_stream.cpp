@@ -15,6 +15,8 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
+		typedef		u64			xasync_id;
+
 		class xstream_imp_empty : public xistream
 		{
 		public:
@@ -43,10 +45,10 @@ namespace xcore
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count)								{ return 0; }
 			virtual u64				writeByte(xbyte value)															{ return 0; }
 
-			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)			{ return xasync_result(); }
-			virtual void			endRead(xasync_result& asyncResult)												{ }
-			virtual xasync_result	beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)	{ return xasync_result(); }
-			virtual void			endWrite(xasync_result& asyncResult)											{ }
+			virtual xasync_id		beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)			{ return -1; }
+			virtual void			endRead(xasync_id& asyncResult)													{ }
+			virtual xasync_id		beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)	{ return -1; }
+			virtual void			endWrite(xasync_id& asyncResult)												{ }
 
 			virtual void			copyTo(xistream* dst)															{ }
 			virtual void			copyTo(xistream* dst, u64 count)												{ }
@@ -167,22 +169,22 @@ namespace xcore
 		}
 
 
-		xasync_result			xstream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		xasync_id				xstream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			return mImplementation->beginRead(buffer, offset, count, callback);
 		}
 
-		void					xstream::endRead(xasync_result& asyncResult)
+		void					xstream::endRead(xasync_id& asyncResult)
 		{
 			mImplementation->endRead(asyncResult);
 		}
 
-		xasync_result			xstream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		xasync_id				xstream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			return mImplementation->beginWrite(buffer, offset, count, callback);
 		}
 
-		void					xstream::endWrite(xasync_result& asyncResult)
+		void					xstream::endWrite(xasync_id& asyncResult)
 		{
 			mImplementation->endWrite(asyncResult);
 		}

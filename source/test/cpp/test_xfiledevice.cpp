@@ -498,7 +498,7 @@ namespace xcore
 					testFile->mFileLength = testFile->mMaxFileLength;
 				}
 
-				x_memcopy(testFile->mFileData + pos, buffer, bytesToWrite);
+				x_memcopy(testFile->mFileData + pos, buffer, (s32)bytesToWrite);
 				outNumBytesWritten = bytesToWrite;
 				return true;
 			}

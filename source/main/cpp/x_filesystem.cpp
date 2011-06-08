@@ -27,7 +27,7 @@ namespace xcore
 		{
 			do
 			{
-				xfileasync* pAsync = asyncIORemoveHead();
+				xfileasync* pAsync = popAsyncIO();
 				if (pAsync)
 				{
 					if (pAsync->getFileIndex() >=  0)
@@ -143,7 +143,13 @@ namespace xcore
 						}
 						// ========================================================================
 
-						freeAsyncIOAddToTail(pAsync);
+						if (pAsync->getPushFileDataOnFreeQueue())
+						{
+							xfilesystem::pushFreeFileSlot(pAsync->getFileIndex());
+							pAsync->setPushFileDataOnFreeQueue(false);
+						}
+
+						pushFreeAsyncIO(pAsync);
 					}
 				}
 				else

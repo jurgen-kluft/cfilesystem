@@ -81,7 +81,7 @@
 
 	<Dependency Package="sdk_3ds" Platform="N3DS">
 		<Group>com.virtuos.sdk</Group>
-		<Version>[1.0,)</Version>
+		<Version>[0.14,)</Version>
 		<Type>Package</Type>
 	</Dependency>
 
