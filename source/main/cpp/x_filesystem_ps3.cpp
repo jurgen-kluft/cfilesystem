@@ -63,19 +63,6 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				setLength( u32 uHandle, u64 uNewSize )
-		{
-			xfiledata* pxFileInfo = getFileInfo(uHandle);
-
-			s32 nResult	= cellFsFtruncate(pxFileInfo->m_nFileHandle, uNewSize);
-			if(nResult != CELL_OK)
-			{
-				x_printf("xfilesystem:"TARGET_PLATFORM_STR" ERROR cellFsFtruncate %d\n", x_va_list(nResult));
-			}
-		}
-
-		//------------------------------------------------------------------------------------------
-
 		u64					getFreeSize( const char* szPath )
 		{
 			u32	uBlockSize;

@@ -22,16 +22,16 @@ namespace xcore
 	namespace xfilesystem
 	{
 		///< Forward declares
-		class xthreading;
+		class xio_thread;
 
 		///< Initialization
-		extern void				init				( u32 max_open_streams, xthreading* threading, x_iallocator* allocator );
-		extern void				exit				( void );
+		extern void				init	( u32 max_open_streams, xio_thread* io_thread, x_iallocator* allocator );
+		extern void				exit	( void );
 
 		///< doIO; user has to call this from either the main thread or an Io thread.
 		///< This call will block the calling thread and it will stay in a do-while
 		///< until threading->loop() is false.
-		extern void				doIO				( void );
+		extern void				doIO	( xio_thread* );
 	};
 
 	//==============================================================================

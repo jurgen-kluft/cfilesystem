@@ -10,7 +10,7 @@
 //==============================================================================
 #include "xbase\x_types.h"
 
-#include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem\private\x_filesystem_constants.h"
 
 //==============================================================================
 // xcore namespace
@@ -44,9 +44,7 @@ namespace xcore
 
 			xbool				m_boReading;
 			xbool				m_boWriting;
-			xbool				m_boWaitAsync;
 			
-			xfileasync*			m_pFileAsync;
 			xfiledevice*		m_pFileDevice;
 
 			// Async IO worker thread will write here:
@@ -60,7 +58,7 @@ namespace xcore
 
 				m_boReading			= true;
 				m_boWriting			= false;
-				m_boWaitAsync		= false;
+
 				m_pFileDevice		= NULL;
 
 				m_nFileHandle		= (u32)-1;

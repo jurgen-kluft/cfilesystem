@@ -23,7 +23,7 @@ namespace xcore
 	{
 		//------------------------------------------------------------------------------------------
 
-		void doIO()
+		void doIO(xio_thread* io_thread)
 		{
 			do
 			{
@@ -48,7 +48,7 @@ namespace xcore
 								bool boSuccess = pFileDevice->openFile(pInfo->m_szFilename, pInfo->m_boReading, pInfo->m_boWriting, nFileHandle);
 								if (!boSuccess)
 								{
-									x_printf ("openOrCreateFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
+									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR openFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 									boError = true;
 								}
 								else
@@ -64,7 +64,7 @@ namespace xcore
 										bool boClose = pFileDevice->closeFile(pInfo->m_nFileHandle);
 										if (!boClose)
 										{
-											x_printf ("CloseFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
+											x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR closeFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 										}
 										pInfo->m_nFileHandle = (u32)INVALID_FILE_HANDLE;
 									}
@@ -79,7 +79,7 @@ namespace xcore
 								bool boClose = pFileDevice->closeFile(pInfo->m_nFileHandle);
 								if (!boClose)
 								{
-									x_printf ("CloseFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
+									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR closeFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 								}
 							
 								pInfo->m_nFileHandle	= (u32)INVALID_FILE_HANDLE;
@@ -92,14 +92,14 @@ namespace xcore
 								bool boClose = pFileDevice->closeFile(pInfo->m_nFileHandle);
 								if (!boClose)
 								{
-									x_printf ("CloseFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
+									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR closeFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 								}
 								else
 								{
 									bool boDelete = pFileDevice->deleteFile(pInfo->m_szFilename);
 									if (!boDelete)
 									{
-										x_printf ("DeleteFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
+										x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR deleteFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 									}
 								}
 
@@ -122,7 +122,7 @@ namespace xcore
 								bool boRead = pFileDevice->readFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getReadAddress(), (u32)pAsync->getReadWriteSize(), nReadSize);
 								if (!boRead)
 								{
-									x_printf ("ReadFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
+									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR readFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 								}
 
 								pAsync->setStatus(FILE_OP_STATUS_DONE);
@@ -135,7 +135,7 @@ namespace xcore
 								bool boWrite = pFileDevice->writeFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getWriteAddress(), (u32)pAsync->getReadWriteSize(), nWriteSize);
 								if (!boWrite)
 								{
-									x_printf ("WriteFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
+									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR writeFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 								}
 
 								pAsync->setStatus(FILE_OP_STATUS_DONE);
@@ -149,14 +149,21 @@ namespace xcore
 							pAsync->setPushFileDataOnFreeQueue(false);
 						}
 
+						if (pAsync->getEvent() != NULL)
+						{
+							pAsync->getEvent()->signal();
+							getEventFactory()->destruct(pAsync->getEvent());
+						}
+
+						pAsync->clear();
 						pushFreeAsyncIO(pAsync);
 					}
 				}
 				else
 				{
-					getThreading()->wait();
+					io_thread->wait();
 				}
-			} while (getThreading()->loop());
+			} while (io_thread->loop());
 		}
 		
 	};

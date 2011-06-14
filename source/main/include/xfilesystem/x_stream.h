@@ -11,6 +11,9 @@
 #include "xbase\x_types.h"
 #include "xbase\x_debug.h"
 
+#include "xfilesystem\x_async_result.h"
+#include "xfilesystem\private\x_filesystem_constants.h"
+
 //==============================================================================
 // xcore namespace
 //==============================================================================
@@ -21,9 +24,6 @@ namespace xcore
 		// Forward declares
 		class xfilepath;
 		class xistream;
-
-		///< Types
-		typedef		u64			xasync_id;
 
 		///< Callback prototype
 		typedef void(*AsyncCallback)(void);
@@ -36,7 +36,7 @@ namespace xcore
 		};
 
 		///< xstream object
-		///< The main interface of a stream object, user deals with this object 99% of the time.
+		///< The main interface of a stream object, user deals with this object most of the time.
 		///< The derived class xfilestream is a constructor object and can be constructed as a xstream
 		///< object.
 		class xstream
@@ -56,21 +56,21 @@ namespace xcore
 			u64					getLength() const;																///< Gets the length in bytes of the stream.
 			void				setLength(u64 length);							 								///< When overridden in a derived class, sets the length of the current stream.
 			u64					getPosition() const;															///< Gets the current position of this stream.
-			void				setPosition(u64 Pos);															///< Sets the current position of this stream.
+			u64					setPosition(u64 Pos);															///< Sets the current position of this stream and returns the resulting position.
 
 			u64					seek(s64 offset, ESeekOrigin origin);		 									///< When overridden in a derived class, sets the position within the current stream.
 			void				close(); 																		///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
 			void				flush();																		///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
 
 			u64					read(xbyte* buffer, u64 offset, u64 count); 									///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
-			s32					readByte();										 								///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
+			u64					readByte(xbyte& outByte);										 								///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
 			u64					write(const xbyte* buffer, u64 offset, u64 count);								///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
-			u64					writeByte(xbyte value);							 								///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
+			u64					writeByte(xbyte inByte);							 							///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
-			xasync_id			beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);  		///< Begins an asynchronous read operation.
-			void				endRead(xasync_id& asyncResult);												///< Waits for the pending asynchronous read to complete.
-			xasync_id			beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
-			void				endWrite(xasync_id& asyncResult);												///< Ends an asynchronous write operation.
+			xasync_result		beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);  		///< Begins an asynchronous read operation.
+			bool				endRead(xasync_result& asyncResult, bool block=true);												///< Waits for the pending asynchronous read to complete.
+			xasync_result		beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
+			bool				endWrite(xasync_result& asyncResult, bool block=true);												///< Ends an asynchronous write operation.
 
 			void				copyTo(xstream& dst);															///< Reads the bytes from the current stream and writes them to the destination stream.
 			void				copyTo(xstream& dst, u64 count);												///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.

@@ -48,6 +48,7 @@ namespace xcore
 		u64							mMaxFileLength;
 		xbyte						mFileData[4096];
 		xbyte						mFileDataEndGuard[16];
+		u64							mFilePos;
 	};
 
 	struct FileDataCopy
@@ -281,6 +282,8 @@ namespace xcore
 			virtual bool			canSeek() const										{ return true; }
 			virtual bool			canWrite() const									{ return mCanWrite; }
 
+			virtual bool			getDeviceInfo(u64& totalSpace, u64& freeSpace) const;
+
 			virtual bool			hasFile(const char* szFilename) const;
 			virtual bool			openFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const;
 			virtual bool			createFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const;
@@ -291,6 +294,8 @@ namespace xcore
 			virtual bool			moveFile(const char* szFilename, const char* szToFilename) const;
 			virtual bool			copyFile(const char* szFilename, const char* szToFilename, bool boOverwrite) const;
 			virtual bool			deleteFile(const char* szFilename) const;
+			virtual bool			setFilePos(u32 nFileHandle, u64& ioFilePos) const;
+			virtual bool			getFilePos(u32 nFileHandle, u64& outFilePos) const;
 			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength) const;
 			virtual bool			getLengthOfFile(u32 nFileHandle, u64& outLength) const;
 			virtual bool			setFileTime(const char* szFilename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const;
@@ -410,6 +415,13 @@ namespace xcore
 				t++;
 			}
 			return NULL;
+		}
+
+		bool xfiledevice_TEST::getDeviceInfo(u64& totalSpace, u64& freeSpace) const
+		{
+			totalSpace = 16 * 1024 * 1024;
+			freeSpace  = 12 * 1024 * 1024;
+			return true;
 		}
 
 		bool xfiledevice_TEST::hasFile(const char* szFilename) const
@@ -545,6 +557,38 @@ namespace xcore
 			if (testFile!=NULL)
 			{
 				testFile->mName = "__EMPTY__";
+				return true;
+			}
+			return false;
+		}
+
+		bool xfiledevice_TEST::setFilePos(u32 nFileHandle, u64& ioFilePos) const
+		{
+			TestFile* testFile = static_cast<TestFile*>((void*)nFileHandle);
+			if (testFile!=NULL)
+			{
+				testFile->mFilePos = ioFilePos;
+				if (testFile->mFilePos > testFile->mFileLength)
+				{
+					testFile->mFileLength = testFile->mFilePos;
+					if (testFile->mFileLength > testFile->mMaxFileLength)
+					{
+						testFile->mFileLength = testFile->mMaxFileLength;
+						testFile->mFilePos = testFile->mMaxFileLength;
+						ioFilePos = testFile->mFilePos;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+
+		bool xfiledevice_TEST::getFilePos(u32 nFileHandle, u64& outFilePos) const
+		{
+			TestFile* testFile = static_cast<TestFile*>((void*)nFileHandle);
+			if (testFile!=NULL)
+			{
+				outFilePos = testFile->mFilePos;
 				return true;
 			}
 			return false;

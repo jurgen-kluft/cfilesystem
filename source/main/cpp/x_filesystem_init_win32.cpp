@@ -101,7 +101,7 @@ namespace xcore
 					if (xdevicealias::sFind(driveLetter) == NULL)
 					{
 						if (sFileDevices[eDriveType]==NULL)
-							sFileDevices[eDriveType] = x_CreateFileDevicePC(boCanWrite);
+							sFileDevices[eDriveType] = x_CreateFileDevicePC(sSystemDevicePaths[driveIdx], boCanWrite);
 						xfiledevice* device = sFileDevices[eDriveType];
 
 						char local_alias[1024];
@@ -149,10 +149,10 @@ namespace xcore
 		//------------------------------------------------------------------------------
 		static char sAppDir[1024] = { '\0' };										///< Needs to end with a backslash!
 		static char sWorkDir[1024] = { '\0' };										///< Needs to end with a backslash!
-		void init(u32 max_open_streams, xthreading* threading, x_iallocator* allocator)
+		void init(u32 max_open_streams, xio_thread* io_thread, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setThreading(threading);
+			xfilesystem::setIoThreadInterface(io_thread);
 			xdevicealias::sInit();
 
 			// Get the application directory (by removing the executable filename)
@@ -218,7 +218,7 @@ namespace xcore
 				}
 			}
 
-			xfilesystem::setThreading(NULL);
+			xfilesystem::setIoThreadInterface(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 	}

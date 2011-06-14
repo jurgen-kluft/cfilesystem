@@ -4,9 +4,11 @@
 #include "xbase\x_target.h"
 #include "xbase\x_debug.h"
 
+#include "xfilesystem\x_async_result.h"
 #include "xfilesystem\x_filestream.h"
 #include "xfilesystem\x_istream.h"
 #include "xfilesystem\x_stream.h"
+#include "xfilesystem\private\x_filesystem_constants.h"
 
 //==============================================================================
 // xcore namespace
@@ -15,8 +17,6 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		typedef		u64			xasync_id;
-
 		class xstream_imp_empty : public xistream
 		{
 		public:
@@ -34,21 +34,21 @@ namespace xcore
 			virtual u64				getLength() const																{ return 0; }
 			virtual void			setLength(u64 length)															{ }
 			virtual u64				getPosition() const																{ return 0; }
-			virtual void			setPosition(u64 Pos)															{ }
+			virtual u64				setPosition(u64 Pos)															{ return 0; }
 
 			virtual u64				seek(s64 offset, ESeekOrigin origin)											{ return 0; }
 			virtual void			close()																			{ }
 			virtual void			flush()																			{ }
 
 			virtual u64				read(xbyte* buffer, u64 offset, u64 count)										{ return 0; }
-			virtual s32				readByte()																		{ return 0; }
+			virtual u64				readByte(xbyte&)																{ return 0; }
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count)								{ return 0; }
-			virtual u64				writeByte(xbyte value)															{ return 0; }
+			virtual u64				writeByte(xbyte)																{ return 0; }
 
-			virtual xasync_id		beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)			{ return -1; }
-			virtual void			endRead(xasync_id& asyncResult)													{ }
-			virtual xasync_id		beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)	{ return -1; }
-			virtual void			endWrite(xasync_id& asyncResult)												{ }
+			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)			{ return xasync_result(); }
+			virtual void			endRead(xasync_result& asyncResult)												{ }
+			virtual xasync_result	beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)	{ return xasync_result(); }
+			virtual void			endWrite(xasync_result& asyncResult)											{ }
 
 			virtual void			copyTo(xistream* dst)															{ }
 			virtual void			copyTo(xistream* dst, u64 count)												{ }
@@ -121,9 +121,9 @@ namespace xcore
 			return mImplementation->getPosition();
 		}
 
-		void					xstream::setPosition(u64 Pos)
+		u64						xstream::setPosition(u64 Pos)
 		{
-			mImplementation->setPosition(Pos);
+			return mImplementation->setPosition(Pos);
 		}
 
 
@@ -153,9 +153,9 @@ namespace xcore
 			return mImplementation->read(buffer, offset, count);
 		}
 
-		s32						xstream::readByte()
+		u64						xstream::readByte(xbyte& outByte)
 		{
-			return mImplementation->readByte();
+			return mImplementation->readByte(outByte);
 		}
 
 		u64						xstream::write(const xbyte* buffer, u64 offset, u64 count)
@@ -169,24 +169,26 @@ namespace xcore
 		}
 
 
-		xasync_id				xstream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		xasync_result			xstream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			return mImplementation->beginRead(buffer, offset, count, callback);
 		}
 
-		void					xstream::endRead(xasync_id& asyncResult)
+		bool					xstream::endRead(xasync_result& asyncResult, bool block)
 		{
 			mImplementation->endRead(asyncResult);
+			return true;
 		}
 
-		xasync_id				xstream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		xasync_result			xstream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			return mImplementation->beginWrite(buffer, offset, count, callback);
 		}
 
-		void					xstream::endWrite(xasync_id& asyncResult)
+		bool					xstream::endWrite(xasync_result& asyncResult, bool block)
 		{
 			mImplementation->endWrite(asyncResult);
+			return true;
 		}
 
 
