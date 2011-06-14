@@ -7,15 +7,16 @@
 #include "xbase\x_string_std.h"
 
 #include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_spsc_queue.h"
+#include "xfilesystem\private\x_filesystem_cqueue.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\private\x_filedata.h"
-#include "xfilesystem\private\x_fileasync.h"
+#include "xfilesystem\x_iasync_result.h"
+#include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_devicealias.h"
+#include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\x_threading.h"
+#include "xfilesystem\private\x_filedata.h"
+#include "xfilesystem\private\x_fileasync.h"
 
 //==============================================================================
 // xcore namespace
@@ -29,45 +30,85 @@ namespace xcore
 	//------------------------------------------------------------------------------------------
 
 	/*
+		The user can create streams on any thread and this means that the file system will be
+		accessed in a concurrent way. So this is why all the objects are managed by a concurrent
+		queue.
 
-	Ok, so we have the IO thread which pops xfileasync items from a spsc queue, this all works
-	fine. But now we need a mechanism where preferably one thread (the IO thread) can also push
-	back the xfiledata on the unused queue. Currently this is done by the Sync() function which
-	checks for xfiledata items that are done but this should be refactored.
-
-	The change that we need is a spsc queue for the 'done' xfiledata and the IO thread can push
-	the xfiledata object back on this queue (the xfileasync will contain a flag to request this).
-
-	When the xfilesystem pops a xfiledata from the spsc queue to open a file, upon handling a close
-	file request it will inform the xfileasync operation to push the xfiledata object on the spsc
-	queue for 'unused' xfiledata items.
-
-	Note: If we replace the spsc queue with a spmc queue then xfilesystem requests can originate
-	      from more than one thread.
-		  Or the xfilesystem can be locked/unlocked when doing file operations.
+		The last error feature should be for every xfiledata and for the global file system.
 	*/
 
 	namespace xfilesystem
 	{
 		//------------------------------------------------------------------------------------------
+
+		class xiasync_result_imp : public xiasync_result
+		{
+		public:
+							xiasync_result_imp();
+			virtual			~xiasync_result_imp()					{ }
+
+			void			init(xasync_id nAsyncId, u32 nFileHandle, xevent* pEvent);
+
+			virtual bool	checkForCompletion();
+			virtual void	waitForCompletion();
+
+			virtual u64		getResult() const;
+
+			virtual void	clear();
+			virtual s32		hold();
+			virtual s32		release();
+			virtual void	destroy();
+
+			XFILESYSTEM_OBJECT_NEW_DELETE()
+		private:
+			s32				mRefCount;		/// This needs to be an atomic integer
+			xasync_id		mAsyncId;
+			u32				mFileHandle;
+			u64				mResult;
+			xevent*			mEvent;
+		};
+
+		//------------------------------------------------------------------------------------------
+		// Init/Exit touches these
 		static u32							m_uMaxOpenedFiles = 32;
 		static u32							m_uMaxAsyncOperations = 32;
 		static u32							m_uMaxErrorItems = 32;
-
 		static char*						*m_Filenames = NULL;
-
 		static xfiledata					*m_OpenAsyncFileArray = NULL;
-		static spsc_cqueue<xfiledata*>		*m_FreeAsyncFile = NULL;
-
 		static xfileasync					*m_AsyncIOData = NULL;
-		static spsc_cqueue<xfileasync*>		*m_pFreeAsyncIOList = NULL;
-		static spsc_cqueue<xfileasync*>		*m_pAsyncIOList = NULL;
+		static xiasync_result_imp			*m_AsyncResultData = NULL;
 
-		static EError						*m_eLastErrorStack = NULL;
+		///< Concurrent access
+		static cqueue<xfiledata*>			*m_FreeAsyncFile = NULL;
+		static cqueue<xfileasync*>			*m_pFreeAsyncIOList = NULL;
+		static cqueue<xfileasync*>			*m_pAsyncIOList = NULL;
+		static cqueue<xiasync_result*>		*m_pAsyncResultList = NULL;
+		static cqueue<u32>					*m_pLastErrorStack = NULL;
+
+		///< Synchronous file operations
+		extern u32			syncCreate			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
+		extern u32			syncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
+		extern u64			syncSetPos			( u32 uHandle, u64 filePos );
+		extern u64			syncGetPos			( u32 uHandle );
+		extern void			syncSetSize			( u32 uHandle, u64 fileSize );
+		extern u64			syncGetSize			( u32 uHandle );
+		extern u64			syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );	
+		extern u64			syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
+		extern void 		syncClose			( u32& uHandle );
+		extern void			syncDelete			( u32& uHandle );
+
+		///< Asynchronous file operations
+		static u32			asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
+		static void			asyncOpen			( const u32 uHandle, xiasync_result** pAsyncId );
+		static u32			asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false, xiasync_result** pAsyncId = NULL );
+		static void			asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result** pAsyncId );
+		static void			asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result** pAsyncId );
+		static void			asyncClose			( const u32 uHandle, xiasync_result** pAsyncId );
+		static void			asyncCloseAndDelete	( const u32 uHandle, xiasync_result** pAsyncId );
 
 		//------------------------------------------------------------------------------------------
 
-		xbool				exists( const char* szName )
+		xbool				exists ( const char* szName )
 		{
 			u32 uHandle = syncOpen(szName, false);
 			if (uHandle == (u32)INVALID_FILE_HANDLE)
@@ -78,17 +119,17 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					open ( const char* szFilename, xbool boRead, xbool boWrite, xbool boAsync)
+		u32					open ( const char* szFilename, xbool boRead, xbool boWrite, xiasync_result** pAsyncId)
 		{
-			if (boAsync)
-				return asyncOpen(szFilename, boRead, boWrite);
+			if (pAsyncId)
+				return asyncOpen(szFilename, boRead, boWrite, pAsyncId);
 			else
 				return syncOpen(szFilename, boRead, boWrite);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		xbool				caps				( const xfilepath& szFilename, bool& can_read, bool& can_write, bool& can_seek, bool& can_async )
+		xbool				caps ( const xfilepath& szFilename, bool& can_read, bool& can_write, bool& can_seek, bool& can_async )
 		{
 			const xdevicealias* alias = xdevicealias::sFind(szFilename);
 			if (alias == NULL)
@@ -105,37 +146,80 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					getLength			( u32 uHandle )
+		void				setLength ( u32 uHandle, u64 uFileSize )
 		{
-			return syncSize(uHandle);
+			syncSetSize(uHandle, uFileSize);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				read (u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer )
+		u64					getLength ( u32 uHandle )
 		{
-			syncRead(uHandle, uOffset, uSize, pBuffer);
+			return syncGetSize(uHandle);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				write( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer )
+		u64					read (u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result** pAsyncId )
 		{
-			syncWrite(uHandle, uOffset, uSize, pBuffer);
+			if (pAsyncId != NULL)
+			{
+				asyncRead(uHandle, uOffset, uSize, pBuffer, pAsyncId);
+				return 0;
+			}
+			else
+			{
+				return syncRead(uHandle, uOffset, uSize, pBuffer);
+			}
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				closeAndDelete( u32& uHandle )
+		u64					write ( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result** pAsyncId )
 		{
-			syncDelete(uHandle);
+			if (pAsyncId != NULL)
+			{
+				asyncWrite(uHandle, uOffset, uSize, pBuffer, pAsyncId);
+				return 0;
+			}
+			else
+			{
+				return syncWrite(uHandle, uOffset, uSize, pBuffer);
+			}
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				close ( u32 &uHandle )
+		u64					getpos ( u32 uHandle )
 		{
-			syncClose(uHandle);
+			return syncGetPos(uHandle);
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		u64					setpos ( u32 uHandle, u64 uFilePos )
+		{
+			return syncSetPos(uHandle, uFilePos);
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		void				closeAndDelete ( u32& uHandle, xiasync_result** pAsyncId )
+		{
+			if (pAsyncId != NULL)
+				asyncCloseAndDelete(uHandle, pAsyncId);
+			else
+				syncDelete(uHandle);
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		void				close ( u32 &uHandle, xiasync_result** pAsyncId )
+		{
+			if (pAsyncId != NULL)
+				asyncClose(uHandle, pAsyncId);
+			else
+				syncClose(uHandle);
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -148,14 +232,14 @@ namespace xcore
 			u32 uHandle = open(szFilename, xTRUE);
 			if (uHandle != (u32)INVALID_FILE_HANDLE)
 			{
-				write(uHandle, 0, uSize, pData);
-				close(uHandle);
+				write(uHandle, 0, uSize, pData, NULL);
+				close(uHandle, NULL);
 			}
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		xbool				asyncDone ( const u32 uHandle )
+		bool				asyncCompleted ( u32 uHandle, xasync_id const& uAsync )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -163,23 +247,22 @@ namespace xcore
 				return true;
 			}
 
-			xfiledata*  pInfo  = getFileInfo(uHandle);
-			xfileasync* pAsync = getAsyncIOData(pInfo->m_nFileIndex);
-			return pAsync->getStatus() == FILE_OP_STATUS_DONE;
+			bool _out = m_pAsyncIOList->outside(uAsync);
+			return _out;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		u32					asyncOpen ( const char* szName, xbool boRead, xbool boWrite )
+		u32					asyncOpen ( const char* szName, xbool boRead, xbool boWrite, xiasync_result** pAsyncId )
 		{
 			u32 uHandle = asyncPreOpen( szName, boRead, boWrite );
-			asyncOpen(uHandle);
+			asyncOpen(uHandle, pAsyncId);
 			return uHandle;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncOpen (const u32 uHandle)
+		void				asyncOpen (const u32 uHandle, xiasync_result** pAsyncId)
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
@@ -200,13 +283,22 @@ namespace xcore
 			pOpen->setReadWriteOffset	(0);
 			pOpen->setReadWriteSize		(0);
 
-			pushAsyncIO(pOpen);
-			getThreading()->signal();
+			xasync_id id = pushAsyncIO(pOpen);
+			if (pAsyncId!=NULL) 
+			{
+				xevent* async_event = getEventFactory()->construct();
+				pOpen->setEvent(async_event);
+
+				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
+				async_result->init(id, uHandle, async_event);
+				*pAsyncId = async_result;
+			}
+			getIoThreadInterface()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xasync_id& nAsyncId )
+		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result** pAsyncId )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -232,13 +324,24 @@ namespace xcore
 			pRead->setReadWriteOffset	(uOffset);
 			pRead->setReadWriteSize		(uSize);
 
-			pushAsyncIO(pRead);
-			getThreading()->signal();
+			xasync_id id = pushAsyncIO(pRead);
+			if (pAsyncId!=NULL) 
+			{
+				xevent* async_event = getEventFactory()->construct();
+				async_event->set();
+				pRead->setEvent(async_event);
+
+				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
+				async_result->init(id, uHandle, async_event);
+				*pAsyncId = async_result;
+			}
+
+			getIoThreadInterface()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xasync_id& nAsyncId )
+		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result** pAsyncId )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -264,13 +367,24 @@ namespace xcore
 			pWrite->setReadWriteOffset	(uOffset);
 			pWrite->setReadWriteSize	(uSize);
 
-			pushAsyncIO(pWrite);
-			getThreading()->signal();
+			xasync_id id = pushAsyncIO(pWrite);
+			if (pAsyncId!=NULL) 
+			{
+				xevent* async_event = getEventFactory()->construct();
+				async_event->set();
+				pWrite->setEvent(async_event);
+
+				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
+				async_result->init(id, uHandle, async_event);
+				*pAsyncId = async_result;
+			}
+
+			getIoThreadInterface()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncDelete(const u32 uHandle)
+		void				asyncCloseAndDelete ( const u32 uHandle, xiasync_result** pAsyncId )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -294,13 +408,24 @@ namespace xcore
 			pDelete->setReadWriteOffset	(0);
 			pDelete->setReadWriteSize	(0);
 
-			pushAsyncIO(pDelete);
-			getThreading()->signal();
+			xasync_id id = pushAsyncIO(pDelete);
+			if (pAsyncId!=NULL) 
+			{
+				xevent* async_event = getEventFactory()->construct();
+				async_event->set();
+				pDelete->setEvent(async_event);
+
+				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
+				async_result->init(id, uHandle, async_event);
+				*pAsyncId = async_result;
+			}
+
+			getIoThreadInterface()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncClose (const u32 uHandle)
+		void				asyncClose ( const u32 uHandle, xiasync_result** pAsyncId )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -325,8 +450,19 @@ namespace xcore
 			pClose->setReadWriteOffset	(0);
 			pClose->setReadWriteSize	(0);
 
-			pushAsyncIO(pClose);
-			getThreading()->signal();
+			xasync_id id = pushAsyncIO(pClose);
+			if (pAsyncId!=NULL) 
+			{
+				xevent* async_event = getEventFactory()->construct();
+				async_event->set();
+				pClose->setEvent(async_event);
+
+				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
+				async_result->init(id, uHandle, async_event);
+				*pAsyncId = async_result;
+			}
+
+			getIoThreadInterface()->signal();
 		}
 
 
@@ -356,9 +492,9 @@ namespace xcore
 				return (u32)INVALID_FILE_HANDLE;
 			}
 
-			if (device==NULL || (boWrite && !device->canWrite()))
+			if (boWrite && !device->canWrite())
 			{
-				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Device is readonly!");
+				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Device is read-only!");
 
 				setLastError(FILE_ERROR_DEVICE_READONLY);
 				return (u32)INVALID_FILE_HANDLE;
@@ -415,40 +551,38 @@ namespace xcore
 			{
 				m_Filenames = (char**)heapAlloc(m_uMaxOpenedFiles * sizeof(char*), X_ALIGNMENT_DEFAULT);
 				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
-					m_Filenames[uFile] = (char*)heapAlloc(FS_MAX_PATH + 2, X_ALIGNMENT_DEFAULT);
+				{
+					char* filename = (char*)heapAlloc(FS_MAX_PATH + 2, X_ALIGNMENT_DEFAULT);
+					x_memset(filename, '\0', FS_MAX_PATH + 2);
+					m_Filenames[uFile] = filename;
+				}
 			}
 
 			if (m_OpenAsyncFileArray == NULL)
 			{
 				m_OpenAsyncFileArray = (xfiledata*)heapAlloc(m_uMaxOpenedFiles * sizeof(xfiledata), X_ALIGNMENT_DEFAULT);
-
 				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
 				{
 					new (&m_OpenAsyncFileArray[uFile]) xfiledata();
-
 					m_OpenAsyncFileArray[uFile].clear();
 					m_OpenAsyncFileArray[uFile].m_nFileIndex = uFile;
 					m_OpenAsyncFileArray[uFile].m_szFilename = m_Filenames[uFile];
 					m_OpenAsyncFileArray[uFile].m_sFilenameMaxLen = FS_MAX_PATH;
-
-					x_memset(m_OpenAsyncFileArray[uFile].m_szFilename, 0, FS_MAX_PATH);
-					m_OpenAsyncFileArray[uFile].m_szFilename[0] = '\0';
-					m_OpenAsyncFileArray[uFile].m_szFilename[1] = '\0';
-					m_OpenAsyncFileArray[uFile].m_szFilename[FS_MAX_PATH+0] = '\0';
-					m_OpenAsyncFileArray[uFile].m_szFilename[FS_MAX_PATH+1] = '\0';
 				}
 			}
 
 			if (m_FreeAsyncFile == NULL)
 			{
-				void* mem1 = heapAlloc(sizeof(spsc_cqueue<xfiledata*>), CACHE_LINE_SIZE);
+				void* mem1 = heapAlloc(sizeof(cqueue<xfiledata*>), CACHE_LINE_SIZE);
 				void* mem2 = heapAlloc(m_uMaxOpenedFiles * sizeof(xfiledata*), CACHE_LINE_SIZE);
-				spsc_cqueue<xfiledata*>* queue = new (mem1) spsc_cqueue<xfiledata*>(m_uMaxOpenedFiles, (xfiledata* volatile*)mem2);
+				cqueue<xfiledata*>* queue = new (mem1) cqueue<xfiledata*>(m_uMaxOpenedFiles, (xfiledata* volatile*)mem2);
 				m_FreeAsyncFile = queue;
-
 				// Populate the unused xfiledata queue
 				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
-					m_FreeAsyncFile->push(&m_OpenAsyncFileArray[uFile]);
+				{
+					u32 _idx;
+					m_FreeAsyncFile->push(&m_OpenAsyncFileArray[uFile], _idx);
+				}
 			}
 			
 			if (m_AsyncIOData == NULL)
@@ -458,40 +592,67 @@ namespace xcore
 					new (&m_AsyncIOData[uFile]) xfileasync();
 			}
 
-			if (m_eLastErrorStack == NULL)
+			if (m_AsyncResultData == NULL)
 			{
-				m_eLastErrorStack = (EError*)heapAlloc(m_uMaxErrorItems * sizeof(EError), X_ALIGNMENT_DEFAULT);
+				m_AsyncResultData = (xiasync_result_imp*)heapAlloc(m_uMaxAsyncOperations * sizeof(xiasync_result_imp), X_ALIGNMENT_DEFAULT);
+				for (u32 uOp = 0; uOp < m_uMaxAsyncOperations; uOp++)
+					new (&m_AsyncResultData[uOp]) xiasync_result_imp();
 			}
-			//--------------------------------
-			// Clear the error stack
-			//--------------------------------
-			for (u32 i=0; i<m_uMaxErrorItems; ++i)
-				m_eLastErrorStack[i] = FILE_ERROR_OK;
+
 
 			//-------------------------------------------------------
-			// Allocate all the spsc queues aligned on a cache line
+			// Allocate all the concurrent queues aligned on a cache line
 			//-------------------------------------------------------
 			if (m_pFreeAsyncIOList == NULL)
 			{
-				void* mem1 = heapAlloc(sizeof(spsc_cqueue<xfileasync*>), CACHE_LINE_SIZE);
+				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), CACHE_LINE_SIZE);
 				void* mem2 = heapAlloc(m_uMaxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
-				spsc_cqueue<xfileasync*>* queue = new (mem1) spsc_cqueue<xfileasync*>(m_uMaxAsyncOperations, (xfileasync* volatile*)mem2);
+				cqueue<xfileasync*>* queue = new (mem1) cqueue<xfileasync*>(m_uMaxAsyncOperations, (xfileasync* volatile*)mem2);
 				m_pFreeAsyncIOList = queue;
+
+				for(u32 uSlot = 0; uSlot < m_uMaxAsyncOperations; uSlot++)	
+				{
+					m_AsyncIOData[uSlot].clear();
+					u32 _idx;
+					m_pFreeAsyncIOList->push(&m_AsyncIOData[uSlot], _idx);
+				}
+				ASSERT(m_pFreeAsyncIOList->full());
 			}
 			if (m_pAsyncIOList == NULL)
 			{
-				void* mem1 = heapAlloc(sizeof(spsc_cqueue<xfileasync*>), CACHE_LINE_SIZE);
+				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), CACHE_LINE_SIZE);
 				void* mem2 = heapAlloc(m_uMaxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
-				spsc_cqueue<xfileasync*>* queue = new (mem1) spsc_cqueue<xfileasync*>(m_uMaxAsyncOperations, (xfileasync* volatile*)mem2);
+				cqueue<xfileasync*>* queue = new (mem1) cqueue<xfileasync*>(m_uMaxAsyncOperations, (xfileasync* volatile*)mem2);
 				m_pAsyncIOList = queue;
 			}
-
-			for(u32 uSlot = 0; uSlot < m_uMaxAsyncOperations; uSlot++)	
+			if (m_pAsyncResultList == NULL)
 			{
-				m_AsyncIOData[uSlot].clear();
-				m_pFreeAsyncIOList->push(&m_AsyncIOData[uSlot]);
+				void* mem1 = heapAlloc(sizeof(cqueue<xiasync_result*>), CACHE_LINE_SIZE);
+				void* mem2 = heapAlloc(m_uMaxAsyncOperations * sizeof(xiasync_result*), CACHE_LINE_SIZE);
+				cqueue<xiasync_result*>* queue = new (mem1) cqueue<xiasync_result*>(m_uMaxAsyncOperations, (xiasync_result* volatile*)mem2);
+				m_pAsyncResultList = queue;
+				// Populate the queue
+				for (u32 uOp = 0; uOp < m_uMaxAsyncOperations; uOp++)
+				{
+					u32 _idx;
+					m_pAsyncResultList->push(&m_AsyncResultData[uOp], _idx);
+				}
+			}			
+			if (m_pLastErrorStack == NULL)
+			{
+				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), CACHE_LINE_SIZE);
+				void* mem2 = heapAlloc(m_uMaxErrorItems * sizeof(u32), CACHE_LINE_SIZE);
+				cqueue<u32>* queue = new (mem1) cqueue<u32>(m_uMaxErrorItems, (u32 volatile*)mem2);
+				m_pLastErrorStack = queue;
+
+				//--------------------------------
+				// Clear the error stack
+				//--------------------------------
+				u32* lastErrorStack = (u32*)mem2;
+				for (u32 i=0; i<m_uMaxErrorItems; ++i)
+					lastErrorStack[i] = FILE_ERROR_OK;
 			}
-			ASSERT(m_pFreeAsyncIOList->full());
+
 		}	
 
 		//------------------------------------------------------------------------------------------
@@ -501,12 +662,12 @@ namespace xcore
 			x_printf ("xfilesystem:"TARGET_PLATFORM_STR" INFO shutdown()\n");
 
 			//-------------------------------------------------------
-			// Free all the spsc queues
+			// Free all the concurrent queues
 			//-------------------------------------------------------
 			if (m_pFreeAsyncIOList != NULL)
 			{
 				heapFree((void*)m_pFreeAsyncIOList->getArray());
-				m_pFreeAsyncIOList->~spsc_cqueue<xfileasync*>();
+				m_pFreeAsyncIOList->~cqueue<xfileasync*>();
 				heapFree(m_pFreeAsyncIOList);
 				m_pFreeAsyncIOList = NULL;
 			}
@@ -514,60 +675,86 @@ namespace xcore
 			if (m_pAsyncIOList != NULL)
 			{
 				heapFree((void*)m_pAsyncIOList->getArray());
-				m_pAsyncIOList->~spsc_cqueue<xfileasync*>();
+				m_pAsyncIOList->~cqueue<xfileasync*>();
 				heapFree(m_pAsyncIOList);
 				m_pAsyncIOList = NULL;
 				heapFree(m_AsyncIOData);
 				m_AsyncIOData = NULL;
 			}
 
+			if (m_pAsyncResultList != NULL)
+			{
+				heapFree((void*)m_pAsyncResultList->getArray());
+				m_pAsyncResultList->~cqueue<xiasync_result*>();
+				heapFree(m_pAsyncResultList);
+				m_pAsyncResultList = NULL;
+				heapFree(m_AsyncResultData);
+				m_AsyncResultData = NULL;
+			}
+
 			if (m_FreeAsyncFile != NULL)
 			{
 				heapFree((void*)m_FreeAsyncFile->getArray());
-				m_FreeAsyncFile->~spsc_cqueue<xfiledata*>();
+				m_FreeAsyncFile->~cqueue<xfiledata*>();
+				heapFree(m_FreeAsyncFile);
 				m_FreeAsyncFile = NULL;
 				heapFree(m_OpenAsyncFileArray);
 				m_OpenAsyncFileArray = NULL;
 			}
 
-			for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
-				heapFree(m_Filenames[uFile]);
-			heapFree(m_Filenames);
-			m_Filenames = NULL;
+			if (m_Filenames != NULL)
+			{
+				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
+					heapFree(m_Filenames[uFile]);
+				heapFree(m_Filenames);
+				m_Filenames = NULL;
+			}
 
-			heapFree(m_eLastErrorStack);
-			m_eLastErrorStack = NULL;
+			if (m_pLastErrorStack!= NULL)
+			{
+				heapFree((void*)m_pLastErrorStack->getArray());
+				m_pLastErrorStack->~cqueue<u32>();
+				heapFree(m_pLastErrorStack);
+				m_pLastErrorStack = NULL;
+			}
 		}
 
 		//------------------------------------------------------------------------------------------
-		class xsinglethreading : public xthreading
+		class xio_thread_st : public xio_thread
 		{
 		public:
 			virtual void		sleep(u32 ms)						{ }
 			virtual bool		loop() const						{ return false; }
 			virtual void		wait()								{ }
 			virtual void		signal()							{ }
-
-			virtual void		lock(u32 streamIndex)				{ }
-			virtual void		unlock(u32 streamIndex)				{ }
-			virtual void		wait(u32 streamIndex)				{ }
-			virtual void		signal(u32 streamIndex)				{ }
 		};
 
-		static xsinglethreading	sIoThreadingSt;
-		static xthreading*		sIoThreading = &sIoThreadingSt;
+		static xio_thread_st	sIoThreadSt;
+		static xio_thread*		sIoThreadCt = &sIoThreadSt;
 
-		void				setThreading( xthreading* io_thread )
+		void					setIoThreadInterface( xio_thread* io_thread )
 		{
-			sIoThreading = io_thread;
-			if (sIoThreading == NULL)
-				sIoThreading = &sIoThreadingSt;
+			sIoThreadCt = io_thread;
+			if (sIoThreadCt == NULL)
+				sIoThreadCt = &sIoThreadSt;
 		}
 
-		xthreading*			getThreading()
+		xio_thread*				getIoThreadInterface()
 		{
-			return sIoThreading;
+			return sIoThreadCt;
 		}
+
+		static xevent_factory*	sEventFactory = NULL;
+		void					setEventFactory		( xevent_factory* event_factory )
+		{
+			sEventFactory = event_factory;
+		}
+		
+		xevent_factory*			getEventFactory		( void )
+		{
+			return sEventFactory;
+		}
+
 
 		//------------------------------------------------------------------------------------------
 
@@ -577,7 +764,7 @@ namespace xcore
 			const xfilesystem::xdevicealias* alias = xdevicealias::sFind(szFilename);
 			if (alias == NULL)
 			{
-				// Take the workdir
+				// Take the working directory
 				alias = xdevicealias::sFind("curdir");
 			}
 
@@ -592,7 +779,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfiledata*			getFileInfo			( u32 uHandle )
+		xfiledata*				getFileInfo			( u32 uHandle )
 		{
 			ASSERT(uHandle<m_uMaxOpenedFiles);
 			return &m_OpenAsyncFileArray[uHandle];
@@ -600,7 +787,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					popFreeFileSlot			(void)
+		u32						popFreeFileSlot			(void)
 		{
 			xfiledata* f;
 			if (m_FreeAsyncFile->pop(f))
@@ -610,17 +797,18 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		bool				pushFreeFileSlot		(u32 nFileIndex)
+		bool					pushFreeFileSlot		(u32 nFileIndex)
 		{
 			xfiledata* f = &m_OpenAsyncFileArray[nFileIndex];
-			if (m_FreeAsyncFile->push(f))
+			xasync_id _id;
+			if (m_FreeAsyncFile->push(f, _id))
 				return true;
 			return false;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		xfileasync*			getAsyncIOData			( u32 nSlot )
+		xfileasync*				getAsyncIOData			( u32 nSlot )
 		{
 			xfileasync* asyncIOInfo = &m_AsyncIOData[nSlot];
 			return asyncIOInfo;
@@ -628,30 +816,33 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfileasync*			popFreeAsyncIO			( bool wait )
+		xfileasync*				popFreeAsyncIO			( bool wait )
 		{
 			do
 			{
 				xfileasync* asyncIOInfo;
 				if (m_pFreeAsyncIOList->pop(asyncIOInfo))
+				{
+					asyncIOInfo->clear();
 					return asyncIOInfo;
-
-				getThreading()->wait();
+				}
+				
 			} while (wait);
 			return NULL;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				pushFreeAsyncIO			( xfileasync* asyncIOInfo )
+		void					pushFreeAsyncIO			( xfileasync* asyncIOInfo )
 		{
 			asyncIOInfo->setFileIndex(INVALID_FILE_HANDLE);
-			m_pFreeAsyncIOList->push(asyncIOInfo);
+			u32 idx;
+			m_pFreeAsyncIOList->push(asyncIOInfo, idx);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		xfileasync*			popAsyncIO				( void )
+		xfileasync*				popAsyncIO				( void )
 		{
 			xfileasync* item;
 			if (m_pAsyncIOList->pop(item))
@@ -661,29 +852,60 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				pushAsyncIO				( xfileasync* asyncIOInfo )
+		xasync_id				pushAsyncIO				( xfileasync* asyncIOInfo )
 		{
-			m_pAsyncIOList->push(asyncIOInfo);
+			u32 _idx;
+			m_pAsyncIOList->push(asyncIOInfo, _idx);
+			return _idx;
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		u32						testAsyncId			( xasync_id id )
+		{
+			if (m_pAsyncIOList->inside(id))
+				return 0;	// In the processing queue
+			else if (m_pAsyncIOList->outside(id))
+				return -1;	// Has been processed
+			else
+				return 1;	// Not processed yet
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		xiasync_result*			popAsyncResult		( void )
+		{
+			xiasync_result* item;
+			if (m_pAsyncResultList->pop(item))
+				return item;
+			return NULL;
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		void					pushAsyncResult		( xiasync_result* asyncResult )
+		{
+			u32 _idx;
+			m_pAsyncResultList->push(asyncResult, _idx);
 		}
 
 		//------------------------------------------------------------------------------------------
 
 		void					setLastError		( EError error )
 		{
-			// Push everything up
-			for (u32 i=1; i<m_uMaxErrorItems; ++i)
-			{
-				m_eLastErrorStack[i-1] = m_eLastErrorStack[i];
-			}
-			m_eLastErrorStack[m_uMaxErrorItems-1] = error;
+			u32 old_error;
+			u32 _idx;
+			while (!m_pLastErrorStack->push((u32)error, _idx))
+				m_pLastErrorStack->pop(old_error);
 		}
-
 
 		//------------------------------------------------------------------------------------------
 
 		xbool					hasLastError		( void )
 		{
-			return m_eLastErrorStack[m_uMaxErrorItems-1] != FILE_ERROR_OK;
+			u32 lastError = FILE_ERROR_OK;
+			m_pLastErrorStack->peek(lastError);
+			return lastError != FILE_ERROR_OK;
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -697,7 +919,12 @@ namespace xcore
 
 		EError					getLastError		( )
 		{
-			return m_eLastErrorStack[m_uMaxErrorItems-1];
+			u32 lastError;
+			if (m_pLastErrorStack->peek(lastError))
+			{
+				return (EError)lastError;
+			}
+			return FILE_ERROR_OK;
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -739,14 +966,14 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 		///< Synchronous file operations
-		u32					syncCreate			( const char* szFilename, xbool boRead, xbool boWrite)
+		u32					syncCreate			( const char* szFilename, xbool boRead, xbool boWrite )
 		{
 			u32 uHandle = asyncPreOpen(szFilename, boRead, boWrite);
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u32 nFileHandle;
 			if (!pxFileInfo->m_pFileDevice->createFile(szFilename, boRead, boWrite, nFileHandle))
 			{
-				x_printf ("device->createFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->createFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 				pxFileInfo->clear();
 				uHandle = (u32)INVALID_FILE_HANDLE;
 			}
@@ -757,14 +984,14 @@ namespace xcore
 			return uHandle;
 		}
 
-		u32					syncOpen			( const char* szFilename, xbool boRead, xbool boWrite)
+		u32					syncOpen			( const char* szFilename, xbool boRead, xbool boWrite )
 		{
 			u32 uHandle = asyncPreOpen(szFilename, boRead, boWrite);
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u32 nFileHandle;
 			if (!pxFileInfo->m_pFileDevice->openFile(szFilename, boRead, boWrite, nFileHandle))
 			{
-				x_printf ("device->openFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->openFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 				pxFileInfo->clear();
 				uHandle = (u32)INVALID_FILE_HANDLE;
 			}
@@ -777,18 +1004,63 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					syncSize			( u32 uHandle )
+		u64					syncGetSize			( u32 uHandle )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return 0;
 
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
-			u64 length;
-			if (!pxFileInfo->m_pFileDevice->getLengthOfFile(pxFileInfo->m_nFileHandle, length))
+			u64 fileSize = 0;
+			if (!pxFileInfo->m_pFileDevice->getLengthOfFile(pxFileInfo->m_nFileHandle, fileSize))
 			{
-				x_printf ("device->lengthOfFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->getLengthOfFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
-			return length;
+			return fileSize;
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		void				syncSetSize			( u32 uHandle, u64 fileSize )
+		{
+			if (uHandle==(u32)INVALID_FILE_HANDLE)
+				return;
+
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
+			if (!pxFileInfo->m_pFileDevice->setLengthOfFile(pxFileInfo->m_nFileHandle, fileSize))
+			{
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->setLengthOfFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+			}
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		u64					syncGetPos			( u32 uHandle )
+		{
+			if (uHandle==(u32)INVALID_FILE_HANDLE)
+				return 0;
+
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
+			u64 filePos = 0;
+			if (!pxFileInfo->m_pFileDevice->getFilePos(pxFileInfo->m_nFileHandle, filePos))
+			{
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->getFilePos failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+			}
+			return filePos;
+		}
+
+		//------------------------------------------------------------------------------------------
+
+		u64					syncSetPos			( u32 uHandle, u64 filePos )
+		{
+			if (uHandle==(u32)INVALID_FILE_HANDLE)
+				return 0;
+
+			xfiledata* pxFileInfo = getFileInfo(uHandle);
+			if (!pxFileInfo->m_pFileDevice->setFilePos(pxFileInfo->m_nFileHandle, filePos))
+			{
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->setFilePos failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+			}
+			return filePos;
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -802,7 +1074,7 @@ namespace xcore
 			u64 numBytesRead;
 			if (!pxFileInfo->m_pFileDevice->readFile(pxFileInfo->m_nFileHandle, uOffset, pBuffer, uSize, numBytesRead))
 			{
-				x_printf ("device->ReadFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->readFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
 			return numBytesRead;
 		}
@@ -818,7 +1090,7 @@ namespace xcore
 			u64 numBytesWritten;
 			if (!pxFileInfo->m_pFileDevice->writeFile(pxFileInfo->m_nFileHandle, uOffset, pBuffer, uSize, numBytesWritten))
 			{
-				x_printf ("device->WriteFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->writeFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
 			return numBytesWritten;
 		}
@@ -834,9 +1106,10 @@ namespace xcore
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			if (!pxFileInfo->m_pFileDevice->closeFile(pxFileInfo->m_nFileHandle))
 			{
-				x_printf ("device->CloseFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->closeFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
 			pxFileInfo->clear();
+			pushFreeFileSlot(uHandle);
 			uHandle = (u32)INVALID_FILE_HANDLE;
 		}
 
@@ -850,14 +1123,82 @@ namespace xcore
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			if (!pxFileInfo->m_pFileDevice->closeFile(pxFileInfo->m_nFileHandle))
 			{
-				x_printf ("device->CloseFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->closeFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 			}
-			pxFileInfo->m_pFileDevice->deleteFile(pxFileInfo->m_szFilename);
+			if (pxFileInfo->m_pFileDevice->deleteFile(pxFileInfo->m_szFilename))
+			{
+				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->deleteFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
+			}
 			pxFileInfo->clear();
+			pushFreeFileSlot(uHandle);
 			uHandle = (u32)INVALID_FILE_HANDLE;
 		}
-	};
 
+		//------------------------------------------------------------------------------------------
+
+		xiasync_result_imp::xiasync_result_imp()
+			: mRefCount(0)
+			, mAsyncId(0)
+			, mFileHandle(INVALID_FILE_HANDLE)
+			, mResult(0)
+			, mEvent(NULL)
+		{
+		}
+
+		void			xiasync_result_imp::init(xasync_id nAsyncId, u32 nFileHandle, xevent* pEvent)
+		{
+			mRefCount = 0;
+			mAsyncId = nAsyncId;
+			mFileHandle = nFileHandle;
+			mResult = 0;
+			mEvent = pEvent;
+		}
+
+		bool			xiasync_result_imp::checkForCompletion()
+		{
+			return mFileHandle == INVALID_FILE_HANDLE || testAsyncId(mAsyncId) == -1;
+		}
+
+		void			xiasync_result_imp::waitForCompletion()
+		{
+			if (mFileHandle != INVALID_FILE_HANDLE)
+			{
+				xfiledata* fileInfo = getFileInfo(mFileHandle);
+				if (checkForCompletion() == false)
+				{
+					mEvent->wait();
+				}
+			}
+		}
+
+		u64				xiasync_result_imp::getResult() const
+		{
+			return mResult;
+		}
+
+		void			xiasync_result_imp::clear()
+		{
+			mFileHandle = INVALID_FILE_HANDLE;
+		}
+
+		s32				xiasync_result_imp::hold()
+		{
+			return ++mRefCount;
+		}
+
+		s32				xiasync_result_imp::release()
+		{
+			return --mRefCount;
+		}
+
+		void			xiasync_result_imp::destroy()
+		{
+			// Push us back in the free list
+			u32 _idx;
+			m_pAsyncResultList->push(this, _idx);
+		}
+
+	};
 
 	//==============================================================================
 	// END xcore namespace

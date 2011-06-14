@@ -55,6 +55,12 @@
 		<Type>Package</Type>
 	</Dependency>
 
+	<Dependency Package="xatomic">
+		<Group>com.virtuos.tnt</Group>
+		<Version>[1.0,)</Version>
+		<Type>Package</Type>
+	</Dependency>
+	
 	<Dependency Package="xunittest">
 		<Group>com.virtuos.tnt</Group>
 		<Version>[1.0,)</Version>

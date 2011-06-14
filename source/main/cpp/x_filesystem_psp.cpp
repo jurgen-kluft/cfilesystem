@@ -37,20 +37,6 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				setLength( u32 uHandle, u64 uNewSize )
-		{
-			xfiledata* pInfo = getFileInfo(uHandle);
-
-			s32 nResult=-1;
-// 			nResult	= cellFsFtruncate(pInfo->m_nFileHandle, uNewSize);
-			if(nResult < 0)
-			{
-				x_printf("xfilesystem:"TARGET_PLATFORM_STR" ERROR ReSize %d\n", x_va_list(nResult));
-			}
-		}
-
-		//------------------------------------------------------------------------------------------
-
 		void				getOpenCreatedTime (u32 uHandle, xdatetime& pTimeAndDate)
 		{
 			ASSERTS (pTimeAndDate, "GetOpenCreatedTime() : Pointer to xsystem::TimeAndDate is NULL!");
@@ -119,7 +105,7 @@ namespace xfilesystem
 // 
 // 			if(nError < 0)
 // 			{
-// 				x_printf ("sceNpDrmSetLicenseeKey Error 0x%lx\n", x_va_list(nError));
+// 				x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR sceNpDrmSetLicenseeKey Error 0x%lx\n", x_va_list(nError));
 // 			}
 	}
 
@@ -132,31 +118,28 @@ namespace xfilesystem
 		s32 retval = sceIoMkdir( szPhotosDir, 0 );
 		if ( retval != SCE_KERNEL_ERROR_OK )
 		{
-			//x_printf("sceIoMkdir szPhotosDir fail\n");
+			//x_printf("xfilesystem: " TARGET_PLATFORM_STR " ERROR sceIoMkdir szPhotosDir fail\n");
 		}
 
 		retval = sceIoMkdir( szDirectory, 0 );
 		if ( retval != SCE_KERNEL_ERROR_OK )
 		{
-			//x_printf("sceIoMkdir szDirectory fail\n");
+			//x_printf("xfilesystem: " TARGET_PLATFORM_STR " ERROR sceIoMkdir szDirectory fail\n");
 		}
 
 		uid = sceIoOpen( szFilename, SCE_O_RDWR | SCE_O_TRUNC | SCE_O_CREAT, 0777);
 
 		if(uid < 0)
 		{
-			x_printf("--sample,Open fail!!\n");
+			x_printf("xfilesystem: " TARGET_PLATFORM_STR " ERROR sceIoOpen fail!!\n");
 			return uid;
 		}
 		else
 		{
-			x_printf("Opened FD: %d\n", x_va_list(uid));
-
 			s32 nResult = sceIoWrite(uid, pData, nSizeBytes);
-
 			if( 0 > nResult )
 			{
-				x_printf("write fail\n");
+				x_printf("xfilesystem: " TARGET_PLATFORM_STR " ERROR sceIoWrite fail\n");
 				sceIoClose(uid);
 				return nResult;
 			}

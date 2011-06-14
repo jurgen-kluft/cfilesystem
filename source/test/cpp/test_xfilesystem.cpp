@@ -62,7 +62,7 @@ namespace xcore
 	};
 };
 
-class FileSystemIoThreadObject : public xfilesystem::xthreading
+class FileSystemIoThreadInterface : public xfilesystem::xio_thread
 {
 public:
 	virtual void		sleep(u32 ms)
@@ -80,28 +80,14 @@ public:
 
 	virtual void		signal()
 	{
+		xfilesystem::doIO(this);
 	}
 
-	virtual void		lock(u32 index)
-	{
-	}
-
-	virtual void		unlock(u32 index)
-	{
-	}
-
-	virtual void		wait(u32 index)
-	{
-	}
-
-	virtual void		signal(u32 index)
-	{
-	}
 };
 
-extern x_iallocator*				sSystemAllocator;
-static TestHeapAllocator			sHeapAllocator(NULL);
-static FileSystemIoThreadObject		sThreadObject;
+extern x_iallocator*					sSystemAllocator;
+static TestHeapAllocator				sHeapAllocator(NULL);
+static FileSystemIoThreadInterface		sThreadObject;
 
 UNITTEST_SUITE_BEGIN(filesystem_init)
 {

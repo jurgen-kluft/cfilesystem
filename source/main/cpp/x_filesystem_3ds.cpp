@@ -56,20 +56,6 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				setLength( u32 uHandle, u64 uNewSize )
-		{
-			xfiledata* pInfo = &m_OpenAsyncFile[uHandle];
-
-			s32 nResult=-1;
-// 			nResult	= cellFsFtruncate(pInfo->m_nFileHandle, uNewSize);
-			if(nResult < 0)
-			{
-				x_printf("xfilesystem:"TARGET_PLATFORM_STR" ERROR ReSize %d\n", x_va_list(nResult));
-			}
-		}
-
-		//------------------------------------------------------------------------------------------
-
 		u64					getFreeSize( const char* szPath )
 		{
 			u32	uBlockSize  = 0;

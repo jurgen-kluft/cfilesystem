@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_PRIVATE_H__
-#define __X_FILESYSTEM_PRIVATE_H__
+#ifndef __XFILESYSTEM_IASYNC_RESULT_H__
+#define __XFILESYSTEM_IASYNC_RESULT_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -16,21 +16,28 @@
 //==============================================================================
 namespace xcore
 {
-	//==============================================================================
-	// FORWARD DECLARES
-	//==============================================================================
-	class xdatetime;
-	class xiasync_result;
-	class xfilepath;
-
-	//==============================================================================
-	// CLASSES
-	//==============================================================================
-
 	namespace xfilesystem
 	{
-		
+		///< Async result implementation interface
+		class xiasync_result
+		{
+		public:
+			virtual					~xiasync_result()				{ }
 
+			virtual bool			checkForCompletion() = 0;
+			virtual void			waitForCompletion() = 0;
+
+			virtual u64				getResult() const = 0;
+
+			virtual void			clear() = 0;
+			virtual s32				hold() = 0;
+			virtual s32				release() = 0;
+			virtual void			destroy() = 0;
+		};
+
+		//==============================================================================
+		// END xfilesystem namespace
+		//==============================================================================
 	};
 
 	//==============================================================================
@@ -39,6 +46,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_PRIVATE_H__
+// END __XFILESYSTEM_IASYNC_RESULT_H__
 //==============================================================================
 #endif

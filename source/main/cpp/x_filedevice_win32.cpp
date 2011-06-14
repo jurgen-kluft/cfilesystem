@@ -38,26 +38,31 @@ namespace xcore
 	{
 		class FileDevice_PC_System : public xfiledevice
 		{
+			const char*				mDrivePath;
 			xbool					mCanWrite;
 
 		public:
-									FileDevice_PC_System(xbool boCanWrite)
-										: mCanWrite(boCanWrite)							{ } 
+									FileDevice_PC_System(const char* pDrivePath, xbool boCanWrite)
+										: mDrivePath(pDrivePath)
+										, mCanWrite(boCanWrite)							{ } 
 			virtual					~FileDevice_PC_System()								{ }
 
 			virtual bool			canSeek() const										{ return true; }
 			virtual bool			canWrite() const									{ return mCanWrite; }
 
+			virtual bool			getDeviceInfo(u64& totalSpace, u64& freeSpace) const;
+
 			virtual bool			hasFile(const char* szFilename) const;
 			virtual bool			openFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const;
 			virtual bool			createFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const;
-			virtual u64				seekFile(u32 nFileHandle, u64 pos) const;
 			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const;
 			virtual bool			writeFile(u32 nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) const;
 			virtual bool			closeFile(u32 nFileHandle) const;
 			virtual bool			moveFile(const char* szFilename, const char* szToFilename) const;
 			virtual bool			copyFile(const char* szFilename, const char* szToFilename, bool boOverwrite) const;
 			virtual bool			deleteFile(const char* szFilename) const;
+			virtual bool			setFilePos(u32 nFileHandle, u64& ioPos) const;
+			virtual bool			getFilePos(u32 nFileHandle, u64& outPos) const;
 			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength) const;
 			virtual bool			getLengthOfFile(u32 nFileHandle, u64& outLength) const;
 			virtual bool			setFileTime(const char* szFilename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const;
@@ -86,9 +91,9 @@ namespace xcore
 			XFILESYSTEM_OBJECT_NEW_DELETE()
 		};
 
-		xfiledevice*		x_CreateFileDevicePC(xbool boCanWrite)
+		xfiledevice*		x_CreateFileDevicePC(const char* pDrivePath, xbool boCanWrite)
 		{
-			FileDevice_PC_System* file_device = new FileDevice_PC_System(boCanWrite);
+			FileDevice_PC_System* file_device = new FileDevice_PC_System(pDrivePath, boCanWrite);
 			return file_device;
 		}
 
@@ -96,6 +101,17 @@ namespace xcore
 		{
 			FileDevice_PC_System* file_device = (FileDevice_PC_System*)device;
 			delete file_device;
+		}
+
+		bool FileDevice_PC_System::getDeviceInfo(u64& totalSpace, u64& freeSpace) const
+		{
+			ULARGE_INTEGER totalbytes, freebytes;
+			if (GetDiskFreeSpaceEx( mDrivePath, NULL, &totalbytes, &freebytes) == 0)
+				return false;
+
+			freeSpace = freebytes.QuadPart;
+			totalSpace = totalbytes.QuadPart;
+			return true;
 		}
 
 		bool FileDevice_PC_System::hasFile(const char* szFilename) const
@@ -136,14 +152,6 @@ namespace xcore
 			HANDLE handle = ::CreateFile(szFilename, fileMode, shareType, NULL, disposition, attrFlags, NULL);
 			nFileHandle = (u32)handle;
 			return nFileHandle != (u32)INVALID_HANDLE_VALUE;
-		}
-
-		u64	FileDevice_PC_System::seekFile(u32 nFileHandle, u64 pos) const
-		{
-			u64 newPos;
-			if (canSeek() && seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
-				return newPos;
-			return pos;
 		}
 
 		bool FileDevice_PC_System::readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const
@@ -242,6 +250,40 @@ namespace xcore
 			if (!::DeleteFile(szFilename))
 				return false;
 			return true;
+		}
+
+		bool FileDevice_PC_System::getFilePos(u32 nFileHandle, u64& outPos) const
+		{
+			if (canSeek())
+			{
+				xsize_t distanceLow = 0;
+				xsize_t distanceHigh;
+				distanceLow = ::SetFilePointer((HANDLE)nFileHandle, (LONG)distanceLow, (PLONG)&distanceHigh, FILE_CURRENT );
+				if ( distanceLow == INVALID_SET_FILE_POINTER &&  GetLastError() != NO_ERROR )
+				{
+					return false;
+				}
+				outPos = (u64)distanceHigh; outPos = outPos << 32; outPos = outPos | distanceLow;
+				return true;
+			}
+			return false;
+		}
+
+		bool FileDevice_PC_System::setFilePos(u32 nFileHandle, u64& ioPos) const
+		{
+			if (canSeek())
+			{
+				xsize_t distanceLow = (xsize_t)ioPos;
+				xsize_t distanceHigh = (xsize_t)(ioPos >> 32);
+				distanceLow = ::SetFilePointer((HANDLE)nFileHandle, (LONG)distanceLow, (PLONG)&distanceHigh, FILE_BEGIN);
+				if ( distanceLow == INVALID_SET_FILE_POINTER &&  GetLastError() != NO_ERROR )
+				{
+					return false;
+				}
+				ioPos = (u64)distanceHigh; ioPos = ioPos << 32; ioPos = ioPos | distanceLow;
+				return true;
+			}
+			return false;
 		}
 
 		bool FileDevice_PC_System::setLengthOfFile(u32 nFileHandle, u64 inLength) const

@@ -40,16 +40,19 @@ namespace xcore
 			virtual bool			canWrite() const = 0;
 			virtual bool			canSeek() const = 0;
 
+			virtual bool			getDeviceInfo(u64& totalSpace, u64& freeSpace) const = 0;
+
 			virtual bool			hasFile(const char* szFilename) const = 0;
 			virtual bool			openFile(const char* szFilename, bool boRead, bool boWrite, u32& outFileHandle) const = 0;
 			virtual bool			createFile(const char* szFilename, bool boRead, bool boWrite, u32& outFileHandle) const = 0;
-			virtual u64				seekFile(u32 nFileHandle, u64 pos) const = 0;
 			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const = 0;
 			virtual bool			writeFile(u32 nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) const = 0;
 			virtual bool			closeFile(u32 nFileHandle) const = 0;
 			virtual bool			moveFile(const char* szFilename, const char* szToFilename) const = 0;
 			virtual bool			copyFile(const char* szFilename, const char* szToFilename, bool boOverwrite) const = 0;
 			virtual bool			deleteFile(const char* szFilename) const = 0;
+			virtual bool			setFilePos(u32 nFileHandle, u64& ioPos) const = 0;
+			virtual bool			getFilePos(u32 nFileHandle, u64& outPos) const = 0;
 			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength) const = 0;
 			virtual bool			getLengthOfFile(u32 nFileHandle, u64& outLength) const = 0;
 			virtual bool			setFileTime(const char* szFilename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const = 0;
