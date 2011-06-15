@@ -18,7 +18,7 @@
 #include "xbase\x_va_list.h"
 #include "xbase\x_integer.h"
 
-#include "xtime\x_time.h"
+#include "xtime\x_datetime.h"
 
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_ps3.h"

@@ -4,7 +4,7 @@
 #include "xbase\x_debug.h"
 #include "xbase\x_string.h"
 #include "xbase\x_string_std.h"
-#include "xtime\x_time.h"
+#include "xtime\x_datetime.h"
 
 #include "xfilesystem\x_attributes.h"
 #include "xfilesystem\x_dirinfo.h"

@@ -117,7 +117,7 @@
 		</Properties>
 	</ProjectProperties>
 	
-	<Project Name="xfilesystem" Language="C++" Location="source\main\cpp" Scope="Public" DependsOn="xbase:xbase;xtime:xtime;xstring:xstring">
+	<Project Name="xfilesystem" Language="C++" Location="source\main\cpp" Scope="Public" DependsOn="xbase:xbase;xtime:xtime;xatomic:xatomic;sdk_wii:sdk_wii;sdk_3ds:sdk_3ds;sdk_ps3:sdk_ps3;sdk_360:sdk_360">
 		<ProjectFile>
 			<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 				<PropertyGroup Label="Globals">
