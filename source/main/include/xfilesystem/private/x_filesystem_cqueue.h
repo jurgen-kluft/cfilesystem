@@ -9,119 +9,94 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
+#include "xbase\x_integer.h"
+#include "xatomic\x_queue.h"
+#include "xfilesystem\private\x_filesystem_constants.h"
 #include "xfilesystem\private\x_filesystem_constants.h"
 
 namespace xcore
 {
 	namespace xfilesystem
 	{
-		/// A concurrent sliding window class for the user to detect items
-		/// not being in the queue or to detect if they are still in the queue
-		class cswindow
-		{
-		public:
-			bool					push(xasync_id& outId)					{ outId = mTail; ++mTail; }
-			bool					pop(xasync_id& outId)					{ outId = mHead; ++mHead; }
-
-			bool					inside(xasync_id id) const				{ return id>=mHead && id<mTail; }
-			bool					outside(xasync_id id) const				{ return id<mHead;}
-
-		private:
-			// These integers need to be atomic
-			xasync_id				mTail;			/// Items are added to the tail (grow)
-			xasync_id				mHead;			/// Items are removed from the head (shrink)
-		};
-
 		/// A concurrent queue, multiple producers, multiple consumers
 		template<typename TElement>
 		class cqueue
 		{
 		public:
-									cqueue()
-										: mTail(0)
-										, mHead(0)
-										, mCapacity(0)
-										, mArray(NULL)			{ }
-
-									cqueue(s32 _capacity, TElement volatile* _array) 
-										: mTail(0)
-										, mHead(0)
-										, mCapacity(_capacity)
-										, mArray(_array)		{ }
+									cqueue()								{ }
 
 			XFILESYSTEM_OBJECT_NEW_DELETE()
 
-			xcore::xbool			push(TElement item_, u32& outIndex);
-			xcore::xbool			pop(TElement& item_);
-			xcore::xbool			peek(TElement& item_);
+			bool					init(x_iallocator* _allocator, u32 size)
+			{
+				mFifo = (atomic::fifo::link*)_allocator->allocate(size * sizeof(atomic::fifo::link), 8);
+				mLifo = (atomic::lifo::link*)_allocator->allocate(size * sizeof(atomic::lifo::link), 8);
 
-			bool					inside(s32 index) const					{ return index>=mHead && index<mTail; }
-			bool					outside(s32 index) const				{ return index<mHead;}
+				mElementSize = x_intu::alignUp(sizeof(TElement), X_ALIGNMENT_DEFAULT);
+				mElementBufferSize = size * mElementSize;
+				mElementBuffer = (xbyte*)_allocator->allocate(mElementBufferSize, X_ALIGNMENT_DEFAULT);
+				return mQueue.init(mFifo, mLifo, size, mElementBuffer, mElementBufferSize, mElementSize);
+			}
 
-			xcore::xbool			empty() const;
-			xcore::xbool			full() const;
+			void					clear(x_iallocator* _allocator)
+			{
+				mQueue.clear();
+
+				_allocator->deallocate(mFifo);
+				_allocator->deallocate(mLifo);
+				_allocator->deallocate(mElementBuffer);
+
+				mFifo = NULL;
+				mLifo = NULL;
+				mElementBuffer = NULL;
+				mElementSize = 0;
+				mElementBufferSize = 0;
+			}
+
+			bool					push(TElement const& element, u32& outIndex);
+			bool					pop(TElement& element);
+
+			bool					inside(u32 index) const					{ return mQueue.inside(index); }
+
+			bool					empty() const;
+			bool					full() const;
 			xcore::u32				size() const;
 
-			TElement volatile*		getArray() const;
-
 		private:
-			volatile xcore::s32		mTail;											// input index
-			xcore::xbyte			padding1[CACHE_LINE_SIZE-sizeof(xcore::u32)];
-			volatile xcore::s32		mHead;											// output index
-			xcore::xbyte			padding2[CACHE_LINE_SIZE-sizeof(xcore::u32)];
-			volatile xcore::s32		mCapacity;										// capacity
-			xcore::xbyte			padding3[CACHE_LINE_SIZE-sizeof(xcore::u32)];
-			TElement volatile		*mArray;
-
-			xcore::u32				increment(xcore::u32 idx_) const;
+			atomic::fifo::link*		mFifo;
+			atomic::lifo::link*		mLifo;
+			xbyte*					mElementBuffer;
+			u32						mElementSize;
+			u32						mElementBufferSize;
+			atomic::queue<void*>	mQueue;
 		};
 
 		///< Producer only: Adds item to the circular queue. 
 		/// If queue is full at 'push' operation no update/overwrite
 		/// will happen, it is up to the caller to handle this case
 		///
-		/// \param item_ copy by reference the input item
+		/// \param element copy by reference the input item
 		/// \return whether operation was successful or not
 		template<typename TElement>
-		xcore::xbool cqueue<TElement>::push(TElement item_, u32& outIndex)
+		bool cqueue<TElement>::push(TElement const& element, u32& outIndex)
 		{
-			xcore::s32 nextTail = increment(mTail);
-			if(nextTail != mHead)
-			{
-				mArray[mTail % mCapacity] = item_;
-				outIndex = mTail;
-				mTail = nextTail;
-				return true;
-			}
-
-			// queue was full
-			return false;
+			void* ptr = (void*)element;
+			return mQueue.push(&ptr, outIndex);
 		}
 
 		/// Consumer only: Removes and returns item from the queue
 		/// If queue is empty at 'pop' operation no retrieve will happen
 		/// It is up to the caller to handle this case
 		///
-		/// \param item_ return by reference the wanted item
+		/// \param element return by reference the wanted item
 		/// \return whether operation was successful or not */
 		template<typename TElement>
-		xcore::xbool cqueue<TElement>::pop(TElement& item_)
+		bool cqueue<TElement>::pop(TElement& element)
 		{
-			if(mHead == mTail)
-				return false;  // empty queue
-
-			item_ = mArray[mHead % mCapacity];
-			mHead = increment(mHead);
-			return true;
-		}
-		template<typename TElement>
-		xcore::xbool cqueue<TElement>::peek(TElement& item_)
-		{
-			if(mHead == mTail)
-				return false;  // empty queue
-
-			item_ = mArray[mHead % mCapacity];
-			return true;
+			void* ptr;
+			bool r = mQueue.pop(&ptr);
+			if (r) element = (TElement)ptr;
+			return r;
 		}
 
 		/// Useful for testing and Consumer check of status
@@ -130,9 +105,9 @@ namespace xcore
 		///
 		/// \return true if circular buffer is empty */
 		template<typename TElement>
-		xcore::xbool cqueue<TElement>::empty() const
+		bool cqueue<TElement>::empty() const
 		{
-			return (mHead == mTail);
+			return mQueue.empty();
 		}
 
 		/// Useful for testing and Producer check of status
@@ -141,12 +116,9 @@ namespace xcore
 		///
 		/// \return true if circular buffer is full.  */
 		template<typename TElement>
-		xcore::xbool cqueue<TElement>::full() const
+		bool cqueue<TElement>::full() const
 		{
-			xcore::s32 diff = mTail - mHead;
-			if (diff < 0) 
-				diff += mCapacity;
-			return (xcore::u32)diff == mCapacity;
+			return mQueue.room() == 0;
 		}
 
 		/// Returns the number of items in the queue
@@ -155,35 +127,7 @@ namespace xcore
 		template<typename TElement>
 		xcore::u32 cqueue<TElement>::size() const
 		{
-			xcore::s32 diff = mTail - mHead;
-			if (diff < 0) 
-				diff += mCapacity;
-			return (xcore::u32)diff;
-		}
-
-		/// Increment helper function for index of the circular queue
-		/// index is incremented or wrapped
-		///
-		///  \param idx_ the index to the incremented/wrapped
-		///  \return new value for the index */
-		template<typename TElement>
-		xcore::u32 cqueue<TElement>::increment(xcore::u32 idx_) const
-		{
-			// increment or wrap
-			// =================
-			//    index++;
-			//    if(index == mArray.lenght) -> index = 0;
-			//
-			//or as written below:   
-			//    index = (index+1) % mArray.length
-			idx_ = (idx_+1);
-			return idx_;
-		}
-
-		template<typename TElement>
-		TElement volatile* cqueue<TElement>::getArray() const
-		{
-			return mArray;
+			return mQueue.size();
 		}
 	}
 }

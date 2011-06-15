@@ -70,6 +70,8 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 		// Init/Exit touches these
+		static x_iallocator*				sAllocator = NULL;
+
 		static u32							m_uMaxOpenedFiles = 32;
 		static u32							m_uMaxAsyncOperations = 32;
 		static u32							m_uMaxErrorItems = 32;
@@ -247,8 +249,8 @@ namespace xcore
 				return true;
 			}
 
-			bool _out = m_pAsyncIOList->outside(uAsync);
-			return _out;
+			bool is_inside = m_pAsyncIOList->inside(uAsync);
+			return !is_inside;
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -519,10 +521,6 @@ namespace xcore
 	{
 		//------------------------------------------------------------------------------------------
 
-		static x_iallocator* sAllocator = NULL;
-
-		//------------------------------------------------------------------------------------------
-
 		void*				heapAlloc(s32 size, s32 alignment)
 		{
 			return sAllocator->allocate(size, alignment);
@@ -574,8 +572,9 @@ namespace xcore
 			if (m_FreeAsyncFile == NULL)
 			{
 				void* mem1 = heapAlloc(sizeof(cqueue<xfiledata*>), CACHE_LINE_SIZE);
-				void* mem2 = heapAlloc(m_uMaxOpenedFiles * sizeof(xfiledata*), CACHE_LINE_SIZE);
-				cqueue<xfiledata*>* queue = new (mem1) cqueue<xfiledata*>(m_uMaxOpenedFiles, (xfiledata* volatile*)mem2);
+				cqueue<xfiledata*>* queue = new (mem1) cqueue<xfiledata*>();
+				queue->init(sAllocator, m_uMaxOpenedFiles);
+				
 				m_FreeAsyncFile = queue;
 				// Populate the unused xfiledata queue
 				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
@@ -606,8 +605,9 @@ namespace xcore
 			if (m_pFreeAsyncIOList == NULL)
 			{
 				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), CACHE_LINE_SIZE);
-				void* mem2 = heapAlloc(m_uMaxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
-				cqueue<xfileasync*>* queue = new (mem1) cqueue<xfileasync*>(m_uMaxAsyncOperations, (xfileasync* volatile*)mem2);
+				cqueue<xfileasync*>* queue = new (mem1) cqueue<xfileasync*>();
+				queue->init(sAllocator, m_uMaxAsyncOperations);
+				
 				m_pFreeAsyncIOList = queue;
 
 				for(u32 uSlot = 0; uSlot < m_uMaxAsyncOperations; uSlot++)	
@@ -621,15 +621,16 @@ namespace xcore
 			if (m_pAsyncIOList == NULL)
 			{
 				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), CACHE_LINE_SIZE);
-				void* mem2 = heapAlloc(m_uMaxAsyncOperations * sizeof(xfileasync*), CACHE_LINE_SIZE);
-				cqueue<xfileasync*>* queue = new (mem1) cqueue<xfileasync*>(m_uMaxAsyncOperations, (xfileasync* volatile*)mem2);
+				cqueue<xfileasync*>* queue = new (mem1) cqueue<xfileasync*>();
+				queue->init(sAllocator, m_uMaxAsyncOperations);
 				m_pAsyncIOList = queue;
 			}
 			if (m_pAsyncResultList == NULL)
 			{
 				void* mem1 = heapAlloc(sizeof(cqueue<xiasync_result*>), CACHE_LINE_SIZE);
-				void* mem2 = heapAlloc(m_uMaxAsyncOperations * sizeof(xiasync_result*), CACHE_LINE_SIZE);
-				cqueue<xiasync_result*>* queue = new (mem1) cqueue<xiasync_result*>(m_uMaxAsyncOperations, (xiasync_result* volatile*)mem2);
+				cqueue<xiasync_result*>* queue = new (mem1) cqueue<xiasync_result*>();
+				queue->init(sAllocator, m_uMaxAsyncOperations);
+				
 				m_pAsyncResultList = queue;
 				// Populate the queue
 				for (u32 uOp = 0; uOp < m_uMaxAsyncOperations; uOp++)
@@ -641,16 +642,10 @@ namespace xcore
 			if (m_pLastErrorStack == NULL)
 			{
 				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), CACHE_LINE_SIZE);
-				void* mem2 = heapAlloc(m_uMaxErrorItems * sizeof(u32), CACHE_LINE_SIZE);
-				cqueue<u32>* queue = new (mem1) cqueue<u32>(m_uMaxErrorItems, (u32 volatile*)mem2);
-				m_pLastErrorStack = queue;
+				cqueue<u32>* queue = new (mem1) cqueue<u32>();
+				queue->init(sAllocator, m_uMaxErrorItems);
 
-				//--------------------------------
-				// Clear the error stack
-				//--------------------------------
-				u32* lastErrorStack = (u32*)mem2;
-				for (u32 i=0; i<m_uMaxErrorItems; ++i)
-					lastErrorStack[i] = FILE_ERROR_OK;
+				m_pLastErrorStack = queue;
 			}
 
 		}	
@@ -666,7 +661,7 @@ namespace xcore
 			//-------------------------------------------------------
 			if (m_pFreeAsyncIOList != NULL)
 			{
-				heapFree((void*)m_pFreeAsyncIOList->getArray());
+				m_pFreeAsyncIOList->clear(sAllocator);
 				m_pFreeAsyncIOList->~cqueue<xfileasync*>();
 				heapFree(m_pFreeAsyncIOList);
 				m_pFreeAsyncIOList = NULL;
@@ -674,7 +669,7 @@ namespace xcore
 
 			if (m_pAsyncIOList != NULL)
 			{
-				heapFree((void*)m_pAsyncIOList->getArray());
+				m_pAsyncIOList->clear(sAllocator);
 				m_pAsyncIOList->~cqueue<xfileasync*>();
 				heapFree(m_pAsyncIOList);
 				m_pAsyncIOList = NULL;
@@ -684,7 +679,7 @@ namespace xcore
 
 			if (m_pAsyncResultList != NULL)
 			{
-				heapFree((void*)m_pAsyncResultList->getArray());
+				m_pAsyncResultList->clear(sAllocator);
 				m_pAsyncResultList->~cqueue<xiasync_result*>();
 				heapFree(m_pAsyncResultList);
 				m_pAsyncResultList = NULL;
@@ -694,7 +689,7 @@ namespace xcore
 
 			if (m_FreeAsyncFile != NULL)
 			{
-				heapFree((void*)m_FreeAsyncFile->getArray());
+				m_FreeAsyncFile->clear(sAllocator);
 				m_FreeAsyncFile->~cqueue<xfiledata*>();
 				heapFree(m_FreeAsyncFile);
 				m_FreeAsyncFile = NULL;
@@ -712,7 +707,7 @@ namespace xcore
 
 			if (m_pLastErrorStack!= NULL)
 			{
-				heapFree((void*)m_pLastErrorStack->getArray());
+				m_pLastErrorStack->clear(sAllocator);
 				m_pLastErrorStack->~cqueue<u32>();
 				heapFree(m_pLastErrorStack);
 				m_pLastErrorStack = NULL;
@@ -865,10 +860,8 @@ namespace xcore
 		{
 			if (m_pAsyncIOList->inside(id))
 				return 0;	// In the processing queue
-			else if (m_pAsyncIOList->outside(id))
+			else 
 				return -1;	// Has been processed
-			else
-				return 1;	// Not processed yet
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -904,15 +897,18 @@ namespace xcore
 		xbool					hasLastError		( void )
 		{
 			u32 lastError = FILE_ERROR_OK;
-			m_pLastErrorStack->peek(lastError);
-			return lastError != FILE_ERROR_OK;
+			if (m_pLastErrorStack->pop(lastError))
+				return lastError != FILE_ERROR_OK;
+			return false;
 		}
 
 		//------------------------------------------------------------------------------------------
 
 		void					clearLastError		( void )
 		{
-			setLastError(FILE_ERROR_OK);
+			u32 lastError;
+			while (!m_pLastErrorStack->empty())
+				m_pLastErrorStack->pop(lastError);
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -920,10 +916,8 @@ namespace xcore
 		EError					getLastError		( )
 		{
 			u32 lastError;
-			if (m_pLastErrorStack->peek(lastError))
-			{
+			if (m_pLastErrorStack->pop(lastError))
 				return (EError)lastError;
-			}
 			return FILE_ERROR_OK;
 		}
 

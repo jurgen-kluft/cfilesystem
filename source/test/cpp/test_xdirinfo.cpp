@@ -1,6 +1,6 @@
 #include "xbase\x_types.h"
 #include "xbase\x_string_std.h"
-#include "xtime\x_time.h"
+#include "xtime\x_datetime.h"
 
 #include "xunittest\xunittest.h"
 
