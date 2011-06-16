@@ -21,7 +21,7 @@
 #include "xtime\x_datetime.h"
 
 #include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_ps3.h"
+#include "xfilesystem\private\x_filesystem_win32.h"
 #include "xfilesystem\x_attributes.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_fileinfo.h"
@@ -603,7 +603,7 @@ namespace xcore
 					}
 					else
 					{
-						// Some error occured, close the handle and return FALSE
+						// Some error occurred, close the handle and return FALSE
 						::FindClose(hFind); 
 						return false;
 					}

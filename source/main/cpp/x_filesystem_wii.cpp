@@ -2,8 +2,6 @@
 #ifdef TARGET_WII
 
 #include <revolution.h>
-#include <revolution\hio2.h>
-#include <revolution\nand.h>
 #include <revolution\dvd.h>
 
 //==============================================================================
@@ -13,6 +11,8 @@
 #include "xbase\x_types.h"
 #include "xbase\x_debug.h"
 #include "xbase\x_string_std.h"
+
+#include "xtime\x_datetime.h"
 
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_wii.h"

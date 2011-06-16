@@ -5,9 +5,9 @@
 #include "xbase\x_debug.h"
 #include "xbase\x_string_std.h"
 
-#include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_dirpath.h"
 #include "xfilesystem\x_filepath.h"
+#include "xfilesystem\private\x_devicealias.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 
 //==============================================================================
@@ -33,7 +33,7 @@ namespace xcore
 		static xdevicealias		sAliasList[MAX_FILE_ALIASES];
 
 		//------------------------------------------------------------------------------
-		void				xdevicealias::sInit()
+		void				xdevicealias::init()
 		{
 			sNumAliases = 0;
 			for (s32 i=0; i<MAX_FILE_ALIASES; ++i)
@@ -42,7 +42,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------
 
-		void				xdevicealias::sExit()
+		void				xdevicealias::exit()
 		{
 			sNumAliases = 0;
 		}
@@ -108,7 +108,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------
 
-		void				xdevicealias::sRegister(const xdevicealias& alias)
+		bool				xdevicealias::sRegister(const xdevicealias& alias)
 		{
 			for (s32 i=0; i<sNumAliases; ++i)
 			{
@@ -116,7 +116,7 @@ namespace xcore
 				{
 					sAliasList[i] = alias;
 					xconsole::writeLine("INFO replaced xdevicealias %s", x_va_list(alias.alias()));
-					return;
+					return true;
 				}
 			}
 
@@ -124,10 +124,12 @@ namespace xcore
 			{
 				sAliasList[sNumAliases] = alias;
 				sNumAliases++;
+				return true;
 			}
 			else
 			{
 				xconsole::writeLine("ERROR cannot add another xdevicealias, maximum amount of aliases reached");
+				return false;
 			}
 		}
 
@@ -166,6 +168,20 @@ namespace xcore
 			const xdevicealias* alias = sFind(deviceStrBuffer);
 			return alias;
 		}
+
+
+		bool		x_RegisterAlias (const char* alias, const char* aliasTarget)
+		{
+			xdevicealias device_alias(alias, aliasTarget);
+			return xdevicealias::sRegister(device_alias);
+		}
+
+		bool		x_RegisterAlias (const char* alias, xfiledevice* device, const char* remap)
+		{
+			xdevicealias device_alias(alias, device, remap);
+			return xdevicealias::sRegister(device_alias);
+		}
+
 
 	};
 
