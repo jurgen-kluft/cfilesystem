@@ -4,10 +4,10 @@
 #include "xbase\x_string.h"
 #include "xbase\x_string_std.h"
 
-#include "xfilesystem\x_devicealias.h"
+#include "xfilesystem\private\x_devicealias.h"
+#include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_dirpath.h"
-#include "xfilesystem\private\x_filesystem_common.h"
 
 //==============================================================================
 namespace xcore

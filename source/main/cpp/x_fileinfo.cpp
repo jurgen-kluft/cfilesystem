@@ -8,10 +8,10 @@
 
 #include "xfilesystem\x_attributes.h"
 #include "xfilesystem\x_dirinfo.h"
-#include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_fileinfo.h"
 #include "xfilesystem\x_filestream.h"
+#include "xfilesystem\private\x_devicealias.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 
 
