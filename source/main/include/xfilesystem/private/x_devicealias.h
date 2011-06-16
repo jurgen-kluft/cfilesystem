@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_DEVICE_ALIAS_H__
-#define __X_FILESYSTEM_DEVICE_ALIAS_H__
+#ifndef __X_FILESYSTEM_DEVICE_ALIAS_PRIVATE_H__
+#define __X_FILESYSTEM_DEVICE_ALIAS_PRIVATE_H__
 #include "xbase\x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -9,6 +9,8 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_types.h"
+
+#include "xfilesystem\x_devicealias.h"
 
 //==============================================================================
 // xcore namespace
@@ -21,11 +23,13 @@ namespace xcore
 
 	namespace xfilesystem
 	{
+		class xdirpath;
+		class xfilepath;
 		class xfiledevice;
 
 		//------------------------------------------------------------------------------
 		// Description:
-		//     An alias maps an string to a file device.
+		//     This class maps an alias to a file device.
 		//     This can act as an re-direction and is useful for defining folders
 		//     as drives, remap drives etc..
 		//
@@ -34,9 +38,33 @@ namespace xcore
 		//     dvd:\folder\filename.ext, where dvd = g:\
 		//     
 		//------------------------------------------------------------------------------
+		class xdevicealias
+		{
+		public:
+										xdevicealias ();
+										xdevicealias (const char* alias, const char* aliasTarget);
+										xdevicealias (const char* alias, xfiledevice* device, const char* remap=NULL);
 
-		extern bool		x_RegisterAlias (const char* alias, const char* aliasTarget);
-		extern bool		x_RegisterAlias (const char* alias, xfiledevice* device, const char* remap=NULL);
+			const char*					alias() const								{ return mAliasStr; }
+			const char*					aliasTarget() const							{ return mAliasTargetStr; }
+			const char*					remap() const;
+			xfiledevice*				device() const;
+
+			static bool					sRegister(const xdevicealias& inAlias);
+
+			static const xdevicealias*	sFind(const char* inAlias);
+			static const xdevicealias*	sFind(const xfilepath& inAlias);
+			static const xdevicealias*	sFind(const xdirpath& inAlias);
+
+			static void					init();
+			static void					exit();
+
+		private:
+			const char*					mAliasStr;									///< data
+			const char*					mAliasTargetStr;							///< d
+			mutable const char*			mRemapStr;									///< e.g. "d:\project\data\bin.pc\", data:\file.txt to d:\project\data\bin.pc\file.txt
+			xfiledevice*				mFileDevice;
+		};
 
 	};
 
@@ -46,6 +74,6 @@ namespace xcore
 };
 
 //==============================================================================
-// END __X_FILESYSTEM_DEVICE_ALIAS_H__
+// END __X_FILESYSTEM_DEVICE_ALIAS_PRIVATE_H__
 //==============================================================================
 #endif

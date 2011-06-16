@@ -5,6 +5,10 @@
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_360.h"
+#include "xfilesystem\private\x_devicealias.h"
+
+#include "xfilesystem\x_filesystem.h"
+#include "xfilesystem\x_filepath.h"
 
 namespace xcore
 {
@@ -13,11 +17,11 @@ namespace xcore
 	{
 		static xfiledevice*	sSystemFileDevice = NULL;
 
-		void init(u32 max_open_streams, xthreading* threading, x_iallocator* allocator)
+		void init(u32 max_open_streams, xio_thread* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setThreading(threading);
-			xfilesystem::initAlias();
+			xfilesystem::setIoThreadInterface(threading);
+			xdevicealias::init();
 
 			sSystemFileDevice = x_CreateFileDevice360();
 
@@ -41,11 +45,11 @@ namespace xcore
 		void exit()
 		{
 			xfilesystem::shutdown();
-			xfilesystem::exitAlias();
+			xdevicealias::exit();
 
 			x_DestroyFileDevice360(sSystemFileDevice);
 
-			xfilesystem::setThreading(NULL);
+			xfilesystem::setIoThreadInterface(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 	}

@@ -17,8 +17,8 @@
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_win32.h"
+#include "xfilesystem\private\x_devicealias.h"
 
-#include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\x_filepath.h"
 
@@ -153,7 +153,7 @@ namespace xcore
 		{
 			xfilesystem::setAllocator(allocator);
 			xfilesystem::setIoThreadInterface(io_thread);
-			xdevicealias::sInit();
+			xdevicealias::init();
 
 			// Get the application directory (by removing the executable filename)
 			::GetModuleFileName(0, sAppDir, sizeof(sAppDir) - 1);
@@ -206,7 +206,7 @@ namespace xcore
 		void exit()
 		{
 			xfilesystem::shutdown();
-			xdevicealias::sExit();
+			xdevicealias::exit();
 
 			for (s32 i=0; i<DRIVE_TYPE_NUM; ++i)
 			{

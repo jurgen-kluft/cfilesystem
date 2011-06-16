@@ -10,9 +10,13 @@
 #include "xbase\x_string_std.h"
 #include "xbase\x_va_list.h"
 
-#include "xfilesystem\x_filesystem.h"
+#include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_3ds.h"
+#include "xfilesystem\private\x_devicealias.h"
+
+#include "xfilesystem\x_filesystem.h"
+#include "xfilesystem\x_filepath.h"
 
 namespace xcore
 {
@@ -21,16 +25,16 @@ namespace xcore
 	{
 		static xfiledevice*	sSystemFileDevice = NULL;
 
-		void init(u32 max_open_streams, xthreading* threading, x_iallocator* allocator)
+		void init(u32 max_open_streams, xio_thread* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setThreading(threading);
-			xfilesystem::initAlias();
+			xfilesystem::setIoThreadInterface(threading);
+			xdevicealias::init();
 
-			sSystemFileDevice = x_CreateFileDevice360();
+			sSystemFileDevice = x_CreateFileDevice3DS();
 
 			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, "/");
-			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, "/");
+			xfilesystem::xdevicealias dvd  ("card" , sSystemFileDevice, "/");
 			xfilesystem::xdevicealias cache("cache", sSystemFileDevice, "/");
 
 			xfilesystem::sRegister(host);
@@ -49,11 +53,11 @@ namespace xcore
 		void exit()
 		{
 			xfilesystem::shutdown();
-			xfilesystem::exitAlias();
+			xdevicealias::exit();
 
-			x_DestroyFileDevice360(sSystemFileDevice);
+			x_DestroyFileDevice3DS(sSystemFileDevice);
 
-			xfilesystem::setThreading(NULL);
+			xfilesystem::setIoThreadInterface(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 	}
