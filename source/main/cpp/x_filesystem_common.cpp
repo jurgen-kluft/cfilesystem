@@ -582,6 +582,7 @@ namespace xcore
 					u32 _idx;
 					m_FreeAsyncFile->push(&m_OpenAsyncFileArray[uFile], _idx);
 				}
+				ASSERT(m_FreeAsyncFile->full());
 			}
 			
 			if (m_AsyncIOData == NULL)
@@ -638,6 +639,7 @@ namespace xcore
 					u32 _idx;
 					m_pAsyncResultList->push(&m_AsyncResultData[uOp], _idx);
 				}
+				ASSERT(m_pAsyncResultList->full());
 			}			
 			if (m_pLastErrorStack == NULL)
 			{

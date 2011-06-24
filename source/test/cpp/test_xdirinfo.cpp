@@ -24,6 +24,12 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 		static xdatetime sLastAccessTime(2011, 2, 12, 16, 00, 20);
 		static xdatetime sLastWriteTime(2011, 2, 11, 10, 46, 20);
 
+		UNITTEST_TEST(constructor0)
+		{
+			xdirinfo di;
+			CHECK_TRUE(di.getFullName().isEmpty());
+		}
+
 		UNITTEST_TEST(constructor1)
 		{
 			const char* str = "TEST:\\textfiles\\docs";
@@ -44,9 +50,26 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 			CHECK_EQUAL(0, x_strcmp(di2.getFullName().c_str(), str));
 		}
 
+		UNITTEST_TEST(constructor3)
+		{
+			const char* str2 = "TEST:\\textfiles\\docs\\the_folder\\";
+			xdirpath dp2(str2);
+			CHECK_TRUE(dp2 == str2);
+
+			xdirinfo di1(dp2);
+			CHECK_TRUE(di1 == str2);
+		}
+
+		UNITTEST_TEST(getFullName)
+		{
+			const char* str = "TEST:\\textfiles\\docs\\the_folder\\";
+			xdirinfo di(str);
+			CHECK_TRUE(di.getFullName() == str);
+		}
+
 		UNITTEST_TEST(getName)
 		{
-			const char* str = "TEST:\\textfiles\\docs\\the_folder";
+			const char* str = "TEST:\\textfiles\\docs\\the_folder\\";
 			xdirinfo di(str);
 
 			char nameBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
@@ -130,10 +153,6 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 			CHECK_EQUAL(false, di.exists());
 		}
 
-		//		const xdevicealias*		getAlias() const;
-		//		bool					getRoot(xdirinfo& outRootDirInfo) const;
-		//		bool					getParent(xdirinfo& outParentDirInfo) const;
-		//		bool					getSubdir(const char* subDir, xdirinfo& outSubDirInfo) const;
 		UNITTEST_TEST(getAlias)
 		{
 			const char* str = "TEST:\\textfiles\\docs\\";
