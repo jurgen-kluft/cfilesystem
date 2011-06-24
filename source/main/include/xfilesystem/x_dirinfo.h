@@ -65,7 +65,7 @@ namespace xcore
 			bool					setCreationTime  (const xdatetime&) const;
 			bool					setLastAccessTime(const xdatetime&) const;
 			bool					setLastWriteTime (const xdatetime&) const;
-
+				
 			xdirinfo&				operator = (const char*);
 			xdirinfo&				operator = (const xdirinfo&);
 			xdirinfo&				operator = (const xdirpath&);

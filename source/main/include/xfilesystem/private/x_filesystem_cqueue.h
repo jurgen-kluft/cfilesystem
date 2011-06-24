@@ -29,13 +29,13 @@ namespace xcore
 
 			bool					init(x_iallocator* _allocator, u32 size)
 			{
-				mFifo = (atomic::fifo::link*)_allocator->allocate(size * sizeof(atomic::fifo::link), 8);
-				mLifo = (atomic::lifo::link*)_allocator->allocate(size * sizeof(atomic::lifo::link), 8);
+				mFifo = (atomic::fifo::link*)_allocator->allocate((size+1) * sizeof(atomic::fifo::link), 8);
+				mLifo = (atomic::lifo::link*)_allocator->allocate((size+1) * sizeof(atomic::lifo::link), 8);
 
 				mElementSize = x_intu::alignUp(sizeof(TElement), X_ALIGNMENT_DEFAULT);
-				mElementBufferSize = size * mElementSize;
+				mElementBufferSize = (size+1) * mElementSize;
 				mElementBuffer = (xbyte*)_allocator->allocate(mElementBufferSize, X_ALIGNMENT_DEFAULT);
-				return mQueue.init(mFifo, mLifo, size, mElementBuffer, mElementBufferSize, mElementSize);
+				return mQueue.init(mFifo, size+1, mLifo, size+1, mElementBuffer, mElementBufferSize, mElementSize);
 			}
 
 			void					clear(x_iallocator* _allocator)
@@ -81,7 +81,8 @@ namespace xcore
 		bool cqueue<TElement>::push(TElement const& element, u32& outIndex)
 		{
 			void* ptr = (void*)element;
-			return mQueue.push(&ptr, outIndex);
+			bool r = mQueue.push(ptr, outIndex);
+			return r;
 		}
 
 		/// Consumer only: Removes and returns item from the queue
@@ -94,8 +95,8 @@ namespace xcore
 		bool cqueue<TElement>::pop(TElement& element)
 		{
 			void* ptr;
-			bool r = mQueue.pop(&ptr);
-			if (r) element = (TElement)ptr;
+			bool r = mQueue.pop(ptr);
+			element = (TElement)ptr;
 			return r;
 		}
 
