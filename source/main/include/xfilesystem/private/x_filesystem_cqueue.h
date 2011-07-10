@@ -10,6 +10,7 @@
 //==============================================================================
 #include "xbase\x_types.h"
 #include "xbase\x_integer.h"
+#include "xatomic\x_atomic.h"
 #include "xatomic\x_queue.h"
 #include "xfilesystem\private\x_filesystem_constants.h"
 #include "xfilesystem\private\x_filesystem_constants.h"
@@ -35,7 +36,12 @@ namespace xcore
 				mElementSize = x_intu::alignUp(sizeof(TElement), X_ALIGNMENT_DEFAULT);
 				mElementBufferSize = (size+1) * mElementSize;
 				mElementBuffer = (xbyte*)_allocator->allocate(mElementBufferSize, X_ALIGNMENT_DEFAULT);
-				return mQueue.init(mFifo, size+1, mLifo, size+1, mElementBuffer, mElementBufferSize, mElementSize);
+				mElementRefBuffer = (atomic::atom_s32*)_allocator->allocate((size+1) * sizeof(atomic::atom_s32), X_ALIGNMENT_DEFAULT);
+				for (u32 i=0; i<=size; ++i)
+				{
+					mElementRefBuffer[i] = atomic::atom_s32();
+				}
+				return mQueue.init(mFifo, size+1, mLifo, size+1, mElementBuffer, mElementBufferSize, mElementSize, mElementRefBuffer);
 			}
 
 			void					clear(x_iallocator* _allocator)
@@ -45,12 +51,14 @@ namespace xcore
 				_allocator->deallocate(mFifo);
 				_allocator->deallocate(mLifo);
 				_allocator->deallocate(mElementBuffer);
+				_allocator->deallocate(mElementRefBuffer);
 
 				mFifo = NULL;
 				mLifo = NULL;
 				mElementBuffer = NULL;
 				mElementSize = 0;
 				mElementBufferSize = 0;
+				mElementRefBuffer = NULL;
 			}
 
 			bool					push(TElement const& element, u32& outIndex);
@@ -68,6 +76,7 @@ namespace xcore
 			xbyte*					mElementBuffer;
 			u32						mElementSize;
 			u32						mElementBufferSize;
+			atomic::atom_s32*		mElementRefBuffer;
 			atomic::queue<void*>	mQueue;
 		};
 
