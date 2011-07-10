@@ -28,19 +28,13 @@ namespace xcore
 			return "xstring unittest test heap allocator";
 		}
 
-		void*		allocate(s32 size, s32 alignment)
+		void*		allocate(u32 size, u32 alignment)
 		{
 			++mNumAllocations;
 			return mAllocator->allocate(size, alignment);
 		}
 
-		void*		callocate(s32 n_elems, s32 elem_size)
-		{
-			++mNumAllocations;
-			return mAllocator->callocate(n_elems, elem_size);
-		}
-
-		void*		reallocate(void* mem, s32 size, s32 alignment)
+		void*		reallocate(void* mem, u32 size, u32 alignment)
 		{
 			return mAllocator->reallocate(mem, size, alignment);
 		}
@@ -55,10 +49,6 @@ namespace xcore
 		{
 		}
 
-		u32			usable_size(void *ptr)
-		{
-			return 0;
-		}
 	};
 };
 
