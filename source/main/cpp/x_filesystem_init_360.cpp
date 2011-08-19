@@ -1,6 +1,6 @@
 #include "xbase\x_target.h"
 #ifdef TARGET_360
-#include "xbase\x_system.h"
+#include "xbase\x_types.h"
 
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_filesystem_common.h"
@@ -23,20 +23,20 @@ namespace xcore
 			xfilesystem::setIoThreadInterface(threading);
 			xdevicealias::init();
 
-			sSystemFileDevice = x_CreateFileDevice360();
+			sSystemFileDevice = x_CreateFileDevice360(true);
 
 			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, "GAME:\\");				///< DVD Drive (read-only)
 			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, "DEVKIT:\\");
 			xfilesystem::xdevicealias save ("hdd"  , sSystemFileDevice, "HDD:\\");
 
-			xfilesystem::sRegister(dvd);
-			xfilesystem::sRegister(host);
-			xfilesystem::sRegister(save);
+			xfilesystem::xdevicealias::sRegister(dvd);
+			xfilesystem::xdevicealias::sRegister(host);
+			xfilesystem::xdevicealias::sRegister(save);
 
 			xfilesystem::xdevicealias appdir( "appdir", "host" );
 			xfilesystem::xdevicealias curdir( "curdir", "host" );
-			xfilesystem::sRegister(appdir);
-			xfilesystem::sRegister(curdir);
+			xfilesystem::xdevicealias::sRegister(appdir);
+			xfilesystem::xdevicealias::sRegister(curdir);
 
 			xfilesystem::initialise(max_open_streams);
 		}
