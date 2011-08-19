@@ -571,7 +571,7 @@ namespace xcore
 
 			if (m_FreeAsyncFile == NULL)
 			{
-				void* mem1 = heapAlloc(sizeof(cqueue<xfiledata*>), CACHE_LINE_SIZE);
+				void* mem1 = heapAlloc(sizeof(cqueue<xfiledata*>), X_CACHE_LINE_SIZE);
 				cqueue<xfiledata*>* queue = new (mem1) cqueue<xfiledata*>();
 				queue->init(sAllocator, m_uMaxOpenedFiles);
 				
@@ -605,7 +605,7 @@ namespace xcore
 			//-------------------------------------------------------
 			if (m_pFreeAsyncIOList == NULL)
 			{
-				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), CACHE_LINE_SIZE);
+				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), X_CACHE_LINE_SIZE);
 				cqueue<xfileasync*>* queue = new (mem1) cqueue<xfileasync*>();
 				queue->init(sAllocator, m_uMaxAsyncOperations);
 				
@@ -621,14 +621,14 @@ namespace xcore
 			}
 			if (m_pAsyncIOList == NULL)
 			{
-				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), CACHE_LINE_SIZE);
+				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), X_CACHE_LINE_SIZE);
 				cqueue<xfileasync*>* queue = new (mem1) cqueue<xfileasync*>();
 				queue->init(sAllocator, m_uMaxAsyncOperations);
 				m_pAsyncIOList = queue;
 			}
 			if (m_pAsyncResultList == NULL)
 			{
-				void* mem1 = heapAlloc(sizeof(cqueue<xiasync_result*>), CACHE_LINE_SIZE);
+				void* mem1 = heapAlloc(sizeof(cqueue<xiasync_result*>), X_CACHE_LINE_SIZE);
 				cqueue<xiasync_result*>* queue = new (mem1) cqueue<xiasync_result*>();
 				queue->init(sAllocator, m_uMaxAsyncOperations);
 				
@@ -643,7 +643,7 @@ namespace xcore
 			}			
 			if (m_pLastErrorStack == NULL)
 			{
-				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), CACHE_LINE_SIZE);
+				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), X_CACHE_LINE_SIZE);
 				cqueue<u32>* queue = new (mem1) cqueue<u32>();
 				queue->init(sAllocator, m_uMaxErrorItems);
 

@@ -15,7 +15,7 @@
 
 #include "xtime\x_datetime.h"
 
-#include "xfilesystem\x_filesystem_common.h"
+#include "xfilesystem\private\x_filesystem_common.h"
 #include "xfilesystem\private\x_filesystem_360.h"
 
 namespace xcore
