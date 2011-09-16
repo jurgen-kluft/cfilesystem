@@ -39,19 +39,13 @@ namespace xcore
 			FILE_OP_STATUS_WRITE_PENDING	= 310,
 			FILE_OP_STATUS_WRITING			= 311,
 
-			FILE_OP_STATUS_STAT_PENDING		= 410,
-			FILE_OP_STATUS_STATING			= 411,
-
-			FILE_OP_STATUS_DELETE_PENDING	= 510,
-			FILE_OP_STATUS_DELETING			= 511,
+			FILE_OP_STATUS_DELETE_PENDING	= 410,
+			FILE_OP_STATUS_DELETING			= 411,
 		};
 
 		struct xfileasync
 		{
 			XFILESYSTEM_OBJECT_NEW_DELETE()
-
-			xfileasync*			getPrev	() const								{ return m_pPrev; }
-			xfileasync*			getNext	() const								{ return m_pNext; }
 
 			s32					getFileIndex() const							{ return m_nFileIndex; }
 			EFileOpStatus		getStatus() const								{ return (EFileOpStatus)m_nStatus; }
@@ -63,9 +57,6 @@ namespace xcore
 			bool				getPushFileDataOnFreeQueue() const				{ return m_nFileDataCmd == 1; }
 
 			xevent*				getEvent()										{ return m_pEvent; }
-
-			void				setPrev	( xfileasync* pPrev )					{ m_pPrev = pPrev; }
-			void				setNext	( xfileasync* pNext )					{ m_pNext = pNext; }
 
 			void				setFileIndex(s32 sIndex)						{ m_nFileIndex = sIndex; }
 			void				setStatus(EFileOpStatus eStatus)				{ m_nStatus = eStatus; }
@@ -80,9 +71,6 @@ namespace xcore
 
 			void				clear()
 			{
-				m_pPrev			= NULL;
-				m_pNext			= NULL;
-
 				m_nFileIndex	= -1;
 				m_nFileDataCmd	= 0;
 				m_nStatus		= FILE_OP_STATUS_FREE;
@@ -97,8 +85,6 @@ namespace xcore
 			}
 
 		private:
-			xfileasync*			m_pPrev;
-			xfileasync*			m_pNext;
 
 			s32					m_nFileIndex;
 			s32					m_nFileDataCmd;
