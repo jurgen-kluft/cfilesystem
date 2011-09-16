@@ -9,6 +9,7 @@
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_dirpath.h"
 #include "xfilesystem\x_dirinfo.h"
+#include "xfilesystem\x_fileinfo.h"
 
 using namespace xcore;
 using namespace xfilesystem;
@@ -88,6 +89,10 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 			const char* str2 = "INVALID:\\xfilesystem_test\\the_folder\\";
 			xdirinfo di2(str2);
 			CHECK_EQUAL(false, di2.isValid());
+
+			const char* str3 = "testfile\\doc";
+			xdirinfo di3(str3);
+			CHECK_EQUAL(true,di3.isValid());
 		}
 
 		UNITTEST_TEST(isRoot)
@@ -161,6 +166,11 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 			const xdevicealias* a = di.getAlias();
 			CHECK_EQUAL(true, a!=NULL);
 			CHECK_EQUAL(0, x_strCompare(a->alias(), "TEST"));
+
+			const char* str1 = "L:\\te\\";
+			xdirinfo di1(str1);
+			const xdevicealias* a1 = di1.getAlias();
+			CHECK_NULL(a1);
 		}
 
 		UNITTEST_TEST(getRoot)
@@ -174,8 +184,9 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 
 			const char* str2 = "textfiles\\docs\\";
 			xdirinfo di2(str2);
-
-			CHECK_EQUAL(false, di2.getRoot(root));
+			xdirinfo root1;
+			CHECK_EQUAL(true, di2.getRoot(root1));
+			CHECK_EQUAL(true,root1 == "curdir:\\")
 		}
 		
 		UNITTEST_TEST(getParent)
@@ -364,6 +375,207 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 
 			CHECK_EQUAL(false, di1 != xdirinfo(str1));
 			CHECK_EQUAL(true, di1 != xdirinfo("TEST:\\textfiles2\\"));
+		}
+
+		UNITTEST_TEST(sIsValid)
+		{
+			const char* str1 = "TEST:\\textfiles\\docs\\";
+			xdirpath dp1(str1);
+			CHECK_TRUE(xdirinfo::sIsValid(dp1));
+
+			const char* str2 = "INVALID:\\xfilesystem_test\\the_folder\\";
+			xdirpath dp2(str2);
+			CHECK_FALSE(xdirinfo::sIsValid(dp2));
+
+			const char* str3 = "testfile\\doc";
+			xdirpath dp3(str3);
+			CHECK_TRUE(xdirinfo::sIsValid(dp3));
+		}
+
+		UNITTEST_TEST(sExists)
+		{
+			const char* str1 = "TEST:\\textfiles\\docs\\new_folder\\";
+			xdirpath dp1(str1);
+			CHECK_FALSE(xdirinfo::sExists(dp1));
+
+			const char* str2 = "INVALID:\\xfilesystem_test\the_folder\\";
+			xdirpath dp2(str2);
+			CHECK_FALSE(xdirinfo::sExists(dp2));
+
+			const char* str3 = "TEST:\\textfiles\\docs\\";
+			xdirpath dp3(str3);
+			CHECK_TRUE(xdirinfo::sExists(dp3));
+		}
+
+		UNITTEST_TEST(sCreate)
+		{
+			const char* str = "TEST:\\sCreate\\new_folder\\";
+			xdirpath dp(str);
+			CHECK_EQUAL(false, xdirinfo::sExists(dp));
+			CHECK_EQUAL(true, xdirinfo::sCreate(dp));
+			CHECK_EQUAL(true, xdirinfo::sExists(dp));
+		}
+
+		UNITTEST_TEST(sDelete)
+		{
+			const char* str = "TEST:\\sCreate\\new_folder\\";
+			xdirpath dp(str);
+			CHECK_EQUAL(true, xdirinfo::sExists(dp));
+			CHECK_EQUAL(true, xdirinfo::sDelete(dp));
+			CHECK_EQUAL(false, xdirinfo::sExists(dp));
+		}
+
+		UNITTEST_TEST(sEnumerate)
+		{
+			struct enumerate_delegate_Files:public enumerate_delegate <xfileinfo>
+			{
+				xfileinfo info;
+				virtual void operator () (s32 depth, const xfileinfo& inf, bool& terminate)
+				{
+					if (0 == depth)
+					{
+						info = inf;
+						terminate = true;
+					}
+				}
+			};
+
+			struct enumerate_delegate_Dirs:public enumerate_delegate <xdirinfo>
+			{
+				xdirinfo info;
+				virtual void operator () (s32 depth, const xdirinfo& inf, bool& terminate)
+				{
+					if ( 0 == depth)
+					{
+						info = inf;
+						terminate = true;
+					}
+				}
+			};
+			const char* str1 = "Test:\\textfiles";
+			xdirpath dp1(str1);
+			xdirinfo di1("textfiles");
+			enumerate_delegate_Files file_enumerator;
+			enumerate_delegate_Dirs dir_enumerator;
+			xdirinfo::sEnumerate(dp1,file_enumerator,dir_enumerator,false);
+			CHECK_TRUE(dir_enumerator.info == di1);
+
+			const char* str2 = "textfiles\\readme1st.txt";
+			xfileinfo fi2(str2);
+			CHECK_TRUE(file_enumerator.info == fi2);
+		}
+
+		UNITTEST_TEST(sEnumerateFiles)
+		{
+			struct enumerate_delegate_Files:public enumerate_delegate <xfileinfo>
+			{
+				xfileinfo info;
+				virtual void operator () (s32 depth, const xfileinfo& inf, bool& terminate)
+				{
+					if (0 == depth)
+					{
+						info = inf;
+						terminate = true;
+					}
+				}
+			};
+			const char* str1 = "Test:\\textfiles";
+			xdirpath dp1(str1);
+			enumerate_delegate_Files file_enumerator;
+			xdirinfo::sEnumerateFiles(dp1,file_enumerator,false);
+			const char* str2 = "textfiles\\readme1st.txt";
+			xfileinfo fi2(str2);
+			CHECK_TRUE(file_enumerator.info == fi2);
+		}
+
+		UNITTEST_TEST(sEnumerateDirs)
+		{
+			struct enumerate_delegate_Dirs:public enumerate_delegate <xdirinfo>
+			{
+				xdirinfo info;
+				virtual void operator () (s32 depth, const xdirinfo& inf, bool& terminate)
+				{
+					if ( 0 == depth)
+					{
+						info = inf;
+						terminate = true;
+					}
+				}
+			};
+			const char* str1 = "Test:\\textfiles";
+			xdirpath dp1(str1);
+			xdirinfo di1("textfiles");
+			enumerate_delegate_Dirs dir_enumerator;
+			xdirinfo::sEnumerateDirs(dp1,dir_enumerator,false);
+			CHECK_TRUE(dir_enumerator.info == di1);
+		}
+
+		UNITTEST_TEST(sSetTime_sGetTime)
+		{
+			const char* filename = "TEST:\\textfiles";
+			xdirpath dp1(filename);
+			xdatetime createTime1,lastAccessTime1,lastWriteTime1;
+			xdirinfo::sGetTime(dp1,createTime1,lastAccessTime1,lastWriteTime1);
+
+			xdatetime createTime2(2000,1,1,1,1,1);
+			xdatetime lastAccessTime2(2001,2,2,2,2,2);
+			xdatetime lastWriteTime2(2002,3,3,3,3,3);
+			xdirinfo::sSetTime(dp1,createTime2,lastAccessTime2,lastWriteTime2);
+
+			xdatetime createTime3,lastAccessTime3,lastWriteTime3;
+			xdirinfo::sGetTime(dp1,createTime3,lastAccessTime3,lastWriteTime3);
+			CHECK_TRUE(createTime2 == createTime3);
+			CHECK_TRUE(lastAccessTime2 == lastAccessTime3);
+			CHECK_TRUE(lastWriteTime2 == lastWriteTime3);
+			xdirinfo::sSetTime(dp1,createTime1,lastAccessTime1,lastWriteTime1);
+		}
+
+		UNITTEST_TEST(sSetCreationTime_sGetCreationTime)
+		{
+			const char* filename = "TEST:\\textfiles";
+			xdirpath dp1(filename);
+			xdatetime createTime1;
+			xdirinfo::sGetCreationTime(dp1,createTime1);
+
+			xdatetime createTime2(2000,1,1,1,1,1);
+			xdirinfo::sSetCreationTime(dp1,createTime2);
+
+			xdatetime createTime3;
+			xdirinfo::sGetCreationTime(dp1,createTime3);
+			CHECK_TRUE(createTime3 == createTime2);
+			xdirinfo::sSetCreationTime(dp1,createTime1);
+		}
+
+		UNITTEST_TEST(sSetLastAccessTime_sGetLastAccessTime)
+		{
+			const char* filename = "TEST:\\textfiles";
+			xdirpath dp1(filename);
+			xdatetime lastAccessTime1;
+			xdirinfo::sGetLastAccessTime(dp1,lastAccessTime1);
+
+			xdatetime lastAccessTime2(2001,2,2,2,2,2);
+			xdirinfo::sSetLastAccessTime(dp1,lastAccessTime2);
+
+			xdatetime lastAccessTime3;
+			xdirinfo::sGetLastAccessTime(dp1,lastAccessTime3);
+			CHECK_TRUE(lastAccessTime3 == lastAccessTime2);
+			xdirinfo::sSetLastAccessTime(dp1,lastAccessTime1);
+		}
+
+		UNITTEST_TEST(sSetLastWriteTime_sGetLastWriteTime)
+		{
+			const char* filename = "TEST:\\textfiles";
+			xdirpath dp1(filename);
+			xdatetime lastWriteTime1;
+			xdirinfo::sGetLastWriteTime(dp1,lastWriteTime1);
+
+			xdatetime lastWriteTime2(2001,2,2,2,2,2);
+			xdirinfo::sSetLastWriteTime(dp1,lastWriteTime2);
+
+			xdatetime lastWriteTime3;
+			xdirinfo::sGetLastWriteTime(dp1,lastWriteTime3);
+			CHECK_TRUE(lastWriteTime3 == lastWriteTime2);
+			xdirinfo::sSetLastWriteTime(dp1,lastWriteTime1);
 		}
 	}
 }

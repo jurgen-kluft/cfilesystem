@@ -5,6 +5,7 @@
 
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\x_threading.h"
+#include "xfilesystem\private\x_filesystem_common.h"
 
 using namespace xcore;
 
@@ -78,6 +79,87 @@ public:
 extern x_iallocator*					sSystemAllocator;
 static TestHeapAllocator				sHeapAllocator(NULL);
 static FileSystemIoThreadInterface		sThreadObject;
+
+
+UNITTEST_SUITE_BEGIN(filesystem_global)
+{
+	UNITTEST_FIXTURE(main)
+	{
+		UNITTEST_FIXTURE_SETUP(){}
+		UNITTEST_FIXTURE_TEARDOWN(){}
+
+		// main
+		UNITTEST_TEST(setAllocator)
+		{
+			sHeapAllocator = xcore::TestHeapAllocator(sSystemAllocator);
+			xfilesystem::setAllocator(&sHeapAllocator);
+			xfilesystem::setAllocator(NULL);
+			sHeapAllocator = TestHeapAllocator(NULL);
+		}
+
+		UNITTEST_TEST(initialise)
+		{
+			sHeapAllocator = xcore::TestHeapAllocator(sSystemAllocator);
+			xfilesystem::setAllocator(&sHeapAllocator);
+			xfilesystem::initialise(10);
+			xfilesystem::shutdown();
+			xfilesystem::setAllocator(NULL);
+			sHeapAllocator = TestHeapAllocator(NULL);
+		}
+
+		UNITTEST_TEST(shutdown)
+		{
+			sHeapAllocator = xcore::TestHeapAllocator(sSystemAllocator);
+			xfilesystem::setAllocator(&sHeapAllocator);
+			xfilesystem::initialise(20);
+			xfilesystem::shutdown();
+			xfilesystem::setAllocator(NULL);
+			sHeapAllocator = TestHeapAllocator(NULL);
+		}
+
+		UNITTEST_TEST(initialiseCommon)
+		{
+			sHeapAllocator = xcore::TestHeapAllocator(sSystemAllocator);
+			xfilesystem::setAllocator(&sHeapAllocator);
+			xfilesystem::initialiseCommon(5);
+			xfilesystem::shutdownCommon();
+			xfilesystem::setAllocator(NULL);
+			sHeapAllocator = TestHeapAllocator(NULL);
+		}
+
+		UNITTEST_TEST(shutdownCommon)
+		{
+			sHeapAllocator = xcore::TestHeapAllocator(sSystemAllocator);
+			xfilesystem::setAllocator(&sHeapAllocator);
+			xfilesystem::initialiseCommon(7);
+			xfilesystem::shutdownCommon();
+			xfilesystem::setAllocator(NULL);
+			sHeapAllocator = TestHeapAllocator(NULL);
+		}
+
+		UNITTEST_TEST(setIoThreadInterface)
+		{
+			xfilesystem::xio_thread* thread1 = &sThreadObject;
+			xfilesystem::setIoThreadInterface(thread1);
+			xfilesystem::xio_thread* thread2 = xfilesystem::getIoThreadInterface();
+			CHECK_NOT_NULL(thread2);
+			CHECK_EQUAL(thread1,thread2);
+			xfilesystem::setIoThreadInterface(NULL);
+		}
+
+		UNITTEST_TEST(getIoThreadInterface)
+		{
+			xfilesystem::xio_thread* thread1 = &sThreadObject;
+			xfilesystem::setIoThreadInterface(thread1);
+			xfilesystem::xio_thread* thread2 = xfilesystem::getIoThreadInterface();
+			CHECK_NOT_NULL(thread2);
+			CHECK_EQUAL(thread1,thread2);
+			xfilesystem::setIoThreadInterface(NULL);
+		}
+	}
+}
+UNITTEST_SUITE_END
+
 
 UNITTEST_SUITE_BEGIN(filesystem_init)
 {
