@@ -25,7 +25,7 @@ namespace xcore
 			char deviceStrBuffer[64];
 			xcstring deviceName(deviceStrBuffer, sizeof(deviceStrBuffer));
 			filepath.getDeviceName(deviceName);
-			const xdevicealias* alias = xdevicealias::sFind( deviceName.isEmpty() ? "currdir" : deviceName.c_str());
+			const xdevicealias* alias = xdevicealias::sFind( deviceName.isEmpty() ? "curdir" : deviceName.c_str());
 			return alias;
 		}
 
@@ -211,6 +211,12 @@ namespace xcore
 		{
 			mFilePath.onlyFilename();
 			return *this;
+		}
+
+		xfileinfo				xfileinfo::getFilename() const
+		{
+			xfilepath path = mFilePath.getFilename();
+			return xfileinfo(path);
 		}
 
 		void					xfileinfo::up()
@@ -433,7 +439,7 @@ namespace xcore
 			xfilestream fs(filename, FileMode_Open, FileAccess_Read, FileOp_Sync);
 			if (fs.isOpen())
 			{
-				rc = fs.read(buffer, 0, count);
+				rc = fs.read(buffer, offset, count);
 				fs.close();
 			}
 			return rc;
@@ -446,7 +452,7 @@ namespace xcore
 			if (fs.isOpen())
 			{
 				fs.setLength(0);
-				rc = fs.write(buffer, 0, count);
+				rc = fs.write(buffer, offset, count);
 				fs.close();
 			}
 			return rc;
