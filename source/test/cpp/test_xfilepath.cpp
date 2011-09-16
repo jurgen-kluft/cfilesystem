@@ -99,6 +99,27 @@ UNITTEST_SUITE_BEGIN(filepath)
 			CHECK_NOT_EQUAL(x_strlen(str), p1.getMaxLength());
 		}
 
+		UNITTEST_TEST(isEmpty)
+		{
+			const char* str1 = "TEST:\\docs";
+			xfilepath p1(str1);
+			CHECK_FALSE(p1.isEmpty());
+
+			xfilepath p2;
+			CHECK_TRUE(p2.isEmpty());
+		}
+
+		UNITTEST_TEST(isRooted)
+		{
+			const char* str1 = "TEST:\\docs";
+			xfilepath p1(str1);
+			CHECK_TRUE(p1.isRooted());
+
+			const char* str2 = "docs\\test.txt";
+			xfilepath p2(str2);
+			CHECK_FALSE(p2.isRooted());
+		}
+
 		UNITTEST_TEST(relative)
 		{
 			const char* str = "TEST:\\folder\\filename.ext";
@@ -107,6 +128,153 @@ UNITTEST_SUITE_BEGIN(filepath)
 			xfilepath r1;
 			p1.relative(r1);
 			CHECK_EQUAL(0, x_strCompare(r1.c_str(), "folder\\filename.ext"));
+		}
+
+		UNITTEST_TEST(makeRelative)
+		{
+			const char* str1 = "Test:\\makeRelative\\test\\test.txt";
+			xfilepath p1(str1);
+			p1.makeRelative();
+			const char* str2 = "makeRelative\\test\\test.txt";
+			xfilepath p2(str2);
+			CHECK_TRUE(p1 == p2);
+
+			xfilepath p3(p2);
+			p3.makeRelative();
+			CHECK_TRUE(p2 == p3);
+		}
+
+		UNITTEST_TEST(onlyFilename)
+		{
+			const char* str1 = "Test:\\onlyFilename\\test\\test.txt";
+			xfilepath p1(str1);
+			const char* str2 = "test.txt";
+			xfilepath p2(str2);
+			p1.onlyFilename();
+			CHECK_TRUE(p1 == p2);
+		}
+
+		UNITTEST_TEST(getFilename)
+		{
+			const char* str1 = "Test:\\onlyFilename\\test\\test.txt";
+			xfilepath p1(str1);
+			const char* str2 = "test.txt";
+			xfilepath p2(str2);
+			CHECK_TRUE(p1.getFilename() == p2);
+		}
+
+		UNITTEST_TEST(up)
+		{
+			const char* str1 = "Test:\\onlyFilename\\test\\test.txt";
+			xfilepath p1(str1);
+			const char* str2 = "Test:\\onlyFilename\\test.txt";
+			xfilepath p2(str2);
+			p1.up();
+			CHECK_TRUE(p1 == p2);
+		}
+
+		UNITTEST_TEST(down)
+		{
+			const char* str1 = "Test:\\onlyFilename\\test\\test.txt";
+			xfilepath p1(str1);
+			const char* str2 = "Test:\\onlyFilename\\test\\down\\test.txt";
+			xfilepath p2(str2);
+			p1.down("down");
+			CHECK_TRUE(p1 == p2);
+
+			const char* str3 = "only.txt";
+			xfilepath p3(str3);
+			const char* str4 = "down\\only.txt";
+			xfilepath p4(str4);
+			p3.down("down");
+			CHECK_TRUE(p3 == p4);
+		}
+
+		UNITTEST_TEST(getName)
+		{
+			const char* str1 = "Test:\\onlyFilename\\test.txt";
+			xfilepath p1(str1);
+			char buffer1[10];
+			char buffer2[10];
+			xcstring string1(buffer1,sizeof(buffer1));
+			xcstring string2(buffer2,sizeof(buffer2),"test");
+			p1.getName(string1);
+			CHECK_EQUAL(0,x_strCompare(string1.c_str(),string2.c_str()));
+		}
+
+		UNITTEST_TEST(getExtension)
+		{
+			const char* str1 = "Test:\\onlyFilename\\test.txt";
+			xfilepath p1(str1);
+			char buffer1[10];
+			char buffer2[10];
+			xcstring string1(buffer1,sizeof(buffer1));
+			xcstring string2(buffer2,sizeof(buffer2),".txt");
+			p1.getExtension(string1);
+			CHECK_EQUAL(0,x_strCompare(string1.c_str(),string2.c_str()));
+		}
+
+		UNITTEST_TEST(getSystem)
+		{
+			const char* str1 = "Test:\\getSystem\\test.txt";
+			xfilepath p1(str1);
+			char buffer1[256];
+			char buffer2[256];
+			xcstring string1(buffer1,sizeof(buffer1));
+			xcstring string2(buffer2,sizeof(buffer2),"TEST:\\getSystem\\test.txt");
+			CHECK_NOT_NULL(p1.getSystem(string1));
+			CHECK_EQUAL(0,x_strCompare(string1.c_str(),string2.c_str()));
+		}
+
+		UNITTEST_TEST(getDirPath)
+		{
+			const char* str1 = "Test:\\getDirPath\\test.txt";
+			xfilepath p1(str1);
+			const char* str2 = "Test:\\getDirPath";
+			xdirpath dp2(str2);
+			xdirpath dp1;
+			p1.getDirPath(dp1);
+			CHECK_TRUE(dp1 == dp2);
+		}
+
+		UNITTEST_TEST(getRoot)
+		{
+			const char* str1 = "Test:\\getRoot\\test.txt";
+			xfilepath p1(str1);
+			const char* str2 = "Test:\\";
+			xdirpath dp2(str2);
+			xdirpath dp1;
+			p1.getRoot(dp1);
+			CHECK_TRUE(dp1 == dp2);
+		}
+
+		UNITTEST_TEST(getParent)
+		{
+			const char* str1 = "Test:\\te\\getParent\\test.txt";
+			xfilepath p1(str1);
+			const char* str2 = "Test:\\te";
+			xdirpath dp2(str2);
+			xdirpath dp1;
+			p1.getParent(dp1);
+			CHECK_TRUE(dp1 == dp2);
+		}
+
+		UNITTEST_TEST(getSubDir)
+		{
+			const char* str1 = "Test:\\getSubDir\\test.txt";
+			xfilepath p1(str1);
+			xdirpath dp1;
+			const char* str2 = "Test:\\getSubDir\\Sub";
+			xdirpath dp2(str2);
+			p1.getSubDir("Sub",dp1);
+			CHECK_TRUE(dp1 == dp2);
+		}
+
+		UNITTEST_TEST(c_str)
+		{
+			const char* str1 = "Test:\\getSubDir\\test.txt";
+			xfilepath p1(str1);
+			CHECK_EQUAL(0,x_strCompare(p1.c_str(),str1));
 		}
 
 		UNITTEST_TEST(setDeviceName)

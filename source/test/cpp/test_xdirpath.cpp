@@ -28,6 +28,33 @@ UNITTEST_SUITE_BEGIN(dirpath)
 			"johhnywalker",
 		};
 
+		UNITTEST_TEST(constructor1)
+		{
+			xdirpath dirpath;
+			CHECK_EQUAL(true,dirpath.isEmpty());
+		}
+
+		UNITTEST_TEST(constructor2)
+		{
+			const char* str1 = "TEST:\\the\\name\\is\\johhnywalker\\";
+			xdirpath dirpath1(str1);
+			CHECK_EQUAL(false,dirpath1.isEmpty());
+			CHECK_EQUAL(0,x_strCompareNoCase(str1,dirpath1.c_str()));
+		}
+
+		UNITTEST_TEST(constructor3)
+		{
+			const char* str1 = "TEST:\\the\\name\\is\\johhnywalker\\";
+			xdirpath dirpath1(str1);
+			CHECK_EQUAL(false,dirpath1.isEmpty());
+			xdirpath dirpath_1(dirpath1);
+			CHECK_EQUAL(0,x_strCompareNoCase(str1,dirpath_1.c_str()));
+
+			xdirpath dirpath2;
+			xdirpath dirpath_2(dirpath2);
+			CHECK_EQUAL(true,dirpath_2.isEmpty());
+		}
+
 		UNITTEST_TEST(clear)
 		{
 			xdirpath di1;
@@ -55,6 +82,9 @@ UNITTEST_SUITE_BEGIN(dirpath)
 			const char* str = "TEST:\\the\\name\\is\\johhnywalker";
 			xdirpath di(str);
 			CHECK_EQUAL(xdirpath::XDIRPATH_MAX, di.getMaxLength());
+
+			xdirpath di2;
+			CHECK_EQUAL(xdirpath::XDIRPATH_MAX,di2.getMaxLength());
 		}
 
 		UNITTEST_TEST(isEmpty)
@@ -143,6 +173,10 @@ UNITTEST_SUITE_BEGIN(dirpath)
 			const char* str3 = "name\\is";
 			xdirpath di3(str3);
 			CHECK_EQUAL(-1, di3.getLevelOf(di1));
+
+			const char* str4 = "the\\name\\is\\johhnywalker\\next";
+			xdirpath di4(str4);
+			CHECK_EQUAL(0,di4.getLevelOf(di1));
 		}
 
 		UNITTEST_TEST(isRoot)
@@ -233,6 +267,13 @@ UNITTEST_SUITE_BEGIN(dirpath)
 			di3.makeRelativeTo(di4);
 			CHECK_EQUAL(true, di3.isRooted());
 			CHECK_EQUAL(0, x_strCompare(di3.c_str(), "TEST:\\d\\e\\a\\b\\c\\d\\e\\a\\b\\c\\m\\"));
+
+			const char* str5 = "e\\f";
+			xdirpath di5(str5);
+			const char* str6 = "h\\i";
+			xdirpath di6(str6);
+			di5.makeRelativeTo(di6);
+			CHECK_EQUAL(-1,x_strCompare(di5.c_str(),"h\\i\\e\\f\\"));
 		}
 
 		UNITTEST_TEST(up)
@@ -354,6 +395,21 @@ UNITTEST_SUITE_BEGIN(dirpath)
 			xfiledevice* device = di1.getSystem(str);
 			CHECK_NOT_NULL(device);
 			CHECK_EQUAL(0, x_strCompare(str1, str.c_str()));
+
+			const char* str2 = "c:\\test\\";
+			xdirpath di2(str2);
+			char strBuffer2[256];
+			xcstring str3(strBuffer2,sizeof(strBuffer2));
+			xfiledevice* device2 = di2.getSystem(str3);
+			CHECK_NOT_NULL(device2);
+			CHECK_EQUAL(0,x_strCompare(str2,str3.c_str()));
+
+			const char* str4 = "";
+			xdirpath di3(str4);
+			char strBuffer3[256];
+			xcstring str5(strBuffer3,sizeof(strBuffer3));
+			xfiledevice* device3 = di3.getSystem(str5);
+			CHECK_EQUAL(0,x_strCompare(str5.c_str(),xdevicealias::sFind("curdir")->remap()));
 		}
 
 		UNITTEST_TEST(getRoot)
@@ -374,6 +430,12 @@ UNITTEST_SUITE_BEGIN(dirpath)
 			xdirpath parent;
 			di1.getParent(parent);
 			CHECK_EQUAL(true, parent == "TEST:\\textfiles\\");
+
+			const char* str2 = "test\\";
+			xdirpath di2(str2);
+			xdirpath parent2;
+			di2.getParent(parent2);
+			CHECK_EQUAL(true,parent2 == "test\\");
 		}
 
 		UNITTEST_TEST(getSubDir)

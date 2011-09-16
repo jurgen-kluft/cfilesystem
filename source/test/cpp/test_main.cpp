@@ -9,6 +9,7 @@
 using namespace xcore;
 
 UNITTEST_SUITE_LIST(xFileUnitTest);
+UNITTEST_SUITE_DECLARE(xFileUnitTest,filesystem_global);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filesystem_init);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, xfiledevice_register);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, dirpath);
