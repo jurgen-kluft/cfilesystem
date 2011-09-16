@@ -53,7 +53,7 @@ namespace xcore
 			void					makeRelative();
 			
 			void					onlyFilename();
-			xfilepath				getFilename();
+			xfilepath				getFilename() const;
 
 			void					up();
 			void					down(const char* subDir);
