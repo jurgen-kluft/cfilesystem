@@ -285,7 +285,7 @@ namespace xcore
 				switch (origin)
 				{
 					case Seek_Begin  : pos=xfilesystem::setpos(mFileHandle, offset); break;
-					case Seek_Current: pos=xfilesystem::setpos(mFileHandle, getPosition() + offset);
+					case Seek_Current: pos=xfilesystem::setpos(mFileHandle, getPosition() + offset); break;
 					case Seek_End    : pos=xfilesystem::setpos(mFileHandle, (s64)getLength() + offset); break;
 				}
 			}
@@ -355,7 +355,7 @@ namespace xcore
 		{
 			if (mCaps.isSet(USE_READ))
 			{
-				xiasync_result* async;
+				xiasync_result* async = NULL;
 				u64 p = getPosition();
 				xfilesystem::read(mFileHandle, p, count, &buffer[offset], &async);
 				return xasync_result_construct(async);
@@ -365,14 +365,14 @@ namespace xcore
 
 		void			xifilestream::endRead(xasync_result& asyncResult)
 		{
-			
+			asyncResult.waitForCompletion();
 		}
 
 		xasync_result	xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			if (mCaps.isSet(USE_READ))
 			{
-				xiasync_result* async;
+				xiasync_result* async = NULL;
 				u64 p = getPosition();
 				xfilesystem::write(mFileHandle, p, count, &buffer[offset], &async);
 				return xasync_result_construct(async);
@@ -382,16 +382,31 @@ namespace xcore
 
 		void			xifilestream::endWrite(xasync_result& asyncResult)
 		{
-			
+			asyncResult.waitForCompletion();
 		}
 
 		void			xifilestream::copyTo(xistream* dst)
 		{
-			
+			u64 streamLength = getLength();
+			xbyte* buffer = (xbyte*)heapAlloc(u32(streamLength) ,X_ALIGNMENT_DEFAULT);
+			seek(0,Seek_Begin);
+			dst->seek(0,Seek_Begin);
+			read(buffer,0,streamLength);
+			dst->write(buffer,0,streamLength);
+			heapFree(buffer);
 		}
 
 		void			xifilestream::copyTo(xistream* dst, u64 count)
 		{
+			u64 streamLength = getLength();
+			if (count > streamLength)
+				count = streamLength;
+			xbyte* buffer =(xbyte*)heapAlloc(u32(count),X_ALIGNMENT_DEFAULT);
+			seek(0,Seek_Begin);
+			dst->seek(0,Seek_Begin);
+			read(buffer,0,count);
+			dst->write(buffer,0,count);
+			heapFree(buffer);
 		}
 
 	};
