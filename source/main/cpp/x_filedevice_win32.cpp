@@ -151,7 +151,12 @@ namespace xcore
 
 			HANDLE handle = ::CreateFile(szFilename, fileMode, shareType, NULL, disposition, attrFlags, NULL);
 			nFileHandle = (u32)handle;
-			return nFileHandle != (u32)INVALID_HANDLE_VALUE;
+			if (nFileHandle != u32(INVALID_HANDLE_VALUE))
+			{
+				::CloseHandle(handle);
+				return true;
+			}
+			return false;
 		}
 
 		bool FileDevice_PC_System::readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const
@@ -564,8 +569,6 @@ namespace xcore
 
 					if ((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 					{
-						if (dir_enumerator==NULL)
-						{
 							// We have found a directory, recurse
 							if (!enumerate(FileName.c_str(), boSearchSubDirectories, file_enumerator, dir_enumerator, depth+1))
 							{ 
@@ -579,8 +582,7 @@ namespace xcore
 								(*dir_enumerator)(depth, di, terminate);
 								bSearch = !terminate;
 							}
-						}
-						FileName = DirPath;
+							FileName = DirPath;
 					}
 					else
 					{
