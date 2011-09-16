@@ -2,6 +2,7 @@
 #include "xbase\x_types.h"
 #include "xbase\x_allocator.h"
 
+#include "xtime\x_time.h"
 #include "xfilesystem\x_filesystem.h"
 #include "xunittest\xunittest.h"
 
@@ -47,6 +48,7 @@ xcore::x_iallocator* sSystemAllocator = NULL;
 
 bool gRunUnitTest(UnitTest::TestReporter& reporter)
 {
+	x_TimeInit ();
 	sSystemAllocator = xcore::gCreateSystemAllocator();
 
 	UnitTestAllocator unittestAllocator( sSystemAllocator );
@@ -60,5 +62,6 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter)
 	}
 
 	sSystemAllocator->release();
+	x_TimeExit ();
 	return r==0;
 }
