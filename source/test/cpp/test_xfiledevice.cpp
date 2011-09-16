@@ -384,6 +384,7 @@ namespace xcore
 					t->mName.makeRelative();
 
 					t->mFileLength = dataSize;
+					t->mMaxFileLength = sizeof(t->mFileData);
 					if (t->mFileLength>sizeof(t->mFileData))
 						t->mFileLength = sizeof(t->mFileData);
 
@@ -523,6 +524,7 @@ namespace xcore
 			if (testFile!=NULL)
 			{
 				testFile->mName = szToFilename;
+				return true;
 			}
 			return false;
 		}
@@ -532,9 +534,9 @@ namespace xcore
 			TestFile* srcTestFile = sFindTestFile(szFilename);
 			if (srcTestFile!=NULL)
 			{
-				TestFile* dstTestFile = sFindTestFile(szFilename);
+				TestFile* dstTestFile = sFindTestFile(szToFilename);
 				if (dstTestFile==NULL)
-					dstTestFile = sNewTestFile(szFilename, NULL, 0);
+					dstTestFile = sNewTestFile(szToFilename, NULL, 0);
 
 				if (dstTestFile!=NULL)
 				{
@@ -762,7 +764,10 @@ namespace xcore
 				if (testDir->mName == dp)
 				{
 					xdirinfo di(testDir->mName);
-					(*dir_enumerator)(0, di, terminate);
+					if (dir_enumerator)
+					{
+						(*dir_enumerator)(0, di, terminate);
+					}
 				}
 				else if (boSearchSubDirectories)
 				{
@@ -771,19 +776,55 @@ namespace xcore
 					{
 						xdirinfo di(testDir->mName);
 						level = testDir->mName.getLevels();
-						(*dir_enumerator)(level, di, terminate);
+						if (dir_enumerator)
+						{
+							(*dir_enumerator)(level, di, terminate);
+						}
 					}
 				}
 
-				if (testDir->mName == "__NULL__")
+				if (testDir->mName == xdirpath("__NULL__"))
 					break;
 				testDir++;
+			}
+
+			xdirinfo dirinfo;
+			TestDir* testDirForFile = sDirs;
+			bool terminateForFile = false;
+			while(!terminateForFile)
+			{
+				if (testDirForFile->mName == dp)
+				{
+					dirinfo = xdirinfo(testDirForFile->mName);
+					terminateForFile = true;
+				}
+				if (testDirForFile->mName == xdirpath("__NULL__"))
+					break;
+				testDirForFile++;
 			}
 
 			TestFile* testFile = sFiles;
 			while (true)
 			{
-				if (testFile->mName == "__NULL__")
+				if (dirinfo.getFullName().isEmpty())
+				{
+					break;
+				}
+				xdirpath dp2;
+				xfilepath fp2(testFile->mName);
+				fp2.getDirPath(dp2);
+				xfileinfo fi3(fp2);
+				xdirinfo di3(dp2);
+				bool terminate_temp = false;
+				if (dirinfo == di3)
+				{
+					if (file_enumerator)
+					{
+						(*file_enumerator)(0,fi3,terminate_temp);
+					}
+					break;
+				}
+				if (testFile->mName == xfilepath("__NULL__"))
 					break;
 				testFile++;
 			}
