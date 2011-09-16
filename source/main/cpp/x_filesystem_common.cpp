@@ -294,6 +294,7 @@ namespace xcore
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
 				*pAsyncId = async_result;
+				(*pAsyncId)->destroy();
 			}
 			getIoThreadInterface()->signal();
 		}
@@ -336,6 +337,7 @@ namespace xcore
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
 				*pAsyncId = async_result;
+				(*pAsyncId)->destroy();
 			}
 
 			getIoThreadInterface()->signal();
@@ -379,6 +381,7 @@ namespace xcore
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
 				*pAsyncId = async_result;
+				(*pAsyncId)->destroy();
 			}
 
 			getIoThreadInterface()->signal();
@@ -420,6 +423,7 @@ namespace xcore
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
 				*pAsyncId = async_result;
+				(*pAsyncId)->destroy();
 			}
 
 			getIoThreadInterface()->signal();
@@ -462,6 +466,7 @@ namespace xcore
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
 				*pAsyncId = async_result;
+				(*pAsyncId)->destroy();
 			}
 
 			getIoThreadInterface()->signal();
