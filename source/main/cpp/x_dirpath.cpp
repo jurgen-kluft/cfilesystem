@@ -433,11 +433,11 @@ namespace xcore
 			}
 			else
 			{
-				const char* currdir = "currdir";
-				const xdevicealias* alias = xdevicealias::sFind(currdir);
+				const char* curdir = "curdir";
+				const xdevicealias* alias = xdevicealias::sFind(curdir);
 				if (alias!=NULL)
 				{
-					outRootDirPath.mString = currdir;
+					outRootDirPath.mString = curdir;
 					outRootDirPath.mString += sGetDeviceEnd();
 					return true;
 				}
