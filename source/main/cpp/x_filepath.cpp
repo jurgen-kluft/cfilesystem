@@ -86,7 +86,7 @@ namespace xcore
 				mString.remove(0, slashPos+1);
 		}
 
-		xfilepath		xfilepath::getFilename()
+		xfilepath		xfilepath::getFilename() const
 		{
 			xfilepath p(*this);
 			p.onlyFilename();
