@@ -106,14 +106,7 @@ namespace xcore
 								pInfo->m_nFileHandle	= (u32)INVALID_FILE_HANDLE;
 								pAsync->setStatus(FILE_OP_STATUS_DONE);
 							}
-							else if (pAsync->getStatus() == FILE_OP_STATUS_STAT_PENDING)
-							{
-								pAsync->setStatus(FILE_OP_STATUS_STATING);
-
-								//@TODO: use stats
-
-								pAsync->setStatus(FILE_OP_STATUS_DONE);
-							}
+							
 							else if (pAsync->getStatus() == FILE_OP_STATUS_READ_PENDING)
 							{
 								pAsync->setStatus(FILE_OP_STATUS_READING);
