@@ -136,6 +136,11 @@ namespace xcore
 						}
 						// ========================================================================
 
+						if (pAsync->getStatus() == FILE_OP_STATUS_DONE)
+						{
+							pAsync->setPushFileDataOnFreeQueue(true);
+						}
+
 						if (pAsync->getPushFileDataOnFreeQueue())
 						{
 							xfilesystem::pushFreeFileSlot(pAsync->getFileIndex());
