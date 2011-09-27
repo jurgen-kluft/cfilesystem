@@ -45,8 +45,8 @@ namespace xcore
 
 			CellFsStat	xStat;
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
-			CellFsErrno eError = cellFsFstat(pxFileInfo->m_nFileHandle, &xStat);
-
+//			CellFsErrno eError = cellFsFstat(pxFileInfo->m_nFileHandle, &xStat);
+			CellFsErrno eError = cellFsFstat(uHandle, &xStat);
 			pTimeAndDate = xdatetime::sFromFileTime(xStat.st_ctime);
 		}
 
@@ -58,8 +58,8 @@ namespace xcore
 
 			CellFsStat	xStat;
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
-			CellFsErrno eError = cellFsFstat(pxFileInfo->m_nFileHandle, &xStat);
-
+//			CellFsErrno eError = cellFsFstat(pxFileInfo->m_nFileHandle, &xStat);
+			CellFsErrno eError = cellFsFstat(uHandle, &xStat);
 			pTimeAndDate = xdatetime::sFromFileTime(xStat.st_ctime);
 		}
 

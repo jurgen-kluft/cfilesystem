@@ -23,21 +23,21 @@ namespace xcore
 			xfilesystem::setIoThreadInterface(threading);
 			xdevicealias::init();
 
-			sSystemFileDevice = x_CreateFileDevicePS3();
-
+//			sSystemFileDevice = x_CreateFileDevicePS3();
+			sSystemFileDevice = x_CreateFileDevicePS3(true);
 			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, SYS_APP_HOME"/");
 			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, SYS_DEV_BDVD"/PS3_GAME/USRDIR/");
 			xfilesystem::xdevicealias hdd0 ("hdd"  , sSystemFileDevice, SYS_DEV_HDD0"/game/TEST12345/USRDIR/");		//[hj]: hack directory
 
-			xfilesystem::sRegister(host);
-			xfilesystem::sRegister(dvd);
-			xfilesystem::sRegister(hdd0);
+			xfilesystem::xdevicealias::sRegister(host);
+			xfilesystem::xdevicealias::sRegister(dvd);
+			xfilesystem::xdevicealias::sRegister(hdd0);
 
 			xfilesystem::xdevicealias appdir( "appdir", "host" );
 			xfilesystem::xdevicealias curdir( "curdir", "host" );
 
-			xfilesystem::sRegister(appdir);
-			xfilesystem::sRegister(curdir);
+			xfilesystem::xdevicealias::sRegister(appdir);
+			xfilesystem::xdevicealias::sRegister(curdir);
 			
 			xfilesystem::initialise(max_open_streams);
 		}

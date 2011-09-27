@@ -34,6 +34,8 @@ namespace xcore
 		private:
 			char					mStringBuffer[XFILEPATH_BUFFER_SIZE];
 			xcstring				mString;
+			char					mStringBufferForDevice[XFILEPATH_BUFFER_SIZE];
+			xcstring				mStringForDevice;
 
 		public:
 									xfilepath();
@@ -82,9 +84,11 @@ namespace xcore
 			char					operator [] (s32 index) const;
 
 			const char*				c_str() const;
+			const char*               c_str_device() const;
 
 		private:
-			void					fixSlashes();														///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
+			void					fixSlashes();														///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.		
+			void					fixSlashesForDevice();
 		};
 
 		inline xfilepath	operator + (const xdirpath& dir, const xfilepath& filename)	{ return xfilepath(dir, filename); }

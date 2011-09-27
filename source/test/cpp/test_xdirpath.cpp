@@ -101,12 +101,12 @@ UNITTEST_SUITE_BEGIN(dirpath)
 
 		UNITTEST_TEST(enumLevels)
 		{
-			struct enum_levels_test_enumerator : public enumerate_delegate<const char*>
+			struct enum_levels_test_enumerator : public enumerate_delegate<char>
 			{
 				bool ok;
 				bool reversed;
 				enum_levels_test_enumerator() : ok(true), reversed(false) {}
-				virtual void operator () (s32 depth, const char* const& folder, bool& terminate)
+				virtual void operator () (s32 depth, const char* folder, bool& terminate)
 				{
 					const s32 numFolders = sizeof(sFolders) / sizeof(const char*);
 
@@ -123,6 +123,7 @@ UNITTEST_SUITE_BEGIN(dirpath)
 					}
 					terminate = !ok;
 				}
+				virtual void operator() (s32 depth, const char& folder,bool& terminate) { }
 			};
 
 			const char* str = "TEST:\\the\\name\\is\\johhnywalker";
@@ -389,21 +390,17 @@ UNITTEST_SUITE_BEGIN(dirpath)
 		{
 			const char* str1 = "TEST:\\textfiles\\";
 			xdirpath di1(str1);
-
+			const char* str2 = "TEST:/textfiles/";
 			char strBuffer[256];
 			xcstring str(strBuffer, sizeof(strBuffer));
 			xfiledevice* device = di1.getSystem(str);
 			CHECK_NOT_NULL(device);
+#if defined(TARGET_PC) || defined(TARGET_360)
 			CHECK_EQUAL(0, x_strCompare(str1, str.c_str()));
-
-			const char* str2 = "c:\\test\\";
-			xdirpath di2(str2);
-			char strBuffer2[256];
-			xcstring str3(strBuffer2,sizeof(strBuffer2));
-			xfiledevice* device2 = di2.getSystem(str3);
-			CHECK_NOT_NULL(device2);
-			CHECK_EQUAL(0,x_strCompare(str2,str3.c_str()));
-
+#endif
+#if defined(TARGET_PS3) || defined(TARGET_PSP) || defined(TARGET_WII)
+			CHECK_EQUAL(0,x_strCompare(str2,str.c_str()));
+#endif
 			const char* str4 = "";
 			xdirpath di3(str4);
 			char strBuffer3[256];

@@ -774,7 +774,7 @@ namespace xcore
 			// device part of the filename.
 			xfiledevice* device = alias->device();
 			szFilename.setDevicePart(alias->remap());
-			outFilename = szFilename.c_str();
+			outFilename = szFilename.c_str_device();
 
 			return device;
 		}

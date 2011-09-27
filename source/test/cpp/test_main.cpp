@@ -12,6 +12,9 @@ UNITTEST_SUITE_LIST(xFileUnitTest);
 UNITTEST_SUITE_DECLARE(xFileUnitTest,filesystem_global);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filesystem_init);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, xfiledevice_register);
+#ifdef TARGET_PC
+UNITTEST_SUITE_DECLARE(xFileUnitTest,xfiledevice_win32);
+#endif
 UNITTEST_SUITE_DECLARE(xFileUnitTest, dirpath);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filepath);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, dirinfo);
@@ -46,11 +49,13 @@ public:
 
 
 xcore::x_iallocator* sSystemAllocator = NULL;
+xcore::x_iallocator* sAtomicAllocator = NULL;
 
 bool gRunUnitTest(UnitTest::TestReporter& reporter)
 {
 	x_TimeInit ();
 	sSystemAllocator = xcore::gCreateSystemAllocator();
+	sAtomicAllocator = xcore::gCreateSystemAllocator();
 
 	UnitTestAllocator unittestAllocator( sSystemAllocator );
 	UnitTest::SetAllocator(&unittestAllocator);
@@ -63,6 +68,7 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter)
 	}
 
 	sSystemAllocator->release();
+	sAtomicAllocator->release();
 	x_TimeExit ();
 	return r==0;
 }

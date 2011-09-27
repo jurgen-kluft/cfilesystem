@@ -216,14 +216,19 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 		UNITTEST_TEST(getSystem)
 		{
-			const char* str1 = "Test:\\getSystem\\test.txt";
+			const char* str1 = "TEST:\\getSystem\\test.txt";
+			const char* str2 = "TEST:/getSystem/test.txt";
 			xfilepath p1(str1);
 			char buffer1[256];
-			char buffer2[256];
 			xcstring string1(buffer1,sizeof(buffer1));
-			xcstring string2(buffer2,sizeof(buffer2),"TEST:\\getSystem\\test.txt");
 			CHECK_NOT_NULL(p1.getSystem(string1));
-			CHECK_EQUAL(0,x_strCompare(string1.c_str(),string2.c_str()));
+#if defined(TARGET_PC) || defined(TARGET_360)
+			CHECK_EQUAL(0,x_strCompare(string1.c_str(),str1));
+#endif
+#if defined(TARGET_PS3) || defined(TARGET_PSP) || defined(TARGET_WII)
+			CHECK_EQUAL(0,x_strCompare(string1.c_str(),str2));
+#endif
+			
 		}
 
 		UNITTEST_TEST(getDirPath)
