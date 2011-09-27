@@ -535,7 +535,12 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 
 		UNITTEST_TEST(isPathUNIXStyle)
 		{
+#if defined(TARGET_PC) || defined(TARGET_360)
 			CHECK_FALSE(isPathUNIXStyle()); 
+#endif
+#if defined(TARGET_PS3) || defined(TARGET_PSP) || defined(TARGET_WII) || defined(TARGET_3DS)
+			CHECK_TRUE(isPathUNIXStyle());
+#endif
 		}
 
 		UNITTEST_TEST(setLastError)

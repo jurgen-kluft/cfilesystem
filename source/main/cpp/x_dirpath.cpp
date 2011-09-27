@@ -22,41 +22,47 @@ namespace xcore
 		{
 			return xfilesystem::isPathUNIXStyle() ? '/' : '\\';
 		}
-		static inline const char*	sGetDeviceEnd()
-		{
-			return xfilesystem::isPathUNIXStyle() ? ":/" : ":\\";
-		}
+// 		static inline const char*	sGetDeviceEnd()
+// 		{
+// 			return xfilesystem::isPathUNIXStyle() ? ":/" : ":\\";
+// 		}
 
 		xdirpath::xdirpath()
-			: mString(mStringBuffer, sizeof(mStringBuffer))
+			: mString(mStringBuffer, sizeof(mStringBuffer)),
+			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
 		{
 		}
 		xdirpath::xdirpath(const char* str)
-			: mString(mStringBuffer, sizeof(mStringBuffer), str)
+			: mString(mStringBuffer, sizeof(mStringBuffer), str),
+			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
 		{
 			fixSlashes();
+			mStringForDevice = mString;
+			fixSlashesForDevice();
 		}
 		xdirpath::xdirpath(const xdirpath& dirpath)
-			: mString(mStringBuffer, sizeof(mStringBuffer), dirpath.c_str())
+			: mString(mStringBuffer, sizeof(mStringBuffer), dirpath.c_str()),
+			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
 		{
 			mString = dirpath.mString;
+			mStringForDevice = dirpath.mStringForDevice;
 		}
 		xdirpath::~xdirpath()
 		{
 		}
 
-		void			xdirpath::clear()										{ mString.clear(); }
+		void			xdirpath::clear()										{ mString.clear(); mStringForDevice.clear();}
 
 		s32				xdirpath::getLength() const								{ return mString.getLength(); }
 		s32				xdirpath::getMaxLength() const							{ return mString.getMaxLength(); }
 		bool			xdirpath::isEmpty() const								{ return mString.isEmpty(); }
 
-		void			xdirpath::enumLevels(enumerate_delegate<const char*>& folder_enumerator, bool right_to_left) const
+		void			xdirpath::enumLevels(enumerate_delegate<char>& folder_enumerator, bool right_to_left) const
 		{
 			if (isEmpty())
 				return;
 
-			const s32 devicePos = mString.find(sGetDeviceEnd());
+			const s32 devicePos = mString.find(":\\");
 			const s32 startPos = devicePos>=0 ? devicePos + 2 : 0;
 
 			char folderNameBuffer[128 + 2];
@@ -65,7 +71,7 @@ namespace xcore
 			if (right_to_left == false)
 			{
 				s32 level = 0;
-				const char slash = sGetSlashChar();
+				const char slash = '\\';
 				const char* src = c_str() + startPos;
 				const char* end_src = c_str() + getLength();
 				const char* folder_start = NULL;
@@ -90,7 +96,7 @@ namespace xcore
 			else
 			{
 				s32 level = 0;
-				const char slash = sGetSlashChar();
+				const char slash = '\\';
 				const char* src = c_str() + getLength() - 2;
 				const char* end_src = c_str() + startPos;
 				const char* folder_start = src + 1;
@@ -114,11 +120,12 @@ namespace xcore
 			}
 		}
 
-		struct folder_counting_enumerator : public enumerate_delegate<const char*>
+		struct folder_counting_enumerator : public enumerate_delegate<char>
 		{
 			s32				mLevels;
 							folder_counting_enumerator() : mLevels(0) {}
-			virtual void	operator () (s32 level, const char* const& folder, bool& terminate)	{ terminate = false; mLevels++; }
+							virtual void operator () (s32 level,const char& folder,bool& terminate) { }
+			virtual void	operator () (s32 level, const char* folder, bool& terminate)	{ terminate = false; mLevels++; }
 		};
 
 		s32				xdirpath::getLevels() const
@@ -128,16 +135,16 @@ namespace xcore
 			return e.mLevels;
 		}
 
-		struct folder_search_enumerator : public enumerate_delegate<const char*>
+		struct folder_search_enumerator : public enumerate_delegate<char>
 		{
 			const char*		mFolderName;
 			s32				mFolderNameLen;
 
 			s32				mLevel;
 							
-							folder_search_enumerator(const char* folderName, s32 folderNameLen) : mFolderName(folderName), mFolderNameLen(folderNameLen), mLevel(-1) {}
-
-			virtual void	operator () (s32 level, const char* const& folder, bool& terminate)	
+			folder_search_enumerator(const char* folderName, s32 folderNameLen) : mFolderName(folderName), mFolderNameLen(folderNameLen), mLevel(-1) {}
+			virtual void operator () (s32 level, const char& folder,bool& terminate) {}
+			virtual void	operator () (s32 level, const char* folder, bool& terminate)	
 			{
 				terminate = false; 
 			
@@ -146,7 +153,7 @@ namespace xcore
 				if (len1 == len2)
 				{
 					const char* s1 = folder;
-					const char* e1 = s1 + len1;
+					//const char* e1 = s1 + len1;
 					const char* s2 = mFolderName;
 					bool equal = x_strCompareNoCase(s1, len1, s2, len2) == 0;
 					if (equal)
@@ -170,10 +177,10 @@ namespace xcore
 
 		s32				xdirpath::getLevelOf(const xdirpath& parent) const
 		{
-			const s32 parentDevicePos = parent.mString.find(sGetDeviceEnd());
+			const s32 parentDevicePos = parent.mString.find(":\\");
 			const s32 parentStartPos = parentDevicePos>=0 ? parentDevicePos + 2 : 0;
 
-			const s32 thisDevicePos = mString.find(sGetDeviceEnd());
+			const s32 thisDevicePos = mString.find(":\\");
 			const s32 thisStartPos = thisDevicePos>=0 ? thisDevicePos + 2 : 0;
 
 			// Find the overlap
@@ -185,7 +192,7 @@ namespace xcore
 			const char* parentEnd = parent.mString.c_str() + parent.mString.getLength();
 
 			s32 level = -1;
-			const char slash = sGetSlashChar();
+			const char slash = '\\';
 			const char* folder_start = NULL;
 			const char* folder_end = parentSrc;
 			bool terminate = false;
@@ -223,7 +230,7 @@ namespace xcore
 			if (isRooted())
 			{
 				// Now determine if we have a folder path
-				const s32 pos = mString.find(sGetDeviceEnd()) + 2;
+				const s32 pos = mString.find(":\\") + 2;
 				if (pos == getLength())
 					return true;
 			}
@@ -232,7 +239,7 @@ namespace xcore
 
 		bool			xdirpath::isRooted() const
 		{
-			s32 pos = mString.find(sGetDeviceEnd());
+			s32 pos = mString.find(":\\");
 			return pos >= 0;
 		}
 
@@ -250,21 +257,24 @@ namespace xcore
 
 		void			xdirpath::makeRelative()
 		{
-			s32 pos = mString.find(sGetDeviceEnd());
+			s32 pos = mString.find(":\\");
 			if (pos < 0)	pos = 0;
 			else			pos += 2;
 			mString.remove(0, pos);
+			mStringForDevice.clear();
+			mStringForDevice = mString;
+			fixSlashesForDevice();
 		}
 
 		void			xdirpath::makeRelativeTo(const xdirpath& parent)
 		{
 			makeRelative();
 
-			s32 parentStartPos = parent.mString.find(sGetDeviceEnd());
+			s32 parentStartPos = parent.mString.find(":\\");
 			if (parentStartPos>=0)	parentStartPos += 2;
 			else					parentStartPos = 0;
 
-			s32 thisStartPos = mString.find(sGetDeviceEnd());
+			s32 thisStartPos = mString.find(":\\");
 			if (thisStartPos==-1)	thisStartPos = 0;
 			else					thisStartPos += 2;
 
@@ -283,7 +293,7 @@ namespace xcore
 			const char* parentEnd = parent.mString.c_str() + parent.mString.getLength();
 
 			s32 level = -1;
-			const char slash = sGetSlashChar();
+			const char slash = '\\';
 			const char* folder_start = NULL;
 			const char* folder_end = parentSrc;
 			bool terminate = false;
@@ -317,6 +327,9 @@ namespace xcore
 			{
 				mString.insert(parent.mString.c_str(), folder_start - parent.mString.c_str());
 				fixSlashes();
+				mStringForDevice.clear();
+				mStringForDevice = mString;
+				fixSlashesForDevice();
 			}
 			else
 			{
@@ -330,13 +343,16 @@ namespace xcore
 		{
 			if (getLength() > 2)
 			{
-				s32 lastSlashPos = mString.rfind(sGetSlashChar(), getLength() - 2);
+				s32 lastSlashPos = mString.rfind('\\', getLength() - 2);
 				if (lastSlashPos > 0)
 				{
 					// Remove this folder
 					lastSlashPos += 1;
 					mString.remove(lastSlashPos, getLength() - lastSlashPos);
 					fixSlashes();
+					mStringForDevice.clear();
+					mStringForDevice = mString;
+					fixSlashesForDevice();
 				}
 			}
 		}
@@ -345,17 +361,20 @@ namespace xcore
 		{
 			mString += subDir;
 			fixSlashes();
+			mStringForDevice.clear();
+			mStringForDevice = mString;
+			fixSlashesForDevice();
 		}
 
 		// e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\; sub=="sub\\folder\\";
 		void			xdirpath::split(s32 cnt, xdirpath& parent, xdirpath& subDir) const
 		{
-			const s32 devicePos = mString.find(sGetDeviceEnd());
+			const s32 devicePos = mString.find(":\\");
 			const s32 startPos = devicePos>=0 ? devicePos + 2 : 0;
 
 			s32 levels = 0;
 			s32 split_pos = -1;
-			const char slash = sGetSlashChar();
+			const char slash = '\\';
 			const char* src = c_str() + startPos;
 			const char* end_src = c_str() + getLength();
 			while (src < end_src)
@@ -374,14 +393,18 @@ namespace xcore
 
 			mString.left(split_pos, parent.mString);
 			parent.fixSlashes();
+			parent.mStringForDevice = parent.mString;
+			parent.fixSlashesForDevice();
 			mString.right(mString.getLength() - split_pos, subDir.mString);
 			subDir.fixSlashes();
+			subDir.mStringForDevice = subDir.mString;
+			subDir.fixSlashesForDevice();
 		}
 
 		bool			xdirpath::getName(xcstring& outName) const
 		{
-			const s32 endPos = mString.lastChar()==sGetSlashChar() ? mString.getLength() - 1 : mString.getLength();
-			const s32 slashPos = mString.rfind(sGetSlashChar(), endPos - 1);
+			const s32 endPos = mString.lastChar()=='\\' ? mString.getLength() - 1 : mString.getLength();
+			const s32 slashPos = mString.rfind('\\', endPos - 1);
 			if (slashPos >= 0)
 			{
 				mString.substring((slashPos+1), outName, endPos - (slashPos+1));
@@ -411,6 +434,16 @@ namespace xcore
 			xfiledevice* device = alias->device();
 			return device;
 		}
+		void xdirpath::fixSlashesForDevice()		
+		{ 
+			mStringForDevice = mString;
+			const char slash = sGetSlashChar();
+			mStringForDevice.replace('\\' , slash);
+		}
+		const char* xdirpath::c_str_device() const
+		{
+			return mStringForDevice.c_str();
+		}
 
 		xfiledevice*	xdirpath::getSystem(xcstring& outDirPath) const
 		{
@@ -420,12 +453,13 @@ namespace xcore
 			xfiledevice* device = alias->device();
 			outDirPath = mString;
 			setOrReplaceDevicePart(outDirPath, alias->remap());
+			outDirPath.replace('\\',sGetSlashChar());
 			return device;
 		}
 
 		bool			xdirpath::getRoot(xdirpath& outRootDirPath) const
 		{
-			const s32 deviceSlashPos = mString.find(sGetDeviceEnd());
+			const s32 deviceSlashPos = mString.find(":\\");
 			if (deviceSlashPos>0)
 			{
 				mString.left(deviceSlashPos+2, outRootDirPath.mString);
@@ -438,7 +472,7 @@ namespace xcore
 				if (alias!=NULL)
 				{
 					outRootDirPath.mString = curdir;
-					outRootDirPath.mString += sGetDeviceEnd();
+					outRootDirPath.mString += ":\\";
 					return true;
 				}
 			}
@@ -468,11 +502,14 @@ namespace xcore
 		{
 			setOrReplaceDeviceName(mString, inDeviceName);
 			fixSlashes(); 
+			mStringForDevice.clear();
+			mStringForDevice = mString;
+			fixSlashesForDevice();
 		}
 
 		bool			xdirpath::getDeviceName(xcstring& outDeviceName) const
 		{
-			s32 pos = mString.find(sGetDeviceEnd());
+			s32 pos = mString.find(":\\");
 			if (pos >= 0)
 				mString.left(pos, outDeviceName);
 			return (pos >= 0);
@@ -482,11 +519,14 @@ namespace xcore
 		{
 			setOrReplaceDevicePart(mString, inDevicePart);
 			fixSlashes(); 
+			mStringForDevice.clear();
+			mStringForDevice = mString;
+			fixSlashesForDevice();
 		}
 
 		bool			xdirpath::getDevicePart(xcstring& outDevicePart) const
 		{
-			s32 pos = mString.find(sGetDeviceEnd());
+			s32 pos = mString.find(":\\");
 			if (pos >= 0)
 				mString.left(pos + 2, outDevicePart);
 			return (pos >= 0);
@@ -497,6 +537,7 @@ namespace xcore
 			if (this == &path)
 				return *this;
 			mString = path.mString;
+			mStringForDevice = path.mStringForDevice;
 			return *this;
 		}
 
@@ -507,10 +548,13 @@ namespace xcore
 			mString.clear();
 			mString += str;
 			fixSlashes();
+			mStringForDevice.clear();
+			mStringForDevice = mString;
+			fixSlashesForDevice();
 			return *this; 
 		}
 
-		xdirpath&		xdirpath::operator += ( const char* str )					{ mString += str; fixSlashes(); return *this; }
+		xdirpath&		xdirpath::operator += ( const char* str )					{ mString += str; fixSlashes(); mStringForDevice = mString;fixSlashesForDevice(); return *this; }
 
 		bool			xdirpath::operator == ( const char* rhs) const				{ return x_strCompareNoCase(rhs, c_str()) == 0; }
 		bool			xdirpath::operator != ( const char* rhs) const				{ return x_strCompareNoCase(rhs, c_str()) != 0; }
@@ -523,7 +567,7 @@ namespace xcore
 		void			xdirpath::setOrReplaceDeviceName(xcstring& ioStr, const char* inDeviceName) const
 		{
 			s32 len = 0;
-			s32 pos = ioStr.find(sGetDeviceEnd());
+			s32 pos = ioStr.find(":\\");
 			if (pos >= 0)
 				len = pos;
 
@@ -545,7 +589,7 @@ namespace xcore
 
 		void			xdirpath::setOrReplaceDevicePart(xcstring& ioStr, const char* inDevicePart) const
 		{
-			s32 len = ioStr.find(sGetDeviceEnd());
+			s32 len = ioStr.find(":\\");
 			if (len>=0)	len+=2;
 			else len=0;
 			if (inDevicePart!=NULL)
@@ -565,23 +609,34 @@ namespace xcore
 		{ 
 			// Replace incorrect slashes with the correct one
 			const char slash = sGetSlashChar();
-			mString.replace(slash=='\\' ? '/' : '\\', slash);
-
+		//	mString.replace(slash=='\\' ? '/' : '\\', slash);
+			const char rightSlash = '\\';
+			mString.replace('/', rightSlash);
 			// Remove double slashes like '\\' or '//'
 			char doubleSlash[4];
-			doubleSlash[0] = slash;
-			doubleSlash[1] = slash;
+// 			doubleSlash[0] = slash;
+// 			doubleSlash[1] = slash;
+			doubleSlash[0] = rightSlash;
+			doubleSlash[1] = rightSlash;
 			doubleSlash[2] = '\0';
 			doubleSlash[3] = '\0';
 			mString.replace(doubleSlash, &doubleSlash[1]);
 
 			// Make sure there is NO slash at the start of the path
-			if (mString.getLength()>0 && mString.firstChar()==slash)
-				mString.trimLeft(slash);
+// 			if (mString.getLength()>0 && mString.firstChar()==slash)
+// 				mString.trimLeft(slash);
+			if (mString.getLength()>0 && mString.firstChar()==rightSlash)
+			{
+				mString.trim(rightSlash);
+			}
 
 			// Make sure there is a slash at the end of the path
-			if (mString.getLength()>0 && mString.lastChar()!=slash)
-				mString += slash;
+// 			if (mString.getLength()>0 && mString.lastChar()!=slash)
+// 				mString += slash;
+			if (mString.getLength()>0 && mString.lastChar()!=rightSlash)
+			{
+				mString += rightSlash;
+			}
 		}
 
 		//==============================================================================

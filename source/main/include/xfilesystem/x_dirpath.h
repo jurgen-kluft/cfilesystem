@@ -38,6 +38,8 @@ namespace xcore
 			friend class xfilepath;
 			char					mStringBuffer[XDIRPATH_BUFFER_SIZE];
 			xcstring				mString;
+			char					mStringBufferForDevice[XDIRPATH_BUFFER_SIZE];
+			xcstring				mStringForDevice;
 
 		public:
 									xdirpath();
@@ -51,7 +53,7 @@ namespace xcore
 			s32						getMaxLength() const;
 			bool					isEmpty() const;
 
-			void					enumLevels(enumerate_delegate<const char*>& folder_enumerator, bool right_to_left = false) const;
+			void					enumLevels(enumerate_delegate<char>& folder_enumerator, bool right_to_left = false) const;
 			s32						getLevels() const;
 			s32						getLevelOf(const char* folderName, s32 numChars=-1) const;
 			s32						getLevelOf(const xdirpath& parent) const;
@@ -97,11 +99,14 @@ namespace xcore
 
 			const char*				c_str() const;
 
+			const char*               c_str_device() const;
+
 		private:
 			void					setOrReplaceDeviceName(xcstring&, const char*) const;
 			void					setOrReplaceDevicePart(xcstring&, const char*) const;
 
 			void					fixSlashes();									///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
+			void					fixSlashesForDevice();
 		};
 
 		//==============================================================================

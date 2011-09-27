@@ -215,7 +215,7 @@ UNITTEST_SUITE_BEGIN(filestream)
 			CHECK_EQUAL(xfs1.getPosition(),0);
 			xbyte buffer1[8124];
 			//			memset(buffer1,0,sizeof(buffer1));
-			u64 fileLen1 = xfs1.read(buffer1,8100,10); 
+			u64 fileLen1 = xfs1.read(buffer1,1,10); 
 			CHECK_EQUAL(10,fileLen1);
 		}
 

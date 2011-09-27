@@ -317,7 +317,7 @@ namespace xcore
 			if (device == NULL)
 				return false;
 			xattributes attr;
-			if (device->getFileAttr(filename.c_str(), attr))
+			if (device->getFileAttr(filename.c_str_device(), attr))
 			{
 				outAttr = attr;
 				return true;
@@ -407,7 +407,7 @@ namespace xcore
 			if (device!=NULL)
 			{
 				u32 nFileHandle;
-				if (device->openFile(systemFile.c_str(), true, false, nFileHandle))
+				if (device->openFile(systemFile.c_str(), true, true, nFileHandle))
 				{
 					device->setLengthOfFile(nFileHandle, length);
 					device->closeFile(nFileHandle);

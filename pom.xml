@@ -382,6 +382,7 @@
 					<Link>
 						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
 						<AdditionalDependencies>xfilesystem_$(Configuration)_PS3.lib</AdditionalDependencies>
+						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|PS3'">

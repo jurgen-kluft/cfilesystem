@@ -20,6 +20,7 @@ namespace xcore
 		{
 			///< Return false to terminate the breadth first traversal
 			virtual void operator () (s32 depth, const _Arg& inf, bool& terminate) = 0;
+			virtual void operator() (s32 depth, const _Arg* inf, bool& terminate ) {}
 		protected:
 			virtual ~enumerate_delegate() {}
 		};
