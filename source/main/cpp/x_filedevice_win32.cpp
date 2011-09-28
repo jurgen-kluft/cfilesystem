@@ -440,22 +440,32 @@ namespace xcore
 		{
 			xdirpath nDir;
 			szFileinfo->getFullName().getDirPath(nDir);
-			xfilepath nFilepath_from(szDirPath);
-			xfilepath nFilepath_to(szToDirPath);
-
-			xdirpath nDir_from,nDir_to;
-			nFilepath_from.getDirPath(nDir_from);
-			nFilepath_to.getDirPath(nDir_to);
+//			xfilepath nFilepath_from(szDirPath);
+//			xfilepath nFilepath_to(szToDirPath);
+			xdirpath nDirpath_from(szDirPath);
+			xdirpath nDirpath_to(szToDirPath);
 
 			xfilepath fileName = szFileinfo->getFullName();
 			fileName.onlyFilename();
-
-			s32 depth = nDir_from.getLevels();
+			s32 depth = nDirpath_from.getLevels();
 			xdirpath parent,child,copyDirPath_To;
 			nDir.split(depth,parent,child);
-			nDir_to.getSubDir(child.c_str(),copyDirPath_To);
+			nDirpath_to.getSubDir(child.c_str(),copyDirPath_To);
+			outFilePath = xfilepath(copyDirPath_To,fileName);
 
-			outFilePath =  xfilepath(copyDirPath_To,fileName);
+// 			xdirpath nDir_from,nDir_to;
+// 			nFilepath_from.getDirPath(nDir_from);
+// 			nFilepath_to.getDirPath(nDir_to);
+// 
+// 			xfilepath fileName = szFileinfo->getFullName();
+// 			fileName.onlyFilename();
+// 
+// 			s32 depth = nDir_from.getLevels();
+// 			xdirpath parent,child,copyDirPath_To;
+// 			nDir.split(depth,parent,child);
+// 			nDir_to.getSubDir(child.c_str(),copyDirPath_To);
+// 
+// 			outFilePath =  xfilepath(copyDirPath_To,fileName);
 		}
 
 		static bool sIsDots(const TCHAR* str)
@@ -466,7 +476,7 @@ namespace xcore
 		struct enumerate_delegate_dirs_copy_dir : public enumerate_delegate<xdirinfo>
 		{
 			cstack<const xdirinfo* > dirStack;
-			enumerate_delegate_dirs_copy_dir() { dirStack.init(sAtomicAllocator,16);}
+			enumerate_delegate_dirs_copy_dir() { dirStack.init(sAtomicAllocator,MAX_ENUM_SEARCH_DIRS);}
 			virtual ~enumerate_delegate_dirs_copy_dir() { dirStack.clear(); }
 			virtual void operator () (s32 depth, const xdirinfo& inf, bool& terminate) { }
 			virtual void operator () (s32 depth, const xdirinfo* inf,bool& terminate)
@@ -479,7 +489,7 @@ namespace xcore
 		struct enumerate_delegate_files_copy_dir : public enumerate_delegate<xfileinfo>
 		{
 			cstack<const xfileinfo* > fileStack;
-			enumerate_delegate_files_copy_dir() { fileStack.init(sAtomicAllocator,16); }
+			enumerate_delegate_files_copy_dir() { fileStack.init(sAtomicAllocator,MAX_ENUM_SEARCH_FILES); }
 			virtual ~enumerate_delegate_files_copy_dir() { fileStack.clear(); }
 			virtual void operator () (s32 depth, const xfileinfo& inf, bool& terminate) { }
 			virtual void operator () (s32 depth, const xfileinfo* inf,bool& terminate)

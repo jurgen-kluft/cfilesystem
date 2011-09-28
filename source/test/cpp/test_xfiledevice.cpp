@@ -15,7 +15,8 @@
 
 #include "xfilesystem\private\x_devicealias.h"
 #include "xfilesystem\private\x_filesystem_common.h"
-
+#include "xfilesystem\private\x_filesystem_cstack.h"
+extern xcore::x_iallocator* sAtomicAllocator;
 using namespace xcore;
 
 
@@ -685,24 +686,208 @@ namespace xcore
 			return newDir!=NULL;
 		}
 
+		static bool enumerateCopyTestDir(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth)
+		{
+			xdirpath dp(szDirPath);
+			dp.makeRelative();
+
+			TestDir* testDir = sDirs;
+			bool terminate = false;
+			while (!terminate)
+			{
+				if (testDir->mName == dp)
+				{
+					if (dir_enumerator)
+					{
+						xdirinfo* di = new xdirinfo(testDir->mName);
+						(*dir_enumerator)(0, di, terminate);
+					}
+				}
+				else if (boSearchSubDirectories)
+				{
+					s32 level = testDir->mName.getLevelOf(dp);
+					if (level > 0)
+					{
+						if (dir_enumerator)
+						{
+							xdirinfo* di = new xdirinfo(testDir->mName);
+							(*dir_enumerator)(level, di, terminate);
+						}
+					}
+				}
+
+				if (testDir->mName == xdirpath("__NULL__"))
+					break;
+				testDir++;
+			}
+
+			bool terminateFile = false;
+			TestFile* testFile = sFiles;
+			xdirpath dpTemp;
+			while(!terminateFile)
+			{
+				testFile->mName.getDirPath(dpTemp);
+				if (dpTemp == dp)
+				{
+					if (file_enumerator)
+					{
+						xfileinfo* fiReuslt = new xfileinfo(testFile->mName);
+						(*file_enumerator)(0,fiReuslt,terminateFile);
+					}
+				}
+				else if(boSearchSubDirectories)
+				{
+					s32 levelFile = dpTemp.getLevelOf(dp);
+					if (levelFile > 0)
+					{
+						if (file_enumerator)
+						{
+							xfileinfo* fiResult = new xfileinfo(testFile->mName);
+							(*file_enumerator)(levelFile,fiResult,terminateFile);
+						}
+					}
+				}
+
+				if (testFile->mName == xfilepath("__NULL__"))
+					break;
+				testFile ++;
+			}
+
+			return true;
+		}
+
+		static void changeDirPath(const char* szDirPath,const char* szToDirPath,const xdirinfo* szDirinfo,xdirpath& outDirPath)
+		{
+			xdirpath nDirpath_from(szDirPath);
+			xdirpath nDirpath_to(szToDirPath);
+			s32 depth1 = nDirpath_from.getLevels();
+			xdirpath parent,child;
+			szDirinfo->getFullName().split(depth1,parent,child);
+			nDirpath_to.getSubDir(child.c_str(),outDirPath);
+		}
+
+		static void changeFilePath(const char* szDirPath,const char* szToDirPath,const xfileinfo* szFileinfo,xfilepath& outFilePath)
+		{
+			xdirpath nDir;
+			szFileinfo->getFullName().getDirPath(nDir);
+
+			xdirpath nDirpath_from(szDirPath);
+			xdirpath nDirpath_to(szToDirPath);
+
+			xfilepath fileName = szFileinfo->getFullName();
+			fileName.onlyFilename();
+			s32 depth = nDirpath_from.getLevels();
+			xdirpath parent,child,copyDirPath_To;
+			nDir.split(depth,parent,child);
+			nDirpath_to.getSubDir(child.c_str(),copyDirPath_To);
+			outFilePath = xfilepath(copyDirPath_To,fileName);
+		}
+
+		struct enumerate_delegate_dirs_copy_testDir : public enumerate_delegate<xdirinfo>
+		{
+			cstack<const xdirinfo* > dirStack;
+			enumerate_delegate_dirs_copy_testDir() { dirStack.init(sAtomicAllocator,MAX_ENUM_SEARCH_DIRS);}
+			virtual ~enumerate_delegate_dirs_copy_testDir() { dirStack.clear(); }
+			virtual void operator () (s32 depth, const xdirinfo& inf, bool& terminate) { }
+			virtual void operator () (s32 depth, const xdirinfo* inf,bool& terminate)
+			{
+				terminate = false;
+				dirStack.push(inf);
+			}
+		};
+
+		struct enumerate_delegate_files_copy_testDir : public enumerate_delegate<xfileinfo>
+		{
+			cstack<const xfileinfo* > fileStack;
+			enumerate_delegate_files_copy_testDir() { fileStack.init(sAtomicAllocator,MAX_ENUM_SEARCH_FILES); }
+			virtual ~enumerate_delegate_files_copy_testDir() { fileStack.clear(); }
+			virtual void operator () (s32 depth, const xfileinfo& inf, bool& terminate) { }
+			virtual void operator () (s32 depth, const xfileinfo* inf,bool& terminate)
+			{
+				terminate = false;
+				fileStack.push(inf);
+			}
+		};
+
+
 		bool xfiledevice_TEST::moveDir(const char* szDirPath, const char* szToDirPath) const
 		{
-			return false;
+			copyDir(szDirPath,szToDirPath,true);
+			deleteDir(szDirPath);
+			return true;
 		}
 
 		bool xfiledevice_TEST::copyDir(const char* szDirPath, const char* szToDirPath, bool boOverwrite) const
 		{
-			return false;
-		}
+			enumerate_delegate_files_copy_testDir files_copy_enum;
+			enumerate_delegate_dirs_copy_testDir dirs_copy_enum;
+			enumerateCopyTestDir(szDirPath,true,&files_copy_enum,&dirs_copy_enum,0);
 
-		bool xfiledevice_TEST::deleteDir(const char* szDirPath) const
+			const xdirinfo* dirInfo = NULL;
+			while(dirs_copy_enum.dirStack.pop(dirInfo))
+			{
+				xdirpath copyDirPath_To;
+				changeDirPath(szDirPath,szToDirPath,dirInfo,copyDirPath_To);
+				// nDirinfo_From --------------------->   copyDirPath_To       ( copy dir)
+				delete dirInfo;		dirInfo = NULL;
+				if (!createDir(copyDirPath_To.c_str()))
+					return false;
+			}
+
+			const xfileinfo* fileInfo = NULL;
+			while (files_copy_enum.fileStack.pop(fileInfo))
+			{
+				xfilepath copyFilePath_To;
+				changeFilePath(szDirPath,szToDirPath,fileInfo,copyFilePath_To);
+				//nFileinfo_From --------------------->  copyFilePath_To       (copy file)
+				if (!copyFile(fileInfo->getFullName().c_str(),copyFilePath_To.c_str(),false))
+				{
+					delete fileInfo;    fileInfo = NULL;
+					return false;
+				}
+				delete fileInfo;	fileInfo = NULL;
+			}
+
+			return true;
+		}
+		bool static deleteDirOnly(const char* szDirPath)
 		{
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir==NULL)
 				return false;
-			
+
 			// Need to check if there are dirs and files under this directory
 			testDir->mName = "__EMPTY__";
+			return true;
+		}
+		bool xfiledevice_TEST::deleteDir(const char* szDirPath) const
+		{
+			enumerate_delegate_files_copy_testDir files_copy_enum;
+			enumerate_delegate_dirs_copy_testDir dirs_copy_enum;
+			enumerateCopyTestDir(szDirPath,true,&files_copy_enum,&dirs_copy_enum,0);
+
+			const xfileinfo* fileInfo = NULL;
+			while (files_copy_enum.fileStack.pop(fileInfo))
+			{
+				xfilepath copyFilePath_To;
+				if (!deleteFile(fileInfo->getFullName().c_str()))
+				{
+					delete fileInfo;    fileInfo = NULL;
+					return false;
+				}
+				delete fileInfo;	fileInfo = NULL;
+			}
+
+			const xdirinfo* dirInfo = NULL;
+			while(dirs_copy_enum.dirStack.pop(dirInfo))
+			{
+				if (!deleteDirOnly(dirInfo->getFullName().c_str()))
+				{
+					delete dirInfo;		dirInfo = NULL;
+					return false;
+				}
+				delete dirInfo;		dirInfo = NULL;
+			}
 			return true;
 		}
 
@@ -763,21 +948,20 @@ namespace xcore
 			{
 				if (testDir->mName == dp)
 				{
-					xdirinfo di(testDir->mName);
 					if (dir_enumerator)
 					{
+						xdirinfo di(testDir->mName);
 						(*dir_enumerator)(0, di, terminate);
 					}
 				}
 				else if (boSearchSubDirectories)
 				{
 					s32 level = testDir->mName.getLevelOf(dp);
-					if (level==0)
+					if (level > 0)
 					{
-						xdirinfo di(testDir->mName);
-						level = testDir->mName.getLevels();
 						if (dir_enumerator)
 						{
+							xdirinfo di(testDir->mName);
 							(*dir_enumerator)(level, di, terminate);
 						}
 					}
@@ -788,45 +972,36 @@ namespace xcore
 				testDir++;
 			}
 
-			xdirinfo dirinfo;
-			TestDir* testDirForFile = sDirs;
-			bool terminateForFile = false;
-			while(!terminateForFile)
-			{
-				if (testDirForFile->mName == dp)
-				{
-					dirinfo = xdirinfo(testDirForFile->mName);
-					terminateForFile = true;
-				}
-				if (testDirForFile->mName == xdirpath("__NULL__"))
-					break;
-				testDirForFile++;
-			}
-
+			bool terminateFile = false;
 			TestFile* testFile = sFiles;
-			while (true)
+			xdirpath dpTemp;
+			while(!terminateFile)
 			{
-				if (dirinfo.getFullName().isEmpty())
-				{
-					break;
-				}
-				xdirpath dp2;
-				xfilepath fp2(testFile->mName);
-				fp2.getDirPath(dp2);
-				xfileinfo fi3(fp2);
-				xdirinfo di3(dp2);
-				bool terminate_temp = false;
-				if (dirinfo == di3)
+				testFile->mName.getDirPath(dpTemp);
+				if (dpTemp == dp)
 				{
 					if (file_enumerator)
 					{
-						(*file_enumerator)(0,fi3,terminate_temp);
+						xfileinfo fiReuslt(testFile->mName);
+						(*file_enumerator)(0,fiReuslt,terminateFile);
 					}
-					break;
 				}
+				else if(boSearchSubDirectories)
+				{
+					s32 levelFile = dpTemp.getLevelOf(dp);
+					if (levelFile > 0)
+					{
+						if (file_enumerator)
+						{
+							xfileinfo fiResult(testFile->mName);
+							(*file_enumerator)(levelFile,fiResult,terminateFile);
+						}
+					}
+				}
+
 				if (testFile->mName == xfilepath("__NULL__"))
 					break;
-				testFile++;
+				testFile ++;
 			}
 
 			return true;

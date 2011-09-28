@@ -177,52 +177,27 @@ namespace xcore
 
 		s32				xdirpath::getLevelOf(const xdirpath& parent) const
 		{
-			const s32 parentDevicePos = parent.mString.find(":\\");
-			const s32 parentStartPos = parentDevicePos>=0 ? parentDevicePos + 2 : 0;
-
-			const s32 thisDevicePos = mString.find(":\\");
-			const s32 thisStartPos = thisDevicePos>=0 ? thisDevicePos + 2 : 0;
-
-			// Find the overlap
-
-			const char* thisSrc = mString.c_str() + thisStartPos;
+			// PARENT:   c:\disk
+			// THIS:     c:\disk\child
+			if(parent.mString.getLength() > mString.getLength())
+					return -1;
+			s32 level = -1;
+			const char* thisSrc = mString.c_str();
 			const char* thisEnd = mString.c_str() + mString.getLength();
 
-			const char* parentSrc = parent.mString.c_str() + parentStartPos;
+			const char* parentSrc = parent.mString.c_str();
 			const char* parentEnd = parent.mString.c_str() + parent.mString.getLength();
-
-			s32 level = -1;
-			const char slash = '\\';
-			const char* folder_start = NULL;
-			const char* folder_end = parentSrc;
 			bool terminate = false;
-			while (parentSrc < parentEnd && !terminate)
+			bool match = true;
+			while (parentSrc < parentEnd && match)
 			{
-				if (*parentSrc == slash)
-				{
-					level++;
-
-					folder_start = folder_end;
-					folder_end = parentSrc;
-
-					// See if thisSrc-thisEnd equals the rest of the parentSrc-parentEnd
-					bool match = true;
-					const char* thisSrc1 = thisSrc;
-					const char* parentSrc1 = folder_start;
-					while (parentSrc1 < parentEnd && match)
-					{
-						if (thisSrc1 < thisEnd)
-							match = (*thisSrc1++ == *parentSrc1++);
-						else
-							match = false;
-					}
-					folder_end+=1;
-					terminate = match;
-				}
-				++parentSrc;
+				match = (*parentSrc++ == *thisSrc++);
 			}
-
+			terminate = match;
+			level = getLevels() - parent.getLevels();
 			return terminate ? level : -1;
+			//
+
 		}
 
 		bool			xdirpath::isRoot() const

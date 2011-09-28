@@ -33,6 +33,15 @@ UNITTEST_SUITE_BEGIN(filepath)
 			CHECK_FALSE(p.isEmpty());
 			CHECK_TRUE(p.getLength() == x_strlen(str));
 			CHECK_EQUAL(x_strCompare(p.c_str(), str), 0);
+
+
+			const char* str2 = "\\test\\docs\\ad";
+			xfilepath p2(str2);
+			CHECK_EQUAL(x_strCompare(p2.c_str(),"test\\docs\\ad"),0);
+
+			const char* str3 = "test\\doc\\do\\";
+			xfilepath p3(str3);
+			CHECK_EQUAL(x_strCompare(p3.c_str(),"test\\doc\\do"),0);
 		}
 
 		UNITTEST_TEST(constructor3)

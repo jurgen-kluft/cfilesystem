@@ -338,7 +338,13 @@ namespace xcore
 			doubleSlash[3] = '\0';
 			mString.replace(doubleSlash, &doubleSlash[1]);
 			// Remove slashes at the start and end of this string
-			mString.trimDelimiters(rightSlash, rightSlash);
+			//	mString.trimDelimiters(rightSlash, rightSlash);
+			s32 leftPos = mString.find(rightSlash);
+			s32 rightPos = mString.rfind(rightSlash);
+			if (leftPos == 0)
+				mString.remove(0,1);
+			if (rightPos == mString.getLength()-1)
+				mString.remove(rightPos,1);
 		}
 
 		//==============================================================================
