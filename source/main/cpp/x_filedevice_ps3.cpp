@@ -507,22 +507,16 @@ namespace xcore
 		{
 			xdirpath nDir;
 			szFileinfo->getFullName().getDirPath(nDir);
-			xfilepath nFilepath_from(szDirPath);
-			xfilepath nFilepath_to(szToDirPath);
-
-			xdirpath nDir_from,nDir_to;
-			nFilepath_from.getDirPath(nDir_from);
-			nFilepath_to.getDirPath(nDir_to);
+			xdirpath nDirpath_from(szDirPath);
+			xdirpath nDirpath_to(szToDirPath);
 
 			xfilepath fileName = szFileinfo->getFullName();
 			fileName.onlyFilename();
-
-			s32 depth = nDir_from.getLevels();
+			s32 depth = nDirpath_from.getLevels();
 			xdirpath parent,child,copyDirPath_To;
 			nDir.split(depth,parent,child);
-			nDir_to.getSubDir(child.c_str(),copyDirPath_To);
-			
-			outFilePath =  xfilepath(copyDirPath_To,fileName);
+			nDirpath_to.getSubDir(child.c_str(),copyDirPath_To);
+			outFilePath = xfilepath(copyDirPath_To,fileName);
 		}
 
 		static bool enumerateCopyDir(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth/* =0 */)

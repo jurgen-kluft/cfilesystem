@@ -10,6 +10,7 @@
 #include "xfilesystem\x_dirpath.h"
 #include "xfilesystem\x_dirinfo.h"
 #include "xfilesystem\x_fileinfo.h"
+#include "xfilesystem\x_filestream.h"
 
 using namespace xcore;
 using namespace xfilesystem;
@@ -576,6 +577,73 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 			xdirinfo::sGetLastWriteTime(dp1,lastWriteTime3);
 			CHECK_TRUE(lastWriteTime3 == lastWriteTime2);
 			xdirinfo::sSetLastWriteTime(dp1,lastWriteTime1);
+		}
+
+		UNITTEST_TEST(sCopy)
+		{
+			const char* strCopyFrom = "TEST:\\unique\\sCopyFrom\\";
+			xdirpath dpCopyFrom(strCopyFrom);
+			CHECK_EQUAL(false, xdirinfo::sExists(dpCopyFrom));
+			CHECK_EQUAL(true, xdirinfo::sCreate(dpCopyFrom));
+			CHECK_EQUAL(true,xdirinfo::sExists(dpCopyFrom));
+
+			const char* str2 = "TEST:\\unique\\sCopyFrom\\childDir\\";
+			xdirpath dp2(str2);
+			CHECK_EQUAL(false, xdirinfo::sExists(dp2));
+			CHECK_EQUAL(true, xdirinfo::sCreate(dp2));
+			CHECK_EQUAL(true,xdirinfo::sExists(dp2));
+
+			const char* pathStr1 = "TEST:\\unique\\sCopyFrom\\copy.txt";
+			xfilepath fp1(pathStr1);
+			xfilestream fs1;
+			CHECK_EQUAL(false, xfileinfo::sExists(fp1));
+			CHECK_EQUAL(true, xfileinfo::sCreate(fp1,fs1));
+			CHECK_EQUAL(true,xfileinfo::sExists(fp1));
+
+			const char* strCopyTo = "TEST:\\unique\\sCopyTo\\";
+			xdirpath dpCopyTo(strCopyTo);
+
+			CHECK_TRUE(xdirinfo::sCopy(dpCopyFrom,dpCopyTo,true));
+
+			CHECK_TRUE(xdirinfo::sExists(xdirpath("TEST:\\unique\\sCopyTo\\")));
+			CHECK_TRUE(xdirinfo::sExists(xdirpath( "TEST:\\unique\\sCopyTo\\childDir\\")));
+			CHECK_TRUE(xfileinfo::sExists(xfilepath("TEST:\\unique\\sCopyTo\\copy.txt")));
+
+			CHECK_TRUE(xdirinfo::sDelete(dpCopyTo));
+
+			CHECK_FALSE(xdirinfo::sExists(xdirpath("TEST:\\unique\\sCopyTo\\")));
+			CHECK_FALSE(xdirinfo::sExists(xdirpath( "TEST:\\unique\\sCopyTo\\childDir\\")));
+			CHECK_FALSE(xfileinfo::sExists(xfilepath("TEST:\\unique\\sCopyTo\\copy.txt")));
+		}
+
+		UNITTEST_TEST(sMove)
+		{
+			const char* strCopyFrom = "TEST:\\unique\\sCopyFrom\\";
+			xdirpath dpCopyFrom(strCopyFrom);
+			const char* str2 = "TEST:\\unique\\sCopyFrom\\childDir\\";
+			xdirpath dp2(str2);
+			const char* pathStr1 = "TEST:\\unique\\sCopyFrom\\copy.txt";
+			xfilepath fp1(pathStr1);
+			CHECK_EQUAL(true, xdirinfo::sExists(dpCopyFrom));
+			CHECK_EQUAL(true, xdirinfo::sExists(dp2));
+			CHECK_EQUAL(true, xfileinfo::sExists(fp1));
+
+			const char* strMoveTo = "TEST:\\unique\\sMoveTo\\";
+			xdirpath dpMoveTo(strMoveTo);
+			CHECK_TRUE(xdirinfo::sMove(dpCopyFrom,dpMoveTo));
+			CHECK_TRUE(xdirinfo::sExists(dpMoveTo));
+			CHECK_TRUE(xdirinfo::sExists(xdirpath("TEST:\\unique\\sMoveTo\\childDir")));
+			CHECK_TRUE(xfileinfo::sExists(xfilepath("TEST:\\unique\\sMoveTo\\copy.txt")));
+
+			CHECK_FALSE(xdirinfo::sExists(dpCopyFrom));
+			CHECK_FALSE(xdirinfo::sExists(dp2));
+			CHECK_FALSE(xfileinfo::sExists(fp1));
+			
+			CHECK_TRUE(xdirinfo::sDelete(dpMoveTo));
+
+			CHECK_FALSE(xdirinfo::sExists(dpMoveTo));
+			CHECK_FALSE(xdirinfo::sExists(xdirpath("TEST:\\unique\\sMoveTo\\childDir")));
+			CHECK_FALSE(xfileinfo::sExists(xfilepath("TEST:\\unique\\sMoveTo\\copy.txt")));
 		}
 	}
 }

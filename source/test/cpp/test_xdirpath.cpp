@@ -165,19 +165,40 @@ UNITTEST_SUITE_BEGIN(dirpath)
 
 		UNITTEST_TEST(getLevelOf2)
 		{
+// 			const char* str1 = "TEST:\\the\\name\\is\\johhnywalker";
+// 			xdirpath di1(str1);
+// 			const char* str2 = "is\\johhnywalker";
+// 			xdirpath di2(str2);
+// 			CHECK_EQUAL(2, di2.getLevelOf(di1));
+// 
+// 			const char* str3 = "name\\is";
+// 			xdirpath di3(str3);
+// 			CHECK_EQUAL(-1, di3.getLevelOf(di1));
+// 
+// 			const char* str4 = "the\\name\\is\\johhnywalker\\next";
+// 			xdirpath di4(str4);
+// 			CHECK_EQUAL(0,di4.getLevelOf(di1));
 			const char* str1 = "TEST:\\the\\name\\is\\johhnywalker";
 			xdirpath di1(str1);
-			const char* str2 = "is\\johhnywalker";
+			const char* str2 = "TEST:\\the\\name";
 			xdirpath di2(str2);
-			CHECK_EQUAL(2, di2.getLevelOf(di1));
+			CHECK_EQUAL(2, di1.getLevelOf(di2));
 
-			const char* str3 = "name\\is";
+			const char* str3 = "TEST:";
 			xdirpath di3(str3);
-			CHECK_EQUAL(-1, di3.getLevelOf(di1));
+			CHECK_EQUAL(4, di1.getLevelOf(di3));
 
 			const char* str4 = "the\\name\\is\\johhnywalker\\next";
 			xdirpath di4(str4);
-			CHECK_EQUAL(0,di4.getLevelOf(di1));
+			CHECK_EQUAL(-1,di4.getLevelOf(di1));
+
+			const char* str5 = "C:\\the\\name\\is\\johhnywalker\\abc";
+			xdirpath di5(str5);
+			CHECK_EQUAL(-1,di5.getLevelOf(di1));
+
+			const char* str6 = "TEST:\\the\\name\\is\\johhnywalker";
+			xdirpath di6(str6);
+			CHECK_EQUAL(0,di6.getLevelOf(di1));
 		}
 
 		UNITTEST_TEST(isRoot)

@@ -327,11 +327,6 @@ UNITTEST_SUITE_BEGIN(fileinfo)
 			xdirinfo dir2(filename2);
 			fi1.getParent(dir1);
 			CHECK_TRUE(dir1 == dir2);
-
-			xdirinfo dir3;
-			xfileinfo fi3(filename2);
-			fi3.getParent(dir3);
-			CHECK_TRUE(dir3 == dir2);
 		}
 
 		UNITTEST_TEST(getSubDir)
