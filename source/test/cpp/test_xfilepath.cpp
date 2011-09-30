@@ -226,7 +226,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 		UNITTEST_TEST(getSystem)
 		{
 			const char* str1 = "TEST:\\getSystem\\test.txt";
-			const char* str2 = "TEST:/getSystem/test.txt";
+			const char* str2 = "TEST/getSystem/test.txt";
 			xfilepath p1(str1);
 			char buffer1[256];
 			xcstring string1(buffer1,sizeof(buffer1));

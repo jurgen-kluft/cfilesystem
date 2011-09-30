@@ -324,6 +324,20 @@ namespace xcore
 
 		char			xfilepath::operator [] (s32 index) const				{ return mString[index]; }
 
+#ifdef TARGET_PS3
+		bool			xfilepath::makeRelativeForPS3()
+		{
+			s32 leftPos = mString.find("\\");
+			if (leftPos <= 0)
+				return false;
+			mString.remove(0,leftPos+1);
+			fixSlashes();
+			mStringForDevice.clear();
+			mStringForDevice = mString;
+			return true;
+		}
+#endif
+
 		void			xfilepath::fixSlashes()									
 		{ 
 			// Replace incorrect slashes with the correct one

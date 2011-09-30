@@ -19,7 +19,7 @@ namespace xcore
 	{
 		class xfiledevice;
 
-		extern xfiledevice*	x_CreateFileDevicePS3(xbool boCanWrite);
+		extern xfiledevice*	x_CreateFileDevicePS3(const char* pDrivePath,xbool boCanWrite);
 		extern void			x_DestroyFileDevicePS3(xfiledevice*);
 	};
 

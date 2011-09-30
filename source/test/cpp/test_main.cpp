@@ -12,9 +12,7 @@ UNITTEST_SUITE_LIST(xFileUnitTest);
 UNITTEST_SUITE_DECLARE(xFileUnitTest,filesystem_global);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filesystem_init);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, xfiledevice_register);
-#ifdef TARGET_PC
-UNITTEST_SUITE_DECLARE(xFileUnitTest,xfiledevice_win32);
-#endif
+
 UNITTEST_SUITE_DECLARE(xFileUnitTest, dirpath);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filepath);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, dirinfo);
