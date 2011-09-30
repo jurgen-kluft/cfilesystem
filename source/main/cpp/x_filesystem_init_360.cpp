@@ -15,7 +15,20 @@ namespace xcore
 	//------------------------------------------------------------------------------
 	namespace xfilesystem
 	{
-		static xfiledevice*	sSystemFileDevice = NULL;
+		enum Xbox360_DriveTypes
+		{
+			DRIVE_TYPE_HOST							= 0,
+			DRIVE_TYPE_DVD					        = 1,
+			DRIVE_TYPE_HDD							= 2,
+			DRIVE_TYPE_NUM						    = 3,
+		};
+
+		static xfiledevice*	sSystemFileDevice[DRIVE_TYPE_NUM] = 
+		{
+				NULL,
+				NULL,
+				NULL
+		};
 
 		void init(u32 max_open_streams, xio_thread* threading, x_iallocator* allocator)
 		{
@@ -23,11 +36,14 @@ namespace xcore
 			xfilesystem::setIoThreadInterface(threading);
 			xdevicealias::init();
 
-			sSystemFileDevice = x_CreateFileDevice360(true);
+			sSystemFileDevice[DRIVE_TYPE_DVD] = x_CreateFileDevice360("GAME:\\",true);
+			sSystemFileDevice[DRIVE_TYPE_HOST] = x_CreateFileDevice360("DEVKIT:\\",true);
+			sSystemFileDevice[DRIVE_TYPE_HDD] = x_CreateFileDevice360("HDD:\\",true);
 
-			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, "GAME:\\");				///< DVD Drive (read-only)
-			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, "DEVKIT:\\");
-			xfilesystem::xdevicealias save ("hdd"  , sSystemFileDevice, "HDD:\\");
+
+			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice[DRIVE_TYPE_DVD], "GAME:\\");				///< DVD Drive (read-only)
+			xfilesystem::xdevicealias host ("host" , sSystemFileDevice[DRIVE_TYPE_HOST], "DEVKIT:\\");
+			xfilesystem::xdevicealias save ("hdd"  , sSystemFileDevice[DRIVE_TYPE_HDD], "HDD:\\");
 
 			xfilesystem::xdevicealias::sRegister(dvd);
 			xfilesystem::xdevicealias::sRegister(host);
@@ -47,7 +63,15 @@ namespace xcore
 			xfilesystem::shutdown();
 			xdevicealias::exit();
 
-			x_DestroyFileDevice360(sSystemFileDevice);
+			for (s32 i=0; i<DRIVE_TYPE_NUM; ++i)
+			{
+				xfiledevice* device = sSystemFileDevice[i];
+				if (device != NULL)
+				{
+					x_DestroyFileDevice360(device);
+					sSystemFileDevice[i] = NULL;
+				}
+			}
 
 			xfilesystem::setIoThreadInterface(NULL);
 			xfilesystem::setAllocator(NULL);

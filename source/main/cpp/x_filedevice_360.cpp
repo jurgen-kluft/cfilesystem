@@ -27,8 +27,9 @@
 #include "xfilesystem\x_dirinfo.h"
 #include "xfilesystem\private\x_filedata.h"
 #include "xfilesystem\private\x_fileasync.h"
+#include "xfilesystem\private\x_filesystem_cstack.h"
 
-#include "xstl\list.h"
+extern xcore::x_iallocator* sAtomicAllocator;
 namespace xcore
 {
 	//------------------------------------------------------------------------------------------
@@ -91,13 +92,13 @@ namespace xcore
 			XFILESYSTEM_OBJECT_NEW_DELETE()
 		};
 
-		xfiledevice*		x_CreateFileDevicePC(const char* pDrivePath, bool boCanWrite)
+		xfiledevice*		x_CreateFileDevice360(const char* pDrivePath, bool boCanWrite)
 		{
 			FileDevice_360_System* file_device = new FileDevice_360_System(pDrivePath, boCanWrite);
 			return file_device;
 		}
 
-		void			x_DestroyFileDevicePC(xfiledevice* device)
+		void			x_DestroyFileDevice360(xfiledevice* device)
 		{
 			FileDevice_360_System* file_device = (FileDevice_360_System*)device;
 			delete file_device;
@@ -412,23 +413,212 @@ namespace xcore
 			return ::CreateDirectoryA(szDirPath, NULL) != 0;
 		}
 
+		struct enumerate_delegate_dirs_copy_dir : public enumerate_delegate<xdirinfo>
+		{
+			cstack<const xdirinfo* > dirStack;
+			enumerate_delegate_dirs_copy_dir() { dirStack.init(sAtomicAllocator,MAX_ENUM_SEARCH_DIRS);}
+			virtual ~enumerate_delegate_dirs_copy_dir() { dirStack.clear(); }
+			virtual void operator () (s32 depth, const xdirinfo& inf, bool& terminate) { }
+			virtual void operator () (s32 depth, const xdirinfo* inf,bool& terminate)
+			{
+				terminate = false;
+				dirStack.push(inf);
+			}
+		};
 
+		struct enumerate_delegate_files_copy_dir : public enumerate_delegate<xfileinfo>
+		{
+			cstack<const xfileinfo* > fileStack;
+			enumerate_delegate_files_copy_dir() { fileStack.init(sAtomicAllocator,MAX_ENUM_SEARCH_FILES); }
+			virtual ~enumerate_delegate_files_copy_dir() { fileStack.clear(); }
+			virtual void operator () (s32 depth, const xfileinfo& inf, bool& terminate) { }
+			virtual void operator () (s32 depth, const xfileinfo* inf,bool& terminate)
+			{
+				terminate = false;
+				fileStack.push(inf);
+			}
+		};
+
+		static bool sIsDots(const TCHAR* str)
+		{
+			return (x_strcmp(str,".")==0 || x_strcmp(str,"..")==0);
+		}
+
+		static bool enumerateCopyDir(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth)
+		{
+			HANDLE hFind;  // file handle
+
+			WIN32_FIND_DATA FindFileData;
+
+			char DirPathBuffer[MAX_PATH+2];
+			char FileNameBuffer[MAX_PATH+2];
+			xcstring DirPath(DirPathBuffer, sizeof(DirPathBuffer), szDirPath);
+			DirPath += "\\*";
+
+			xcstring FileName(FileNameBuffer, sizeof(FileNameBuffer), szDirPath);		// searching all files
+			FileName += "\\";
+
+			hFind = ::FindFirstFile(DirPath.c_str(), &FindFileData);					// find the first file
+			if (hFind == INVALID_HANDLE_VALUE)
+				return false;
+
+			DirPath = FileName;
+
+			bool bSearch = true;
+			while(bSearch)
+			{	// until we find an entry
+				if (::FindNextFile(hFind,&FindFileData))
+				{
+					if (sIsDots(FindFileData.cFileName))
+						continue;
+
+					FileName += FindFileData.cFileName;
+
+					if ((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+					{
+						// We have found a directory, recurse
+						if (!enumerateCopyDir(FileName.c_str(), boSearchSubDirectories, file_enumerator, dir_enumerator, depth+1))
+						{ 
+							::FindClose(hFind); 
+							return false;											// directory couldn't be enumerated
+						}
+
+						FileName = DirPath;
+					}
+					else
+					{
+						xfileinfo* fi = new xfileinfo(FileName.c_str());
+						if (file_enumerator!=NULL && fi!=NULL)
+						{
+							bool terminate;
+							(*file_enumerator)(depth, fi, terminate);
+							bSearch = !terminate;
+						}
+						else
+						{
+							delete fi;			fi = NULL;
+						}
+						FileName = DirPath;
+					}
+				}
+				else
+				{
+					if (::GetLastError() == ERROR_NO_MORE_FILES)
+					{
+						// No more files here
+						bSearch = false;
+					}
+					else
+					{
+						// Some error occurred, close the handle and return FALSE
+						::FindClose(hFind); 
+						return false;
+					}
+				}
+			}
+			::FindClose(hFind);					// Closing file handle
+
+			if (dir_enumerator!=NULL)
+			{
+				xdirinfo* di = new xdirinfo(FileName.c_str());
+				bool terminate;
+				if (di != NULL)
+				{
+					(*dir_enumerator)(depth, di, terminate);
+				}
+				else
+				{
+					delete di;			di = NULL;
+				}
+				bSearch = !terminate;
+			}
+
+			return true;
+		}
+
+		static void changeDirPath(const char* szDirPath,const char* szToDirPath,const xdirinfo* szDirinfo,xdirpath& outDirPath)
+		{
+			xdirpath nDirpath_from(szDirPath);
+			xdirpath nDirpath_to(szToDirPath);
+			s32 depth1 = nDirpath_from.getLevels();
+			xdirpath parent,child;
+			szDirinfo->getFullName().split(depth1,parent,child);
+			nDirpath_to.getSubDir(child.c_str(),outDirPath);
+		}
+
+		static void changeFilePath(const char* szDirPath,const char* szToDirPath,const xfileinfo* szFileinfo,xfilepath& outFilePath)
+		{
+			xdirpath nDir;
+			szFileinfo->getFullName().getDirPath(nDir);
+			xdirpath nDirpath_from(szDirPath);
+			xdirpath nDirpath_to(szToDirPath);
+
+			xfilepath fileName = szFileinfo->getFullName();
+			fileName.onlyFilename();
+			s32 depth = nDirpath_from.getLevels();
+			xdirpath parent,child,copyDirPath_To;
+			nDir.split(depth,parent,child);
+			nDirpath_to.getSubDir(child.c_str(),copyDirPath_To);
+			outFilePath = xfilepath(copyDirPath_To,fileName);
+		}
+
+		bool FileDevice_360_System::copyDir(const char* szDirPath, const char* szToDirPath, bool boOverwrite) const
+		{
+			if (boOverwrite)
+			{
+				if (::CreateDirectoryA(szToDirPath,NULL))
+				{
+					::RemoveDirectory(LPCTSTR(szToDirPath));
+				}
+				else
+				{
+					deleteDir(szToDirPath);
+				}
+			}
+			else
+			{
+				if (::CreateDirectoryA(szToDirPath,NULL))
+				{
+					::RemoveDirectory(LPCTSTR(szToDirPath));
+				}
+				else
+					return false;
+			}
+			enumerate_delegate_files_copy_dir files_copy_enum;
+			enumerate_delegate_dirs_copy_dir dirs_copy_enum;
+			enumerateCopyDir(szDirPath,true,&files_copy_enum,&dirs_copy_enum,0);
+
+			const xdirinfo* dirInfo = NULL;
+			while(dirs_copy_enum.dirStack.pop(dirInfo))
+			{
+				xdirpath copyDirPath_To;
+				changeDirPath(szDirPath,szToDirPath,dirInfo,copyDirPath_To);
+				// nDirinfo_From --------------------->   copyDirPath_To       ( copy dir)
+				delete dirInfo;		dirInfo = NULL;
+				if (!::CreateDirectoryA(copyDirPath_To.c_str_device(),NULL) )
+					return false;
+			}
+			const xfileinfo* fileInfo = NULL;
+			while (files_copy_enum.fileStack.pop(fileInfo))
+			{
+				xfilepath copyFilePath_To;
+				changeFilePath(szDirPath,szToDirPath,fileInfo,copyFilePath_To);
+				//nFileinfo_From --------------------->  copyFilePath_To       (copy file)
+				if (!::CopyFileA(fileInfo->getFullName().c_str_device(),copyFilePath_To.c_str_device(),false))
+				{
+					delete fileInfo;    fileInfo = NULL;
+					return false;
+				}
+				delete fileInfo;	fileInfo = NULL;
+			}
+
+			return true;
+		}
 
 		bool FileDevice_360_System::moveDir(const char* szDirPath, const char* szToDirPath) const
 		{
 			u32 dwFlags = MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED;
 			return ::MoveFileExA(szDirPath, szToDirPath, dwFlags) != 0;
-		}
-
-		bool FileDevice_360_System::copyDir(const char* szDirPath, const char* szToDirPath, bool boOverwrite) const
-		{
-
-			return false;
-		}
-
-		static bool sIsDots(const TCHAR* str)
-		{
-			return (x_strcmp(str,".")==0 || x_strcmp(str,"..")==0);
 		}
 
 		struct enumerate_delegate_files_delete_dir : public enumerate_delegate<xfileinfo>
