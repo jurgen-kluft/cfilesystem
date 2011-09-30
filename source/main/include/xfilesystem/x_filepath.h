@@ -85,7 +85,9 @@ namespace xcore
 
 			const char*				c_str() const;
 			const char*               c_str_device() const;
-
+#ifdef TARGET_PS3
+			bool				makeRelativeForPS3();
+#endif
 		private:
 			void					fixSlashes();														///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.		
 			void					fixSlashesForDevice();

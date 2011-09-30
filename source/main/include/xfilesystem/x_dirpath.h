@@ -100,7 +100,9 @@ namespace xcore
 			const char*				c_str() const;
 
 			const char*               c_str_device() const;
-
+#ifdef TARGET_PS3
+			bool					makeRelativeForPS3();	
+#endif
 		private:
 			void					setOrReplaceDeviceName(xcstring&, const char*) const;
 			void					setOrReplaceDevicePart(xcstring&, const char*) const;

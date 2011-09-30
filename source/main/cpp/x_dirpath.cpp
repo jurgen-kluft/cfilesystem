@@ -428,6 +428,9 @@ namespace xcore
 			xfiledevice* device = alias->device();
 			outDirPath = mString;
 			setOrReplaceDevicePart(outDirPath, alias->remap());
+#ifdef TARGET_PS3
+			outDirPath.remove(":");
+#endif	
 			outDirPath.replace('\\',sGetSlashChar());
 			return device;
 		}
@@ -539,6 +542,20 @@ namespace xcore
 
 		char			xdirpath::operator [] (s32 index) const						{ return mString[index]; }
 
+#ifdef TARGET_PS3
+		bool			xdirpath::makeRelativeForPS3()
+		{
+			s32 leftPos = mString.find("\\");
+			if (leftPos <= 0)
+				return false;
+			mString.remove(0,leftPos+1);
+			fixSlashes();
+			mStringForDevice.clear();
+			mStringForDevice = mString;
+			return true;
+		}
+#endif
+
 		void			xdirpath::setOrReplaceDeviceName(xcstring& ioStr, const char* inDeviceName) const
 		{
 			s32 len = 0;
@@ -602,7 +619,7 @@ namespace xcore
 // 				mString.trimLeft(slash);
 			if (mString.getLength()>0 && mString.firstChar()==rightSlash)
 			{
-				mString.trim(rightSlash);
+				mString.trimLeft(rightSlash);
 			}
 
 			// Make sure there is a slash at the end of the path

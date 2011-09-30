@@ -704,17 +704,17 @@ namespace xcore
 		{
 			HANDLE handle = sOpenDir(szDirPath);
 			if (handle != INVALID_HANDLE_VALUE)
-			{
-				FILETIME _creationTime;
-				FILETIME _lastAccessTime;
-				FILETIME _lastWriteTime;
-				::GetFileTime(handle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
-				outCreationTime   = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
-				outLastAccessTime = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
-				outLastWriteTime  = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
-				sCloseDir(handle);
-				return true;
-			}
+				{
+					FILETIME _creationTime;
+					FILETIME _lastAccessTime;
+				    FILETIME _lastWriteTime;
+					::GetFileTime(handle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
+					outCreationTime   = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
+					outLastAccessTime = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
+					outLastWriteTime  = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
+					sCloseDir(handle);
+					return true;
+				}
 			return false;
 		}
 
@@ -757,10 +757,10 @@ namespace xcore
 			char DirPathBuffer[MAX_PATH+2];
 			char FileNameBuffer[MAX_PATH+2];
 			xcstring DirPath(DirPathBuffer, sizeof(DirPathBuffer), szDirPath);
-			DirPath += "\\*";
+			DirPath += "\*";
 
 			xcstring FileName(FileNameBuffer, sizeof(FileNameBuffer), szDirPath);		// searching all files
-			FileName += "\\";
+			//FileName += "\\";
 
 			hFind = ::FindFirstFile(DirPath.c_str(), &FindFileData);					// find the first file
 			if (hFind == INVALID_HANDLE_VALUE)

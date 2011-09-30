@@ -310,14 +310,17 @@ namespace xcore
 
 		bool				sGetFileAttributes(const xfilepath& filename, xattributes& outAttr)
 		{
-			xdevicealias const* da = sGetAlias(filename);
-			if (da == NULL)
-				return false;
-			xfiledevice* device = da->device();
+// 			xdevicealias const* da = sGetAlias(filename);
+// 			if (da == NULL)
+// 				return false;
+// 			xfiledevice* device = da->device();
+			char systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
+			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
+			xfiledevice* device = filename.getSystem(systemFile);
 			if (device == NULL)
 				return false;
 			xattributes attr;
-			if (device->getFileAttr(filename.c_str_device(), attr))
+			if (device->getFileAttr(systemFile.c_str(), attr))
 			{
 				outAttr = attr;
 				return true;

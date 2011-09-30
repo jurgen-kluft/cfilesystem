@@ -411,7 +411,7 @@ UNITTEST_SUITE_BEGIN(dirpath)
 		{
 			const char* str1 = "TEST:\\textfiles\\";
 			xdirpath di1(str1);
-			const char* str2 = "TEST:/textfiles/";
+			const char* str2 = "TEST/textfiles/";
 			char strBuffer[256];
 			xcstring str(strBuffer, sizeof(strBuffer));
 			xfiledevice* device = di1.getSystem(str);

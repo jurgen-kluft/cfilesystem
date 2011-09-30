@@ -322,8 +322,14 @@ namespace xcore
 		static TestDir*		sFindTestDir(const char* szDir)
 		{
 			xdirpath dp(szDir);
+#ifdef TARGET_PS3
+			//  dp ---->   "test\filename\"
+			// format -------> "filename\"
+			if(!dp.makeRelativeForPS3())
+				return NULL;
+#else
 			dp.makeRelative();
-
+#endif
 			s32 i=0;
 			while (true)
 			{
@@ -355,8 +361,14 @@ namespace xcore
 
 		static TestFile*	sFindTestFile(const char* szFilename)
 		{
-			xfilepath fp(szFilename);
+			xfilepath fp(szFilename);			
+
+#ifdef TARGET_PS3
+			if(!fp.makeRelativeForPS3())
+				return NULL;
+#else
 			fp.makeRelative();
+#endif
 
 			TestFile* testFile = sFiles;
 			while (true)
@@ -382,8 +394,11 @@ namespace xcore
 					// init last write time
 					// data copy
 					t->mName = szFilename;
+#ifdef TARGET_PS3
+					t->mName.makeRelativeForPS3();
+#else
 					t->mName.makeRelative();
-
+#endif
 					t->mFileLength = dataSize;
 					t->mMaxFileLength = sizeof(t->mFileData);
 					if (t->mFileLength>sizeof(t->mFileData))
@@ -524,7 +539,9 @@ namespace xcore
 			TestFile* testFile = sFindTestFile(szFilename);
 			if (testFile!=NULL)
 			{
-				testFile->mName = szToFilename;
+				xfilepath filePath(szToFilename);
+//				filePath.removeFirstSlashAndBefore();
+				testFile->mName = filePath.c_str();
 				return true;
 			}
 			return false;
@@ -674,7 +691,11 @@ namespace xcore
 				return false;
 
 			xdirpath dp(szDirPath);
+#ifdef TARGET_PS3
+			dp.makeRelativeForPS3();
+#else
 			dp.makeRelative();
+#endif
 			TestDir* newDir = sFindEmptyTestDir();
 			if (newDir!=NULL)
 			{
@@ -689,8 +710,11 @@ namespace xcore
 		static bool enumerateCopyTestDir(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth)
 		{
 			xdirpath dp(szDirPath);
+#ifdef TARGET_PS3
+			dp.makeRelativeForPS3();
+#else
 			dp.makeRelative();
-
+#endif
 			TestDir* testDir = sDirs;
 			bool terminate = false;
 			while (!terminate)
@@ -761,6 +785,9 @@ namespace xcore
 			xdirpath nDirpath_from(szDirPath);
 			xdirpath nDirpath_to(szToDirPath);
 			s32 depth1 = nDirpath_from.getLevels();
+#ifdef TARGET_PS3
+			depth1 -= 1;
+#endif
 			xdirpath parent,child;
 			szDirinfo->getFullName().split(depth1,parent,child);
 			nDirpath_to.getSubDir(child.c_str(),outDirPath);
@@ -777,6 +804,9 @@ namespace xcore
 			xfilepath fileName = szFileinfo->getFullName();
 			fileName.onlyFilename();
 			s32 depth = nDirpath_from.getLevels();
+#ifdef TARGET_PS3
+			depth -= 1;
+#endif
 			xdirpath parent,child,copyDirPath_To;
 			nDir.split(depth,parent,child);
 			nDirpath_to.getSubDir(child.c_str(),copyDirPath_To);
@@ -822,12 +852,24 @@ namespace xcore
 			enumerate_delegate_files_copy_testDir files_copy_enum;
 			enumerate_delegate_dirs_copy_testDir dirs_copy_enum;
 			enumerateCopyTestDir(szDirPath,true,&files_copy_enum,&dirs_copy_enum,0);
-
+			
 			const xdirinfo* dirInfo = NULL;
 			while(dirs_copy_enum.dirStack.pop(dirInfo))
 			{
 				xdirpath copyDirPath_To;
+
+#ifdef TARGET_PS3
+				//xdirpath szDirPath_Tmp("TEST\\");
+				xdirpath szDirPathChild(szDirPath);
+				//szDirPathChild.makeRelativeTo(szDirPath_Tmp);
+
+				xdirpath szDirPathChild2(szToDirPath);
+				//szDirPathChild2.makeRelativeTo(szDirPath_Tmp);
+				
+				changeDirPath(szDirPathChild.c_str(),szDirPathChild2.c_str(),dirInfo,copyDirPath_To);
+#else
 				changeDirPath(szDirPath,szToDirPath,dirInfo,copyDirPath_To);
+#endif			
 				// nDirinfo_From --------------------->   copyDirPath_To       ( copy dir)
 				delete dirInfo;		dirInfo = NULL;
 				if (!createDir(copyDirPath_To.c_str()))
@@ -838,9 +880,26 @@ namespace xcore
 			while (files_copy_enum.fileStack.pop(fileInfo))
 			{
 				xfilepath copyFilePath_To;
+#ifdef TARGET_PS3
+				//xdirpath szDirPath_Tmp("TEST\\");
+				xdirpath szDirPathChild(szDirPath);
+				//szDirPathChild.makeRelativeTo(szDirPath_Tmp);
+
+				xdirpath szDirPathChild2(szToDirPath);
+				//szDirPathChild2.makeRelativeTo(szDirPath_Tmp);
+				changeFilePath(szDirPathChild.c_str(),szDirPathChild2.c_str(),fileInfo,copyFilePath_To);
+
+				xdirpath copyDirPath_From("TEST\\");
+				copyDirPath_From.down(fileInfo->getFullName().c_str());
+				xfilepath copyFilePath_From(copyDirPath_From.c_str());
+				//nFileinfo_From --------------------->  copyFilePath_To       (copy file)
+				bool copyFile_result = copyFile(copyFilePath_From.c_str(),copyFilePath_To.c_str(),false);
+#else
 				changeFilePath(szDirPath,szToDirPath,fileInfo,copyFilePath_To);
 				//nFileinfo_From --------------------->  copyFilePath_To       (copy file)
-				if (!copyFile(fileInfo->getFullName().c_str(),copyFilePath_To.c_str(),false))
+				bool copyFile_result = copyFile(fileInfo->getFullName().c_str(),copyFilePath_To.c_str(),false);
+#endif
+				if (!copyFile_result)
 				{
 					delete fileInfo;    fileInfo = NULL;
 					return false;
@@ -860,6 +919,7 @@ namespace xcore
 			testDir->mName = "__EMPTY__";
 			return true;
 		}
+
 		bool xfiledevice_TEST::deleteDir(const char* szDirPath) const
 		{
 			enumerate_delegate_files_copy_testDir files_copy_enum;
@@ -869,8 +929,15 @@ namespace xcore
 			const xfileinfo* fileInfo = NULL;
 			while (files_copy_enum.fileStack.pop(fileInfo))
 			{
-				xfilepath copyFilePath_To;
-				if (!deleteFile(fileInfo->getFullName().c_str()))
+#ifdef TARGET_PS3		
+				xdirpath szDirPath_Tmp(fileInfo->getFullName().c_str());
+				szDirPath_Tmp.makeRelativeTo(xdirpath(szDirPath));
+				xfilepath szFilePath_Tmp(szDirPath_Tmp.c_str());
+				bool result_file = deleteFile(szFilePath_Tmp.c_str());
+#else
+				bool result_file = deleteFile(fileInfo->getFullName().c_str());
+#endif
+				if (!result_file)
 				{
 					delete fileInfo;    fileInfo = NULL;
 					return false;
@@ -881,7 +948,15 @@ namespace xcore
 			const xdirinfo* dirInfo = NULL;
 			while(dirs_copy_enum.dirStack.pop(dirInfo))
 			{
-				if (!deleteDirOnly(dirInfo->getFullName().c_str()))
+#ifdef TARGET_PS3
+				xdirpath szDirPath_Tmp(dirInfo->getFullName().c_str());
+				szDirPath_Tmp.makeRelativeTo(xdirpath(szDirPath));
+
+				bool result_dir = deleteDirOnly(szDirPath_Tmp.c_str());
+#else
+				bool result_dir = deleteDirOnly(dirInfo->getFullName().c_str());
+#endif
+				if (!result_dir)
 				{
 					delete dirInfo;		dirInfo = NULL;
 					return false;
@@ -940,7 +1015,11 @@ namespace xcore
 		bool xfiledevice_TEST::enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth) const
 		{
 			xdirpath dp(szDirPath);
+#ifdef TARGET_PS3
+			dp.makeRelativeForPS3();
+#else
 			dp.makeRelative();
+#endif
 
 			TestDir* testDir = sDirs;
 			bool terminate = false;

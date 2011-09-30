@@ -28,6 +28,7 @@
 #include "xfilesystem\private\x_filedata.h"
 #include "xfilesystem\private\x_fileasync.h"
 
+#include "xstl\list.h"
 namespace xcore
 {
 	//------------------------------------------------------------------------------------------
@@ -411,6 +412,8 @@ namespace xcore
 			return ::CreateDirectoryA(szDirPath, NULL) != 0;
 		}
 
+
+
 		bool FileDevice_360_System::moveDir(const char* szDirPath, const char* szToDirPath) const
 		{
 			u32 dwFlags = MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED;
@@ -563,22 +566,13 @@ namespace xcore
 
 					if ((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 					{
-						if (dir_enumerator==NULL)
-						{
 							// We have found a directory, recurse
 							if (!enumerate(FileName.c_str(), boSearchSubDirectories, file_enumerator, dir_enumerator, depth+1))
 							{ 
 								::FindClose(hFind); 
 								return false;											// directory couldn't be enumerated
 							}
-							if (dir_enumerator!=NULL)
-							{
-								xdirinfo di(FileName.c_str());
-								bool terminate;
-								(*dir_enumerator)(depth, di, terminate);
-								bSearch = !terminate;
-							}
-						}
+
 						FileName = DirPath;
 					}
 					else

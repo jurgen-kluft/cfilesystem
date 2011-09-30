@@ -775,7 +775,11 @@ namespace xcore
 			xfiledevice* device = alias->device();
 			szFilename.setDevicePart(alias->remap());
 			outFilename = szFilename.c_str_device();
-
+			// app_home:/dirname/filename.txt  (remove char ':' )
+			// right format is app_home/dirname/filename.txt
+#ifdef TARGET_PS3
+			outFilename.remove(":");
+#endif
 			return device;
 		}
 
@@ -972,7 +976,12 @@ namespace xcore
 			u32 uHandle = asyncPreOpen(szFilename, boRead, boWrite);
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u32 nFileHandle;
-			if (!pxFileInfo->m_pFileDevice->createFile(szFilename, boRead, boWrite, nFileHandle))
+
+			char szSystemFilenameBuffer[FS_MAX_PATH + 2];
+			xcstring szSystemFilename(szSystemFilenameBuffer, sizeof(szSystemFilenameBuffer));
+			xfiledevice* device = createSystemPath(szFilename, szSystemFilename);
+
+			if (!pxFileInfo->m_pFileDevice->createFile(szSystemFilename.c_str(), boRead, boWrite, nFileHandle))
 			{
 				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->createFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 				pxFileInfo->clear();
@@ -990,7 +999,12 @@ namespace xcore
 			u32 uHandle = asyncPreOpen(szFilename, boRead, boWrite);
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
 			u32 nFileHandle;
-			if (!pxFileInfo->m_pFileDevice->openFile(szFilename, boRead, boWrite, nFileHandle))
+
+			char szSystemFilenameBuffer[FS_MAX_PATH + 2];
+			xcstring szSystemFilename(szSystemFilenameBuffer, sizeof(szSystemFilenameBuffer));
+			xfiledevice* device = createSystemPath(szFilename, szSystemFilename);
+
+			if (!pxFileInfo->m_pFileDevice->openFile(szSystemFilename.c_str(), boRead, boWrite, nFileHandle))
 			{
 				x_printf ("xfilesystem:"TARGET_PLATFORM_STR" ERROR device->openFile failed on file %s\n", x_va_list(pxFileInfo->m_szFilename));
 				pxFileInfo->clear();
