@@ -656,7 +656,7 @@ namespace xcore
 				xfilepath copyFilePath_To;
 				changeFilePath(szDirPath,szToDirPath,fileInfo,copyFilePath_To);
 				//nFileinfo_From --------------------->  copyFilePath_To       (copy file)
-				if (!moveFile(fileInfo->getFullName().c_str_device(),copyFilePath_To.c_str_device()))
+				if (!copyFile(fileInfo->getFullName().c_str_device(),copyFilePath_To.c_str_device(),true))
 				{
 					delete fileInfo;		fileInfo = NULL;
 					return false;

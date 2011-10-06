@@ -28,7 +28,6 @@
 #include "xfilesystem\x_dirinfo.h"
 #include "xfilesystem\private\x_filedata.h"
 #include "xfilesystem\private\x_fileasync.h"
-
 #include "xfilesystem\private\x_filesystem_cstack.h"
 
 extern xcore::x_iallocator* sAtomicAllocator;
@@ -440,8 +439,6 @@ namespace xcore
 		{
 			xdirpath nDir;
 			szFileinfo->getFullName().getDirPath(nDir);
-//			xfilepath nFilepath_from(szDirPath);
-//			xfilepath nFilepath_to(szToDirPath);
 			xdirpath nDirpath_from(szDirPath);
 			xdirpath nDirpath_to(szToDirPath);
 
@@ -452,20 +449,6 @@ namespace xcore
 			nDir.split(depth,parent,child);
 			nDirpath_to.getSubDir(child.c_str(),copyDirPath_To);
 			outFilePath = xfilepath(copyDirPath_To,fileName);
-
-// 			xdirpath nDir_from,nDir_to;
-// 			nFilepath_from.getDirPath(nDir_from);
-// 			nFilepath_to.getDirPath(nDir_to);
-// 
-// 			xfilepath fileName = szFileinfo->getFullName();
-// 			fileName.onlyFilename();
-// 
-// 			s32 depth = nDir_from.getLevels();
-// 			xdirpath parent,child,copyDirPath_To;
-// 			nDir.split(depth,parent,child);
-// 			nDir_to.getSubDir(child.c_str(),copyDirPath_To);
-// 
-// 			outFilePath =  xfilepath(copyDirPath_To,fileName);
 		}
 
 		static bool sIsDots(const TCHAR* str)
