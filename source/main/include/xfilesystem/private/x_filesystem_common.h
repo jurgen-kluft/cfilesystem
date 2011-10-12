@@ -55,6 +55,7 @@ namespace xcore
 		extern void 			close				( u32& uHandle, xiasync_result** pAsyncResult );
 		extern void				closeAndDelete		( u32& uHandle, xiasync_result** pAsyncResult );
 		extern void				save				( const char* szFilename, const void* pData, u64 uSize );
+		extern u32				create				( const char* szFilename, xbool boRead = true, xbool boWrite = false);
 
 		extern xbool			hasLastError		( void );
 		extern void				clearLastError		( void );

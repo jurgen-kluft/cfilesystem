@@ -165,7 +165,8 @@ namespace xcore
 						{
 							if (xfilesystem::exists(filename.c_str()) == xFALSE)
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								mFileHandle = xfilesystem::create(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 							}
 						}
 					} break;
@@ -180,7 +181,8 @@ namespace xcore
 							}
 							else
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								mFileHandle = xfilesystem::create(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 							}
 						}
 					} break;
