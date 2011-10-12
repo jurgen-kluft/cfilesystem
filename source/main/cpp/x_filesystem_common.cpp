@@ -239,6 +239,14 @@ namespace xcore
 			}
 		}
 
+		u32				create( const char* szFilename, xbool boRead, xbool boWrite)
+		{
+			ASSERTS (szFilename, "Create() : Pointer to name is NULL!");
+
+			return syncCreate(szFilename, boRead, boWrite);
+		}
+
+
 		//------------------------------------------------------------------------------------------
 
 		bool				asyncCompleted ( u32 uHandle, xasync_id const& uAsync )
