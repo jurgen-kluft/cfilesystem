@@ -153,12 +153,7 @@ namespace xcore
 
 			HANDLE handle = ::CreateFile(szFilename, fileMode, shareType, NULL, disposition, attrFlags, NULL);
 			nFileHandle = (u32)handle;
-			if (nFileHandle != u32(INVALID_HANDLE_VALUE))
-			{
-				::CloseHandle(handle);
-				return true;
-			}
-			return false;
+			return nFileHandle != (u32)(INVALID_HANDLE_VALUE);
 		}
 
 		bool FileDevice_PC_System::readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const
