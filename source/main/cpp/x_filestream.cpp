@@ -167,6 +167,7 @@ namespace xcore
 							{
 								//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
 								mFileHandle = xfilesystem::create(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								xfilesystem::setLength(mFileHandle, 0);
 							}
 						}
 					} break;
@@ -183,6 +184,7 @@ namespace xcore
 							{
 								//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
 								mFileHandle = xfilesystem::create(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								xfilesystem::setLength(mFileHandle, 0);
 							}
 						}
 					} break;
@@ -192,10 +194,26 @@ namespace xcore
 						{
 							mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
 						}
+						else
+						{
+							mFileHandle = INVALID_FILE_HANDLE;
+						}
 					} break;
 				case FileMode_OpenOrCreate:
 					{
-						mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+						{
+							if (xfilesystem::exists(filename.c_str()) == xTRUE)
+							{
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								xfilesystem::setLength(mFileHandle, 0);
+							}
+							else
+							{
+								//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								mFileHandle = xfilesystem::create(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								xfilesystem::setLength(mFileHandle, 0);
+							}
+						}
 					} break;
 				case FileMode_Truncate:
 					{
