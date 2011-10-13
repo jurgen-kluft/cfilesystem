@@ -25,9 +25,10 @@ namespace xcore
 
 		void doIO(xio_thread* io_thread)
 		{
-			do
+			xfileasync* pAsync = NULL;
+			while (io_thread->loop() || (pAsync = popAsyncIO()) != NULL )
 			{
-				xfileasync* pAsync = popAsyncIO();
+				 
 				if (pAsync)
 				{
 					if (pAsync->getFileIndex() >=  0)
@@ -161,7 +162,8 @@ namespace xcore
 				{
 					io_thread->wait();
 				}
-			} while (io_thread->loop());
+			} // end while loop;
+
 		}
 		
 	};
