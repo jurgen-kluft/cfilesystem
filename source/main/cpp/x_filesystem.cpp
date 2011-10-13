@@ -25,8 +25,9 @@ namespace xcore
 
 		void doIO(xio_thread* io_thread)
 		{
+			const xcore::s32 queueSize = 5;
 			xfileasync* pAsync = NULL;
-			xcore::s32 loopFlag = 5; // when the thread is stopped loop extra times to try to clean out memory in queues
+			xcore::s32 loopFlag = queueSize; // when the thread is stopped loop extra times to try to clean out memory in queues
  			do
 			{
 				pAsync = popAsyncIO();
@@ -169,6 +170,23 @@ namespace xcore
 					loopFlag--;
 				}
 			} while (loopFlag >= 0 || pAsync != NULL);
+
+
+
+			// more attempt to clean the queue of event allocations
+			for(xcore::s32 i = 0; i < queueSize; i++)
+			{
+				pAsync = popAsyncIO();
+
+				if(pAsync != NULL)
+				{
+					if (pAsync->getEvent() != NULL)
+					{
+						pAsync->getEvent()->signal();
+						getEventFactory()->destruct(pAsync->getEvent());
+					}
+				}
+			}
 
 
 		}
