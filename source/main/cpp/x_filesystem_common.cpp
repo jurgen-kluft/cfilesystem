@@ -293,11 +293,13 @@ namespace xcore
 			pOpen->setReadWriteOffset	(0);
 			pOpen->setReadWriteSize		(0);
 
+			xevent* async_event = getEventFactory()->construct();
+			async_event->set();
+			pOpen->setEvent(async_event);
+
 			xasync_id id = pushAsyncIO(pOpen);
 			if (pAsyncId!=NULL) 
 			{
-				xevent* async_event = getEventFactory()->construct();
-				pOpen->setEvent(async_event);
 
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
@@ -335,12 +337,14 @@ namespace xcore
 			pRead->setReadWriteOffset	(uOffset);
 			pRead->setReadWriteSize		(uSize);
 
+			xevent* async_event = getEventFactory()->construct();
+			async_event->set();
+			pRead->setEvent(async_event);
+
 			xasync_id id = pushAsyncIO(pRead);
 			if (pAsyncId!=NULL) 
 			{
-				xevent* async_event = getEventFactory()->construct();
-				async_event->set();
-				pRead->setEvent(async_event);
+
 
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
@@ -379,12 +383,14 @@ namespace xcore
 			pWrite->setReadWriteOffset	(uOffset);
 			pWrite->setReadWriteSize	(uSize);
 
+			xevent* async_event = getEventFactory()->construct();
+			async_event->set();
+			pWrite->setEvent(async_event);
+
 			xasync_id id = pushAsyncIO(pWrite);
 			if (pAsyncId!=NULL) 
 			{
-				xevent* async_event = getEventFactory()->construct();
-				async_event->set();
-				pWrite->setEvent(async_event);
+
 
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
@@ -421,12 +427,14 @@ namespace xcore
 			pDelete->setReadWriteOffset	(0);
 			pDelete->setReadWriteSize	(0);
 
+			xevent* async_event = getEventFactory()->construct();
+			async_event->set();
+			pDelete->setEvent(async_event);
+
 			xasync_id id = pushAsyncIO(pDelete);
 			if (pAsyncId!=NULL) 
 			{
-				xevent* async_event = getEventFactory()->construct();
-				async_event->set();
-				pDelete->setEvent(async_event);
+
 
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
@@ -464,12 +472,14 @@ namespace xcore
 			pClose->setReadWriteOffset	(0);
 			pClose->setReadWriteSize	(0);
 
+			xevent* async_event = getEventFactory()->construct();
+			async_event->set();
+			pClose->setEvent(async_event);
+
 			xasync_id id = pushAsyncIO(pClose);
 			if (pAsyncId!=NULL) 
 			{
-				xevent* async_event = getEventFactory()->construct();
-				async_event->set();
-				pClose->setEvent(async_event);
+
 
 				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
 				async_result->init(id, uHandle, async_event);
