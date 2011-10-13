@@ -26,7 +26,8 @@ namespace xcore
 		void doIO(xio_thread* io_thread)
 		{
 			xfileasync* pAsync = NULL;
-			do
+			xcore::s32 loopFlag = 5; // when the thread is stopped loop extra times to try to clean out memory in queues
+ 			do
 			{
 				pAsync = popAsyncIO();
 				if (pAsync)
@@ -162,7 +163,12 @@ namespace xcore
 				{
 					io_thread->wait();
 				}
-			} while (io_thread->loop() || pAsync != NULL);
+
+				if(!io_thread->loop())
+				{
+					loopFlag--;
+				}
+			} while (loopFlag >= 0 || pAsync != NULL);
 
 
 		}
