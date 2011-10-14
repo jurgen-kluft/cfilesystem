@@ -144,8 +144,9 @@ namespace xcore
 						if (pAsync->getStatus() == FILE_OP_STATUS_DONE)
 						{
 							AsyncCallback callback = pAsync->getCallback();
+							xcore::xbyte *buffPtr = (xcore::xbyte*)pAsync->getWriteAddress();
 
-							callback(nResultSize, (xcore::xbyte*)pAsync->getWriteAddress());
+							callback(nResultSize, buffPtr);
 
 							xfilesystem::pushFreeFileSlot(pAsync->getFileIndex());
 							
@@ -174,22 +175,6 @@ namespace xcore
 				}
 			} while (loopFlag >= 0 || pAsync != NULL);
 
-
-
-			// more attempt to clean the queue of event allocations
-			for(xcore::s32 i = 0; i < queueSize; i++)
-			{
-				pAsync = popAsyncIO();
-
-				if(pAsync != NULL)
-				{
-					if (pAsync->getEvent() != NULL)
-					{
-						pAsync->getEvent()->signal();
-						getEventFactory()->destruct(pAsync->getEvent());
-					}
-				}
-			}
 
 
 		}

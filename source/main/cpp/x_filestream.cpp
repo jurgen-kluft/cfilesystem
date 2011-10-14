@@ -381,7 +381,13 @@ namespace xcore
 			if (mCaps.isSet(USE_READ))
 			{
 				u64 p = getPosition();
-				xfilesystem::read(mFileHandle, p, count, &buffer[offset], callback);
+
+				AsyncCallback currCallback = mCallback;
+
+				if(callback != NULL)
+					currCallback = callback;
+
+				xfilesystem::read(mFileHandle, p, count, &buffer[offset], currCallback);
 				return true;
 			}
 			else return false;
@@ -397,7 +403,13 @@ namespace xcore
 			if (mCaps.isSet(USE_WRITE))
 			{
 				u64 p = getPosition();
-				xfilesystem::write(mFileHandle, p, count, &buffer[offset], callback);
+
+				AsyncCallback currCallback = mCallback;
+
+				if(callback != NULL)
+					currCallback = callback;
+
+				xfilesystem::write(mFileHandle, p, count, &buffer[offset], currCallback);
 				return true;	
 			}
 			return false;
