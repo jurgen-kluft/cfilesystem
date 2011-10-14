@@ -45,9 +45,9 @@ namespace xcore
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count)								{ return 0; }
 			virtual u64				writeByte(xbyte)																{ return 0; }
 
-			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)			{ return xasync_result(); }
+			virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)			{ return false; }
 			virtual void			endRead(xasync_result& asyncResult)												{ }
-			virtual xasync_result	beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)	{ return xasync_result(); }
+			virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)	{ return false; }
 			virtual void			endWrite(xasync_result& asyncResult)											{ }
 
 			virtual void			copyTo(xistream* dst)															{ }
@@ -169,7 +169,7 @@ namespace xcore
 		}
 
 
-		xasync_result			xstream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		bool			xstream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			return mImplementation->beginRead(buffer, offset, count, callback);
 		}
@@ -180,7 +180,7 @@ namespace xcore
 			return true;
 		}
 
-		xasync_result			xstream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		bool			xstream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			return mImplementation->beginWrite(buffer, offset, count, callback);
 		}

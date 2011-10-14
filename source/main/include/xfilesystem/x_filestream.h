@@ -51,12 +51,13 @@ namespace xcore
 		public:
 									xfilestream		();
 									xfilestream		(const xfilestream&);
-									xfilestream		(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
+									xfilestream		(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, AsyncCallback = NULL);
 									~xfilestream	(void);
 
 			xfilestream&			operator =		(const xfilestream&);
 			bool					operator ==		(const xfilestream&) const;
 			bool					operator !=		(const xfilestream&) const;
+
 		};
 
 		//==============================================================================

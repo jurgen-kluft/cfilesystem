@@ -26,7 +26,7 @@ namespace xcore
 		class xistream;
 
 		///< Callback prototype
-		typedef void(*AsyncCallback)(void);
+		typedef void (*AsyncCallback)(u64 result, xbyte* buffer);
 
 		enum ESeekOrigin
 		{
@@ -67,9 +67,9 @@ namespace xcore
 			u64					write(const xbyte* buffer, u64 offset, u64 count);								///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 			u64					writeByte(xbyte inByte);							 							///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
-			xasync_result		beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);  		///< Begins an asynchronous read operation.
+			bool				beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback = NULL);  		///< Begins an asynchronous read operation.
 			bool				endRead(xasync_result& asyncResult, bool block=true);												///< Waits for the pending asynchronous read to complete.
-			xasync_result		beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
+			bool				beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback = NULL);	///< Begins an asynchronous write operation.
 			bool				endWrite(xasync_result& asyncResult, bool block=true);												///< Ends an asynchronous write operation.
 
 			void				copyTo(xstream& dst);															///< Reads the bytes from the current stream and writes them to the destination stream.

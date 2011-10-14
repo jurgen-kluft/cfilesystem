@@ -30,6 +30,8 @@ namespace xcore
 			xcore::s32 loopFlag = queueSize; // when the thread is stopped loop extra times to try to clean out memory in queues
  			do
 			{
+				xcore::u64 nResultSize = 0;
+
 				pAsync = popAsyncIO();
 				if (pAsync)
 				{
@@ -114,8 +116,7 @@ namespace xcore
 							{
 								pAsync->setStatus(FILE_OP_STATUS_READING);
 
-								u64 nReadSize;
-								bool boRead = pFileDevice->readFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getReadAddress(), (u32)pAsync->getReadWriteSize(), nReadSize);
+								bool boRead = pFileDevice->readFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getReadAddress(), (u32)pAsync->getReadWriteSize(), nResultSize);
 								if (!boRead)
 								{
 									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR readFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
@@ -127,8 +128,7 @@ namespace xcore
 							{
 								pAsync->setStatus(FILE_OP_STATUS_WRITING);
 
-								u64 nWriteSize;
-								bool boWrite = pFileDevice->writeFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getWriteAddress(), (u32)pAsync->getReadWriteSize(), nWriteSize);
+								bool boWrite = pFileDevice->writeFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getWriteAddress(), (u32)pAsync->getReadWriteSize(), nResultSize);
 								if (!boWrite)
 								{
 									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR writeFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
@@ -139,22 +139,25 @@ namespace xcore
 						}
 						// ========================================================================
 
+
+						// Operation is finished, call the callback
 						if (pAsync->getStatus() == FILE_OP_STATUS_DONE)
 						{
-							pAsync->setPushFileDataOnFreeQueue(true);
-						}
+							AsyncCallback callback = pAsync->getCallback();
 
-						if (pAsync->getPushFileDataOnFreeQueue())
-						{
+							callback(nResultSize, (xcore::xbyte*)pAsync->getWriteAddress());
+
 							xfilesystem::pushFreeFileSlot(pAsync->getFileIndex());
-							pAsync->setPushFileDataOnFreeQueue(false);
+							
 						}
 
+						// no longer care about xevent
+						/*
 						if (pAsync->getEvent() != NULL)
 						{
 							pAsync->getEvent()->signal();
 							getEventFactory()->destruct(pAsync->getEvent());
-						}
+						}*/
 
 						pAsync->clear();
 						pushFreeAsyncIO(pAsync);

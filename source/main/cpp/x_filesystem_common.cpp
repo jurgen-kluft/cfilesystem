@@ -15,6 +15,7 @@
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\x_threading.h"
+#include "xfilesystem\x_stream.h"
 #include "xfilesystem\private\x_filedata.h"
 #include "xfilesystem\private\x_fileasync.h"
 
@@ -101,12 +102,12 @@ namespace xcore
 
 		///< Asynchronous file operations
 		static u32			asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
-		static void			asyncOpen			( const u32 uHandle, xiasync_result** pAsyncId );
-		static u32			asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false, xiasync_result** pAsyncId = NULL );
-		static void			asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result** pAsyncId );
-		static void			asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result** pAsyncId );
-		static void			asyncClose			( const u32 uHandle, xiasync_result** pAsyncId );
-		static void			asyncCloseAndDelete	( const u32 uHandle, xiasync_result** pAsyncId );
+		static void			asyncOpen			( const u32 uHandle, AsyncCallback callback = NULL );
+		static u32			asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false, AsyncCallback callback = NULL );
+		static void			asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, AsyncCallback callback = NULL );
+		static void			asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, AsyncCallback callback = NULL );
+		static void			asyncClose			( const u32 uHandle, AsyncCallback callback = NULL );
+		static void			asyncCloseAndDelete	( const u32 uHandle, AsyncCallback callback = NULL );
 
 		//------------------------------------------------------------------------------------------
 
@@ -121,10 +122,10 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					open ( const char* szFilename, xbool boRead, xbool boWrite, xiasync_result** pAsyncId)
+		u32					open ( const char* szFilename, xbool boRead, xbool boWrite, AsyncCallback callback)
 		{
-			if (pAsyncId)
-				return asyncOpen(szFilename, boRead, boWrite, pAsyncId);
+			if (callback)
+				return asyncOpen(szFilename, boRead, boWrite, callback);
 			else
 				return syncOpen(szFilename, boRead, boWrite);
 		}
@@ -162,11 +163,11 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					read (u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result** pAsyncId )
+		u64					read (u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, AsyncCallback callback )
 		{
-			if (pAsyncId != NULL)
+			if (callback != NULL)
 			{
-				asyncRead(uHandle, uOffset, uSize, pBuffer, pAsyncId);
+				asyncRead(uHandle, uOffset, uSize, pBuffer, callback);
 				return 0;
 			}
 			else
@@ -177,11 +178,11 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					write ( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result** pAsyncId )
+		u64					write ( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, AsyncCallback callback )
 		{
-			if (pAsyncId != NULL)
+			if (callback != NULL)
 			{
-				asyncWrite(uHandle, uOffset, uSize, pBuffer, pAsyncId);
+				asyncWrite(uHandle, uOffset, uSize, pBuffer, callback);
 				return 0;
 			}
 			else
@@ -206,20 +207,20 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				closeAndDelete ( u32& uHandle, xiasync_result** pAsyncId )
+		void				closeAndDelete ( u32& uHandle, AsyncCallback callback )
 		{
-			if (pAsyncId != NULL)
-				asyncCloseAndDelete(uHandle, pAsyncId);
+			if (callback!= NULL)
+				asyncCloseAndDelete(uHandle, callback);
 			else
 				syncDelete(uHandle);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				close ( u32 &uHandle, xiasync_result** pAsyncId )
+		void				close ( u32 &uHandle, AsyncCallback callback)
 		{
-			if (pAsyncId != NULL)
-				asyncClose(uHandle, pAsyncId);
+			if (callback != NULL)
+				asyncClose(uHandle, callback);
 			else
 				syncClose(uHandle);
 		}
@@ -263,16 +264,16 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					asyncOpen ( const char* szName, xbool boRead, xbool boWrite, xiasync_result** pAsyncId )
+		u32					asyncOpen ( const char* szName, xbool boRead, xbool boWrite, AsyncCallback callback )
 		{
 			u32 uHandle = asyncPreOpen( szName, boRead, boWrite );
-			asyncOpen(uHandle, pAsyncId);
+			asyncOpen(uHandle, callback);
 			return uHandle;
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncOpen (const u32 uHandle, xiasync_result** pAsyncId)
+		void				asyncOpen (const u32 uHandle, AsyncCallback callback)
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
@@ -292,12 +293,17 @@ namespace xcore
 			pOpen->setWriteAddress		(NULL);
 			pOpen->setReadWriteOffset	(0);
 			pOpen->setReadWriteSize		(0);
+			pOpen->setCallback			(callback);
 
+			/*
 			xevent* async_event = getEventFactory()->construct();
 			async_event->set();
 			pOpen->setEvent(async_event);
+			*/
 
 			xasync_id id = pushAsyncIO(pOpen);
+			
+			/*
 			if (pAsyncId!=NULL) 
 			{
 
@@ -306,12 +312,15 @@ namespace xcore
 				*pAsyncId = async_result;
 				(*pAsyncId)->destroy();
 			}
+			*/
+
+
 			getIoThreadInterface()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, xiasync_result** pAsyncId )
+		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, AsyncCallback callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -336,12 +345,16 @@ namespace xcore
 			pRead->setWriteAddress		(NULL);
 			pRead->setReadWriteOffset	(uOffset);
 			pRead->setReadWriteSize		(uSize);
+			pRead->setCallback			(callback);
 
+			/*
 			xevent* async_event = getEventFactory()->construct();
 			async_event->set();
 			pRead->setEvent(async_event);
+			*/
 
 			xasync_id id = pushAsyncIO(pRead);
+			/*
 			if (pAsyncId!=NULL) 
 			{
 
@@ -351,13 +364,14 @@ namespace xcore
 				*pAsyncId = async_result;
 				(*pAsyncId)->destroy();
 			}
+			*/
 
 			getIoThreadInterface()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, xiasync_result** pAsyncId )
+		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, AsyncCallback callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -382,12 +396,17 @@ namespace xcore
 			pWrite->setWriteAddress		(pBuffer);
 			pWrite->setReadWriteOffset	(uOffset);
 			pWrite->setReadWriteSize	(uSize);
+			pWrite->setCallback			(callback);
 
+			/*
 			xevent* async_event = getEventFactory()->construct();
 			async_event->set();
 			pWrite->setEvent(async_event);
+			*/
 
 			xasync_id id = pushAsyncIO(pWrite);
+			
+			/*
 			if (pAsyncId!=NULL) 
 			{
 
@@ -397,13 +416,14 @@ namespace xcore
 				*pAsyncId = async_result;
 				(*pAsyncId)->destroy();
 			}
+			*/
 
 			getIoThreadInterface()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncCloseAndDelete ( const u32 uHandle, xiasync_result** pAsyncId )
+		void				asyncCloseAndDelete ( const u32 uHandle, AsyncCallback callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -426,28 +446,19 @@ namespace xcore
 			pDelete->setWriteAddress	(NULL);
 			pDelete->setReadWriteOffset	(0);
 			pDelete->setReadWriteSize	(0);
+			pDelete->setCallback		(callback);
 
-			xevent* async_event = getEventFactory()->construct();
-			async_event->set();
-			pDelete->setEvent(async_event);
+
 
 			xasync_id id = pushAsyncIO(pDelete);
-			if (pAsyncId!=NULL) 
-			{
 
-
-				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
-				async_result->init(id, uHandle, async_event);
-				*pAsyncId = async_result;
-				(*pAsyncId)->destroy();
-			}
 
 			getIoThreadInterface()->signal();
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncClose ( const u32 uHandle, xiasync_result** pAsyncId )
+		void				asyncClose ( const u32 uHandle, AsyncCallback callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -471,21 +482,10 @@ namespace xcore
 			pClose->setWriteAddress		(NULL);
 			pClose->setReadWriteOffset	(0);
 			pClose->setReadWriteSize	(0);
+			pClose->setCallback			(callback);
 
-			xevent* async_event = getEventFactory()->construct();
-			async_event->set();
-			pClose->setEvent(async_event);
 
 			xasync_id id = pushAsyncIO(pClose);
-			if (pAsyncId!=NULL) 
-			{
-
-
-				xiasync_result_imp* async_result = reinterpret_cast<xiasync_result_imp*>(popAsyncResult());
-				async_result->init(id, uHandle, async_event);
-				*pAsyncId = async_result;
-				(*pAsyncId)->destroy();
-			}
 
 			getIoThreadInterface()->signal();
 		}

@@ -50,6 +50,7 @@ namespace xcore
 				USE_ASYNC	= 0x8000,
 			};
 			x_bitfield<ECaps>		mCaps;
+			AsyncCallback mCallback;
 
 		public:
 									xifilestream()
@@ -58,7 +59,7 @@ namespace xcore
 									{
 									}
 
-									xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
+									xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, AsyncCallback callback);
 									~xifilestream(void);
 
 			XFILESYSTEM_OBJECT_NEW_DELETE()
@@ -86,9 +87,9 @@ namespace xcore
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count);					///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 			virtual u64				writeByte(xbyte value);								 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
-			virtual xasync_result	beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	  	///< Begins an asynchronous read operation.
+			virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	  	///< Begins an asynchronous read operation.
 			virtual void			endRead(xasync_result& asyncResult);												///< Waits for the pending asynchronous read to complete.
-			virtual xasync_result	beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
+			virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
 			virtual void			endWrite(xasync_result& asyncResult);												///< Ends an asynchronous write operation.
 
 			virtual void			copyTo(xistream* dst);												///< Reads the bytes from the current stream and writes them to the destination stream.
@@ -107,9 +108,9 @@ namespace xcore
 		{
 		}
 
-		xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
+		xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, AsyncCallback callback)
 		{
-			mImplementation = new xifilestream(filename, mode, access, op);
+			mImplementation = new xifilestream(filename, mode, access, op, callback);
 		}
 
 		xfilestream::~xfilestream()
@@ -140,10 +141,11 @@ namespace xcore
 
 		// ---------------------------------------------------------------------------------------------
 
-		xifilestream::xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
+		xifilestream::xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, AsyncCallback callback)
 			: mRefCount(1)
 			, mFileHandle(INVALID_FILE_HANDLE)
 			, mCaps(NONE)
+			, mCallback(callback)
 		{
 			bool can_read, can_write, can_seek, can_async;
 			xfilesystem::caps(filename, can_read, can_write, can_seek, can_async);
@@ -156,6 +158,9 @@ namespace xcore
 			mCaps.set(USE_SEEK, can_seek);
 			mCaps.set(USE_WRITE, can_write && ((access&FileAccess_Write)!=0));
 			mCaps.set(USE_ASYNC, can_async && (op == FileOp_Async));
+
+			// check if we use async, it is properly setup
+			ASSERT(op == FileOp_Sync || callback != NULL);
 
 			switch(mode)
 			{
@@ -371,16 +376,15 @@ namespace xcore
 			else return 0;
 		}
 
-		xasync_result	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		bool	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
 			if (mCaps.isSet(USE_READ))
 			{
-				xiasync_result* async = NULL;
 				u64 p = getPosition();
-				xfilesystem::read(mFileHandle, p, count, &buffer[offset], &async);
-				return xasync_result_construct(async);
+				xfilesystem::read(mFileHandle, p, count, &buffer[offset], callback);
+				return true;
 			}
-			else return xasync_result();
+			else return false;
 		}
 
 		void			xifilestream::endRead(xasync_result& asyncResult)
@@ -388,16 +392,15 @@ namespace xcore
 			asyncResult.waitForCompletion();
 		}
 
-		xasync_result	xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		bool xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
 		{
-			if (mCaps.isSet(USE_READ))
+			if (mCaps.isSet(USE_WRITE))
 			{
-				xiasync_result* async = NULL;
 				u64 p = getPosition();
-				xfilesystem::write(mFileHandle, p, count, &buffer[offset], &async);
-				return xasync_result_construct(async);
+				xfilesystem::write(mFileHandle, p, count, &buffer[offset], callback);
+				return true;	
 			}
-			else return xasync_result();
+			return false;
 		}
 
 		void			xifilestream::endWrite(xasync_result& asyncResult)
