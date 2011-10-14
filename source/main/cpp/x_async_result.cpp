@@ -64,8 +64,8 @@ namespace xcore
 
 		bool xasync_result::checkForCompletion()
 		{
-			if (mImplementation==&sNullAsyncResultImp)
-				return true;
+		//	if (mImplementation==&sNullAsyncResultImp)
+		//		return true;
 
 			bool _completed = mImplementation->checkForCompletion();
 			if (_completed)

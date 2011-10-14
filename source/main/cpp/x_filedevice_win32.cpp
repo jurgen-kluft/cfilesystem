@@ -735,7 +735,7 @@ namespace xcore
 			char DirPathBuffer[MAX_PATH+2];
 			char FileNameBuffer[MAX_PATH+2];
 			xcstring DirPath(DirPathBuffer, sizeof(DirPathBuffer), szDirPath);
-			DirPath += "\*";
+			DirPath += "\\*";
 
 			xcstring FileName(FileNameBuffer, sizeof(FileNameBuffer), szDirPath);		// searching all files
 			//FileName += "\\";

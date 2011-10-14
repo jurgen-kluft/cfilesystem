@@ -57,6 +57,7 @@ namespace xcore
 			bool				getPushFileDataOnFreeQueue() const				{ return m_nFileDataCmd == 1; }
 
 			xevent*				getEvent()										{ return m_pEvent; }
+			AsyncCallback		getCallback()									{ return m_fpCallback; }
 
 			void				setFileIndex(s32 sIndex)						{ m_nFileIndex = sIndex; }
 			void				setStatus(EFileOpStatus eStatus)				{ m_nStatus = eStatus; }
@@ -68,6 +69,7 @@ namespace xcore
 			void				setPushFileDataOnFreeQueue(bool flag)			{ if (flag) m_nFileDataCmd |= 1; else m_nFileDataCmd &= 1; }
 
 			void				setEvent(xevent* async_event)					{ m_pEvent = async_event; }
+			void				setCallback(AsyncCallback callback)				{ m_fpCallback = callback; }
 
 			void				clear()
 			{
@@ -96,6 +98,7 @@ namespace xcore
 			u64					m_uReadWriteSize;
 
 			xevent*				m_pEvent;
+			AsyncCallback		m_fpCallback;
 		};
 
 	};
