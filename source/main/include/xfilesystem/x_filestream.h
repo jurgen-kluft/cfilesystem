@@ -51,7 +51,7 @@ namespace xcore
 		public:
 									xfilestream		();
 									xfilestream		(const xfilestream&);
-									xfilestream		(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, AsyncCallback = NULL);
+									xfilestream		(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct* = NULL);
 									~xfilestream	(void);
 
 			xfilestream&			operator =		(const xfilestream&);

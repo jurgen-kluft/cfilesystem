@@ -31,8 +31,12 @@ namespace xcore
  			do
 			{
 				// parameters sent out by the callback
-				xcore::u64 nResultSize = 0;
-				xcore::xbyte *buffPtr = NULL;
+				x_asyncio_result ioResult;
+				ioResult.userData = NULL;
+				ioResult.result = 0;
+				ioResult.buffer = NULL;
+				ioResult.fileHandle = (u32)INVALID_FILE_HANDLE;
+				ioResult.operation = FILE_OP_STATUS_FREE;
 
 				pAsync = popAsyncIO();
 				if (pAsync)
@@ -46,6 +50,9 @@ namespace xcore
 
 						if (pFileDevice!=NULL && pInfo!=NULL)
 						{
+
+							ioResult.userData = pAsync->getCallback()->userData; // Set the user data void ptr
+
 							if (pAsync->getStatus() == FILE_OP_STATUS_OPEN_PENDING)
 							{
 								pAsync->setStatus(FILE_OP_STATUS_OPENING);
@@ -118,13 +125,16 @@ namespace xcore
 							{
 								pAsync->setStatus(FILE_OP_STATUS_READING);
 
-								bool boRead = pFileDevice->readFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getReadAddress(), (u32)pAsync->getReadWriteSize(), nResultSize);
+								bool boRead = pFileDevice->readFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getReadAddress(), (u32)pAsync->getReadWriteSize(), ioResult.result);
 								if (!boRead)
 								{
 									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR readFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 								}
 
-								buffPtr = (xcore::xbyte*)pAsync->getReadAddress();
+								ioResult.buffer = (xcore::xbyte*)pAsync->getReadAddress();
+								ioResult.operation = pAsync->getStatus();
+								ioResult.fileHandle = pInfo->m_nFileHandle;
+
 
 								pAsync->setStatus(FILE_OP_STATUS_DONE);
 							}
@@ -132,13 +142,15 @@ namespace xcore
 							{
 								pAsync->setStatus(FILE_OP_STATUS_WRITING);
 
-								bool boWrite = pFileDevice->writeFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getWriteAddress(), (u32)pAsync->getReadWriteSize(), nResultSize);
+								bool boWrite = pFileDevice->writeFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getWriteAddress(), (u32)pAsync->getReadWriteSize(), ioResult.result);
 								if (!boWrite)
 								{
 									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR writeFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 								}
 
-								buffPtr = (xcore::xbyte*)pAsync->getWriteAddress();
+								ioResult.buffer = (xcore::xbyte*)pAsync->getWriteAddress();
+								ioResult.operation = pAsync->getStatus();
+								ioResult.fileHandle = pInfo->m_nFileHandle;
 
 								pAsync->setStatus(FILE_OP_STATUS_DONE);
 							}
@@ -149,21 +161,14 @@ namespace xcore
 						// Operation is finished, call the callback
 						if (pAsync->getStatus() == FILE_OP_STATUS_DONE)
 						{
-							AsyncCallback callback = pAsync->getCallback();
+							x_asyncio_callback_struct* callback = pAsync->getCallback();
 
-							callback(nResultSize, buffPtr);
+							callback->callback(ioResult);
 
 							xfilesystem::pushFreeFileSlot(pAsync->getFileIndex());
 							
 						}
 
-						// no longer care about xevent
-						/*
-						if (pAsync->getEvent() != NULL)
-						{
-							pAsync->getEvent()->signal();
-							getEventFactory()->destruct(pAsync->getEvent());
-						}*/
 
 						pAsync->clear();
 						pushFreeAsyncIO(pAsync);
