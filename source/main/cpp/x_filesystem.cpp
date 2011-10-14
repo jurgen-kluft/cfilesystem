@@ -30,7 +30,9 @@ namespace xcore
 			xcore::s32 loopFlag = queueSize; // when the thread is stopped loop extra times to try to clean out memory in queues
  			do
 			{
+				// parameters sent out by the callback
 				xcore::u64 nResultSize = 0;
+				xcore::xbyte *buffPtr = NULL;
 
 				pAsync = popAsyncIO();
 				if (pAsync)
@@ -122,6 +124,8 @@ namespace xcore
 									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR readFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 								}
 
+								buffPtr = (xcore::xbyte*)pAsync->getReadAddress();
+
 								pAsync->setStatus(FILE_OP_STATUS_DONE);
 							}
 							else if (pAsync->getStatus() == FILE_OP_STATUS_WRITE_PENDING)
@@ -134,6 +138,8 @@ namespace xcore
 									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR writeFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
 								}
 
+								buffPtr = (xcore::xbyte*)pAsync->getWriteAddress();
+
 								pAsync->setStatus(FILE_OP_STATUS_DONE);
 							}
 						}
@@ -144,7 +150,6 @@ namespace xcore
 						if (pAsync->getStatus() == FILE_OP_STATUS_DONE)
 						{
 							AsyncCallback callback = pAsync->getCallback();
-							xcore::xbyte *buffPtr = (xcore::xbyte*)pAsync->getWriteAddress();
 
 							callback(nResultSize, buffPtr);
 
