@@ -102,12 +102,12 @@ namespace xcore
 
 		///< Asynchronous file operations
 		static u32			asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
-		static void			asyncOpen			( const u32 uHandle, AsyncCallback callback = NULL );
-		static u32			asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false, AsyncCallback callback = NULL );
-		static void			asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, AsyncCallback callback = NULL );
-		static void			asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, AsyncCallback callback = NULL );
-		static void			asyncClose			( const u32 uHandle, AsyncCallback callback = NULL );
-		static void			asyncCloseAndDelete	( const u32 uHandle, AsyncCallback callback = NULL );
+		static void			asyncOpen			( const u32 uHandle, x_asyncio_callback_struct* callback = NULL );
+		static u32			asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false, x_asyncio_callback_struct* callback = NULL );
+		static void			asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct* callback = NULL );
+		static void			asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct* callback = NULL );
+		static void			asyncClose			( const u32 uHandle, x_asyncio_callback_struct* callback = NULL );
+		static void			asyncCloseAndDelete	( const u32 uHandle, x_asyncio_callback_struct* callback = NULL );
 
 		//------------------------------------------------------------------------------------------
 
@@ -122,7 +122,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					open ( const char* szFilename, xbool boRead, xbool boWrite, AsyncCallback callback)
+		u32					open ( const char* szFilename, xbool boRead, xbool boWrite, x_asyncio_callback_struct* callback)
 		{
 			if (callback)
 				return asyncOpen(szFilename, boRead, boWrite, callback);
@@ -163,7 +163,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					read (u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, AsyncCallback callback )
+		u64					read (u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct* callback )
 		{
 			if (callback != NULL)
 			{
@@ -178,7 +178,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					write ( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, AsyncCallback callback )
+		u64					write ( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct* callback )
 		{
 			if (callback != NULL)
 			{
@@ -207,7 +207,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				closeAndDelete ( u32& uHandle, AsyncCallback callback )
+		void				closeAndDelete ( u32& uHandle, x_asyncio_callback_struct* callback )
 		{
 			if (callback!= NULL)
 				asyncCloseAndDelete(uHandle, callback);
@@ -217,7 +217,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				close ( u32 &uHandle, AsyncCallback callback)
+		void				close ( u32 &uHandle, x_asyncio_callback_struct* callback)
 		{
 			if (callback != NULL)
 				asyncClose(uHandle, callback);
@@ -264,7 +264,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					asyncOpen ( const char* szName, xbool boRead, xbool boWrite, AsyncCallback callback )
+		u32					asyncOpen ( const char* szName, xbool boRead, xbool boWrite, x_asyncio_callback_struct* callback )
 		{
 			u32 uHandle = asyncPreOpen( szName, boRead, boWrite );
 			asyncOpen(uHandle, callback);
@@ -273,7 +273,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncOpen (const u32 uHandle, AsyncCallback callback)
+		void				asyncOpen (const u32 uHandle, x_asyncio_callback_struct* callback)
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
@@ -320,7 +320,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, AsyncCallback callback )
+		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct* callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -371,7 +371,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, AsyncCallback callback )
+		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct* callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -423,7 +423,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncCloseAndDelete ( const u32 uHandle, AsyncCallback callback )
+		void				asyncCloseAndDelete ( const u32 uHandle, x_asyncio_callback_struct* callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -458,7 +458,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncClose ( const u32 uHandle, AsyncCallback callback )
+		void				asyncClose ( const u32 uHandle, x_asyncio_callback_struct* callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{

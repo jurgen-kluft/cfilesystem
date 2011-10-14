@@ -50,7 +50,7 @@ namespace xcore
 				USE_ASYNC	= 0x8000,
 			};
 			x_bitfield<ECaps>		mCaps;
-			AsyncCallback mCallback;
+			x_asyncio_callback_struct* mCallback;
 
 		public:
 									xifilestream()
@@ -59,7 +59,7 @@ namespace xcore
 									{
 									}
 
-									xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, AsyncCallback callback);
+									xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct* callback);
 									~xifilestream(void);
 
 			XFILESYSTEM_OBJECT_NEW_DELETE()
@@ -87,9 +87,9 @@ namespace xcore
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count);					///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 			virtual u64				writeByte(xbyte value);								 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
-			virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	  	///< Begins an asynchronous read operation.
+			virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct* callback);	  	///< Begins an asynchronous read operation.
 			virtual void			endRead(xasync_result& asyncResult);												///< Waits for the pending asynchronous read to complete.
-			virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback);	///< Begins an asynchronous write operation.
+			virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct* callback);	///< Begins an asynchronous write operation.
 			virtual void			endWrite(xasync_result& asyncResult);												///< Ends an asynchronous write operation.
 
 			virtual void			copyTo(xistream* dst);												///< Reads the bytes from the current stream and writes them to the destination stream.
@@ -108,7 +108,7 @@ namespace xcore
 		{
 		}
 
-		xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, AsyncCallback callback)
+		xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct* callback)
 		{
 			mImplementation = new xifilestream(filename, mode, access, op, callback);
 		}
@@ -141,7 +141,7 @@ namespace xcore
 
 		// ---------------------------------------------------------------------------------------------
 
-		xifilestream::xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, AsyncCallback callback)
+		xifilestream::xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct* callback)
 			: mRefCount(1)
 			, mFileHandle(INVALID_FILE_HANDLE)
 			, mCaps(NONE)
@@ -376,13 +376,13 @@ namespace xcore
 			else return 0;
 		}
 
-		bool	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		bool	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct* callback)
 		{
 			if (mCaps.isSet(USE_READ))
 			{
 				u64 p = getPosition();
 
-				AsyncCallback currCallback = mCallback;
+				x_asyncio_callback_struct* currCallback = mCallback;
 
 				if(callback != NULL)
 					currCallback = callback;
@@ -398,13 +398,13 @@ namespace xcore
 			asyncResult.waitForCompletion();
 		}
 
-		bool xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, AsyncCallback callback)
+		bool xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct* callback)
 		{
 			if (mCaps.isSet(USE_WRITE))
 			{
 				u64 p = getPosition();
 
-				AsyncCallback currCallback = mCallback;
+				x_asyncio_callback_struct* currCallback = mCallback;
 
 				if(callback != NULL)
 					currCallback = callback;

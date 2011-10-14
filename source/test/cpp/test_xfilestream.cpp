@@ -41,11 +41,23 @@ UNITTEST_SUITE_BEGIN(filestream)
 {
 	UNITTEST_FIXTURE(main)
 	{
-		UNITTEST_FIXTURE_SETUP() {}
+		void callbackWrite_TEST_func(x_asyncio_result ioResult){}
+		void callbackRead_TEST_func(x_asyncio_result ioResult){}
+
+		x_asyncio_callback_struct callbackWrite_TEST;
+		x_asyncio_callback_struct callbackRead_TEST;
+
+		UNITTEST_FIXTURE_SETUP() 
+		{
+			callbackWrite_TEST.callback = callbackWrite_TEST_func;
+			callbackWrite_TEST.userData = NULL;
+
+			callbackRead_TEST.callback = callbackRead_TEST_func;
+			callbackRead_TEST.userData = NULL;
+		}
 		UNITTEST_FIXTURE_TEARDOWN() {}
 
-		void callbackWrite_TEST(u64 result, xbyte* buffer) {}
-		void callbackRead_TEST(u64 result, xbyte* buffer) {}
+
 		UNITTEST_TEST(open)
 		{
 			xfilepath fp("TEST:\\textfiles\\readme1st.txt");
@@ -133,7 +145,7 @@ UNITTEST_SUITE_BEGIN(filestream)
 			xfilestream xfs1(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs1.isAsync(),false);
 
-			xfilestream xfs2(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Async, callbackRead_TEST);
+			xfilestream xfs2(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Async, &callbackRead_TEST);
 			CHECK_EQUAL(xfs2.isAsync(),true);
 
 		}

@@ -142,23 +142,40 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 {
 	UNITTEST_FIXTURE(main)
 	{
-		UNITTEST_FIXTURE_SETUP() {}
+
+		void callbackWrite_TEST_func(x_asyncio_result ioResult){}
+		void callbackRead_TEST_func(x_asyncio_result ioResult){}
+
+		x_asyncio_callback_struct callbackWrite_TEST;
+		x_asyncio_callback_struct callbackRead_TEST;
+
+		UNITTEST_FIXTURE_SETUP() 
+		{
+			callbackWrite_TEST.callback = callbackWrite_TEST_func;
+			callbackWrite_TEST.userData = NULL;
+
+			callbackRead_TEST.callback = callbackRead_TEST_func;
+			callbackRead_TEST.userData = NULL;
+
+		}
 		UNITTEST_FIXTURE_TEARDOWN() {}
 
 		// main 
-		void callbackWrite_TEST(u64 result, xbyte* buffer){}
-		void callbackRead_TEST(u64 result, xbyte* buffer){}
+
+
+		
+
+
 		UNITTEST_TEST(beginRead)
 		{
 			xevent_factory_test event_factory_temp;
 			xevent_factory* event_factory_1 = &event_factory_temp;
-			setEventFactory(event_factory_1);
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
 			xfilepath xfp1(str1);
 			xfilestream xfs1(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			xbyte buffer1[100];
-			xfs1.beginRead(buffer1,0,100,callbackRead_TEST);
-			setEventFactory(NULL);
+			xfs1.beginRead(buffer1,0,100, &callbackRead_TEST);
+
 		}
 
 		UNITTEST_TEST(beginWrite)
@@ -174,7 +191,7 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 
 			xbyte buffer1[10] = "abcdefgh";
 			//			memset(buffer1,0,sizeof(buffer1));
-			xfs1.beginWrite(buffer1,0,10,callbackWrite_TEST);
+			xfs1.beginWrite(buffer1,0,10, &callbackWrite_TEST);
 			xbyte buffer2[10];
 			xfs1.read(buffer2,0,10);
 			for (int n = 0; n<10;++n)
@@ -182,37 +199,10 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 				CHECK_EQUAL(buffer1[n],buffer2[n]);
 			}
 			xfs1.write(buffer,0,10);
-			setEventFactory(NULL);
 		}
 
 		//============================================
 
-		UNITTEST_TEST(setEventFactory)
-		{
-			xevent_factory* event_factory_1 = getEventFactory();
-			CHECK_NULL(event_factory_1);
-
-			xevent_factory_test event_factory_temp;
-			xevent_factory* event_factory_2 = &event_factory_temp;
-			setEventFactory(event_factory_2);
-			xevent_factory* event_factory2 = getEventFactory();
-			CHECK_EQUAL(event_factory2 ,event_factory_2 );
-
-			setEventFactory(event_factory_1);
-		}
-
-		UNITTEST_TEST(getEventFactory)
-		{
-			xevent_factory* event_factory_1 = getEventFactory();
-			CHECK_NULL(event_factory_1);
-			xevent_factory_test event_factory_temp;
-			xevent_factory* event_factory_2 = &event_factory_temp;
-			setEventFactory(event_factory_2);
-			xevent_factory* event_factory2 = getEventFactory();
-			CHECK_EQUAL(event_factory2 ,event_factory_2 );
-
-			setEventFactory(event_factory_1);
-		}
 
 		UNITTEST_TEST(createSystemPath)
 		{
