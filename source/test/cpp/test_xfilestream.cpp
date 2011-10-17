@@ -10,32 +10,9 @@
 #include "xfilesystem\x_fileinfo.h"
 
 using namespace xcore;
-namespace xcore
-{
+
 	using namespace xfilesystem;
-	namespace xfilesystem
-	{
-		class xevent_test : public xevent
-		{
-		public:
-			virtual				~xevent_test()						{ }
 
-			virtual void		set()										{ }
-			virtual void		wait()									{ }
-			virtual void		signal()								{ }
-		};
-
-		class xevent_factory_test : public xevent_factory
-		{
-		public:
-			virtual				~xevent_factory_test()				{ }
-
-			virtual xevent*		construct()						{ xevent* event = new xevent_test; return event;}		
-			virtual void		destruct(xevent* event)				{ delete event; event = NULL; }
-		};
-	}
-
-}
 
 UNITTEST_SUITE_BEGIN(filestream)
 {

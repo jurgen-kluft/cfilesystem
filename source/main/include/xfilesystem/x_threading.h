@@ -33,30 +33,7 @@ namespace xcore
 			virtual void		signal() = 0;
 		};
 
-
-		///< The user needs to implement this object and integrate a thread synchronization
-		///< object capable of putting the calling thread to sleep and waking it up when
-		///< signal is called. 
-		class xevent
-		{
-		public:
-			virtual				~xevent()						{ }
-
-			virtual void		set() = 0;						///< Set the event
-			virtual void		wait() = 0;						///< Wait for event
-			virtual void		signal() = 0;					///< Signal event has occured
-		};
-
-		class xevent_factory
-		{
-		public:
-			virtual				~xevent_factory()				{ }
-
-			virtual xevent*		construct() = 0;				///< Called from main thread
-			virtual void		destruct(xevent*) = 0;			///< Called from io thread
-		};
 	};
-
 	//==============================================================================
 	// END xcore namespace
 	//==============================================================================

@@ -19,8 +19,8 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		// Forward declares
-		class xevent;
+
+
 
 		enum EFileOpStatus
 		{
@@ -56,7 +56,6 @@ namespace xcore
 
 			bool				getPushFileDataOnFreeQueue() const				{ return m_nFileDataCmd == 1; }
 
-			xevent*				getEvent()										{ return m_pEvent; }
 			x_asyncio_callback_struct		getCallback()									{ return m_fpCallback; }
 
 			void				setFileIndex(s32 sIndex)						{ m_nFileIndex = sIndex; }
@@ -68,7 +67,6 @@ namespace xcore
 
 			void				setPushFileDataOnFreeQueue(bool flag)			{ if (flag) m_nFileDataCmd |= 1; else m_nFileDataCmd &= 1; }
 
-			void				setEvent(xevent* async_event)					{ m_pEvent = async_event; }
 			void				setCallback(x_asyncio_callback_struct callback)				{ m_fpCallback = callback; }
 
 			void				clear()
@@ -83,7 +81,6 @@ namespace xcore
 				m_uReadWriteOffset	= 0;
 				m_uReadWriteSize	= 0;
 
-				m_pEvent		= NULL;
 			}
 
 		private:
@@ -96,8 +93,6 @@ namespace xcore
 
 			u64					m_uReadWriteOffset;
 			u64					m_uReadWriteSize;
-
-			xevent*				m_pEvent;
 			x_asyncio_callback_struct		m_fpCallback;
 		};
 
