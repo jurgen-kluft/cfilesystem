@@ -56,9 +56,9 @@ namespace xcore
 			virtual u64				writeByte(xbyte inByte) = 0;							 			///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
 			virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback) = 0;  		///< Begins an asynchronous read operation.
-			virtual void			endRead(xasync_result& asyncResult) = 0;												///< Waits for the pending asynchronous read to complete.
+//			virtual void			endRead(xasync_result& asyncResult) = 0;												///< Waits for the pending asynchronous read to complete.
 			virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback) = 0;	///< Begins an asynchronous write operation.
-			virtual void			endWrite(xasync_result& asyncResult) = 0;												///< Ends an asynchronous write operation.
+//			virtual void			endWrite(xasync_result& asyncResult) = 0;												///< Ends an asynchronous write operation.
 
 			virtual void			copyTo(xistream* dst) = 0;											///< Reads the bytes from the current stream and writes them to the destination stream.
 			virtual void			copyTo(xistream* dst, u64 count) = 0;								///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.

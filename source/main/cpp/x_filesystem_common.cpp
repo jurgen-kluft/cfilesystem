@@ -42,32 +42,7 @@ namespace xcore
 	{
 		//------------------------------------------------------------------------------------------
 
-		class xiasync_result_imp : public xiasync_result
-		{
-		public:
-							xiasync_result_imp();
-			virtual			~xiasync_result_imp()					{ }
 
-			void			init(xasync_id nAsyncId, u32 nFileHandle, xevent* pEvent);
-
-			virtual bool	checkForCompletion();
-			virtual void	waitForCompletion();
-
-			virtual u64		getResult() const;
-
-			virtual void	clear();
-			virtual s32		hold();
-			virtual s32		release();
-			virtual void	destroy();
-
-			XFILESYSTEM_OBJECT_NEW_DELETE()
-		private:
-			s32				mRefCount;		/// This needs to be an atomic integer
-			xasync_id		mAsyncId;
-			u32				mFileHandle;
-			u64				mResult;
-			xevent*			mEvent;
-		};
 
 		//------------------------------------------------------------------------------------------
 		// Init/Exit touches these
@@ -79,13 +54,12 @@ namespace xcore
 		static char*						*m_Filenames = NULL;
 		static xfiledata					*m_OpenAsyncFileArray = NULL;
 		static xfileasync					*m_AsyncIOData = NULL;
-		static xiasync_result_imp			*m_AsyncResultData = NULL;
+	//	static xiasync_result_imp			*m_AsyncResultData = NULL;
 
 		///< Concurrent access
 		static cqueue<xfiledata*>			*m_FreeAsyncFile = NULL;
 		static cqueue<xfileasync*>			*m_pFreeAsyncIOList = NULL;
 		static cqueue<xfileasync*>			*m_pAsyncIOList = NULL;
-		static cqueue<xiasync_result*>		*m_pAsyncResultList = NULL;
 		static cqueue<u32>					*m_pLastErrorStack = NULL;
 
 		///< Synchronous file operations
@@ -615,12 +589,6 @@ namespace xcore
 					new (&m_AsyncIOData[uFile]) xfileasync();
 			}
 
-			if (m_AsyncResultData == NULL)
-			{
-				m_AsyncResultData = (xiasync_result_imp*)heapAlloc(m_uMaxAsyncOperations * sizeof(xiasync_result_imp), X_ALIGNMENT_DEFAULT);
-				for (u32 uOp = 0; uOp < m_uMaxAsyncOperations; uOp++)
-					new (&m_AsyncResultData[uOp]) xiasync_result_imp();
-			}
 
 
 			//-------------------------------------------------------
@@ -649,21 +617,7 @@ namespace xcore
 				queue->init(sAllocator, m_uMaxAsyncOperations);
 				m_pAsyncIOList = queue;
 			}
-			if (m_pAsyncResultList == NULL)
-			{
-				void* mem1 = heapAlloc(sizeof(cqueue<xiasync_result*>), X_CACHE_LINE_SIZE);
-				cqueue<xiasync_result*>* queue = new (mem1) cqueue<xiasync_result*>();
-				queue->init(sAllocator, m_uMaxAsyncOperations);
-				
-				m_pAsyncResultList = queue;
-				// Populate the queue
-				for (u32 uOp = 0; uOp < m_uMaxAsyncOperations; uOp++)
-				{
-					u32 _idx;
-					m_pAsyncResultList->push(&m_AsyncResultData[uOp], _idx);
-				}
-				ASSERT(m_pAsyncResultList->full());
-			}			
+	
 			if (m_pLastErrorStack == NULL)
 			{
 				void* mem1 = heapAlloc(sizeof(cqueue<xfileasync*>), X_CACHE_LINE_SIZE);
@@ -702,15 +656,6 @@ namespace xcore
 				m_AsyncIOData = NULL;
 			}
 
-			if (m_pAsyncResultList != NULL)
-			{
-				m_pAsyncResultList->clear(sAllocator);
-				m_pAsyncResultList->~cqueue<xiasync_result*>();
-				heapFree(m_pAsyncResultList);
-				m_pAsyncResultList = NULL;
-				heapFree(m_AsyncResultData);
-				m_AsyncResultData = NULL;
-			}
 
 			if (m_FreeAsyncFile != NULL)
 			{
@@ -764,16 +709,6 @@ namespace xcore
 			return sIoThreadCt;
 		}
 
-		static xevent_factory*	sEventFactory = NULL;
-		void					setEventFactory		( xevent_factory* event_factory )
-		{
-			sEventFactory = event_factory;
-		}
-		
-		xevent_factory*			getEventFactory		( void )
-		{
-			return sEventFactory;
-		}
 
 
 		//------------------------------------------------------------------------------------------
@@ -891,24 +826,6 @@ namespace xcore
 				return 0;	// In the processing queue
 			else 
 				return -1;	// Has been processed
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		xiasync_result*			popAsyncResult		( void )
-		{
-			xiasync_result* item;
-			if (m_pAsyncResultList->pop(item))
-				return item;
-			return NULL;
-		}
-
-		//------------------------------------------------------------------------------------------
-
-		void					pushAsyncResult		( xiasync_result* asyncResult )
-		{
-			u32 _idx;
-			m_pAsyncResultList->push(asyncResult, _idx);
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -1167,73 +1084,10 @@ namespace xcore
 			uHandle = (u32)INVALID_FILE_HANDLE;
 		}
 
-		//------------------------------------------------------------------------------------------
 
-		xiasync_result_imp::xiasync_result_imp()
-			: mRefCount(0)
-			, mAsyncId(0)
-			, mFileHandle(INVALID_FILE_HANDLE)
-			, mResult(0)
-			, mEvent(NULL)
-		{
-		}
-
-		void			xiasync_result_imp::init(xasync_id nAsyncId, u32 nFileHandle, xevent* pEvent)
-		{
-			mRefCount = 0;
-			mAsyncId = nAsyncId;
-			mFileHandle = nFileHandle;
-			mResult = 0;
-			mEvent = pEvent;
-		}
-
-		bool			xiasync_result_imp::checkForCompletion()
-		{
-			return mFileHandle == INVALID_FILE_HANDLE || testAsyncId(mAsyncId) == -1;
-		}
-
-		void			xiasync_result_imp::waitForCompletion()
-		{
-			if (mFileHandle != INVALID_FILE_HANDLE)
-			{
-				xfiledata* fileInfo = getFileInfo(mFileHandle);
-				if (checkForCompletion() == false)
-				{
-					mEvent->wait();
-				}
-			}
-		}
-
-		u64				xiasync_result_imp::getResult() const
-		{
-			return mResult;
-		}
-
-		void			xiasync_result_imp::clear()
-		{
-			mFileHandle = INVALID_FILE_HANDLE;
-		}
-
-		s32				xiasync_result_imp::hold()
-		{
-			return ++mRefCount;
-		}
-
-		s32				xiasync_result_imp::release()
-		{
-			return --mRefCount;
-		}
-
-		void			xiasync_result_imp::destroy()
-		{
-			// Push us back in the free list
-			u32 _idx;
-			m_pAsyncResultList->push(this, _idx);
-		}
-
-	};
 
 	//==============================================================================
 	// END xcore namespace
 	//==============================================================================
+	};
 };

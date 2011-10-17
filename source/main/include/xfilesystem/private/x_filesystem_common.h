@@ -78,9 +78,6 @@ namespace xcore
 		extern void				setIoThreadInterface( xio_thread* io_thread );
 		extern xio_thread*		getIoThreadInterface( void );
 
-		extern void				setEventFactory		( xevent_factory* event_factory );
-		extern xevent_factory*	getEventFactory		( void );
-
 		///< Common
 		extern void				initialiseCommon	( u32 uMaxOpenStreams );
 		extern void				shutdownCommon		( void );
@@ -99,8 +96,6 @@ namespace xcore
 		extern xasync_id		pushAsyncIO			( xfileasync* asyncIOInfo );
 		extern u32				testAsyncId			( xasync_id id );
 
-		extern xiasync_result*	popAsyncResult		( void );
-		extern void				pushAsyncResult		( xiasync_result* asyncResult );
 
 		extern xbool			isPathUNIXStyle		( void );					///< UNIX = '/', Win32 = '\'
 

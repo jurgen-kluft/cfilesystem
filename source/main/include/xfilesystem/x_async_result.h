@@ -50,40 +50,7 @@ namespace xcore
 
 
 
-		// ------------------------------------------------
-		// TODO: REMOVE  BELOW OLD CLASS 
-		
-		///< Forward declares
-		class xiasync_result;
 
-		///< Async result (Reference counted)
-		///< User can hold on to this object and use it to check for an async
-		///< file operations to complete. 
-
-		class xasync_result
-		{
-		public:
-									xasync_result();
-									xasync_result(const xasync_result&);
-									~xasync_result();
-
-			bool					checkForCompletion();
-			void					waitForCompletion();
-
-			u64						getResult() const;
-
-			xasync_result&			operator =  (const xasync_result&);
-			bool					operator == (const xasync_result&) const;
-			bool					operator != (const xasync_result&) const;
-
-		protected:
-									xasync_result(xiasync_result* imp);
-
-			xiasync_result*			mImplementation;
-			u64						mResult;
-		};
-
-	
 
 		//==============================================================================
 		// END xfilesystem namespace

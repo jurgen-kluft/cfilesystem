@@ -23,117 +23,8 @@ namespace xcore
 	using namespace xfilesystem;
 	namespace xfilesystem
 	{
-		class xevent_test : public xevent
-		{
-		public:
-			virtual				~xevent_test()						{ }
 
-			virtual void		set()										{ }
-			virtual void		wait()									{ }
-			virtual void		signal()								{ }
-		};
 
-		static xevent_test event_test ;
-
-		class xevent_factory_test : public xevent_factory
-		{
-		public:
-			virtual				~xevent_factory_test()				{ }
-
-			virtual xevent*		construct()						{ xevent* event = new xevent_test; return event;}		
-			virtual void		destruct(xevent* event)				{ delete event; event = NULL; }
-		};
-
-		class xiasync_result_test : public xiasync_result
-		{
-		public:
-			xiasync_result_test();
-			virtual			~xiasync_result_test()					{ }
-
-			void			init(xasync_id nAsyncId, u32 nFileHandle, xevent* pEvent);
-
-			virtual bool	checkForCompletion();
-			virtual void	waitForCompletion();
-
-			virtual u64		getResult() const;
-
-			virtual void	clear();
-			virtual s32		hold();
-			virtual s32		release();
-			virtual void	destroy();
-
-			XFILESYSTEM_OBJECT_NEW_DELETE()
-		private:
-			s32				mRefCount;		/// This needs to be an atomic integer
-			xasync_id		mAsyncId;
-			u32				mFileHandle;
-			u64				mResult;
-			xevent*			mEvent;
-		};
-
-		//================
-
-		xiasync_result_test::xiasync_result_test()
-			: mRefCount(0)
-			, mAsyncId(0)
-			, mFileHandle(INVALID_FILE_HANDLE)
-			, mResult(0)
-			, mEvent(NULL)
-		{
-		}
-
-		void			xiasync_result_test::init(xasync_id nAsyncId, u32 nFileHandle, xevent* pEvent)
-		{
-			mRefCount = 0;
-			mAsyncId = nAsyncId;
-			mFileHandle = nFileHandle;
-			mResult = 0;
-			mEvent = pEvent;
-		}
-
-		bool			xiasync_result_test::checkForCompletion()
-		{
-			return mFileHandle == INVALID_FILE_HANDLE || testAsyncId(mAsyncId) == -1;
-		}
-
-		void			xiasync_result_test::waitForCompletion()
-		{
-			if (mFileHandle != INVALID_FILE_HANDLE)
-			{
-				xfiledata* fileInfo = getFileInfo(mFileHandle);
-				if (checkForCompletion() == false)
-				{
-					mEvent->wait();
-				}
-			}
-		}
-
-		u64				xiasync_result_test::getResult() const
-		{
-			return mResult;
-		}
-
-		void			xiasync_result_test::clear()
-		{
-			mFileHandle = INVALID_FILE_HANDLE;
-		}
-
-		s32				xiasync_result_test::hold()
-		{
-			return ++mRefCount;
-		}
-
-		s32				xiasync_result_test::release()
-		{
-			return --mRefCount;
-		}
-
-		void			xiasync_result_test::destroy()
-		{
-			// Push us back in the free list
-			pushAsyncResult(this);
-		}
-		//================
 	}
 }
 
@@ -168,8 +59,6 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 
 		UNITTEST_TEST(beginRead)
 		{
-			xevent_factory_test event_factory_temp;
-			xevent_factory* event_factory_1 = &event_factory_temp;
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
 			xfilepath xfp1(str1);
 			xfilestream xfs1(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
@@ -180,9 +69,6 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 
 		UNITTEST_TEST(beginWrite)
 		{
-			xevent_factory_test event_factory_temp;
-			xevent_factory* event_factory_1 = &event_factory_temp;
-			setEventFactory(event_factory_1);
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
 			xfilepath xfp1(str1);
 			xfilestream xfs1(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
@@ -461,67 +347,6 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 			delete xfileasync2;
 		}
 
-		UNITTEST_TEST(popAsyncResult)
-		{
-			xiasync_result* result_1 = new xiasync_result_test();
-			xiasync_result* result_2 = new xiasync_result_test();
-
-			xiasync_result* result1 = popAsyncResult();
-			xiasync_result* result2 = popAsyncResult();
-			xiasync_result* result3 = popAsyncResult();
-			xiasync_result* result4 = popAsyncResult();
-
-			CHECK_EQUAL(result1->getResult(),0);
-			CHECK_EQUAL(result2->getResult(),0);
-			CHECK_EQUAL(result3->getResult(),0);
-			CHECK_EQUAL(result4->getResult(),0);
-
-			pushAsyncResult(result_1);
-			pushAsyncResult(result_2);
-			xiasync_result* result_check_1 = popAsyncResult();
-			xiasync_result* result_check_2 = popAsyncResult();
-			CHECK_EQUAL(result_1,result_check_1);
-			CHECK_EQUAL(result_2,result_check_2);
-
-			pushAsyncResult(result1);
-			pushAsyncResult(result2);
-			pushAsyncResult(result3);
-			pushAsyncResult(result4);
-
-			delete result_1;
-			delete result_2;
-		}
-
-		UNITTEST_TEST(pushAsyncResult)
-		{
-			xiasync_result* result_1 = new xiasync_result_test();
-			xiasync_result* result_2 = new xiasync_result_test();
-
-			xiasync_result* result1 = popAsyncResult();
-			xiasync_result* result2 = popAsyncResult();
-			xiasync_result* result3 = popAsyncResult();
-			xiasync_result* result4 = popAsyncResult();
-
-			CHECK_EQUAL(result1->getResult(),0);
-			CHECK_EQUAL(result2->getResult(),0);
-			CHECK_EQUAL(result3->getResult(),0);
-			CHECK_EQUAL(result4->getResult(),0);
-
-			pushAsyncResult(result_1);
-			pushAsyncResult(result_2);
-			xiasync_result* result_check_1 = popAsyncResult();
-			xiasync_result* result_check_2 = popAsyncResult();
-			CHECK_EQUAL(result_1,result_check_1);
-			CHECK_EQUAL(result_2,result_check_2);
-
-			pushAsyncResult(result1);
-			pushAsyncResult(result2);
-			pushAsyncResult(result3);
-			pushAsyncResult(result4);
-
-			delete result_1;
-			delete result_2;
-		}
 
 		UNITTEST_TEST(isPathUNIXStyle)
 		{
@@ -555,21 +380,6 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 			CHECK_NOT_EQUAL(PENDING_FILE_HANDLE , uHandle2);
 			CHECK_NOT_EQUAL(INVALID_FILE_HANDLE , uHandle2);
 			close(uHandle2,NULL);	
-
-			/*
-			xevent_factory_test event_factory_temp;
-			xevent_factory* event_factory_2 = &event_factory_temp;
-			setEventFactory(event_factory_2);
-
-			xiasync_result_test xiasync_result_test_1;
-			xiasync_result* xiasync_result_temp1 = &xiasync_result_test_1;
-			u32 uHandle3 = open(str2,true,true,&xiasync_result_temp1);
-
-			xiasync_result_test xiasync_result_test_2;
-			xiasync_result* xiasync_result_temp2 = &xiasync_result_test_2;
-			close(uHandle3,&xiasync_result_temp2);
-			//close(uHandle3,NULL);
-			*/
 		}
 
 		UNITTEST_TEST(read)
@@ -659,12 +469,6 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 			close(uHandle1,NULL);
 			CHECK_EQUAL(uHandle1,INVALID_FILE_HANDLE);
 
-			xevent_factory_test event_factory_temp;
-			xevent_factory* event_factory_2 = &event_factory_temp;
-			setEventFactory(event_factory_2);
-
-			xiasync_result_test xiasync_result_test_1;
-			xiasync_result* xiasync_result_temp1 = &xiasync_result_test_1;
 			u32 uHandle2 = open(str1,true,false);
 			close(uHandle2,NULL);
 		}
