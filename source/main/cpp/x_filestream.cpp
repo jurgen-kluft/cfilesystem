@@ -23,11 +23,6 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		class xasync_result_construct : public xasync_result
-		{
-		public:
-			xasync_result_construct(xiasync_result* imp) : xasync_result(imp) {}
-		};
 
 
 		//------------------------------------------------------------------------------------------
@@ -53,14 +48,14 @@ namespace xcore
 			x_asyncio_callback_struct mCallback;
 
 		public:
-									xifilestream()
-										: mRefCount(2)
-										, mFileHandle(INVALID_FILE_HANDLE)
-									{
-									}
+			xifilestream()
+				: mRefCount(2)
+				, mFileHandle(INVALID_FILE_HANDLE)
+			{
+			}
 
-									xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct callback);
-									~xifilestream(void);
+			xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct callback);
+			~xifilestream(void);
 
 			XFILESYSTEM_OBJECT_NEW_DELETE()
 
@@ -88,9 +83,9 @@ namespace xcore
 			virtual u64				writeByte(xbyte value);								 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
 			virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);	  	///< Begins an asynchronous read operation.
-			virtual void			endRead(xasync_result& asyncResult);												///< Waits for the pending asynchronous read to complete.
+//			virtual void			endRead(xasync_result& asyncResult);												///< Waits for the pending asynchronous read to complete.
 			virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);	///< Begins an asynchronous write operation.
-			virtual void			endWrite(xasync_result& asyncResult);												///< Ends an asynchronous write operation.
+//			virtual void			endWrite(xasync_result& asyncResult);												///< Ends an asynchronous write operation.
 
 			virtual void			copyTo(xistream* dst);												///< Reads the bytes from the current stream and writes them to the destination stream.
 			virtual void			copyTo(xistream* dst, u64 count);									///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
@@ -393,10 +388,6 @@ namespace xcore
 			else return false;
 		}
 
-		void			xifilestream::endRead(xasync_result& asyncResult)
-		{
-			asyncResult.waitForCompletion();
-		}
 
 		bool xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback)
 		{
@@ -415,10 +406,6 @@ namespace xcore
 			return false;
 		}
 
-		void			xifilestream::endWrite(xasync_result& asyncResult)
-		{
-			asyncResult.waitForCompletion();
-		}
 
 		void			xifilestream::copyTo(xistream* dst)
 		{

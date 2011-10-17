@@ -19,12 +19,16 @@ namespace xcore
 	{
 		class xstream_imp_empty : public xistream
 		{
+
+			xcore::s32				mRefCount;
+
 		public:
+									xstream_imp_empty()																{ mRefCount = 1; }
 			virtual					~xstream_imp_empty()															{ }
 
-			virtual void			hold()																			{ }
-			virtual s32				release()																		{ return 1; }
-			virtual void			destroy()																		{ }
+			virtual void			hold()																			{ mRefCount++; }
+			virtual s32				release()																		{ --mRefCount; return mRefCount; }
+			virtual void			destroy()																		{ close(); delete this; }
 
 			virtual bool			canRead() const																	{ return false; }
 			virtual bool			canSeek() const																	{ return false; }
@@ -46,20 +50,20 @@ namespace xcore
 			virtual u64				writeByte(xbyte)																{ return 0; }
 
 			virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback)			{ return false; }
-			virtual void			endRead(xasync_result& asyncResult)												{ }
+//			virtual void			endRead(xasync_result& asyncResult)												{ }
 			virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback)	{ return false; }
-			virtual void			endWrite(xasync_result& asyncResult)											{ }
+//			virtual void			endWrite(xasync_result& asyncResult)											{ }
 
 			virtual void			copyTo(xistream* dst)															{ }
 			virtual void			copyTo(xistream* dst, u64 count)												{ }
 		};
 
-		static xstream_imp_empty	sNullStreamImp;
 
 		//------------------------------------------------------------------------------------------
 		xstream::xstream()
-			: mImplementation(&sNullStreamImp)
 		{
+			mImplementation = new xstream_imp_empty();
+
 		}
 
 		xstream::xstream(const xstream& other)
@@ -78,6 +82,7 @@ namespace xcore
 		{
 			if (mImplementation->release() == 0)
 				mImplementation->destroy();
+			
 			mImplementation = 0;
 		}
 
@@ -135,11 +140,6 @@ namespace xcore
 		void					xstream::close()
 		{
 			mImplementation->close();
-
-			if (mImplementation->release() == 0)
-				mImplementation->destroy();
-
-			mImplementation = &sNullStreamImp;
 		}
 
 		void					xstream::flush()
@@ -180,11 +180,6 @@ namespace xcore
 			return mImplementation->beginRead(buffer, offset, count, callback);
 		}
 
-		bool					xstream::endRead(xasync_result& asyncResult, bool block)
-		{
-			mImplementation->endRead(asyncResult);
-			return true;
-		}
 
 		bool			xstream::beginWrite(const xbyte* buffer, u64 offset, u64 count)
 		{
@@ -198,11 +193,6 @@ namespace xcore
 			return mImplementation->beginWrite(buffer, offset, count, callback);
 		}
 
-		bool					xstream::endWrite(xasync_result& asyncResult, bool block)
-		{
-			mImplementation->endWrite(asyncResult);
-			return true;
-		}
 
 
 		void					xstream::copyTo(xstream& dst)

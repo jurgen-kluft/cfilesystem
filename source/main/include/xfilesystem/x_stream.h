@@ -68,11 +68,11 @@ namespace xcore
 
 			bool				beginRead(xbyte* buffer, u64 offset, u64 count);
 			bool				beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);  		///< Begins an asynchronous read operation.
-			bool				endRead(xasync_result& asyncResult, bool block=true);												///< Waits for the pending asynchronous read to complete.
+//			bool				endRead(xasync_result& asyncResult, bool block=true);												///< Waits for the pending asynchronous read to complete.
 			
 			bool				beginWrite(const xbyte* buffer, u64 offset, u64 count);
 			bool				beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);	///< Begins an asynchronous write operation.
-			bool				endWrite(xasync_result& asyncResult, bool block=true);												///< Ends an asynchronous write operation.
+//			bool				endWrite(xasync_result& asyncResult, bool block=true);												///< Ends an asynchronous write operation.
 
 			void				copyTo(xstream& dst);															///< Reads the bytes from the current stream and writes them to the destination stream.
 			void				copyTo(xstream& dst, u64 count);												///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
