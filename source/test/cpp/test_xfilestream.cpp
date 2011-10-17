@@ -145,7 +145,7 @@ UNITTEST_SUITE_BEGIN(filestream)
 			xfilestream xfs1(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs1.isAsync(),false);
 
-			xfilestream xfs2(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Async, &callbackRead_TEST);
+			xfilestream xfs2(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Async, callbackRead_TEST);
 			CHECK_EQUAL(xfs2.isAsync(),true);
 
 		}

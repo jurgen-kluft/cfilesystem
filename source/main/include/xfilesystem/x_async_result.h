@@ -40,6 +40,12 @@ namespace xcore
 			x_asyncio_callback_func callback;
 			void*					userData;
 			
+			x_asyncio_callback_struct(x_asyncio_callback_func inCallback = NULL, void* inUserData = NULL)
+			{
+				callback = inCallback;
+				userData = inUserData;
+			}
+
 		};
 
 

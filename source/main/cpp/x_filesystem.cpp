@@ -51,7 +51,7 @@ namespace xcore
 						if (pFileDevice!=NULL && pInfo!=NULL)
 						{
 
-							ioResult.userData = pAsync->getCallback()->userData; // Set the user data void ptr
+							ioResult.userData = pAsync->getCallback().userData; // Set the user data void ptr
 
 							if (pAsync->getStatus() == FILE_OP_STATUS_OPEN_PENDING)
 							{
@@ -161,9 +161,9 @@ namespace xcore
 						// Operation is finished, call the callback
 						if (pAsync->getStatus() == FILE_OP_STATUS_DONE)
 						{
-							x_asyncio_callback_struct* callback = pAsync->getCallback();
+							x_asyncio_callback_struct callback = pAsync->getCallback();
 
-							callback->callback(ioResult);
+							callback.callback(ioResult);
 
 							xfilesystem::pushFreeFileSlot(pAsync->getFileIndex());
 							
