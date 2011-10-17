@@ -50,7 +50,7 @@ namespace xcore
 				USE_ASYNC	= 0x8000,
 			};
 			x_bitfield<ECaps>		mCaps;
-			x_asyncio_callback_struct* mCallback;
+			x_asyncio_callback_struct mCallback;
 
 		public:
 									xifilestream()
@@ -59,7 +59,7 @@ namespace xcore
 									{
 									}
 
-									xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct* callback);
+									xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct callback);
 									~xifilestream(void);
 
 			XFILESYSTEM_OBJECT_NEW_DELETE()
@@ -87,9 +87,9 @@ namespace xcore
 			virtual u64				write(const xbyte* buffer, u64 offset, u64 count);					///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 			virtual u64				writeByte(xbyte value);								 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
 
-			virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct* callback);	  	///< Begins an asynchronous read operation.
+			virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);	  	///< Begins an asynchronous read operation.
 			virtual void			endRead(xasync_result& asyncResult);												///< Waits for the pending asynchronous read to complete.
-			virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct* callback);	///< Begins an asynchronous write operation.
+			virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);	///< Begins an asynchronous write operation.
 			virtual void			endWrite(xasync_result& asyncResult);												///< Ends an asynchronous write operation.
 
 			virtual void			copyTo(xistream* dst);												///< Reads the bytes from the current stream and writes them to the destination stream.
@@ -108,7 +108,7 @@ namespace xcore
 		{
 		}
 
-		xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct* callback)
+		xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct callback)
 		{
 			mImplementation = new xifilestream(filename, mode, access, op, callback);
 		}
@@ -141,7 +141,7 @@ namespace xcore
 
 		// ---------------------------------------------------------------------------------------------
 
-		xifilestream::xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct* callback)
+		xifilestream::xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct callback)
 			: mRefCount(1)
 			, mFileHandle(INVALID_FILE_HANDLE)
 			, mCaps(NONE)
@@ -160,7 +160,7 @@ namespace xcore
 			mCaps.set(USE_ASYNC, can_async && (op == FileOp_Async));
 
 			// check if we use async, it is properly setup
-			ASSERT(op == FileOp_Sync || callback != NULL);
+			ASSERT(op == FileOp_Sync || callback.callback != NULL);
 
 			switch(mode)
 			{
@@ -182,7 +182,7 @@ namespace xcore
 						{
 							if (xfilesystem::exists(filename.c_str()) == xTRUE)
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 								xfilesystem::setLength(mFileHandle, 0);
 							}
 							else
@@ -197,7 +197,7 @@ namespace xcore
 					{
 						if (xfilesystem::exists(filename.c_str()) == xTRUE)
 						{
-							mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+							mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 						}
 						else
 						{
@@ -209,7 +209,7 @@ namespace xcore
 						{
 							if (xfilesystem::exists(filename.c_str()) == xTRUE)
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 								xfilesystem::setLength(mFileHandle, 0);
 							}
 							else
@@ -226,7 +226,7 @@ namespace xcore
 						{
 							if (xfilesystem::exists(filename.c_str()) == xTRUE)
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 								if (mFileHandle != INVALID_FILE_HANDLE)
 								{
 									xfilesystem::setLength(mFileHandle, 0);
@@ -240,7 +240,7 @@ namespace xcore
 						{
 							if (xfilesystem::exists(filename.c_str()) == xTRUE)
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
+								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 								if (mFileHandle != INVALID_FILE_HANDLE)
 								{
 									mCaps.set(USE_READ, false);
@@ -321,7 +321,7 @@ namespace xcore
 		{
 			if (mFileHandle != INVALID_FILE_HANDLE)
 			{
-				xfilesystem::close(mFileHandle, NULL);
+				xfilesystem::close(mFileHandle);
 			}
 		}
 
@@ -334,7 +334,7 @@ namespace xcore
 			if (mCaps.isSet(USE_READ))
 			{
 				//u64 p = getPosition();
-				u64 n = xfilesystem::read(mFileHandle, offset, count, buffer, NULL);
+				u64 n = xfilesystem::read(mFileHandle, offset, count, buffer);
 				return n;
 			} else return 0;
 		}
@@ -345,7 +345,7 @@ namespace xcore
 			{
 				xbyte data[4];
 				u64 p = getPosition();
-				u64 n = xfilesystem::read(mFileHandle, p, 1, data, NULL);
+				u64 n = xfilesystem::read(mFileHandle, p, 1, data);
 				outByte = (s32)data[0];
 				return n;
 			}
@@ -357,7 +357,7 @@ namespace xcore
 			if (mCaps.isSet(USE_WRITE))
 			{
 				//u64 p = getPosition();
-				u64 n = xfilesystem::write(mFileHandle, offset, count, buffer, NULL);
+				u64 n = xfilesystem::write(mFileHandle, offset, count, buffer);
 				return n;
 			}
 			else return 0;
@@ -370,21 +370,21 @@ namespace xcore
 				xbyte data[4];
 				data[0] = value;
 				u64 p = getPosition();
-				u64 n = xfilesystem::write(mFileHandle, p, 1, data, NULL);
+				u64 n = xfilesystem::write(mFileHandle, p, 1, data);
 				return n;
 			}
 			else return 0;
 		}
 
-		bool	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct* callback)
+		bool	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback)
 		{
 			if (mCaps.isSet(USE_READ))
 			{
 				u64 p = getPosition();
 
-				x_asyncio_callback_struct* currCallback = mCallback;
+				x_asyncio_callback_struct currCallback = mCallback;
 
-				if(callback != NULL)
+				if(callback.callback != NULL)
 					currCallback = callback;
 
 				xfilesystem::read(mFileHandle, p, count, &buffer[offset], currCallback);
@@ -398,15 +398,15 @@ namespace xcore
 			asyncResult.waitForCompletion();
 		}
 
-		bool xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct* callback)
+		bool xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback)
 		{
 			if (mCaps.isSet(USE_WRITE))
 			{
 				u64 p = getPosition();
 
-				x_asyncio_callback_struct* currCallback = mCallback;
+				x_asyncio_callback_struct currCallback = mCallback;
 
-				if(callback != NULL)
+				if(callback.callback != NULL)
 					currCallback = callback;
 
 				xfilesystem::write(mFileHandle, p, count, &buffer[offset], currCallback);

@@ -174,7 +174,7 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 			xfilepath xfp1(str1);
 			xfilestream xfs1(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			xbyte buffer1[100];
-			xfs1.beginRead(buffer1,0,100, &callbackRead_TEST);
+			xfs1.beginRead(buffer1,0,100, callbackRead_TEST);
 
 		}
 
@@ -191,7 +191,7 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 
 			xbyte buffer1[10] = "abcdefgh";
 			//			memset(buffer1,0,sizeof(buffer1));
-			xfs1.beginWrite(buffer1,0,10, &callbackWrite_TEST);
+			xfs1.beginWrite(buffer1,0,10, callbackWrite_TEST);
 			xbyte buffer2[10];
 			xfs1.read(buffer2,0,10);
 			for (int n = 0; n<10;++n)
