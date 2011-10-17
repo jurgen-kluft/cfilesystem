@@ -23,10 +23,10 @@ namespace xcore
 
 		struct x_asyncio_result
 		{
-			xcore::u64		result;				// number of bytes written or read (or 0 for failure)
-			xcore::xbyte*	buffer;				// pointer to buffer used for read/writing
-			xcore::u32		fileHandle;			// the file handle this operation was commited on
-			xcore::u32		operation;			// status enum: which operation was performed? (see EFileOpStatus from fileasync)
+			u64		result;				// number of bytes written or read (or 0 for failure)
+			xbyte*	buffer;				// pointer to buffer used for read/writing
+			u32		fileHandle;			// the file handle this operation was commited on
+			u32		operation;			// status enum: which operation was performed? (see EFileOpStatus from fileasync)
 			void*			userData;			// user defined data -- set in x_asyncio_callback_struct*
 		};
 

@@ -34,9 +34,7 @@ namespace xcore
 		class xfilepath;
 		struct xfiledata;
 		struct xfileasync;
-		class xiasync_result;
 		class xio_thread;
-		class xevent_factory;
 
 		//////////////////////////////////////////////////////////////////////////
 		// Common xfilesystem functionality

@@ -14,7 +14,6 @@
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\private\x_fileasync.h"
-#include "xfilesystem\x_iasync_result.h"
 #include "xfilesystem\x_filestream.h"
 
 using namespace xcore;

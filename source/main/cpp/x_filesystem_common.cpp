@@ -10,7 +10,6 @@
 #include "xfilesystem\private\x_filesystem_cqueue.h"
 #include "xfilesystem\private\x_devicealias.h"
 
-#include "xfilesystem\x_iasync_result.h"
 #include "xfilesystem\x_filedevice.h"
 #include "xfilesystem\x_filepath.h"
 #include "xfilesystem\x_filesystem.h"
