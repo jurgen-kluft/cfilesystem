@@ -33,7 +33,6 @@ namespace xcore
 		void init(u32 max_open_streams, xio_thread* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setIoThreadInterface(threading);
 			xdevicealias::init();
 
 			sSystemFileDevice[DRIVE_TYPE_DVD] = x_CreateFileDevice360("GAME:\\",true);
@@ -55,6 +54,7 @@ namespace xcore
 			xfilesystem::xdevicealias::sRegister(curdir);
 
 			xfilesystem::initialise(max_open_streams);
+			xfilesystem::xfs_common::instance()->setIoThreadInterface(io_thread);
 		}
 
 		//------------------------------------------------------------------------------
@@ -70,10 +70,9 @@ namespace xcore
 				{
 					x_DestroyFileDevice360(device);
 					sSystemFileDevice[i] = NULL;
-				}
+				} 
 			}
 
-			xfilesystem::setIoThreadInterface(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 	}

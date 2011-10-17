@@ -32,7 +32,7 @@ namespace xcore
 		void init(u32 max_open_streams, xio_thread* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setIoThreadInterface(threading);
+
 			xdevicealias::init();
 
 //			sSystemFileDevice = x_CreateFileDevicePS3();
@@ -55,6 +55,8 @@ namespace xcore
 			xfilesystem::xdevicealias::sRegister(curdir);
 			
 			xfilesystem::initialise(max_open_streams);
+			xfilesystem::xfs_common::instance()->setIoThreadInterface(io_thread);
+		
 		}
 
 		//------------------------------------------------------------------------------
@@ -72,8 +74,6 @@ namespace xcore
 					sSystemFileDevice[i] = NULL;
 				}
 			}
-
-			xfilesystem::setIoThreadInterface(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 	}

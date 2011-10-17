@@ -28,7 +28,6 @@ namespace xcore
 		void init(u32 max_open_streams, xio_thread* threading, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setIoThreadInterface(threading);
 			xdevicealias::init();
 
 			sSystemFileDevice = x_CreateFileDeviceWII();
@@ -47,6 +46,7 @@ namespace xcore
 			xfilesystem::sRegister(curdir);
 
 			xfilesystem::initialise(max_open_streams);
+			xfilesystem::xfs_common::instance()->setIoThreadInterface(io_thread);
 		}
 
 		//------------------------------------------------------------------------------
@@ -57,7 +57,6 @@ namespace xcore
 
 			x_DestroyFileDeviceWII(sSystemFileDevice);
 
-			xfilesystem::setIoThreadInterface(NULL);
 			xfilesystem::setAllocator(NULL);
 		}
 	}

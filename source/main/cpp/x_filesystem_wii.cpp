@@ -69,14 +69,16 @@ namespace xcore
 
 		void				initialise ( u32 uMaxOpenStreams )
 		{
-			initialiseCommon(uMaxOpenStreams);
+			xfs_common::create();
+			xfs_common::instance()->initialiseCommon( uMaxOpenStreams );
 		}	
 
 		//------------------------------------------------------------------------------------------
 
 		void				shutdown ( void )
 		{
-			shutdownCommon();
+			xfs_common::instance()->shutdownCommon();
+			xfs_common::destroy();
 		}
 
 		//------------------------------------------------------------------------------------------
