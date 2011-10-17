@@ -152,8 +152,9 @@ namespace xcore
 		void init(u32 max_open_streams, xio_thread* io_thread, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
-			xfilesystem::setIoThreadInterface(io_thread);
+
 			xdevicealias::init();
+
 
 			// Get the application directory (by removing the executable filename)
 			::GetModuleFileName(0, sAppDir, sizeof(sAppDir) - 1);
@@ -187,7 +188,10 @@ namespace xcore
 			xdevicealias::sRegister(xfilesystem::xdevicealias("dvd", sFileDevices[DRIVE_TYPE_CDROM], ""));
 			xdevicealias::sRegister(xfilesystem::xdevicealias("hdd", sFileDevices[DRIVE_TYPE_FIXED], ""));
 
+
 			xfilesystem::initialise(max_open_streams);
+
+			xfilesystem::xfs_common::instance()->setIoThreadInterface(io_thread);
 		}
 
 		//------------------------------------------------------------------------------
@@ -205,6 +209,7 @@ namespace xcore
 		//------------------------------------------------------------------------------
 		void exit()
 		{
+
 			xfilesystem::shutdown();
 			xdevicealias::exit();
 
@@ -218,7 +223,7 @@ namespace xcore
 				}
 			}
 
-			xfilesystem::setIoThreadInterface(NULL);
+
 			xfilesystem::setAllocator(NULL);
 		}
 	}

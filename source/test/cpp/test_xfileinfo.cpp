@@ -12,6 +12,7 @@
 #include "xfilesystem\x_devicealias.h"
 #include "xfilesystem\private\x_devicealias.h"
 #include "xfilesystem\x_dirinfo.h"
+#include "xfilesystem\private\x_filesystem_common.h"
 
 using namespace xcore;
 using namespace xfilesystem;
@@ -20,8 +21,15 @@ UNITTEST_SUITE_BEGIN(fileinfo)
 {
 	UNITTEST_FIXTURE(main)
 	{
-		UNITTEST_FIXTURE_SETUP() {}
-		UNITTEST_FIXTURE_TEARDOWN() {}
+		UNITTEST_FIXTURE_SETUP() 
+		{
+
+			
+		}
+		UNITTEST_FIXTURE_TEARDOWN() 
+		{
+
+		}
 
 		static xdatetime sCreationTime(2011, 2, 10, 15, 30, 10);
 		static xdatetime sLastAccessTime(2011, 2, 12, 16, 00, 20);

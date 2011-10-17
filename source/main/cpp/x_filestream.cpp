@@ -143,7 +143,7 @@ namespace xcore
 			, mCallback(callback)
 		{
 			bool can_read, can_write, can_seek, can_async;
-			xfilesystem::caps(filename, can_read, can_write, can_seek, can_async);
+			xfilesystem::xfs_common::instance()->caps(filename, can_read, can_write, can_seek, can_async);
 			mCaps.set(CAN_WRITE, can_write);
 			mCaps.set(CAN_READ, can_read);
 			mCaps.set(CAN_SEEK, can_seek);
@@ -163,11 +163,11 @@ namespace xcore
 					{
 						if (mCaps.isSet(CAN_WRITE))
 						{
-							if (xfilesystem::exists(filename.c_str()) == xFALSE)
+							if (xfilesystem::xfs_common::instance()->exists(filename.c_str()) == xFALSE)
 							{
 								//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
-								mFileHandle = xfilesystem::create(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-								xfilesystem::setLength(mFileHandle, 0);
+								mFileHandle = xfilesystem::xfs_common::instance()->createFile(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								xfilesystem::xfs_common::instance()->setLength(mFileHandle, 0);
 							}
 						}
 					} break;
@@ -175,24 +175,24 @@ namespace xcore
 					{
 						if (mCaps.isSet(CAN_WRITE))
 						{
-							if (xfilesystem::exists(filename.c_str()) == xTRUE)
+							if (xfilesystem::xfs_common::instance()->exists(filename.c_str()) == xTRUE)
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-								xfilesystem::setLength(mFileHandle, 0);
+								mFileHandle = xfilesystem::xfs_common::instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								xfilesystem::xfs_common::instance()->setLength(mFileHandle, 0);
 							}
 							else
 							{
 								//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
-								mFileHandle = xfilesystem::create(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-								xfilesystem::setLength(mFileHandle, 0);
+								mFileHandle = xfilesystem::xfs_common::instance()->createFile(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								xfilesystem::xfs_common::instance()->setLength(mFileHandle, 0);
 							}
 						}
 					} break;
 				case FileMode_Open:
 					{
-						if (xfilesystem::exists(filename.c_str()) == xTRUE)
+						if (xfilesystem::xfs_common::instance()->exists(filename.c_str()) == xTRUE)
 						{
-							mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+							mFileHandle = xfilesystem::xfs_common::instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 						}
 						else
 						{
@@ -202,16 +202,16 @@ namespace xcore
 				case FileMode_OpenOrCreate:
 					{
 						{
-							if (xfilesystem::exists(filename.c_str()) == xTRUE)
+							if (xfilesystem::xfs_common::instance()->exists(filename.c_str()) == xTRUE)
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-								xfilesystem::setLength(mFileHandle, 0);
+								mFileHandle = xfilesystem::xfs_common::instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								xfilesystem::xfs_common::instance()->setLength(mFileHandle, 0);
 							}
 							else
 							{
 								//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
-								mFileHandle = xfilesystem::create(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-								xfilesystem::setLength(mFileHandle, 0);
+								mFileHandle = xfilesystem::xfs_common::instance()->createFile(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								xfilesystem::xfs_common::instance()->setLength(mFileHandle, 0);
 							}
 						}
 					} break;
@@ -219,12 +219,12 @@ namespace xcore
 					{
 						if (mCaps.isSet(CAN_WRITE))
 						{
-							if (xfilesystem::exists(filename.c_str()) == xTRUE)
+							if (xfilesystem::xfs_common::instance()->exists(filename.c_str()) == xTRUE)
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								mFileHandle = xfilesystem::xfs_common::instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 								if (mFileHandle != INVALID_FILE_HANDLE)
 								{
-									xfilesystem::setLength(mFileHandle, 0);
+									xfilesystem::xfs_common::instance()->setLength(mFileHandle, 0);
 								}
 							}
 						}
@@ -233,9 +233,9 @@ namespace xcore
 					{
 						if (mCaps.isSet(CAN_WRITE))
 						{
-							if (xfilesystem::exists(filename.c_str()) == xTRUE)
+							if (xfilesystem::xfs_common::instance()->exists(filename.c_str()) == xTRUE)
 							{
-								mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+								mFileHandle = xfilesystem::xfs_common::instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
 								if (mFileHandle != INVALID_FILE_HANDLE)
 								{
 									mCaps.set(USE_READ, false);
@@ -279,22 +279,22 @@ namespace xcore
 
 		u64				xifilestream::getLength() const
 		{
-			return xfilesystem::getLength(mFileHandle);
+			return xfilesystem::xfs_common::instance()->getLength(mFileHandle);
 		}
 		
 		void			xifilestream::setLength(u64 length)
 		{
-			xfilesystem::setLength(mFileHandle, length);
+			xfilesystem::xfs_common::instance()->setLength(mFileHandle, length);
 		}
 
 		u64				xifilestream::getPosition() const
 		{
-			return (u64)xfilesystem::getpos(mFileHandle);
+			return (u64)xfilesystem::xfs_common::instance()->getpos(mFileHandle);
 		}
 
 		u64				xifilestream::setPosition(u64 Pos)
 		{
-			return xfilesystem::setpos(mFileHandle, Pos);
+			return xfilesystem::xfs_common::instance()->setpos(mFileHandle, Pos);
 		}
 
 		u64				xifilestream::seek(s64 offset, ESeekOrigin origin)
@@ -304,9 +304,9 @@ namespace xcore
 			{
 				switch (origin)
 				{
-					case Seek_Begin  : pos=xfilesystem::setpos(mFileHandle, offset); break;
-					case Seek_Current: pos=xfilesystem::setpos(mFileHandle, getPosition() + offset); break;
-					case Seek_End    : pos=xfilesystem::setpos(mFileHandle, (s64)getLength() + offset); break;
+					case Seek_Begin  : pos=xfilesystem::xfs_common::instance()->setpos(mFileHandle, offset); break;
+					case Seek_Current: pos=xfilesystem::xfs_common::instance()->setpos(mFileHandle, getPosition() + offset); break;
+					case Seek_End    : pos=xfilesystem::xfs_common::instance()->setpos(mFileHandle, (s64)getLength() + offset); break;
 				}
 			}
 			return pos;
@@ -316,7 +316,7 @@ namespace xcore
 		{
 			if (mFileHandle != INVALID_FILE_HANDLE)
 			{
-				xfilesystem::close(mFileHandle);
+				xfilesystem::xfs_common::instance()->close(mFileHandle);
 			}
 		}
 
@@ -329,7 +329,7 @@ namespace xcore
 			if (mCaps.isSet(USE_READ))
 			{
 				//u64 p = getPosition();
-				u64 n = xfilesystem::read(mFileHandle, offset, count, buffer);
+				u64 n = xfilesystem::xfs_common::instance()->read(mFileHandle, offset, count, buffer);
 				return n;
 			} else return 0;
 		}
@@ -340,7 +340,7 @@ namespace xcore
 			{
 				xbyte data[4];
 				u64 p = getPosition();
-				u64 n = xfilesystem::read(mFileHandle, p, 1, data);
+				u64 n = xfilesystem::xfs_common::instance()->read(mFileHandle, p, 1, data);
 				outByte = (s32)data[0];
 				return n;
 			}
@@ -352,7 +352,7 @@ namespace xcore
 			if (mCaps.isSet(USE_WRITE))
 			{
 				//u64 p = getPosition();
-				u64 n = xfilesystem::write(mFileHandle, offset, count, buffer);
+				u64 n = xfilesystem::xfs_common::instance()->write(mFileHandle, offset, count, buffer);
 				return n;
 			}
 			else return 0;
@@ -365,7 +365,7 @@ namespace xcore
 				xbyte data[4];
 				data[0] = value;
 				u64 p = getPosition();
-				u64 n = xfilesystem::write(mFileHandle, p, 1, data);
+				u64 n = xfilesystem::xfs_common::instance()->write(mFileHandle, p, 1, data);
 				return n;
 			}
 			else return 0;
@@ -382,7 +382,7 @@ namespace xcore
 				if(callback.callback != NULL)
 					currCallback = callback;
 
-				xfilesystem::read(mFileHandle, p, count, &buffer[offset], currCallback);
+				xfilesystem::xfs_common::instance()->read(mFileHandle, p, count, &buffer[offset], currCallback);
 				return true;
 			}
 			else return false;
@@ -400,7 +400,7 @@ namespace xcore
 				if(callback.callback != NULL)
 					currCallback = callback;
 
-				xfilesystem::write(mFileHandle, p, count, &buffer[offset], currCallback);
+				xfilesystem::xfs_common::instance()->write(mFileHandle, p, count, &buffer[offset], currCallback);
 				return true;	
 			}
 			return false;

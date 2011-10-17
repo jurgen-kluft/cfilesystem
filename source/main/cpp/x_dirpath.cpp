@@ -20,7 +20,7 @@ namespace xcore
 
 		static inline char			sGetSlashChar()
 		{
-			return xfilesystem::isPathUNIXStyle() ? '/' : '\\';
+			return xfilesystem::xfs_common::instance()->isPathUNIXStyle() ? '/' : '\\';
 		}
 // 		static inline const char*	sGetDeviceEnd()
 // 		{

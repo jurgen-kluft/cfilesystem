@@ -16,7 +16,7 @@ namespace xcore
 	{
 		static inline char			sGetSlashChar()
 		{
-			return xfilesystem::isPathUNIXStyle() ? '/' : '\\';
+			return xfilesystem::xfs_common::instance()->isPathUNIXStyle() ? '/' : '\\';
 		}
 // 		static inline const char*	sGetDeviceEnd()
 // 		{
@@ -184,7 +184,7 @@ namespace xcore
 
 		xfiledevice*	xfilepath::getSystem(xcstring& outSystemFilePath) const
 		{
-			return createSystemPath(mString.c_str(), outSystemFilePath);
+			return xfs_common::instance()->createSystemPath(mString.c_str(), outSystemFilePath);
 		}
 
 		void			xfilepath::getDirPath(xdirpath& outDirPath) const
