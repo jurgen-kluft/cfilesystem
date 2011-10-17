@@ -41,50 +41,43 @@ namespace xcore
 	{
 		//------------------------------------------------------------------------------------------
 
+		// allocator stuff
+		static x_iallocator*				sAllocator;
 
 
-		//------------------------------------------------------------------------------------------
-		// Init/Exit touches these
-		static x_iallocator*				sAllocator = NULL;
-
-		static u32							m_uMaxOpenedFiles = 32;
-		static u32							m_uMaxAsyncOperations = 32;
-		static u32							m_uMaxErrorItems = 32;
-		static char*						*m_Filenames = NULL;
-		static xfiledata					*m_OpenAsyncFileArray = NULL;
-		static xfileasync					*m_AsyncIOData = NULL;
-	//	static xiasync_result_imp			*m_AsyncResultData = NULL;
-
-		///< Concurrent access
-		static cqueue<xfiledata*>			*m_FreeAsyncFile = NULL;
-		static cqueue<xfileasync*>			*m_pFreeAsyncIOList = NULL;
-		static cqueue<xfileasync*>			*m_pAsyncIOList = NULL;
-		static cqueue<u32>					*m_pLastErrorStack = NULL;
-
-		///< Synchronous file operations
-		extern u32			syncCreate			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
-		extern u32			syncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
-		extern u64			syncSetPos			( u32 uHandle, u64 filePos );
-		extern u64			syncGetPos			( u32 uHandle );
-		extern void			syncSetSize			( u32 uHandle, u64 fileSize );
-		extern u64			syncGetSize			( u32 uHandle );
-		extern u64			syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );	
-		extern u64			syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
-		extern void 		syncClose			( u32& uHandle );
-		extern void			syncDelete			( u32& uHandle );
-
-		///< Asynchronous file operations
-		static u32			asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
-		static void			asyncOpen			( const u32 uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-		static u32			asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-		static void			asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-		static void			asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-		static void			asyncClose			( const u32 uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-		static void			asyncCloseAndDelete	( const u32 uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+		void*				heapAlloc(s32 size, s32 alignment)
+		{
+			return sAllocator->allocate(size, alignment);
+		}
 
 		//------------------------------------------------------------------------------------------
 
-		xbool				exists ( const char* szName )
+		void				heapFree(void* mem)
+		{
+			sAllocator->deallocate(mem);
+		}
+
+		void				setAllocator	( x_iallocator* allocator )
+		{
+			sAllocator = allocator;
+		}
+
+
+		//------------------------------------------------------------------------------------------
+
+		x_iallocator* xfs_common::singleton_allocator()
+		{
+			return sAllocator;
+		}
+		u32    xfs_common::singleton_alignment()
+		{
+			return 4;
+		}
+
+
+		//------------------------------------------------------------------------------------------
+
+		xbool				xfs_common::exists ( const char* szName )
 		{
 			u32 uHandle = syncOpen(szName, false);
 			if (uHandle == (u32)INVALID_FILE_HANDLE)
@@ -95,7 +88,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32					open ( const char* szFilename, xbool boRead, xbool boWrite, x_asyncio_callback_struct callback)
+		u32					xfs_common::open ( const char* szFilename, xbool boRead, xbool boWrite, x_asyncio_callback_struct callback)
 		{
 			if (callback.callback != NULL)
 				return asyncOpen(szFilename, boRead, boWrite, callback);
@@ -105,7 +98,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xbool				caps ( const xfilepath& szFilename, bool& can_read, bool& can_write, bool& can_seek, bool& can_async )
+		xbool				xfs_common::caps ( const xfilepath& szFilename, bool& can_read, bool& can_write, bool& can_seek, bool& can_async )
 		{
 			const xdevicealias* alias = xdevicealias::sFind(szFilename);
 			if (alias == NULL)
@@ -122,21 +115,21 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				setLength ( u32 uHandle, u64 uFileSize )
+		void				xfs_common::setLength ( u32 uHandle, u64 uFileSize )
 		{
 			syncSetSize(uHandle, uFileSize);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		u64					getLength ( u32 uHandle )
+		u64					xfs_common::getLength ( u32 uHandle )
 		{
 			return syncGetSize(uHandle);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		u64					read (u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct callback )
+		u64					xfs_common::read (u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct callback )
 		{
 			if (callback.callback != NULL)
 			{
@@ -151,7 +144,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					write ( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct callback )
+		u64					xfs_common::write ( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct callback )
 		{
 			if (callback.callback != NULL)
 			{
@@ -166,21 +159,21 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					getpos ( u32 uHandle )
+		u64					xfs_common::getpos ( u32 uHandle )
 		{
 			return syncGetPos(uHandle);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		u64					setpos ( u32 uHandle, u64 uFilePos )
+		u64					xfs_common::setpos ( u32 uHandle, u64 uFilePos )
 		{
 			return syncSetPos(uHandle, uFilePos);
 		}
 
 		//------------------------------------------------------------------------------------------
 
-		void				closeAndDelete ( u32& uHandle, x_asyncio_callback_struct callback )
+		void				xfs_common::closeAndDelete ( u32& uHandle, x_asyncio_callback_struct callback )
 		{
 			if (callback.callback != NULL)
 				asyncCloseAndDelete(uHandle, callback);
@@ -190,7 +183,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				close ( u32 &uHandle, x_asyncio_callback_struct callback)
+		void				xfs_common::close ( u32 &uHandle, x_asyncio_callback_struct callback)
 		{
 			if (callback.callback != NULL)
 				asyncClose(uHandle, callback);
@@ -200,7 +193,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				save (const char* szFilename, const void* pData, u64 uSize)
+		void				xfs_common::save (const char* szFilename, const void* pData, u64 uSize)
 		{
 			ASSERTS (szFilename, "Save() : Pointer to name is NULL!");
 			ASSERTS (pData,	"Save() : Pointer to data is NULL!");
@@ -213,7 +206,7 @@ namespace xcore
 			}
 		}
 
-		u32				create( const char* szFilename, xbool boRead, xbool boWrite)
+		u32				xfs_common::createFile( const char* szFilename, xbool boRead, xbool boWrite)
 		{
 			ASSERTS (szFilename, "Create() : Pointer to name is NULL!");
 
@@ -222,8 +215,8 @@ namespace xcore
 
 
 		//------------------------------------------------------------------------------------------
-
-		bool				asyncCompleted ( u32 uHandle, xasync_id const& uAsync )
+		/*
+		bool				xfs_common::asyncCompleted ( u32 uHandle, xasync_id const& uAsync )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -234,10 +227,11 @@ namespace xcore
 			bool is_inside = m_pAsyncIOList->inside(uAsync);
 			return !is_inside;
 		}
+		*/
 
 		//------------------------------------------------------------------------------------------
 
-		u32					asyncOpen ( const char* szName, xbool boRead, xbool boWrite, x_asyncio_callback_struct callback )
+		u32					xfs_common::asyncOpen ( const char* szName, xbool boRead, xbool boWrite, x_asyncio_callback_struct callback )
 		{
 			u32 uHandle = asyncPreOpen( szName, boRead, boWrite );
 			asyncOpen(uHandle, callback);
@@ -246,7 +240,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncOpen (const u32 uHandle, x_asyncio_callback_struct callback)
+		void				xfs_common::asyncOpen (const u32 uHandle, x_asyncio_callback_struct callback)
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
@@ -293,7 +287,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct callback )
+		void				xfs_common::asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -344,7 +338,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct callback )
+		void				xfs_common::asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -396,7 +390,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncCloseAndDelete ( const u32 uHandle, x_asyncio_callback_struct callback )
+		void				xfs_common::asyncCloseAndDelete ( const u32 uHandle, x_asyncio_callback_struct callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -431,7 +425,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				asyncClose ( const u32 uHandle, x_asyncio_callback_struct callback )
+		void				xfs_common::asyncClose ( const u32 uHandle, x_asyncio_callback_struct callback )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 			{
@@ -466,7 +460,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32				asyncPreOpen( const char* szFilename, xbool boRead, xbool boWrite )
+		u32				xfs_common::asyncPreOpen( const char* szFilename, xbool boRead, xbool boWrite )
 		{
 			//-----------------------------
 			// File find a free file slot.
@@ -517,26 +511,14 @@ namespace xcore
 	{
 		//------------------------------------------------------------------------------------------
 
-		void*				heapAlloc(s32 size, s32 alignment)
-		{
-			return sAllocator->allocate(size, alignment);
-		}
 
-		//------------------------------------------------------------------------------------------
-
-		void				heapFree(void* mem)
+		void				xfs_common::initialiseCommon ( u32 uMaxOpenStreams )
 		{
-			sAllocator->deallocate(mem);
-		}
 
-		void				setAllocator	( x_iallocator* allocator )
-		{
-			sAllocator = allocator;
-		}
+			ASSERT(mInitCommonComplete != 1);
+			ASSERT(this != NULL);
 
-		void				initialiseCommon ( u32 uMaxOpenStreams )
-		{
-			x_printf ("xfilesystem:"TARGET_PLATFORM_STR" INFO initialise()\n");
+			x_printf ("xfilesystem: %s INFO initialise()\n", TARGET_PLATFORM_STR);
 
 			m_uMaxOpenedFiles = uMaxOpenStreams;
 			m_uMaxAsyncOperations = uMaxOpenStreams;
@@ -626,13 +608,18 @@ namespace xcore
 				m_pLastErrorStack = queue;
 			}
 
+			mInitCommonComplete = 1;
+
 		}	
 
 		//------------------------------------------------------------------------------------------
 
-		void				shutdownCommon		( void )
+		void				xfs_common::shutdownCommon		( void )
 		{
-			x_printf ("xfilesystem:"TARGET_PLATFORM_STR" INFO shutdown()\n");
+
+			ASSERT(mInitCommonComplete == 1);
+
+			x_printf ("xfilesystem:%s INFO shutdown()\n", TARGET_PLATFORM_STR);
 
 			//-------------------------------------------------------
 			// Free all the concurrent queues
@@ -681,38 +668,32 @@ namespace xcore
 				heapFree(m_pLastErrorStack);
 				m_pLastErrorStack = NULL;
 			}
+
+			mInitCommonComplete = 0;
 		}
 
-		//------------------------------------------------------------------------------------------
-		class xio_thread_st : public xio_thread
-		{
-		public:
-			virtual void		sleep(u32 ms)						{ }
-			virtual bool		loop() const						{ return false; }
-			virtual void		wait()								{ }
-			virtual void		signal()							{ }
-		};
+		
 
-		static xio_thread_st	sIoThreadSt;
-		static xio_thread*		sIoThreadCt = &sIoThreadSt;
-
-		void					setIoThreadInterface( xio_thread* io_thread )
+		void					xfs_common::setIoThreadInterface( xio_thread* io_thread )
 		{
-			sIoThreadCt = io_thread;
-			if (sIoThreadCt == NULL)
-				sIoThreadCt = &sIoThreadSt;
+			mIoThread = io_thread;
 		}
 
-		xio_thread*				getIoThreadInterface()
+		xio_thread*				xfs_common::getIoThreadInterface()
 		{
-			return sIoThreadCt;
+			return mIoThread;
 		}
 
 
 
 		//------------------------------------------------------------------------------------------
 
-		xfiledevice*			createSystemPath( const char* inFilename, xcstring& outFilename )
+		xbool					xfs_common::isPathUNIXStyle(void)
+		{
+			return xfilesystem::isPathUNIXStyle();
+		}
+
+		xfiledevice*			xfs_common::createSystemPath( const char* inFilename, xcstring& outFilename )
 		{
 			xfilepath szFilename(inFilename);
 			const xfilesystem::xdevicealias* alias = xdevicealias::sFind(szFilename);
@@ -737,7 +718,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfiledata*				getFileInfo			( u32 uHandle )
+		xfiledata*				xfs_common::getFileInfo			( u32 uHandle )
 		{
 			ASSERT(uHandle<m_uMaxOpenedFiles);
 			return &m_OpenAsyncFileArray[uHandle];
@@ -745,7 +726,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32						popFreeFileSlot			(void)
+		u32						xfs_common::popFreeFileSlot			(void)
 		{
 			xfiledata* f;
 			if (m_FreeAsyncFile->pop(f))
@@ -755,7 +736,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		bool					pushFreeFileSlot		(u32 nFileIndex)
+		bool					xfs_common::pushFreeFileSlot		(u32 nFileIndex)
 		{
 			xfiledata* f = &m_OpenAsyncFileArray[nFileIndex];
 			xasync_id _id;
@@ -766,7 +747,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfileasync*				getAsyncIOData			( u32 nSlot )
+		xfileasync*				xfs_common::getAsyncIOData			( u32 nSlot )
 		{
 			xfileasync* asyncIOInfo = &m_AsyncIOData[nSlot];
 			return asyncIOInfo;
@@ -774,7 +755,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfileasync*				popFreeAsyncIO			( bool wait )
+		xfileasync*				xfs_common::popFreeAsyncIO			( bool wait )
 		{
 			do
 			{
@@ -791,7 +772,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void					pushFreeAsyncIO			( xfileasync* asyncIOInfo )
+		void					xfs_common::pushFreeAsyncIO			( xfileasync* asyncIOInfo )
 		{
 			asyncIOInfo->setFileIndex(INVALID_FILE_HANDLE);
 			u32 idx;
@@ -800,7 +781,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xfileasync*				popAsyncIO				( void )
+		xfileasync*				xfs_common::popAsyncIO				( void )
 		{
 			xfileasync* item;
 			if (m_pAsyncIOList->pop(item))
@@ -810,7 +791,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xasync_id				pushAsyncIO				( xfileasync* asyncIOInfo )
+		xasync_id				xfs_common::pushAsyncIO				( xfileasync* asyncIOInfo )
 		{
 			u32 _idx;
 			m_pAsyncIOList->push(asyncIOInfo, _idx);
@@ -819,7 +800,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u32						testAsyncId			( xasync_id id )
+		u32						xfs_common::testAsyncId			( xasync_id id )
 		{
 			if (m_pAsyncIOList->inside(id))
 				return 0;	// In the processing queue
@@ -829,7 +810,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void					setLastError		( EError error )
+		void					xfs_common::setLastError		( EError error )
 		{
 			u32 old_error;
 			u32 _idx;
@@ -839,7 +820,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		xbool					hasLastError		( void )
+		xbool					xfs_common::hasLastError		( void )
 		{
 			u32 lastError = FILE_ERROR_OK;
 			if (m_pLastErrorStack->pop(lastError))
@@ -849,7 +830,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void					clearLastError		( void )
+		void					xfs_common::clearLastError		( void )
 		{
 			u32 lastError;
 			while (!m_pLastErrorStack->empty())
@@ -858,7 +839,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		EError					getLastError		( )
+		EError					xfs_common::getLastError		( )
 		{
 			u32 lastError;
 			if (m_pLastErrorStack->pop(lastError))
@@ -868,7 +849,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		const char*				getLastErrorStr		( )
+		const char*				xfs_common::getLastErrorStr		( )
 		{
 			switch (getLastError())
 			{
@@ -905,7 +886,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 		///< Synchronous file operations
-		u32					syncCreate			( const char* szFilename, xbool boRead, xbool boWrite )
+		u32					xfs_common::syncCreate			( const char* szFilename, xbool boRead, xbool boWrite )
 		{
 			u32 uHandle = asyncPreOpen(szFilename, boRead, boWrite);
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
@@ -928,7 +909,7 @@ namespace xcore
 			return uHandle;
 		}
 
-		u32					syncOpen			( const char* szFilename, xbool boRead, xbool boWrite )
+		u32					xfs_common::syncOpen			( const char* szFilename, xbool boRead, xbool boWrite )
 		{
 			u32 uHandle = asyncPreOpen(szFilename, boRead, boWrite);
 			xfiledata* pxFileInfo = getFileInfo(uHandle);
@@ -953,7 +934,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					syncGetSize			( u32 uHandle )
+		u64					xfs_common::syncGetSize			( u32 uHandle )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return 0;
@@ -969,7 +950,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				syncSetSize			( u32 uHandle, u64 fileSize )
+		void				xfs_common::syncSetSize			( u32 uHandle, u64 fileSize )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
@@ -983,7 +964,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					syncGetPos			( u32 uHandle )
+		u64					xfs_common::syncGetPos			( u32 uHandle )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return 0;
@@ -999,7 +980,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					syncSetPos			( u32 uHandle, u64 filePos )
+		u64					xfs_common::syncSetPos			( u32 uHandle, u64 filePos )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return 0;
@@ -1014,7 +995,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer )
+		u64					xfs_common::syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return 0;
@@ -1030,7 +1011,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		u64					syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer )
+		u64					xfs_common::syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return 0;
@@ -1047,7 +1028,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void 				syncClose			( u32& uHandle )
+		void 				xfs_common::syncClose			( u32& uHandle )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
@@ -1064,7 +1045,7 @@ namespace xcore
 
 		//------------------------------------------------------------------------------------------
 
-		void				syncDelete			( u32& uHandle )
+		void				xfs_common::syncDelete			( u32& uHandle )
 		{
 			if (uHandle==(u32)INVALID_FILE_HANDLE)
 				return;
