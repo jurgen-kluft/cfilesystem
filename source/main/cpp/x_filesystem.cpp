@@ -129,10 +129,19 @@ namespace xcore
 								if (!boRead)
 								{
 									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR readFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
+									
+									ioResult.buffer = NULL;
+									ioResult.operation = FILE_OP_STATUS_READ_ERROR;
+								
 								}
 
-								ioResult.buffer = (xcore::xbyte*)pAsync->getReadAddress();
-								ioResult.operation = pAsync->getStatus();
+								else
+								{
+
+									ioResult.buffer = (xcore::xbyte*)pAsync->getReadAddress();
+									ioResult.operation = FILE_OP_STATUS_READ_FINISHED;
+								}
+
 								ioResult.fileHandle = pInfo->m_nFileHandle;
 
 
@@ -146,10 +155,18 @@ namespace xcore
 								if (!boWrite)
 								{
 									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR writeFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
+									ioResult.buffer = NULL;
+									ioResult.operation = FILE_OP_STATUS_WRITE_ERROR;
+								
 								}
 
-								ioResult.buffer = (xcore::xbyte*)pAsync->getWriteAddress();
-								ioResult.operation = pAsync->getStatus();
+								else
+								{
+
+									ioResult.buffer = (xcore::xbyte*)pAsync->getWriteAddress();
+									ioResult.operation = FILE_OP_STATUS_WRITE_FINISHED;
+								}
+
 								ioResult.fileHandle = pInfo->m_nFileHandle;
 
 								pAsync->setStatus(FILE_OP_STATUS_DONE);

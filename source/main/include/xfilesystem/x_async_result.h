@@ -19,6 +19,33 @@ namespace xcore
 	namespace xfilesystem
 	{
 		
+		
+		// file operations 
+		enum EFileOpStatus
+		{
+			FILE_OP_STATUS_FREE				= 0,
+			FILE_OP_STATUS_DONE				= 0,
+
+			FILE_OP_STATUS_OPEN_PENDING		= 10,
+			FILE_OP_STATUS_OPENING			= 11,
+
+			FILE_OP_STATUS_CLOSE_PENDING	= 110,
+			FILE_OP_STATUS_CLOSING			= 111,
+
+			FILE_OP_STATUS_READ_PENDING		= 210,
+			FILE_OP_STATUS_READING			= 211,
+			FILE_OP_STATUS_READ_FINISHED	= 212,
+			FILE_OP_STATUS_READ_ERROR		= 213,
+
+			FILE_OP_STATUS_WRITE_PENDING	= 310,
+			FILE_OP_STATUS_WRITING			= 311,
+			FILE_OP_STATUS_WRITE_FINISHED	= 312,
+			FILE_OP_STATUS_WRITE_ERROR		= 313,
+
+			FILE_OP_STATUS_DELETE_PENDING	= 410,
+			FILE_OP_STATUS_DELETING			= 411,
+		};
+
 		// new simplified async IO result structure
 
 		struct x_asyncio_result

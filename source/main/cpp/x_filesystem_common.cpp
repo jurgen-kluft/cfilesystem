@@ -295,7 +295,7 @@ namespace xcore
 				return;
 			}
 
-			xfileasync* pRead = popFreeAsyncIO();
+			xfileasync* pRead = popFreeAsyncIO(true);
 			if(pRead == 0)
 			{
 				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
@@ -346,7 +346,7 @@ namespace xcore
 				return;
 			}
 
-			xfileasync* pWrite = popFreeAsyncIO(false);
+			xfileasync* pWrite = popFreeAsyncIO(true);
 			if(pWrite == 0)
 			{
 				ASSERTS(0, "xfilesystem:" TARGET_PLATFORM_STR " ERROR Out of AsyncIO slots");
@@ -767,6 +767,7 @@ namespace xcore
 				}
 				
 			} while (wait);
+
 			return NULL;
 		}
 
