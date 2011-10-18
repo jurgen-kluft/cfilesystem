@@ -191,7 +191,7 @@ namespace xcore
 
 			xfilesystem::initialise(max_open_streams);
 
-			xfilesystem::xfs_common::instance()->setIoThreadInterface(io_thread);
+			xfilesystem::xfs_common::s_instance()->setIoThreadInterface(io_thread);
 		}
 
 		//------------------------------------------------------------------------------

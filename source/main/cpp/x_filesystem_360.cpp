@@ -75,7 +75,7 @@ namespace xcore
 		void				initialise ( u32 uMaxOpenStreams )
 		{
 			xfs_common::create();
-			xfs_common::instance()->initialiseCommon( uMaxOpenStreams );
+			xfs_common::s_instance()->initialiseCommon( uMaxOpenStreams );
 
 #ifndef TARGET_FINAL
 			HRESULT devkitDriveResult = DmMapDevkitDrive();
@@ -90,7 +90,7 @@ namespace xcore
 
 		void				shutdown ( void )
 		{
-			xfs_common::instance()->shutdownCommon();
+			xfs_common::s_instance()->shutdownCommon();
 			xfs_common::destroy();
 		}
 
