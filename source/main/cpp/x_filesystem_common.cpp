@@ -738,6 +738,8 @@ namespace xcore
 
 		bool					xfs_common::pushFreeFileSlot		(u32 nFileIndex)
 		{
+
+			ASSERT(nFileIndex < m_uMaxOpenedFiles);
 			xfiledata* f = &m_OpenAsyncFileArray[nFileIndex];
 			xasync_id _id;
 			if (m_FreeAsyncFile->push(f, _id))
@@ -762,6 +764,7 @@ namespace xcore
 				xfileasync* asyncIOInfo;
 				if (m_pFreeAsyncIOList->pop(asyncIOInfo))
 				{
+					ASSERT(asyncIOInfo != NULL);
 					asyncIOInfo->clear();
 					return asyncIOInfo;
 				}
@@ -775,6 +778,7 @@ namespace xcore
 
 		void					xfs_common::pushFreeAsyncIO			( xfileasync* asyncIOInfo )
 		{
+			ASSERT(asyncIOInfo != NULL);
 			asyncIOInfo->setFileIndex(INVALID_FILE_HANDLE);
 			u32 idx;
 			bool queueSuccess = m_pFreeAsyncIOList->push(asyncIOInfo, idx);
@@ -798,6 +802,9 @@ namespace xcore
 		xasync_id				xfs_common::pushAsyncIO				( xfileasync* asyncIOInfo )
 		{
 			u32 _idx;
+
+			ASSERT(asyncIOInfo != NULL);
+
 			bool queueSuccess = m_pAsyncIOList->push(asyncIOInfo, _idx);
 
 			ASSERT(queueSuccess); // make sure we can actually push on the queue
