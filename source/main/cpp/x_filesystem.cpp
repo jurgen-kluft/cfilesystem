@@ -154,7 +154,7 @@ namespace xcore
 
 								// NOTICE: we can not use pAsync->getReadWriteOffset() since this was generated in the wrong thread while we may be writing to the same file here.
 								// instead, compute base write offset right now
-								u64 writeOffset = xfs_common::s_instance()->getpos(pInfo->m_nFileHandle);
+								u64 writeOffset = xfs_common::s_instance()->getpos(pAsync->getFileIndex());
 								bool boWrite = pFileDevice->writeFile(pInfo->m_nFileHandle, writeOffset, pAsync->getWriteAddress(), (u32)pAsync->getReadWriteSize(), ioResult.result);
 								if (!boWrite)
 								{
