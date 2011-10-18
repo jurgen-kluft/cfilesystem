@@ -134,6 +134,12 @@ namespace xcore
 			}
 
 
+			 xcore::s32			getMaxAsyncOp		( void )
+			 {
+				 return m_uMaxAsyncOperations;
+			 }
+
+
 			///< Synchronous file operations
 			 xbool				exists				( const char* szFilename );
 			 u64				getLength			( u32 uHandle );
@@ -189,6 +195,7 @@ namespace xcore
 
 			///< Error
 			 void				setLastError		( EError error );
+
 
 		};
 	};
