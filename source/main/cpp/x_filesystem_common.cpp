@@ -777,7 +777,10 @@ namespace xcore
 		{
 			asyncIOInfo->setFileIndex(INVALID_FILE_HANDLE);
 			u32 idx;
-			m_pFreeAsyncIOList->push(asyncIOInfo, idx);
+			bool queueSuccess = m_pFreeAsyncIOList->push(asyncIOInfo, idx);
+			
+			ASSERT(queueSuccess); // make sure we can actually push on the queue
+		
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -795,7 +798,10 @@ namespace xcore
 		xasync_id				xfs_common::pushAsyncIO				( xfileasync* asyncIOInfo )
 		{
 			u32 _idx;
-			m_pAsyncIOList->push(asyncIOInfo, _idx);
+			bool queueSuccess = m_pAsyncIOList->push(asyncIOInfo, _idx);
+
+			ASSERT(queueSuccess); // make sure we can actually push on the queue
+
 			return _idx;
 		}
 
