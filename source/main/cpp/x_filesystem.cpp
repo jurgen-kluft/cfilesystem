@@ -38,12 +38,12 @@ namespace xcore
 				ioResult.fileHandle = (u32)INVALID_FILE_HANDLE;
 				ioResult.operation = FILE_OP_STATUS_FREE;
 
-				pAsync = xfs_common::instance()->popAsyncIO();
+				pAsync = xfs_common::s_instance()->popAsyncIO();
 				if (pAsync)
 				{
 					if (pAsync->getFileIndex() >=  0)
 					{
-						xfiledata* pInfo = xfs_common::instance()->getFileInfo(pAsync->getFileIndex());
+						xfiledata* pInfo = xfs_common::s_instance()->getFileInfo(pAsync->getFileIndex());
 						xfiledevice* pFileDevice = pInfo->m_pFileDevice;
 
 						// ========================================================================
@@ -182,13 +182,13 @@ namespace xcore
 
 							callback.callback(ioResult);
 
-							xfilesystem::xfs_common::instance()->pushFreeFileSlot(pAsync->getFileIndex());
+							xfilesystem::xfs_common::s_instance()->pushFreeFileSlot(pAsync->getFileIndex());
 							
 						}
 
 
 						pAsync->clear();
-						xfs_common::instance()->pushFreeAsyncIO(pAsync);
+						xfs_common::s_instance()->pushFreeAsyncIO(pAsync);
 					}
 				}
 				else
