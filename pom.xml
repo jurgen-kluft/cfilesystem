@@ -178,6 +178,7 @@
 					<Link>
 						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
 						<AdditionalDependencies>#xfilesystem_DevDebug_PS3.lib</AdditionalDependencies>
+						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevRelease|PS3'">
@@ -187,6 +188,7 @@
 					<Link>
 						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
 						<AdditionalDependencies>#xfilesystem_DevRelease_PS3.lib</AdditionalDependencies>
+						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|PS3'">
@@ -196,6 +198,7 @@
 					<Link>
 						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
 						<AdditionalDependencies>#xfilesystem_DevFinal_PS3.lib</AdditionalDependencies>
+						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|PS3'">
@@ -205,6 +208,7 @@
 					<Link>
 						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
 						<AdditionalDependencies>#xfilesystem_TestDebug_PS3.lib</AdditionalDependencies>
+						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|PS3'">
@@ -214,6 +218,7 @@
 					<Link>
 						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
 						<AdditionalDependencies>#xfilesystem_TestRelease_PS3.lib</AdditionalDependencies>
+						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevDebug|Xbox 360'">
@@ -315,7 +320,7 @@
 			</Project>
 		</ProjectFile>
 	</Project>
-	<Project Name="xfilesystem_test" Language="C++" Location="source\test\cpp" Scope="Private" DependsOn="xfilesystem:xfilesystem;xunittest:xunittest">
+	<Project Name="xfilesystem_test" Language="C++" Location="source\test\cpp" Scope="Private" DependsOn="xfilesystem:xfilesystem;xunittest:xunittest;sdk_ps3:sdk_ps3">
 		<ProjectFile>
 			<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 				<PropertyGroup Label="Globals">
@@ -382,7 +387,6 @@
 					<Link>
 						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
 						<AdditionalDependencies>xfilesystem_$(Configuration)_PS3.lib</AdditionalDependencies>
-						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|PS3'">
