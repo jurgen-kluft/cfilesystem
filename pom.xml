@@ -69,7 +69,7 @@
 
 	<Dependency Package="sdk_ps3" Platform="PS3">
 		<Group>com.virtuos.sdk</Group>
-		<Version>[300.0.01,)</Version>
+		<Version>[340.0.01,)</Version>
 		<Type>Package</Type>
 	</Dependency>
 

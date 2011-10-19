@@ -15,6 +15,22 @@
 #include "xfilesystem\x_filesystem.h"
 #include "xfilesystem\private\x_filesystem_constants.h"
 #include "xfilesystem\x_stream.h"
+
+namespace xcore
+{
+	namespace xfilesystem
+	{
+		extern void				setAllocator		( x_iallocator* allocator );
+		x_iallocator*			getAllocator		( void );
+		extern void*			heapAlloc			( s32 size, s32 alignment );
+		extern void				heapFree			( void* mem );
+
+	};
+
+};
+
+
+
 #include "xfilesystem\private\x_filesystem_cqueue.h"
 
 
@@ -39,10 +55,7 @@ namespace xcore
 		class xio_thread;
 
 
-		extern void				setAllocator		( x_iallocator* allocator );
-		x_iallocator*			getAllocator		( void );
-		extern void*			heapAlloc			( s32 size, s32 alignment );
-		extern void				heapFree			( void* mem );
+
 
 		
 		extern void 			initialise			( u32 uMaxOpenStreams );
