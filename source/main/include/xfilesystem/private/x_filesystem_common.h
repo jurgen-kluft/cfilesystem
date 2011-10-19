@@ -40,6 +40,7 @@ namespace xcore
 
 
 		extern void				setAllocator		( x_iallocator* allocator );
+		x_iallocator*			getAllocator		( void );
 		extern void*			heapAlloc			( s32 size, s32 alignment );
 		extern void				heapFree			( void* mem );
 

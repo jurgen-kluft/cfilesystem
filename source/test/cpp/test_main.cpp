@@ -48,7 +48,7 @@ public:
 
 
 xcore::x_iallocator* sSystemAllocator = NULL;
-xcore::x_iallocator* sAtomicAllocator = NULL;
+
 
 namespace xcore
 {
@@ -126,7 +126,6 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter)
 {
 	x_TimeInit ();
 	sSystemAllocator = xcore::gCreateSystemAllocator();
-	sAtomicAllocator = xcore::gCreateSystemAllocator();
 
 	UnitTestAllocator unittestAllocator( sSystemAllocator );
 	UnitTest::SetAllocator(&unittestAllocator);
@@ -146,7 +145,7 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter)
 	xfilesystem::exit();
 
 	sSystemAllocator->release();
-	sAtomicAllocator->release();
+
 	x_TimeExit ();
 	return r==0;
 }

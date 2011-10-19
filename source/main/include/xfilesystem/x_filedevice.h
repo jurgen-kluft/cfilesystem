@@ -25,6 +25,8 @@ namespace xcore
 		class xdirinfo;
 		struct xattributes;
 
+
+
 		///< File device
 		///< 
 		///< This interface exists to present a way to implement different types
