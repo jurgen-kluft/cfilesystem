@@ -521,7 +521,6 @@ namespace xcore
 			x_printf ("xfilesystem: %s INFO initialise()\n", TARGET_PLATFORM_STR);
 
 			m_uMaxOpenedFiles = uMaxOpenStreams;
-			m_uMaxAsyncOperations = uMaxOpenStreams;
 
 			if (m_Filenames == NULL)
 			{
@@ -565,8 +564,8 @@ namespace xcore
 			
 			if (m_AsyncIOData == NULL)
 			{
-				m_AsyncIOData = (xfileasync*)heapAlloc(m_uMaxOpenedFiles * sizeof(xfileasync), X_ALIGNMENT_DEFAULT);
-				for (u32 uFile = 0; uFile < m_uMaxOpenedFiles; uFile++)
+				m_AsyncIOData = (xfileasync*)heapAlloc(m_uMaxAsyncOperations * sizeof(xfileasync), X_ALIGNMENT_DEFAULT);
+				for (u32 uFile = 0; uFile < m_uMaxAsyncOperations; uFile++)
 					new (&m_AsyncIOData[uFile]) xfileasync();
 			}
 
