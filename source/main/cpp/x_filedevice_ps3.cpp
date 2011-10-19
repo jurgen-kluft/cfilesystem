@@ -224,7 +224,7 @@ namespace xcore
 			if (boSuccess)
 				outLength = stats.st_size;
 			else
-				outLength = -1;
+				outLength = 0;
 
 			return boSuccess;
 		}
@@ -269,7 +269,7 @@ namespace xcore
 				}
 				else
 				{ 
-					outNumBytesRead = -1;
+					outNumBytesRead = 0;
 				}
 				return boSuccess;
 			}
@@ -382,7 +382,6 @@ namespace xcore
 		{
 			if (canSeek())
 			{
-				u64 newPos;
 				s32 nResult = cellFsLseek (nFileHandle, ioPos, __SEEK_ORIGIN, &ioPos);
 				return nResult == CELL_OK;
 			}
@@ -455,7 +454,6 @@ namespace xcore
 
 		bool FileDevice_PS3_System::createDir(const char* szDirPath) const
 		{
-			s32 hFile = INVALID_FILE_HANDLE;
 			char systemDirBuffer[xfilepath::XFILEPATH_MAX ];
 			xcstring systemFile(systemDirBuffer, sizeof(systemDirBuffer));
 			formatPath(szDirPath,systemFile);
@@ -480,6 +478,8 @@ namespace xcore
 				formatPath(inf.getFullName().c_str_device(),systemFile);
 				cellFsUnlink(systemFile.c_str());
 			}
+
+			using enumerate_delegate::operator();
 		};
 
 		struct enumerate_delegate_dirs_delete_dir : public enumerate_delegate<xdirinfo>
@@ -492,6 +492,8 @@ namespace xcore
 				formatPath(inf.getFullName().c_str_device(),systemDir);
 				cellFsRmdir(systemDir.c_str()); // remove the empty directory
 			}
+
+			using enumerate_delegate::operator();
 		};
 
 		struct enumerate_delegate_dirs_copy_dir : public enumerate_delegate<xdirinfo>

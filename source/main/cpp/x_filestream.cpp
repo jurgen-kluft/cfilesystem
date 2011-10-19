@@ -30,7 +30,7 @@ namespace xcore
 		class xifilestream : public xistream
 		{
 			s32						mRefCount;
-			u32						mFileHandle;
+			s32						mFileHandle;
 
 			enum ECaps
 			{
@@ -44,7 +44,7 @@ namespace xcore
 				USE_WRITE	= 0x4000,
 				USE_ASYNC	= 0x8000,
 			};
-			x_bitfield<ECaps>		mCaps;
+			x_bitfield<u32>		mCaps;
 			x_asyncio_callback_struct mCallback;
 
 		public:
@@ -254,17 +254,17 @@ namespace xcore
 
 		bool			xifilestream::canRead() const
 		{
-			return mCaps.isSet(ECaps(CAN_READ|USE_READ));
+			return mCaps.isSet( (CAN_READ|USE_READ) );
 		}
 
 		bool			xifilestream::canSeek() const
 		{
-			return mCaps.isSet(ECaps(CAN_SEEK|USE_SEEK));
+			return mCaps.isSet((CAN_SEEK|USE_SEEK));
 		}
 
 		bool			xifilestream::canWrite() const
 		{
-			return mCaps.isSet(ECaps(CAN_WRITE|USE_WRITE));
+			return mCaps.isSet((CAN_WRITE|USE_WRITE));
 		}
 
 		bool			xifilestream::isOpen() const
@@ -274,7 +274,7 @@ namespace xcore
 
 		bool			xifilestream::isAsync() const
 		{
-			return mCaps.isSet(ECaps(CAN_ASYNC|USE_ASYNC));
+			return mCaps.isSet((CAN_ASYNC|USE_ASYNC));
 		}
 
 		u64				xifilestream::getLength() const

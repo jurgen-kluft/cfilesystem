@@ -60,7 +60,7 @@ namespace xcore
 		template <typename TElement>
 		bool cstack<TElement>::pop(TElement& element)
 		{
-			void* ptr;
+			void* ptr = NULL;
 			bool r = mStack.pop(ptr);
 			element = (TElement)ptr;
 			return r;

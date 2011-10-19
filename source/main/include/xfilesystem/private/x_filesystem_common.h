@@ -93,25 +93,25 @@ namespace xcore
 			xio_thread*					mIoThread;
 
 						///< Synchronous file operations
-			 u32			syncCreate			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
-			 u32			syncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
-			 u64			syncSetPos			( u32 uHandle, u64 filePos );
-			 u64			syncGetPos			( u32 uHandle );
-			 void			syncSetSize			( u32 uHandle, u64 fileSize );
-			 u64			syncGetSize			( u32 uHandle );
-			 u64			syncRead			( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );	
-			 u64			syncWrite			( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
-			 void 			syncClose			( u32& uHandle );
-			 void			syncDelete			( u32& uHandle );
+			 s32			syncCreate			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
+			 s32			syncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false );
+			 u64			syncSetPos			( s32 uHandle, u64 filePos );
+			 u64			syncGetPos			( s32 uHandle );
+			 void			syncSetSize			( s32 uHandle, u64 fileSize );
+			 u64			syncGetSize			( s32 uHandle );
+			 u64			syncRead			( s32 uHandle, u64 uOffset, u64 uSize, void* pBuffer );	
+			 u64			syncWrite			( s32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer );
+			 void 			syncClose			( s32& uHandle );
+			 void			syncDelete			( s32& uHandle );
 
 			///< Asynchronous file operations
-			 u32			asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
-			 void			asyncOpen			( const u32 uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-			 u32			asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-			 void			asyncRead			( const u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-			 void			asyncWrite			( const u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-			 void			asyncClose			( const u32 uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-			 void			asyncCloseAndDelete	( const u32 uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 s32			asyncPreOpen		( const char* szFilename, xbool boRead = true, xbool boWrite = false );
+			 void			asyncOpen			( const s32 uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 s32			asyncOpen			( const char* szFilename, xbool boRead = true, xbool boWrite = false, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 void			asyncRead			( const s32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 void			asyncWrite			( const s32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 void			asyncClose			( const s32 uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 void			asyncCloseAndDelete	( const s32 uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
 
 
 
@@ -156,19 +156,19 @@ namespace xcore
 
 			///< Synchronous file operations
 			 xbool				exists				( const char* szFilename );
-			 u64				getLength			( u32 uHandle );
-			 void				setLength			( u32 uHandle, u64 uFileSize );
+			 u64				getLength			( s32 uHandle );
+			 void				setLength			( s32 uHandle, u64 uFileSize );
 			 xbool				caps				( const xfilepath& szFilename, bool& can_read, bool& can_write, bool& can_seek, bool& can_async );
 
-			 u32				open				( const char* szFilename, xbool boRead = true, xbool boWrite = false, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-			 u64				read				( u32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );	
-			 u64				write				( u32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-			 u64				getpos				( u32 uHandle );
-			 u64				setpos				( u32 uHandle, u64 uPos );
-			 void 				close				( u32& uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
-			 void				closeAndDelete		( u32& uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 s32				open				( const char* szFilename, xbool boRead = true, xbool boWrite = false, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 u64				read				( s32 uHandle, u64 uOffset, u64 uSize, void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );	
+			 u64				write				( s32 uHandle, u64 uOffset, u64 uSize, const void* pBuffer, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 u64				getpos				( s32 uHandle );
+			 u64				setpos				( s32 uHandle, u64 uPos );
+			 void 				close				( s32& uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
+			 void				closeAndDelete		( s32& uHandle, x_asyncio_callback_struct callback = x_asyncio_callback_struct() );
 			 void				save				( const char* szFilename, const void* pData, u64 uSize );
-			 u32				createFile			( const char* szFilename, xbool boRead = true, xbool boWrite = false);
+			 s32				createFile			( const char* szFilename, xbool boRead = true, xbool boWrite = false);
 
 			 xbool				hasLastError		( void );
 			 void				clearLastError		( void );
@@ -192,9 +192,9 @@ namespace xcore
 
 			 xfiledevice*		createSystemPath	( const char* szFilename, xcstring& outFilename );
 
-			 xfiledata*			getFileInfo			( u32 uHandle );
-			 u32				popFreeFileSlot		( void );
-			 bool				pushFreeFileSlot	( u32 uHandle );
+			 xfiledata*			getFileInfo			( s32 uHandle );
+			 s32				popFreeFileSlot		( void );
+			 bool				pushFreeFileSlot	( s32 uHandle );
 
 			 xfileasync*		getAsyncIOData		( u32 nSlot );
 			 xfileasync*		popFreeAsyncIO		( bool wait = false );
@@ -202,7 +202,7 @@ namespace xcore
 
 			 xfileasync*		popAsyncIO			( void );
 			 xasync_id			pushAsyncIO			( xfileasync* asyncIOInfo );
-			 u32				testAsyncId			( xasync_id id );
+			 s32				testAsyncId			( xasync_id id );
 
 
 			 xbool				isPathUNIXStyle		( void );					///< UNIX = '/', Win32 = '\'

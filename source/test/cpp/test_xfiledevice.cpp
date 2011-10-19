@@ -203,23 +203,23 @@ namespace xcore
 
 	static TestFile					sFiles[] = 
 	{
-		{ xfilepath("textfiles\\readme1st.txt")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("textfiles\\authors.txt")			, xattributes(true ,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("textfiles\\docs\\tech.txt")		, xattributes(false,false,true ,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("textfiles\\tech\\install.txt")		, xattributes(false,false,false,true ), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("textfiles\\readme1st.txt")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("textfiles\\authors.txt")			, xattributes(true ,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("textfiles\\docs\\tech.txt")		, xattributes(false,false,true ,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("textfiles\\tech\\install.txt")		, xattributes(false,false,false,true ), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
 		 
-		{ xfilepath("binfiles\\texture1.bin")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\texture2.bin")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\objects\\object1.bin")	, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\objects\\object2.bin")	, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\tracks\\track1.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("binfiles\\tracks\\track2.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("binfiles\\texture1.bin")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("binfiles\\texture2.bin")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("binfiles\\objects\\object1.bin")	, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("binfiles\\objects\\object2.bin")	, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("binfiles\\tracks\\track1.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("binfiles\\tracks\\track2.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
 
-		{ xfilepath("readonly_files\\readme.txt")		, xattributes(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("readonly_files\\data.bin")			, xattributes(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("readonly_files\\readme.txt")		, xattributes(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("readonly_files\\data.bin")			, xattributes(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
 
-		{ xfilepath("writeable_files\\file.txt")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
-		{ xfilepath("writeable_files\\file.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), -1, -1 },
+		{ xfilepath("writeable_files\\file.txt")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ xfilepath("writeable_files\\file.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
 
 		// Room for creating files
 		{ xfilepath("__EMPTY__") },
@@ -425,6 +425,7 @@ namespace xcore
 			return NULL;
 		}
 
+		/*
 		static TestFile*		sFindEmptyTestFile()
 		{
 			TestFile* t = sFiles;
@@ -438,6 +439,7 @@ namespace xcore
 			}
 			return NULL;
 		}
+		*/
 
 		bool xfiledevice_TEST::getDeviceInfo(u64& totalSpace, u64& freeSpace) const
 		{
@@ -454,7 +456,7 @@ namespace xcore
 		bool xfiledevice_TEST::openFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
-			nFileHandle = (testFile!=NULL) ? (u32)testFile : INVALID_FILE_HANDLE;
+			nFileHandle = (testFile!=NULL) ? (s32)testFile : INVALID_FILE_HANDLE;
 			return nFileHandle!=INVALID_FILE_HANDLE;
 		}
 
