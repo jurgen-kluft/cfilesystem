@@ -30,7 +30,7 @@
 #include "xfilesystem\private\x_fileasync.h"
 #include "xfilesystem\private\x_filesystem_cstack.h"
 
-extern xcore::x_iallocator* sAtomicAllocator;
+
 namespace xcore
 {
 	//------------------------------------------------------------------------------------------
@@ -38,6 +38,7 @@ namespace xcore
 	//------------------------------------------------------------------------------------------
 	namespace xfilesystem
 	{
+
 		class FileDevice_PC_System : public xfiledevice
 		{
 			const char*				mDrivePath;
@@ -454,7 +455,7 @@ namespace xcore
 		struct enumerate_delegate_dirs_copy_dir : public enumerate_delegate<xdirinfo>
 		{
 			cstack<const xdirinfo* > dirStack;
-			enumerate_delegate_dirs_copy_dir() { dirStack.init(sAtomicAllocator,MAX_ENUM_SEARCH_DIRS);}
+			enumerate_delegate_dirs_copy_dir() { dirStack.init(getAllocator(),MAX_ENUM_SEARCH_DIRS);}
 			virtual ~enumerate_delegate_dirs_copy_dir() { dirStack.clear(); }
 			virtual void operator () (s32 depth, const xdirinfo& inf, bool& terminate) { }
 			virtual void operator () (s32 depth, const xdirinfo* inf,bool& terminate)
@@ -467,7 +468,7 @@ namespace xcore
 		struct enumerate_delegate_files_copy_dir : public enumerate_delegate<xfileinfo>
 		{
 			cstack<const xfileinfo* > fileStack;
-			enumerate_delegate_files_copy_dir() { fileStack.init(sAtomicAllocator,MAX_ENUM_SEARCH_FILES); }
+			enumerate_delegate_files_copy_dir() { fileStack.init(getAllocator(),MAX_ENUM_SEARCH_FILES); }
 			virtual ~enumerate_delegate_files_copy_dir() { fileStack.clear(); }
 			virtual void operator () (s32 depth, const xfileinfo& inf, bool& terminate) { }
 			virtual void operator () (s32 depth, const xfileinfo* inf,bool& terminate)

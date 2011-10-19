@@ -42,7 +42,7 @@ namespace xcore
 		//------------------------------------------------------------------------------------------
 
 		// allocator stuff
-		static x_iallocator*				sAllocator;
+		static x_iallocator*				sAllocator = NULL;
 
 
 		void*				heapAlloc(s32 size, s32 alignment)
@@ -60,6 +60,11 @@ namespace xcore
 		void				setAllocator	( x_iallocator* allocator )
 		{
 			sAllocator = allocator;
+		}
+
+		x_iallocator*			getAllocator		( void )
+		{
+			return sAllocator;
 		}
 
 
