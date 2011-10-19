@@ -125,7 +125,8 @@ namespace xcore
 							{
 								pAsync->setStatus(FILE_OP_STATUS_READING);
 
-								bool boRead = pFileDevice->readFile(pInfo->m_nFileHandle, pAsync->getReadWriteOffset(), pAsync->getReadAddress(), (u32)pAsync->getReadWriteSize(), ioResult.result);
+								u64 readOffset = xfs_common::s_instance()->getpos(pAsync->getFileIndex());
+								bool boRead = pFileDevice->readFile(pInfo->m_nFileHandle, readOffset, pAsync->getReadAddress(), (u32)pAsync->getReadWriteSize(), ioResult.result);
 								if (!boRead)
 								{
 									x_printf ("xfilesystem: " TARGET_PLATFORM_STR " ERROR readFile failed on file %s\n", x_va_list(pInfo->m_szFilename));
