@@ -182,6 +182,17 @@ namespace xcore
 			return xdevicealias::sRegister(device_alias);
 		}
 
+		bool		x_RegisterSysPathAlias (const char* alias, const char* path)
+		{
+			const xdevicealias* curDirAlias = xdevicealias::sFind("curdir");
+			xfiledevice* device = curDirAlias->device();
+
+			xdevicealias device_alias(alias, device, path);
+			return xdevicealias::sRegister(device_alias);
+
+
+		}
+
 
 	};
 
