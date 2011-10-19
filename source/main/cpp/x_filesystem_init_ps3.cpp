@@ -29,7 +29,7 @@ namespace xcore
 			NULL
 		};
 
-		void init(u32 max_open_streams, xio_thread* threading, x_iallocator* allocator)
+		void init(u32 max_open_streams, xio_thread* io_thread, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
 

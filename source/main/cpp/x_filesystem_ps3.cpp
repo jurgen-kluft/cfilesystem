@@ -44,7 +44,7 @@ namespace xcore
 			ASSERTS (pTimeAndDate, "GetOpenCreatedTime() : Pointer to xsystem::TimeAndDate is NULL!");
 
 			CellFsStat	xStat;
-			xfiledata* pxFileInfo = getFileInfo(uHandle);
+			xfiledata* pxFileInfo = xfs_common::s_instance()->getFileInfo(uHandle);
 //			CellFsErrno eError = cellFsFstat(pxFileInfo->m_nFileHandle, &xStat);
 			CellFsErrno eError = cellFsFstat(uHandle, &xStat);
 			pTimeAndDate = xdatetime::sFromFileTime(xStat.st_ctime);
@@ -57,7 +57,7 @@ namespace xcore
 			ASSERTS (pTimeAndDate, "GetOpenModifiedTime() : Pointer to xsystem::TimeAndDate is NULL!");
 
 			CellFsStat	xStat;
-			xfiledata* pxFileInfo = getFileInfo(uHandle);
+			xfiledata* pxFileInfo = xfs_common::s_instance()->getFileInfo(uHandle);
 //			CellFsErrno eError = cellFsFstat(pxFileInfo->m_nFileHandle, &xStat);
 			CellFsErrno eError = cellFsFstat(uHandle, &xStat);
 			pTimeAndDate = xdatetime::sFromFileTime(xStat.st_ctime);
@@ -78,7 +78,7 @@ namespace xcore
 
 		void				initialise ( u32 uMaxOpenStreams )
 		{
-			xfs_common::create();
+			xfs_common::s_create();
 			xfs_common::s_instance()->initialiseCommon( uMaxOpenStreams );
 		}	
 
@@ -87,7 +87,7 @@ namespace xcore
 		void				shutdown ( void )
 		{
 			xfs_common::s_instance()->shutdownCommon();
-			xfs_common::destroy();
+			xfs_common::s_destroy();
 		}
 
 		
