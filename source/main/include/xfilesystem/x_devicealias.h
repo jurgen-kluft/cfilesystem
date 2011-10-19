@@ -37,7 +37,7 @@ namespace xcore
 
 		extern bool		x_RegisterAlias (const char* alias, const char* aliasTarget);
 		extern bool		x_RegisterAlias (const char* alias, xfiledevice* device, const char* remap=NULL);
-
+		extern bool		x_RegisterSysPathAlias (const char* alias, const char* path);
 	};
 
 	//==============================================================================
