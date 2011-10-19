@@ -375,7 +375,7 @@ namespace xcore
 		{
 			if (mCaps.isSet(USE_READ))
 			{
-				u64 p = getPosition();
+				u64 p = 0; // call get position in the IO thread, not here. //getPosition();
 
 				x_asyncio_callback_struct currCallback = mCallback;
 
@@ -394,14 +394,14 @@ namespace xcore
 			if (mCaps.isSet(USE_WRITE))
 			{
 				// TODO: fix proper offset??
-				u64 p; //= getPosition(); // This is not synchronized, must do this in the io thread NOT main thread!!!!
+				u64 p = 0; //= getPosition(); // This is not synchronized, must do this in the io thread NOT main thread!!!!
 
 				x_asyncio_callback_struct currCallback = mCallback;
 
 				if(callback.callback != NULL)
 					currCallback = callback;
 
-				xfilesystem::xfs_common::s_instance()->write(mFileHandle, 0, count, &buffer[offset], currCallback);
+				xfilesystem::xfs_common::s_instance()->write(mFileHandle, p, count, &buffer[offset], currCallback);
 				return true;	
 			}
 			return false;
