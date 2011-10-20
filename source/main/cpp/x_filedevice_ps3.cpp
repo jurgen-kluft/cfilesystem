@@ -210,7 +210,6 @@ namespace xcore
 			outFileHandle = (u32)hFile;
 			if (nResult == CELL_OK)
 			{
-				cellFsClose(hFile);
 				return true;
 			}
 			return false;
