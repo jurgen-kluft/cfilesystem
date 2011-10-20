@@ -28,7 +28,10 @@ namespace xcore
 			const xcore::s32 queueSize = 5;
 			xfileasync* pAsync = NULL;
 			xcore::s32 loopFlag = queueSize; // when the thread is stopped loop extra times to try to clean out memory in queues
- 			do
+ 			
+			io_thread->wait(); // wait before starting loop
+			
+			do
 			{
 				// parameters sent out by the callback
 				x_asyncio_result ioResult;
@@ -188,6 +191,8 @@ namespace xcore
 							callback.callback(ioResult);
 
 							xfilesystem::xfs_common::s_instance()->pushFreeFileSlot(pAsync->getFileIndex());
+
+							io_thread->wait(); // wait only after successful IO
 							
 						}
 
@@ -196,10 +201,7 @@ namespace xcore
 						xfs_common::s_instance()->pushFreeAsyncIO(pAsync);
 					}
 				}
-				else
-				{
-					io_thread->wait();
-				}
+
 
 				if(!io_thread->loop())
 				{
