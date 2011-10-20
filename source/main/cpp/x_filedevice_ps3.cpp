@@ -263,13 +263,9 @@ namespace xcore
 				s32 nResult = cellFsRead (nFileHandle, buffer, count, &numBytesRead);
 
 				bool boSuccess = (nResult == CELL_OK);
-				if (boSuccess)
+
 				{
-					outNumBytesRead = (u32)numBytesRead;
-				}
-				else
-				{ 
-					outNumBytesRead = 0;
+					outNumBytesRead = numBytesRead;
 				}
 				return boSuccess;
 			}
@@ -286,9 +282,10 @@ namespace xcore
 
 				bool boSuccess = (nResult == CELL_OK);
 				outNumBytesWritten = 0;
-				if (boSuccess)
+
+
 				{
-					outNumBytesWritten = (u32)numBytesWritten;
+					outNumBytesWritten = numBytesWritten;
 				}
 				return boSuccess;
 			}
