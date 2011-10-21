@@ -188,7 +188,7 @@ namespace xcore
 			}
 			s32 nResult = cellFsOpen(systemFile.c_str(),nFlags,&hFile,NULL,0);
 			outFileHandle = (u32)hFile;
-			return nResult == CELL_OK;			
+			return nResult == CELL_FS_SUCCEEDED;			
 		}
 
 		bool FileDevice_PS3_System::createFile(const char* szFilename, bool boRead, bool boWrite, u32& outFileHandle) const
