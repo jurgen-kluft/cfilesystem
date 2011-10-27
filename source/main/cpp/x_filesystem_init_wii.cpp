@@ -25,7 +25,7 @@ namespace xcore
 	{
 		static xfiledevice*	sSystemFileDevice = NULL;
 
-		void init(u32 max_open_streams, xio_thread* threading, x_iallocator* allocator)
+		void init(u32 max_open_streams, xio_thread* io_thread, x_iallocator* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
 			xdevicealias::init();
@@ -36,14 +36,14 @@ namespace xcore
 			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, "/");
 			xfilesystem::xdevicealias cache("cache", sSystemFileDevice, "/");
 
-			xfilesystem::sRegister(host);
-			xfilesystem::sRegister(dvd);
-			xfilesystem::sRegister(cache);
+			xfilesystem::xdevicealias::sRegister(host);
+			xfilesystem::xdevicealias::sRegister(dvd);
+			xfilesystem::xdevicealias::sRegister(cache);
 
 			xfilesystem::xdevicealias appdir( "appdir", "host" );
 			xfilesystem::xdevicealias curdir( "curdir", "host" );
-			xfilesystem::sRegister(appdir);
-			xfilesystem::sRegister(curdir);
+			xfilesystem::xdevicealias::sRegister(appdir);
+			xfilesystem::xdevicealias::sRegister(curdir);
 
 			xfilesystem::initialise(max_open_streams);
 			xfilesystem::xfs_common::s_instance()->setIoThreadInterface(io_thread);

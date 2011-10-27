@@ -16,10 +16,13 @@
 #include "xfilesystem\private\x_fileasync.h"
 #include "xfilesystem\x_filestream.h"
 
+
 using namespace xcore;
 using namespace xcore::xfilesystem;
 
-	
+
+
+
 UNITTEST_SUITE_BEGIN(filesystem_common)
 {
 	UNITTEST_FIXTURE(main)
@@ -116,16 +119,16 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 		UNITTEST_TEST(getLength)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			s32 uHandle1 = xfilesystem::xfs_common::s_instance()->open(str1,true,false);
+			xcore::s32 uHandle1 = xfilesystem::xfs_common::s_instance()->open(str1,true,false);
 			xbyte buffer1[8192];
-			u64 fileLen1 = xfilesystem::xfs_common::s_instance()->read(uHandle1,u64(0),sizeof(buffer1),buffer1,NULL);
+			xcore::u64 fileLen1 = xfilesystem::xfs_common::s_instance()->read(uHandle1,xcore::u64(0),sizeof(buffer1),buffer1,NULL);
 			CHECK_EQUAL(xfilesystem::xfs_common::s_instance()->getLength(uHandle1),fileLen1);
 			xfilesystem::xfs_common::s_instance()->close(uHandle1,NULL);
 
 			const char* str2 = "TEST:\\textfiles\\authors.txt";
-			s32 uHandle2 = xfilesystem::xfs_common::s_instance()->open(str2,true,false);
+			xcore::s32 uHandle2 = xfilesystem::xfs_common::s_instance()->open(str2,true,false);
 			xbyte buffer2[8192];
-			u64 fileLen2 = xfilesystem::xfs_common::s_instance()->read(uHandle2,u64(0),sizeof(buffer2),buffer2,NULL);
+			xcore::u64 fileLen2 = xfilesystem::xfs_common::s_instance()->read(uHandle2,xcore::u64(0),sizeof(buffer2),buffer2,NULL);
 			CHECK_EQUAL(xfilesystem::xfs_common::s_instance()->getLength(uHandle2),fileLen2);
 			xfilesystem::xfs_common::s_instance()->close(uHandle2,NULL);
 		}
@@ -133,9 +136,9 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 		UNITTEST_TEST(setLength)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			s32 uHandle1 = xfilesystem::xfs_common::s_instance()->open(str1,true,false);
+			xcore::s32 uHandle1 = xfilesystem::xfs_common::s_instance()->open(str1,true,false);
 			xbyte buffer1[8192];
-			u64 fileLen1 = xfilesystem::xfs_common::s_instance()->read(uHandle1,u64(0),sizeof(buffer1),buffer1,NULL);
+			xcore::u64 fileLen1 = xfilesystem::xfs_common::s_instance()->read(uHandle1,xcore::u64(0),sizeof(buffer1),buffer1,NULL);
 			xfilesystem::xfs_common::s_instance()->setLength(uHandle1,fileLen1+1);
 			CHECK_EQUAL(xfilesystem::xfs_common::s_instance()->getLength(uHandle1),fileLen1+1);
 			xfilesystem::xfs_common::s_instance()->close(uHandle1,NULL);
@@ -196,7 +199,7 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 
 		UNITTEST_TEST(heapAlloc)
 		{
-			char* filename = (char*)heapAlloc(s32(32),X_ALIGNMENT_DEFAULT);
+			char* filename = (char*)heapAlloc(xcore::s32(32),X_ALIGNMENT_DEFAULT);
 			const char* temp = "sssssssssssssssssssssssssssssss";
 			x_memset(filename,'s',31);
 			filename[31] = '\0';
@@ -227,7 +230,7 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 
 		UNITTEST_TEST(getFileInfo)
 		{
-			for (u32 uFile = 0;uFile < 4; ++ uFile )
+			for (xcore::u32 uFile = 0;uFile < 4; ++ uFile )
 			{
 				if (xfs_common::s_instance()->getFileInfo(uFile))
 				{
@@ -238,10 +241,10 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 
 		UNITTEST_TEST(popFreeFileSlot)
 		{
-			s32 uHandle1 = xfs_common::s_instance()->popFreeFileSlot();
+			xcore::s32 uHandle1 = xfs_common::s_instance()->popFreeFileSlot();
 			CHECK_NOT_EQUAL(PENDING_FILE_HANDLE , uHandle1);
 			CHECK_NOT_EQUAL(INVALID_FILE_HANDLE , uHandle1);
-			s32 uHandle2 = xfs_common::s_instance()->popFreeFileSlot();
+			xcore::s32 uHandle2 = xfs_common::s_instance()->popFreeFileSlot();
 			CHECK_NOT_EQUAL(PENDING_FILE_HANDLE , uHandle2);
 			CHECK_NOT_EQUAL(INVALID_FILE_HANDLE , uHandle2);
 			CHECK_TRUE(xfs_common::s_instance()->pushFreeFileSlot(uHandle1));
@@ -250,10 +253,10 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 
 		UNITTEST_TEST(pushFreeFileSlot)
 		{
-			s32 uHandle1 = xfs_common::s_instance()->popFreeFileSlot();
+			xcore::s32 uHandle1 = xfs_common::s_instance()->popFreeFileSlot();
 			CHECK_NOT_EQUAL(PENDING_FILE_HANDLE , uHandle1);
 			CHECK_NOT_EQUAL(INVALID_FILE_HANDLE , uHandle1);
-			s32 uHandle2 = xfs_common::s_instance()->popFreeFileSlot();
+			xcore::s32 uHandle2 = xfs_common::s_instance()->popFreeFileSlot();
 			CHECK_NOT_EQUAL(PENDING_FILE_HANDLE , uHandle2);
 			CHECK_NOT_EQUAL(INVALID_FILE_HANDLE , uHandle2);
 			CHECK_TRUE(xfs_common::s_instance()->pushFreeFileSlot(uHandle1));
@@ -368,13 +371,13 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 		UNITTEST_TEST(open)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			s32 uHandle1 =  xfs_common::s_instance()->open(str1,true,false);
+			xcore::s32 uHandle1 =  xfs_common::s_instance()->open(str1,true,false);
 			CHECK_NOT_EQUAL(PENDING_FILE_HANDLE , uHandle1);
 			CHECK_NOT_EQUAL(INVALID_FILE_HANDLE , uHandle1);
 			xfs_common::s_instance()->close(uHandle1,NULL);	
 
 			const char* str2 = "TEST:\\textfiles\\authors.txt";
-			s32 uHandle2 = xfs_common::s_instance()->open(str2,true,true);
+			xcore::s32 uHandle2 = xfs_common::s_instance()->open(str2,true,true);
 			CHECK_NOT_EQUAL(PENDING_FILE_HANDLE , uHandle2);
 			CHECK_NOT_EQUAL(INVALID_FILE_HANDLE , uHandle2);
 			xfs_common::s_instance()->close(uHandle2,NULL);	
@@ -383,9 +386,9 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 		UNITTEST_TEST(read)
 		{
 			const char* str1 = "TEST:\\textfiles\\authors.txt";
-			s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
+			xcore::s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
 			xbyte buffer1[8192];
-			u64 fileLen1 = xfilesystem::xfs_common::s_instance()->read(uHandle1,u64(0),sizeof(buffer1),buffer1,NULL);
+			xcore::u64 fileLen1 = xfilesystem::xfs_common::s_instance()->read(uHandle1,xcore::u64(0),sizeof(buffer1),buffer1,NULL);
 			CHECK_TRUE(fileLen1);
 			xfs_common::s_instance()->close(uHandle1,NULL);
 
@@ -397,8 +400,8 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 			setEventFactory(event_factory_2);
 			xiasync_result_test xiasync_result_test_1;
 			xiasync_result* xiasync_result_temp1 = &xiasync_result_test_1;
-			s32 uHandle2 = open(str1,true,false);
-			u64 fileLen2 = xfilesystem::read(uHandle2,u64(0),sizeof(buffer1),buffer1,&xiasync_result_temp1);
+			xcore::s32 uHandle2 = open(str1,true,false);
+			xcore::u64 fileLen2 = xfilesystem::read(uHandle2,xcore::u64(0),sizeof(buffer1),buffer1,&xiasync_result_temp1);
 			CHECK_FALSE(fileLen2);
 			xiasync_result_test xiasync_result_test_2;
 			xiasync_result* xiasync_result_temp2 = &xiasync_result_test_2;
@@ -410,15 +413,15 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 		UNITTEST_TEST(write)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			s32 uHandle1 = xfs_common::s_instance()->open(str1,true,true);
+			xcore::s32 uHandle1 = xfs_common::s_instance()->open(str1,true,true);
 			xbyte buffer1[] = { "a unittest writing data to a file" };
 			xbyte bufferRead[8192];
-			u64 fileLen1 = xfilesystem::xfs_common::s_instance()->read(uHandle1,u64(0),sizeof(bufferRead),bufferRead,NULL);
-			u64 writeLen1 = xfilesystem::xfs_common::s_instance()->write(uHandle1,fileLen1,sizeof(buffer1),buffer1,NULL);
+			xcore::u64 fileLen1 = xfilesystem::xfs_common::s_instance()->read(uHandle1,xcore::u64(0),sizeof(bufferRead),bufferRead,NULL);
+			xcore::u64 writeLen1 = xfilesystem::xfs_common::s_instance()->write(uHandle1,fileLen1,sizeof(buffer1),buffer1,NULL);
 			CHECK_EQUAL(writeLen1 , sizeof(buffer1));
 
 			xbyte buffer2[8192];
-			u64 fileLen2 = xfilesystem::xfs_common::s_instance()->read(uHandle1,u64(0),sizeof(buffer2),buffer2,NULL);
+			xcore::u64 fileLen2 = xfilesystem::xfs_common::s_instance()->read(uHandle1,xcore::u64(0),sizeof(buffer2),buffer2,NULL);
 			CHECK_NOT_EQUAL(fileLen1,fileLen2);
 			CHECK_EQUAL(fileLen2,fileLen1+sizeof(buffer1));
 			xfs_common::s_instance()->close(uHandle1,NULL);	
@@ -430,8 +433,8 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 			setEventFactory(event_factory_2);
 			xiasync_result_test xiasync_result_test_1;
 			xiasync_result* xiasync_result_temp1 = &xiasync_result_test_1;
-			s32 uHandle2 = open(str1,true,true);
-			u64 writeLen2 = xfilesystem::write(uHandle2,fileLen2,sizeof(buffer1),buffer1,&xiasync_result_temp1);
+			xcore::s32 uHandle2 = open(str1,true,true);
+			xcore::u64 writeLen2 = xfilesystem::write(uHandle2,fileLen2,sizeof(buffer1),buffer1,&xiasync_result_temp1);
 			CHECK_EQUAL(writeLen2,0);
 			close(uHandle2,NULL);
 			*/
@@ -440,47 +443,47 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 		UNITTEST_TEST(getpos)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
-			u64 pos = xfs_common::s_instance()->getpos(uHandle1);
-			CHECK_EQUAL(pos,u64(0));
+			xcore::s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
+			xcore::u64 pos = xfs_common::s_instance()->getpos(uHandle1);
+			CHECK_EQUAL(pos,xcore::u64(0));
 			xfs_common::s_instance()->close(uHandle1,NULL);	
 		}
 
 		UNITTEST_TEST(setpos)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
-			xfs_common::s_instance()->setpos(uHandle1,u64(20));
-			u64 pos = xfs_common::s_instance()->getpos(uHandle1);
-			CHECK_EQUAL(pos,u64(20));
+			xcore::s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
+			xfs_common::s_instance()->setpos(uHandle1,xcore::u64(20));
+			xcore::u64 pos = xfs_common::s_instance()->getpos(uHandle1);
+			CHECK_EQUAL(pos,xcore::u64(20));
 
-			xfs_common::s_instance()->setpos(uHandle1,u64(0));
-			u64 pos1 = xfs_common::s_instance()->getpos(uHandle1);
-			CHECK_EQUAL(pos1,u64(0));
+			xfs_common::s_instance()->setpos(uHandle1,xcore::u64(0));
+			xcore::u64 pos1 = xfs_common::s_instance()->getpos(uHandle1);
+			CHECK_EQUAL(pos1,xcore::u64(0));
 			xfs_common::s_instance()->close(uHandle1,NULL);	
 		}
 
 		UNITTEST_TEST(close)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
+			xcore::s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
 			xfs_common::s_instance()->close(uHandle1,NULL);
 			CHECK_EQUAL(uHandle1,INVALID_FILE_HANDLE);
 
-			s32 uHandle2 = xfs_common::s_instance()->open(str1,true,false);
+			xcore::s32 uHandle2 = xfs_common::s_instance()->open(str1,true,false);
 			xfs_common::s_instance()->close(uHandle2,NULL);
 		}
 
 		UNITTEST_TEST(save)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
+			xcore::s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
 			CHECK_NOT_EQUAL(PENDING_FILE_HANDLE , uHandle1);
 			CHECK_NOT_EQUAL(INVALID_FILE_HANDLE,uHandle1);
 			xfs_common::s_instance()->close(uHandle1,NULL);
-			xbyte buffer1[] = { "a unittest saving data to a file" };
+			xcore::xbyte buffer1[] = { "a unittest saving data to a file" };
 			xfs_common::s_instance()->save(str1,buffer1,sizeof(buffer1));
-			s32 uHandle2 = xfs_common::s_instance()->open(str1,true,true);
+			xcore::s32 uHandle2 = xfs_common::s_instance()->open(str1,true,true);
 			CHECK_NOT_EQUAL(PENDING_FILE_HANDLE , uHandle2);
 			CHECK_NOT_EQUAL(INVALID_FILE_HANDLE,uHandle2);
 			xfs_common::s_instance()->close(uHandle2,NULL);
@@ -489,11 +492,12 @@ UNITTEST_SUITE_BEGIN(filesystem_common)
 		UNITTEST_TEST(closeAndDelete)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
+			xcore::s32 uHandle1 = xfs_common::s_instance()->open(str1,true,false);
 			xfs_common::s_instance()->closeAndDelete(uHandle1,NULL);
 			CHECK_EQUAL(uHandle1,INVALID_FILE_HANDLE);
 		}
 	}
 }
 UNITTEST_SUITE_END
+
 
