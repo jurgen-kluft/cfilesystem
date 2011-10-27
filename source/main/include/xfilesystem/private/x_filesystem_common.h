@@ -148,9 +148,14 @@ namespace xcore
 			}
 
 
-			 xcore::s32			getMaxAsyncOp		( void )
+			 xcore::u32			getMaxAsyncOp		( void )
 			 {
 				 return m_uMaxAsyncOperations;
+			 }
+
+			 xcore::u32 getMaxOpenFiles()
+			 {
+				return m_uMaxOpenedFiles;
 			 }
 
 
