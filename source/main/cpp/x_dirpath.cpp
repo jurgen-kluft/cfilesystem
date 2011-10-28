@@ -428,9 +428,10 @@ namespace xcore
 			xfiledevice* device = alias->device();
 			outDirPath = mString;
 			setOrReplaceDevicePart(outDirPath, alias->remap());
-#ifdef TARGET_PS3
-			outDirPath.remove(":");
-#endif	
+			
+			//if(xfs_common::s_instance()->isPathUNIXStyle())
+			//	outDirPath.remove(":");
+
 			outDirPath.replace('\\',sGetSlashChar());
 			return device;
 		}

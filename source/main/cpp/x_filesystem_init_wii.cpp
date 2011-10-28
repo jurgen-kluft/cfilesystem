@@ -30,6 +30,9 @@ namespace xcore
 			xfilesystem::setAllocator(allocator);
 			xdevicealias::init();
 
+			xfilesystem::initialise(max_open_streams);
+			xfilesystem::xfs_common::s_instance()->setIoThreadInterface(io_thread);
+
 			sSystemFileDevice = x_CreateFileDeviceWII();
 
 			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, "/");
@@ -45,8 +48,7 @@ namespace xcore
 			xfilesystem::xdevicealias::sRegister(appdir);
 			xfilesystem::xdevicealias::sRegister(curdir);
 
-			xfilesystem::initialise(max_open_streams);
-			xfilesystem::xfs_common::s_instance()->setIoThreadInterface(io_thread);
+
 		}
 
 		//------------------------------------------------------------------------------

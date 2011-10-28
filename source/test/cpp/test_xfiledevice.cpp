@@ -1,3 +1,4 @@
+#include "xbase\x_target.h"
 #include "xbase\x_types.h"
 #include "xbase\x_allocator.h"
 #include "xtime\x_datetime.h"
@@ -23,6 +24,19 @@
 using namespace xcore;
 
 
+void *operator new(size_t memsize) 
+{
+	return xcore::xfilesystem::heapAlloc(memsize, X_ALIGNMENT_DEFAULT);
+}
+
+void operator delete(void *ptr) throw ()
+{
+	xcore::xfilesystem::heapFree(ptr);
+
+
+}
+
+
 
 namespace xcore
 {
@@ -31,6 +45,8 @@ namespace xcore
 	//------------------------------------------------------------------------------------------
 	using namespace xfilesystem;
 	
+
+
 
 	struct TestFile;
 
@@ -322,6 +338,14 @@ namespace xcore
 			virtual bool			enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth) const;
 
 			XFILESYSTEM_OBJECT_NEW_DELETE()
+			
+				/*
+			void*	operator new(xcore::xsize_t num_bytes)				{ return heapAlloc(num_bytes, X_ALIGNMENT_DEFAULT); }	
+			void*	operator new(xcore::xsize_t num_bytes, void* mem)	{ return mem; }											
+			void	operator delete(void* mem)							{ heapFree(mem); }										
+			void	operator delete(void* mem, void* )					{ }						
+			*/
+		
 		};
 
 		static TestDir*		sFindTestDir(const char* szDir)

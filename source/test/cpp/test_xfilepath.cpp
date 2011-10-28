@@ -226,7 +226,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 		UNITTEST_TEST(getSystem)
 		{
 			const char* str1 = "TEST:\\getSystem\\test.txt";
-			const char* str2 = "TEST/getSystem/test.txt";
+			const char* str2 = "TEST:/getSystem/test.txt";
 			xfilepath p1(str1);
 			char buffer1[256];
 			xcstring string1(buffer1,sizeof(buffer1));
@@ -237,6 +237,8 @@ UNITTEST_SUITE_BEGIN(filepath)
 #if defined(TARGET_PS3) || defined(TARGET_PSP) || defined(TARGET_WII)
 			CHECK_EQUAL(0,x_strCompare(string1.c_str(),str2));
 #endif
+
+			x_printf("getSystem() in test xfilepath returned: %s\n", string1.c_str());
 			
 		}
 
