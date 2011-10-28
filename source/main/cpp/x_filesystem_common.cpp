@@ -714,9 +714,9 @@ namespace xcore
 			outFilename = szFilename.c_str_device();
 			// app_home:/dirname/filename.txt  (remove char ':' )
 			// right format is app_home/dirname/filename.txt
-#ifdef TARGET_PS3
-			outFilename.remove(":");
-#endif
+			//if(xfs_common::s_instance()->isPathUNIXStyle())
+			//	outFilename.remove(":");
+
 			return device;
 		}
 

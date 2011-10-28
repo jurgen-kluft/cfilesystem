@@ -411,7 +411,7 @@ UNITTEST_SUITE_BEGIN(dirpath)
 		{
 			const char* str1 = "TEST:\\textfiles\\";
 			xdirpath di1(str1);
-			const char* str2 = "TEST/textfiles/";
+			const char* str2 = "TEST:/textfiles/";
 			char strBuffer[256];
 			xcstring str(strBuffer, sizeof(strBuffer));
 			xfiledevice* device = di1.getSystem(str);
@@ -422,6 +422,9 @@ UNITTEST_SUITE_BEGIN(dirpath)
 #if defined(TARGET_PS3) || defined(TARGET_PSP) || defined(TARGET_WII)
 			CHECK_EQUAL(0,x_strCompare(str2,str.c_str()));
 #endif
+
+			x_printf("getSystem() in test xdirpath returned: %s\n", str.c_str());
+
 			const char* str4 = "";
 			xdirpath di3(str4);
 			char strBuffer3[256];
