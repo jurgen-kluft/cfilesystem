@@ -37,8 +37,9 @@ namespace xcore
 			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
 		{
 			fixSlashes();
-			mStringForDevice = mString;
+			//mStringForDevice = mString; // already copied mString in fixSlashesForDevice
 			fixSlashesForDevice();
+		//	x_printf("Constructing xdirpath(%s), mStringForDevice=%s mString=%s\n", str, mStringForDevice.c_str(), mString.c_str());
 		}
 		xdirpath::xdirpath(const xdirpath& dirpath)
 			: mString(mStringBuffer, sizeof(mStringBuffer), dirpath.c_str()),
