@@ -40,6 +40,8 @@ namespace xcore
 			fixSlashes();
 			mStringForDevice = mString;
 			fixSlashesForDevice();
+
+			//x_printf("Constructing xfilepath(%s), mStringForDevice = %s, mString=%s\n", str, mStringForDevice.c_str(), mString.c_str());
 		}
 		xfilepath::xfilepath(const xfilepath& filepath)
 			: mString(mStringBuffer, sizeof(mStringBuffer)),

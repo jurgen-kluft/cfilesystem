@@ -581,6 +581,9 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 
 		UNITTEST_TEST(sCopy)
 		{
+
+			x_printf("----------Beginning Test sCopy--------------##\n");
+
 			const char* strCopyFrom = "TEST:\\unique\\sCopyFrom\\";
 			xdirpath dpCopyFrom(strCopyFrom);
 			CHECK_EQUAL(false, xdirinfo::sExists(dpCopyFrom));
