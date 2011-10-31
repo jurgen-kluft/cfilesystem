@@ -24,6 +24,7 @@ namespace xcore
 	namespace xfilesystem
 	{
 		static xfiledevice*	sSystemFileDevice = NULL;
+		static xfiledevice* sNandFileDevice = NULL;
 
 		void init(u32 max_open_streams, xio_thread* io_thread, x_iallocator* allocator)
 		{
@@ -34,6 +35,7 @@ namespace xcore
 			xfilesystem::xfs_common::s_instance()->setIoThreadInterface(io_thread);
 
 			sSystemFileDevice = x_CreateFileDeviceWII();
+			sNandFileDevice = x_CreateNandDeviceWII();
 
 			xfilesystem::xdevicealias host ("host" , sSystemFileDevice, "/");
 			xfilesystem::xdevicealias dvd  ("dvd"  , sSystemFileDevice, "/");
@@ -48,6 +50,9 @@ namespace xcore
 			xfilesystem::xdevicealias::sRegister(appdir);
 			xfilesystem::xdevicealias::sRegister(curdir);
 
+			xdevicealias nand("nand", sNandFileDevice, "/");
+			xdevicealias::sRegister(nand);
+
 
 		}
 
@@ -58,6 +63,7 @@ namespace xcore
 			xdevicealias::exit();
 
 			x_DestroyFileDeviceWII(sSystemFileDevice);
+			xfilesystem::x_DestroyNandDeviceWII(sNandFileDevice);
 
 			xfilesystem::setAllocator(NULL);
 		}
