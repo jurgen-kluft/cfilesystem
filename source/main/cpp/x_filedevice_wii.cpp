@@ -255,7 +255,11 @@ namespace xcore
 			DVDFileInfo* dvdFileInfo = &mDvdFileInfo[nFileHandle];
 			// For now, let the user deal with this.  May not be safe to modify size of output buffer provided anyway
 			//count = (count + 31) & 0xffffffe0;									///< DVDRead requires count to be a multiple of 32
-			s32 numBytesRead = DVDRead(dvdFileInfo, buffer, count, (s32)pos);
+			
+			xcore::x_printf("Reading from WII DVD length = %d, offset = %d\n", count, pos);
+
+
+			s32 numBytesRead = DVDRead(dvdFileInfo, buffer, (s32)count, (s32)pos);
 			bool boSuccess = numBytesRead >= 0;
 			if (boSuccess)
 			{
