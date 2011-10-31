@@ -827,6 +827,20 @@ namespace xcore
 			return (result == NAND_RESULT_OK);
 		}
 
+		bool FileDevice_WII_NAND::setLengthOfFile(u32 nFileHandle, u64 inLength) const
+		{
+			return false;
+
+			// unfinished...
+
+			if(nFileHandle >= mMaxNumOpenFiles)
+			{
+				return false;
+			}
+
+			NANDFileInfo* fileInfo = &mNandFileInfo[nFileHandle];
+		}
+
 		bool FileDevice_WII_NAND::closeFile(u32 nFileHandle) const
 		{
 

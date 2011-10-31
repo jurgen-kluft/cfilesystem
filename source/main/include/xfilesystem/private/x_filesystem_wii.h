@@ -23,7 +23,7 @@ namespace xcore
 		extern void			x_DestroyFileDeviceWII(xfiledevice*);
 
 		extern xfiledevice*	x_CreateNandDeviceWII();
-		extern xfiledevice*	x_DestroyNandDeviceWII();
+		extern void	x_DestroyNandDeviceWII(xfiledevice*);
 	};
 
 	//==============================================================================
