@@ -141,7 +141,7 @@ namespace xcore
 
 			HANDLE handle = ::CreateFile(szFilename, fileMode, shareType, NULL, disposition, attrFlags, NULL);
 			nFileHandle = (u32)handle;
-			return nFileHandle != (u32)INVALID_HANDLE_VALUE;
+			return handle != INVALID_HANDLE_VALUE;
 		}
 
 		bool FileDevice_360_System::createFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const
@@ -153,7 +153,7 @@ namespace xcore
 
 			HANDLE handle = ::CreateFile(szFilename, fileMode, shareType, NULL, disposition, attrFlags, NULL);
 			nFileHandle = (u32)handle;
-			return nFileHandle != (u32)INVALID_HANDLE_VALUE;
+			return handle != INVALID_HANDLE_VALUE;
 		}
 
 		bool FileDevice_360_System::readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const
