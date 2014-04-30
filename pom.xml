@@ -36,11 +36,7 @@
 		<Item Src="libs\**\*.*" Dst="libs\" />
 		<Item Src="docs\**\*.*" Dst="docs\" />
 		<Item Src="tools\**\*.*" Dst="Tools\" />
-		<Item Src="target\${Name}\outdir\${Name}_DevDebug_${Platform}\${Name}_DevDebug_${Platform}.lib" Dst="libs\" Required="True" />
-		<Item Src="target\${Name}\outdir\${Name}_DevRelease_${Platform}\${Name}_DevRelease_${Platform}.lib" Dst="libs\" Required="True" />
-		<Item Src="target\${Name}\outdir\${Name}_DevFinal_${Platform}\${Name}_DevFinal_${Platform}.lib" Dst="libs\" Required="True" />
-		<Item Src="target\${Name}\outdir\${Name}_TestDebug_${Platform}\${Name}_TestDebug_${Platform}.lib" Dst="libs\" Required="True" />
-		<Item Src="target\${Name}\outdir\${Name}_TestRelease_${Platform}\${Name}_TestRelease_${Platform}.lib" Dst="libs\" Required="True" />
+		<Item Src="target\xunittest\outdir\${Name}_*_${Platform}_${ToolSet}\${Name}_*_${Platform}_${ToolSet}.lib" Dst="libs\" />
 	</Content>
 
 	<Dependency Package="xbase">
@@ -50,12 +46,6 @@
 	</Dependency>
 
 	<Dependency Package="xtime">
-		<Group>com.virtuos.tnt</Group>
-		<Version>[1.0,)</Version>
-		<Type>Package</Type>
-	</Dependency>
-
-	<Dependency Package="xatomic">
 		<Group>com.virtuos.tnt</Group>
 		<Version>[1.0,)</Version>
 		<Type>Package</Type>
@@ -79,24 +69,13 @@
 		<Type>Package</Type>
 	</Dependency>
 
-	<Dependency Package="sdk_wii" Platform="WII">
-		<Group>com.virtuos.sdk</Group>
-		<Version>[1.0,)</Version>
-		<Type>Package</Type>
-	</Dependency>
-
-	<Dependency Package="sdk_3ds" Platform="N3DS">
-		<Group>com.virtuos.sdk</Group>
-		<Version>[0.14,)</Version>
-		<Type>Package</Type>
-	</Dependency>
-
 	<ProjectProperties>
 		<Properties DependencyType="Root" Platform="*">
 			<PropertyGroup Label="xfilesystem_TargetDirs">
 				<xfilesystem_RootDir>$(SolutionDir)</xfilesystem_RootDir> 
-				<xfilesystem_LibraryDir>$(SolutionDir)target\xfilesystem\outdir\xfilesystem_$(Configuration)_$(Platform)\</xfilesystem_LibraryDir>
+				<xfilesystem_LibraryDir>$(SolutionDir)target\xfilesystem\outdir\xfilesystem_$(PackageSignature)\</xfilesystem_LibraryDir>
 				<xfilesystem_IncludeDir>$(SolutionDir)source\main\include\</xfilesystem_IncludeDir>
+				<xfilesystem_TestIncludeDir>$(SolutionDir)source\test\include\</xfilesystem_TestIncludeDir>
 			</PropertyGroup>
 		</Properties>
 				
@@ -105,19 +84,21 @@
 				<xfilesystem_RootDir>${Location}</xfilesystem_RootDir> 
 				<xfilesystem_LibraryDir>${Location}libs\</xfilesystem_LibraryDir>
 				<xfilesystem_IncludeDir>${Location}source\main\include\</xfilesystem_IncludeDir>
+				<xfilesystem_TestIncludeDir>${Location}source\test\include\</xfilesystem_TestIncludeDir>
 			</PropertyGroup>
 		</Properties>
 	
 		<Properties DependencyType="Source" Platform="*">
 			<PropertyGroup Label="xfilesystem_TargetDirs">
 				<xfilesystem_RootDir>$(SolutionDir)target\xfilesystem\</xfilesystem_RootDir> 
-				<xfilesystem_LibraryDir>$(SolutionDir)target\xfilesystem\target\xfilesystem\outdir\xfilesystem_$(Configuration)_$(Platform)\</xfilesystem_LibraryDir>
+				<xfilesystem_LibraryDir>$(SolutionDir)target\xfilesystem\target\xfilesystem\outdir\xfilesystem_$(PackageSignature)\</xfilesystem_LibraryDir>
 				<xfilesystem_IncludeDir>$(SolutionDir)target\xfilesystem\source\main\include\</xfilesystem_IncludeDir>
+				<xfilesystem_TestIncludeDir>$(SolutionDir)target\xfilesystem\source\test\include\</xfilesystem_TestIncludeDir>
 			</PropertyGroup>
 		</Properties>
 	</ProjectProperties>
 	
-	<Project Name="xfilesystem" Language="C++" Location="source\main\cpp" Scope="Public" DependsOn="xbase:xbase;xtime:xtime;xatomic:xatomic;sdk_wii:sdk_wii;sdk_3ds:sdk_3ds;sdk_ps3:sdk_ps3;sdk_360:sdk_360">
+	<Project Name="xfilesystem" Language="C++" Location="source\main\cpp" Scope="Public" DependsOn="xbase:xbase;xtime:xtime;xatomic:xatomic;sdk_ps3:sdk_ps3;sdk_360:sdk_360">
 		<ProjectFile>
 			<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 				<PropertyGroup Label="Globals">
@@ -128,29 +109,29 @@
 				</ImportGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevDebug|Win32'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\libs</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevDebug_Win32.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevRelease|Win32'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\libs</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevRelease_Win32.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|Win32'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\source\main\include;@$(SolutionDir)source\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>#$(xfilesystem_TargetDir)target\xfilesystem\Win32\libs</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevFinal_Win32.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Win32'">
@@ -158,8 +139,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_TestDebug_Win32.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Win32'">
@@ -167,17 +148,62 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_TestRelease_Win32.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
+				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevDebug|x64'">
+					<ClCompile>
+						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+					</ClCompile>
+					<Link>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
+					</Link>
+				</ItemDefinitionGroup>
+				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevRelease|x64'">
+					<ClCompile>
+						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+					</ClCompile>
+					<Link>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
+					</Link>
+				</ItemDefinitionGroup>
+				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|x64'">
+					<ClCompile>
+						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+					</ClCompile>
+					<Link>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
+					</Link>
+				</ItemDefinitionGroup>
+				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
+					<ClCompile>
+						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+					</ClCompile>
+					<Link>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
+					</Link>
+				</ItemDefinitionGroup>
+				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|x64'">
+					<ClCompile>
+						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+					</ClCompile>
+					<Link>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
+					</Link>
+				</ItemDefinitionGroup>				
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevDebug|PS3'">
 					<ClCompile>
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevDebug_PS3.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
@@ -186,8 +212,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevRelease_PS3.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
@@ -196,8 +222,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevFinal_PS3.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
@@ -206,8 +232,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_TestDebug_PS3.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
@@ -216,8 +242,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_TestRelease_PS3.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 						<AdditionalDependencies>libfs_stub.a</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
@@ -226,8 +252,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevDebug_Xbox 360.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevRelease|Xbox 360'">
@@ -235,8 +261,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevRelease_Xbox 360.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|Xbox 360'">
@@ -244,8 +270,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevFinal_Xbox 360.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Xbox 360'">
@@ -253,8 +279,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_TestDebug_Xbox 360.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Xbox 360'">
@@ -262,53 +288,8 @@
 						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_TestRelease_Xbox 360.lib</AdditionalDependencies>
-					</Link>
-				</ItemDefinitionGroup>
-				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevDebug|WII'">
-					<ClCompile>
-						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-					</ClCompile>
-					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevDebug_WII.lib</AdditionalDependencies>
-					</Link>
-				</ItemDefinitionGroup>
-				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevRelease|WII'">
-					<ClCompile>
-						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-					</ClCompile>
-					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevRelease_WII.lib</AdditionalDependencies>
-					</Link>
-				</ItemDefinitionGroup>
-				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DevFinal|WII'">
-					<ClCompile>
-						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-					</ClCompile>
-					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_DevFinal_WII.lib</AdditionalDependencies>
-					</Link>
-				</ItemDefinitionGroup>
-				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|WII'">
-					<ClCompile>
-						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-					</ClCompile>
-					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_TestDebug_WII.lib</AdditionalDependencies>
-					</Link>
-				</ItemDefinitionGroup>
-				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|WII'">
-					<ClCompile>
-						<AdditionalIncludeDirectories>$(xfilesystem_IncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-					</ClCompile>
-					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>#xfilesystem_TestRelease_WII.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>#$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>#xfilesystem_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemGroup>
@@ -332,16 +313,18 @@
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Win32'" Label="Configuration">
 					<ConfigurationType>Application</ConfigurationType>
 				</PropertyGroup>
+				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'" Label="Configuration">
+					<ConfigurationType>Application</ConfigurationType>
+				</PropertyGroup>
+				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|x64'" Label="Configuration">
+					<ConfigurationType>Application</ConfigurationType>
+				</PropertyGroup>
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|PS3'" Label="Configuration">
 					<ConfigurationType>Application</ConfigurationType>
+					<TargetExt>.elf</TargetExt>
 				</PropertyGroup>
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|PS3'" Label="Configuration">
 					<ConfigurationType>Application</ConfigurationType>
-				</PropertyGroup>
-				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|PS3'">
-					<TargetExt>.elf</TargetExt>
-				</PropertyGroup>
-				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|PS3'">
 					<TargetExt>.elf</TargetExt>
 				</PropertyGroup>
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Xbox 360'" Label="Configuration">
@@ -350,88 +333,76 @@
 				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Xbox 360'" Label="Configuration">
 					<ConfigurationType>Application</ConfigurationType>
 				</PropertyGroup>
-				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|WII'" Label="Configuration">
-					<ConfigurationType>Application</ConfigurationType>
-				</PropertyGroup>
-				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|WII'" Label="Configuration">
-					<ConfigurationType>Application</ConfigurationType>
-				</PropertyGroup>
-				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|WII'">
-					<TargetExt>.elf</TargetExt>
-				</PropertyGroup>
-				<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|WII'">
-					<TargetExt>.elf</TargetExt>
-				</PropertyGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Win32'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>$(${Name}_TargetDir)\source\test\include</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>$(${Name}_TestIncludeDir)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>xfilesystem_$(Configuration)_$(Platform).lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>$(${Name}_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>${Name}_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Win32'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>$(${Name}_TargetDir)\source\test\include</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>$(${Name}_TestIncludeDir)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>xfilesystem_$(Configuration)_$(Platform).lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>$(${Name}_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>${Name}_$(PackageSignature).lib</AdditionalDependencies>
+					</Link>
+				</ItemDefinitionGroup>
+				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
+					<ClCompile>
+						<AdditionalIncludeDirectories>$(${Name}_TestIncludeDir)</AdditionalIncludeDirectories>
+					</ClCompile>
+					<Link>
+						<AdditionalLibraryDirectories>$(${Name}_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>${Name}_$(PackageSignature).lib</AdditionalDependencies>
+					</Link>
+				</ItemDefinitionGroup>
+				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|x64'">
+					<ClCompile>
+						<AdditionalIncludeDirectories>$(${Name}_TestIncludeDir)</AdditionalIncludeDirectories>
+					</ClCompile>
+					<Link>
+						<AdditionalLibraryDirectories>$(${Name}_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>${Name}_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|PS3'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>$(${Name}_TargetDir)\source\test\include</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>$(${Name}_TestIncludeDir)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>xfilesystem_$(Configuration)_PS3.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>$(${Name}_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>${Name}_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|PS3'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>$(${Name}_TargetDir)\source\test\include</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>$(${Name}_TestIncludeDir)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>xfilesystem_$(Configuration)_PS3.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>$(${Name}_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>${Name}_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|Xbox 360'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>$(${Name}_TargetDir)\source\test\include</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>$(${Name}_TestIncludeDir)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>xfilesystem_$(Configuration)_Xbox 360.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>$(${Name}_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>${Name}_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|Xbox 360'">
 					<ClCompile>
-						<AdditionalIncludeDirectories>$(${Name}_TargetDir)\source\test\include</AdditionalIncludeDirectories>
+						<AdditionalIncludeDirectories>$(${Name}_TestIncludeDir)</AdditionalIncludeDirectories>
 					</ClCompile>
 					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>xfilesystem_$(Configuration)_Xbox 360.lib</AdditionalDependencies>
-					</Link>
-				</ItemDefinitionGroup>
-				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|WII'">
-					<ClCompile>
-						<AdditionalIncludeDirectories>$(${Name}_TargetDir)\source\test\include</AdditionalIncludeDirectories>
-					</ClCompile>
-					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>xfilesystem_$(Configuration)_WII.lib</AdditionalDependencies>
-					</Link>
-				</ItemDefinitionGroup>
-				<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRelease|WII'">
-					<ClCompile>
-						<AdditionalIncludeDirectories>$(${Name}_TargetDir)\source\test\include</AdditionalIncludeDirectories>
-					</ClCompile>
-					<Link>
-						<AdditionalLibraryDirectories>$(xfilesystem_LibraryDir)</AdditionalLibraryDirectories>
-						<AdditionalDependencies>xfilesystem_$(Configuration)_WII.lib</AdditionalDependencies>
+						<AdditionalLibraryDirectories>$(${Name}_LibraryDir)</AdditionalLibraryDirectories>
+						<AdditionalDependencies>${Name}_$(PackageSignature).lib</AdditionalDependencies>
 					</Link>
 				</ItemDefinitionGroup>
 				<ItemGroup>
