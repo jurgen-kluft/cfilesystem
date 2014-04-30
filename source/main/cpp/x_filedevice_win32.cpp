@@ -14,7 +14,6 @@
 #include "xbase\x_limits.h"
 #include "xbase\x_memory_std.h"
 #include "xbase\x_string_std.h"
-#include "xbase\x_string.h"
 #include "xbase\x_va_list.h"
 #include "xbase\x_integer.h"
 
@@ -604,7 +603,7 @@ namespace xcore
 				// nDirinfo_From --------------------->   copyDirPath_To       ( copy dir)
 				delete dirInfo;		dirInfo = NULL;
 				if (!::CreateDirectoryA(copyDirPath_To.c_str_device(),NULL) )
-				 	return false;
+					return false;
 			}
 
 			const xfileinfo* fileInfo = NULL;
@@ -686,7 +685,7 @@ namespace xcore
 				{
 					FILETIME _creationTime;
 					FILETIME _lastAccessTime;
-				    FILETIME _lastWriteTime;
+					FILETIME _lastWriteTime;
 					::GetFileTime(handle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
 					outCreationTime   = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
 					outLastAccessTime = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
@@ -746,7 +745,7 @@ namespace xcore
 				return false;
 
 			DirPath = FileName;
-        
+		
 			bool bSearch = true;
 			while(bSearch)
 			{	// until we find an entry

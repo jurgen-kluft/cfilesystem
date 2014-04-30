@@ -8,9 +8,7 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_types.h"
 #include "xbase\x_debug.h"
-#include "xbase\x_string.h"
 
 #include "xfilesystem\x_enumerator.h"
 
