@@ -1,0 +1,37 @@
+package xfilesystem
+
+import (
+	"github.com/jurgen-kluft/xbase/package"
+	"github.com/jurgen-kluft/xcode/denv"
+	"github.com/jurgen-kluft/xentry/package"
+	"github.com/jurgen-kluft/xunittest/package"
+)
+
+// GetPackage returns the package object of 'xfilesystem'
+func GetPackage() *denv.Package {
+	// Dependencies
+	xunittestpkg := xunittest.GetPackage()
+	xentrypkg := xentry.GetPackage()
+	xbasepkg := xbase.GetPackage()
+
+	// The main (xfilesystem) package
+	mainpkg := denv.NewPackage("xfilesystem")
+	mainpkg.AddPackage(xunittestpkg)
+	mainpkg.AddPackage(xentrypkg)
+	mainpkg.AddPackage(xbasepkg)
+
+	// 'xfilesystem' library
+	mainlib := denv.SetupDefaultCppLibProject("xfilesystem", "github.com\\jurgen-kluft\\xfilesystem")
+	mainlib.Dependencies = append(mainlib.Dependencies, xbasepkg.GetMainLib())
+
+	// 'xfilesystem' unittest project
+	maintest := denv.SetupDefaultCppTestProject("xfilesystem_test", "github.com\\jurgen-kluft\\xfilesystem")
+	maintest.Dependencies = append(maintest.Dependencies, xunittestpkg.GetMainLib())
+	maintest.Dependencies = append(maintest.Dependencies, xentrypkg.GetMainLib())
+	maintest.Dependencies = append(maintest.Dependencies, xbasepkg.GetMainLib())
+	maintest.Dependencies = append(maintest.Dependencies, mainlib)
+
+	mainpkg.AddMainLib(mainlib)
+	mainpkg.AddUnittest(maintest)
+	return mainpkg
+}
