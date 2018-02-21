@@ -1,11 +1,11 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_target.h"
-#include "xbase\x_debug.h"
-#include "xbase\x_string_std.h"
+#include "xbase/x_target.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_string_std.h"
 
-#include "xfilesystem\x_attributes.h"
+#include "xfilesystem/x_attributes.h"
 
 //==============================================================================
 // xcore namespace

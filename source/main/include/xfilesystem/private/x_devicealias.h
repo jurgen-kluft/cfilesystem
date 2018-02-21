@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_DEVICE_ALIAS_PRIVATE_H__
 #define __X_FILESYSTEM_DEVICE_ALIAS_PRIVATE_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,9 +8,9 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_types.h"
+#include "xbase/x_types.h"
 
-#include "xfilesystem\x_devicealias.h"
+#include "xfilesystem/x_devicealias.h"
 
 //==============================================================================
 // xcore namespace

@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_FILEASYNC_H__
 #define __X_FILESYSTEM_FILEASYNC_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,10 +8,10 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_types.h"
-#include "xbase\x_allocator.h"
+#include "xbase/x_types.h"
+#include "xbase/x_allocator.h"
 
-#include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_common.h"
 
 //==============================================================================
 // xcore namespace

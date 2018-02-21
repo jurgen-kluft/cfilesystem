@@ -1,20 +1,20 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_target.h"
-#include "xbase\x_debug.h"
-#include "xbase\x_limits.h"
-#include "xbase\x_string_std.h"
-#include "xbase\x_va_list.h"
-#include "xbase\x_bit_field.h"
+#include "xbase/x_target.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_limits.h"
+#include "xbase/x_string_std.h"
+#include "xbase/x_va_list.h"
+#include "xbase/x_bit_field.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_filestream.h"
-#include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_stream.h"
-#include "xfilesystem\x_istream.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filestream.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_stream.h"
+#include "xfilesystem/x_istream.h"
 
-#include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_common.h"
 
 //==============================================================================
 // xcore namespace

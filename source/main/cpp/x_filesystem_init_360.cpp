@@ -1,14 +1,14 @@
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef TARGET_360
-#include "xbase\x_types.h"
+#include "xbase/x_types.h"
 
-#include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_360.h"
-#include "xfilesystem\private\x_devicealias.h"
+#include "xfilesystem/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_360.h"
+#include "xfilesystem/private/x_devicealias.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_filepath.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
 
 namespace xcore
 {

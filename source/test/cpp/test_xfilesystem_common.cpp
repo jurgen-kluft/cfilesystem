@@ -1,20 +1,20 @@
-#include "xbase\x_types.h"
-#include "xbase\x_allocator.h"
-#include "xbase\x_string.h"
-#include "xbase\x_string_std.h"
+#include "xbase/x_types.h"
+#include "xbase/x_allocator.h"
+#include "xbase/x_string.h"
+#include "xbase/x_string_std.h"
 
-#include "xunittest\xunittest.h"
+#include "xunittest/xunittest.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\x_threading.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/x_threading.h"
 
-#include "xfilesystem\x_async_result.h"
-#include "xfilesystem\private\x_devicealias.h"
-#include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\private\x_fileasync.h"
-#include "xfilesystem\x_filestream.h"
+#include "xfilesystem/x_async_result.h"
+#include "xfilesystem/private/x_devicealias.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_filedevice.h"
+#include "xfilesystem/private/x_fileasync.h"
+#include "xfilesystem/x_filestream.h"
 
 
 using namespace xcore;

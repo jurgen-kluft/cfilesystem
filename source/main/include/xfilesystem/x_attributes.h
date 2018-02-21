@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_FILE_DIR_ATTRIBUTES_H__
 #define __X_FILESYSTEM_FILE_DIR_ATTRIBUTES_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,7 +8,7 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_types.h"
+#include "xbase/x_types.h"
 
 //==============================================================================
 namespace xcore

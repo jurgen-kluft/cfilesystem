@@ -1,4 +1,4 @@
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef TARGET_360
 
 //==============================================================================
@@ -9,14 +9,14 @@
 #include <xbdm.h>
 #endif
 
-#include "xbase\x_debug.h"
-#include "xbase\x_string_std.h"
-#include "xbase\x_va_list.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_string_std.h"
+#include "xbase/x_va_list.h"
 
-#include "xtime\x_datetime.h"
+#include "xtime/x_datetime.h"
 
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_360.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_360.h"
 
 namespace xcore
 {

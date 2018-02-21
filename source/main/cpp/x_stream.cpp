@@ -1,14 +1,14 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_target.h"
-#include "xbase\x_debug.h"
+#include "xbase/x_target.h"
+#include "xbase/x_debug.h"
 
-#include "xfilesystem\x_async_result.h"
-#include "xfilesystem\x_filestream.h"
-#include "xfilesystem\x_istream.h"
-#include "xfilesystem\x_stream.h"
-#include "xfilesystem\private\x_filesystem_constants.h"
+#include "xfilesystem/x_async_result.h"
+#include "xfilesystem/x_filestream.h"
+#include "xfilesystem/x_istream.h"
+#include "xfilesystem/x_stream.h"
+#include "xfilesystem/private/x_filesystem_constants.h"
 
 //==============================================================================
 // xcore namespace

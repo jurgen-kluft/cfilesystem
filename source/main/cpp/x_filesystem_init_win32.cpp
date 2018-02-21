@@ -1,7 +1,7 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef TARGET_PC
 
 #define WIN32_LEAN_AND_MEAN
@@ -10,17 +10,17 @@
 #include <windows.h>
 #include <stdio.h>
 
-#include "xbase\x_debug.h"
-#include "xbase\x_string_std.h"
-#include "xbase\x_va_list.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_string_std.h"
+#include "xbase/x_va_list.h"
 
-#include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_win32.h"
-#include "xfilesystem\private\x_devicealias.h"
+#include "xfilesystem/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_win32.h"
+#include "xfilesystem/private/x_devicealias.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_filepath.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
 
 //==============================================================================
 // xcore namespace

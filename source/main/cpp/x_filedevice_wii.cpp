@@ -1,4 +1,4 @@
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef TARGET_WII
 
 //==============================================================================
@@ -9,22 +9,22 @@
 #include <revolution\nand.h>
 #include <revolution\dvd.h>
 
-#include "xbase\x_debug.h"
-#include "xbase\x_limits.h"
-#include "xbase\x_string_std.h"
-#include "xbase\x_va_list.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_limits.h"
+#include "xbase/x_string_std.h"
+#include "xbase/x_va_list.h"
 
-#include "xtime\x_datetime.h"
+#include "xtime/x_datetime.h"
 
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_wii.h"
-#include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\private\x_filedata.h"
-#include "xfilesystem\private\x_fileasync.h"
-#include "xfilesystem\x_attributes.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_wii.h"
+#include "xfilesystem/x_filedevice.h"
+#include "xfilesystem/private/x_filedata.h"
+#include "xfilesystem/private/x_fileasync.h"
+#include "xfilesystem/x_attributes.h"
 
-#include "xatomic\x_queue.h"
-#include "xbase\x_allocator.h"
+#include "xatomic/x_queue.h"
+#include "xbase/x_allocator.h"
 
 namespace xcore
 {

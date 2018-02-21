@@ -1,4 +1,4 @@
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef TARGET_PSP
 
 //==============================================================================
@@ -18,17 +18,17 @@
 #include <utility/utility_module.h>
 #include <np/np_drm.h>
 
-#include "xbase\x_debug.h"
-#include "xbase\x_string_std.h"
-#include "xbase\x_va_list.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_string_std.h"
+#include "xbase/x_va_list.h"
 
-#include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_psp.h"
-#include "xfilesystem\private\x_devicealias.h"
+#include "xfilesystem/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_psp.h"
+#include "xfilesystem/private/x_devicealias.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_filepath.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
 namespace xcore
 {
 	namespace xfilesystem

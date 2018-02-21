@@ -1,15 +1,15 @@
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef TARGET_PS3
 
 #include <sys/paths.h>
 
-#include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_ps3.h"
-#include "xfilesystem\private\x_devicealias.h"
+#include "xfilesystem/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_ps3.h"
+#include "xfilesystem/private/x_devicealias.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_filepath.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
 
 namespace xcore
 {
