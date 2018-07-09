@@ -1,4 +1,4 @@
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef TARGET_PSP
 
 //==============================================================================
@@ -17,14 +17,14 @@
 #include <utility/utility_module.h>
 #include <np/np_drm.h>
 
-#include "xbase\x_debug.h"
-#include "xbase\x_system.h"
-#include "xbase\x_string_std.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_system.h"
+#include "xbase/x_string_std.h"
 
-#include "xtime\x_datetime.h"
+#include "xtime/x_datetime.h"
 
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_psp.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_psp.h"
 
 //==============================================================================
 // xcore namespace

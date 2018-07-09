@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_CONCURRENT_QUEUE_H__
 #define __X_FILESYSTEM_CONCURRENT_QUEUE_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,9 +8,9 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_integer.h"
-#include "xfilesystem\private\x_filesystem_constants.h"
-#include "xfilesystem\private\x_filesystem_constants.h"
+#include "xbase/x_integer.h"
+#include "xfilesystem/private/x_filesystem_constants.h"
+#include "xfilesystem/private/x_filesystem_constants.h"
 
 namespace xcore
 {

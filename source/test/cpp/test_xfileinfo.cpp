@@ -1,18 +1,18 @@
-#include "xbase\x_types.h"
-#include "xbase\x_string_std.h"
-#include "xtime\x_datetime.h"
+#include "xbase/x_types.h"
+#include "xbase/x_string_std.h"
+#include "xtime/x_datetime.h"
 
-#include "xunittest\xunittest.h"
+#include "xunittest/xunittest.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_dirpath.h"
-#include "xfilesystem\x_fileinfo.h"
-#include "xfilesystem\x_filestream.h"
-#include "xfilesystem\x_devicealias.h"
-#include "xfilesystem\private\x_devicealias.h"
-#include "xfilesystem\x_dirinfo.h"
-#include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_fileinfo.h"
+#include "xfilesystem/x_filestream.h"
+#include "xfilesystem/x_devicealias.h"
+#include "xfilesystem/private/x_devicealias.h"
+#include "xfilesystem/x_dirinfo.h"
+#include "xfilesystem/private/x_filesystem_common.h"
 
 using namespace xcore;
 using namespace xfilesystem;

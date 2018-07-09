@@ -1,12 +1,12 @@
-#include "xbase\x_target.h"
-#include "xbase\x_types.h"
-#include "xbase\x_allocator.h"
-#include "xbase\x_console.h"
+#include "xbase/x_target.h"
+#include "xbase/x_types.h"
+#include "xbase/x_allocator.h"
+#include "xbase/x_console.h"
 
-#include "xtime\x_time.h"
-#include "xfilesystem\x_filesystem.h"
-#include "xunittest\xunittest.h"
-#include "xfilesystem\x_threading.h"
+#include "xtime/x_time.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xunittest/xunittest.h"
+#include "xfilesystem/x_threading.h"
 
 using namespace xcore;
 

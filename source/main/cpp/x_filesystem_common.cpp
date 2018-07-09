@@ -1,22 +1,22 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_target.h"
-#include "xbase\x_debug.h"
-#include "xbase\x_allocator.h"
-#include "xbase\x_string_std.h"
+#include "xbase/x_target.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_allocator.h"
+#include "xbase/x_string_std.h"
 
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_cqueue.h"
-#include "xfilesystem\private\x_devicealias.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_cqueue.h"
+#include "xfilesystem/private/x_devicealias.h"
 
-#include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_threading.h"
-#include "xfilesystem\x_stream.h"
-#include "xfilesystem\private\x_filedata.h"
-#include "xfilesystem\private\x_fileasync.h"
+#include "xfilesystem/x_filedevice.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_threading.h"
+#include "xfilesystem/x_stream.h"
+#include "xfilesystem/private/x_filedata.h"
+#include "xfilesystem/private/x_fileasync.h"
 
 //==============================================================================
 // xcore namespace

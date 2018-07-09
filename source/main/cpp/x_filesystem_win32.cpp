@@ -1,4 +1,4 @@
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef TARGET_PC
 
 //==============================================================================
@@ -11,19 +11,19 @@
 #include <windows.h>
 #include <stdio.h>
 
-#include "xbase\x_debug.h"
-#include "xbase\x_string_std.h"
-#include "xbase\x_va_list.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_string_std.h"
+#include "xbase/x_va_list.h"
 
-#include "xtime\x_datetime.h"
+#include "xtime/x_datetime.h"
 
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_win32.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_win32.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\private\x_filedata.h"
-#include "xfilesystem\private\x_fileasync.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filedevice.h"
+#include "xfilesystem/private/x_filedata.h"
+#include "xfilesystem/private/x_fileasync.h"
 
 namespace xcore
 {

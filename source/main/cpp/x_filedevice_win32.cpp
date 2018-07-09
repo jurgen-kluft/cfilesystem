@@ -1,4 +1,4 @@
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef TARGET_PC
 
 //==============================================================================
@@ -10,24 +10,24 @@
 #include <windows.h>
 #include <stdio.h>
 
-#include "xbase\x_debug.h"
-#include "xbase\x_limits.h"
-#include "xbase\x_memory_std.h"
-#include "xbase\x_string_std.h"
-#include "xbase\x_va_list.h"
-#include "xbase\x_integer.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_limits.h"
+#include "xbase/x_memory_std.h"
+#include "xbase/x_string_std.h"
+#include "xbase/x_va_list.h"
+#include "xbase/x_integer.h"
 
-#include "xtime\x_datetime.h"
+#include "xtime/x_datetime.h"
 
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\private\x_filesystem_win32.h"
-#include "xfilesystem\x_attributes.h"
-#include "xfilesystem\x_filedevice.h"
-#include "xfilesystem\x_fileinfo.h"
-#include "xfilesystem\x_dirinfo.h"
-#include "xfilesystem\private\x_filedata.h"
-#include "xfilesystem\private\x_fileasync.h"
-#include "xfilesystem\private\x_filesystem_cstack.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_filesystem_win32.h"
+#include "xfilesystem/x_attributes.h"
+#include "xfilesystem/x_filedevice.h"
+#include "xfilesystem/x_fileinfo.h"
+#include "xfilesystem/x_dirinfo.h"
+#include "xfilesystem/private/x_filedata.h"
+#include "xfilesystem/private/x_fileasync.h"
+#include "xfilesystem/private/x_filesystem_cstack.h"
 
 
 namespace xcore

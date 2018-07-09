@@ -1,12 +1,12 @@
-#include "xbase\x_target.h"
-#include "xbase\x_debug.h"
-#include "xbase\x_string.h"
-#include "xbase\x_string_std.h"
+#include "xbase/x_target.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_string.h"
+#include "xbase/x_string_std.h"
 
-#include "xfilesystem\x_devicealias.h"
-#include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_dirpath.h"
-#include "xfilesystem\private\x_filesystem_common.h"
+#include "xfilesystem/x_devicealias.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/private/x_filesystem_common.h"
 
 //==============================================================================
 namespace xcore
@@ -162,7 +162,7 @@ namespace xcore
 			len = len - pos;
 			mString.mid(pos, outName, len);
 		}
-		
+
 		void			xfilepath::getExtension(xcstring& outExtension) const
 		{
 			s32 pos = mString.rfind(".");
@@ -172,8 +172,8 @@ namespace xcore
 				outExtension = "";
 		}
 
-		void xfilepath::fixSlashesForDevice()		
-		{ 
+		void xfilepath::fixSlashesForDevice()
+		{
 			mStringForDevice = mString;
 			const char slash = sGetSlashChar();
 			mStringForDevice.replace('\\' , slash);
@@ -238,7 +238,7 @@ namespace xcore
 				mString.replace(0, len, inDeviceName);
 			else if (len > 0)
 				mString.remove(0, len + 2);
-			fixSlashes(); 
+			fixSlashes();
 			mString.trimLeft(':');
 			mString.trimLeft('\\');
 			mStringForDevice.clear();
@@ -265,7 +265,7 @@ namespace xcore
 				mString.replace(0, len, inDevicePart);
 			else
 				mString.remove(0, len);
-			fixSlashes(); 
+			fixSlashes();
 			mStringForDevice.clear();
 			mStringForDevice = mString;
 			fixSlashesForDevice();
@@ -280,15 +280,15 @@ namespace xcore
 				outDevicePart.clear();
 		}
 
-		xfilepath&		xfilepath::operator =  ( const char* str )				
+		xfilepath&		xfilepath::operator =  ( const char* str )
 		{
-			mString.clear(); 
-			mString += str; 
+			mString.clear();
+			mString += str;
 			fixSlashes();
 			mStringForDevice.clear();
 			mStringForDevice+=mString;
-			fixSlashesForDevice(); 
-			return *this; 
+			fixSlashesForDevice();
+			return *this;
 		}
 		xfilepath&		xfilepath::operator =  ( const xfilepath& path )
 		{
@@ -301,23 +301,23 @@ namespace xcore
 			return *this;
 		}
 
-		xfilepath&		xfilepath::operator += ( const char* str )				
+		xfilepath&		xfilepath::operator += ( const char* str )
 		{
-			mString += str; 
-			fixSlashes(); 
-			mStringForDevice.clear(); 
-			mStringForDevice = mString; 
-			fixSlashesForDevice(); 
-			return *this; 
-		}
-		xfilepath&		xfilepath::operator += ( const xfilepath& str )			
-		{
-			mString += str.c_str(); 
-			fixSlashes(); 
+			mString += str;
+			fixSlashes();
 			mStringForDevice.clear();
 			mStringForDevice = mString;
-			fixSlashesForDevice(); 
-			return *this; 
+			fixSlashesForDevice();
+			return *this;
+		}
+		xfilepath&		xfilepath::operator += ( const xfilepath& str )
+		{
+			mString += str.c_str();
+			fixSlashes();
+			mStringForDevice.clear();
+			mStringForDevice = mString;
+			fixSlashesForDevice();
+			return *this;
 		}
 
 		bool			xfilepath::operator == ( const xfilepath& rhs) const	{ return (rhs.getLength() == getLength()) && x_strCompare(rhs.c_str(), c_str()) == 0; }
@@ -339,8 +339,8 @@ namespace xcore
 		}
 #endif
 
-		void			xfilepath::fixSlashes()									
-		{ 
+		void			xfilepath::fixSlashes()
+		{
 			// Replace incorrect slashes with the correct one
 			const char slash = sGetSlashChar();
 			const char rightSlash = '\\';

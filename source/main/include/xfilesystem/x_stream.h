@@ -1,6 +1,6 @@
 #ifndef __XFILESYSTEM_XSTREAM_H__
 #define __XFILESYSTEM_XSTREAM_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,10 +8,10 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_debug.h"
+#include "xbase/x_debug.h"
 
-#include "xfilesystem\x_async_result.h"
-#include "xfilesystem\private\x_filesystem_constants.h"
+#include "xfilesystem/x_async_result.h"
+#include "xfilesystem/private/x_filesystem_constants.h"
 
 //==============================================================================
 // xcore namespace

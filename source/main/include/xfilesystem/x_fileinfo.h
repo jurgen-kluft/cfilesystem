@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_FILE_INFO_H__
 #define __X_FILESYSTEM_FILE_INFO_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,9 +8,9 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_debug.h"
+#include "xbase/x_debug.h"
 
-#include "xfilesystem\x_filepath.h"
+#include "xfilesystem/x_filepath.h"
 
 //==============================================================================
 namespace xcore

@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_COMMON_H__
 #define __X_FILESYSTEM_COMMON_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,12 +8,12 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_allocator.h"
-#include "xbase\x_singleton.h"
+#include "xbase/x_allocator.h"
+#include "xbase/x_singleton.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\private\x_filesystem_constants.h"
-#include "xfilesystem\x_stream.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/private/x_filesystem_constants.h"
+#include "xfilesystem/x_stream.h"
 
 namespace xcore
 {
@@ -30,7 +30,7 @@ namespace xcore
 
 
 
-#include "xfilesystem\private\x_filesystem_cqueue.h"
+#include "xfilesystem/private/x_filesystem_cqueue.h"
 
 
 

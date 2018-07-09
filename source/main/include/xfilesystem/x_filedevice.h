@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_FILEDEVICE_H__
 #define __X_FILESYSTEM_FILEDEVICE_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,8 +8,8 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_types.h"
-#include "xfilesystem\x_enumerator.h"
+#include "xbase/x_types.h"
+#include "xfilesystem/x_enumerator.h"
 #define MAX_ENUM_SEARCH_FILES 32
 #define MAX_ENUM_SEARCH_DIRS 16
 //==============================================================================

@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_DEVICE_ALIAS_H__
 #define __X_FILESYSTEM_DEVICE_ALIAS_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif

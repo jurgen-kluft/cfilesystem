@@ -1,11 +1,11 @@
-#include "xbase\x_types.h"
-#include "xbase\x_string_std.h"
+#include "xbase/x_types.h"
+#include "xbase/x_string_std.h"
 
-#include "xunittest\xunittest.h"
+#include "xunittest/xunittest.h"
 
-#include "xfilesystem\x_filesystem.h"
-#include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_dirpath.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_dirpath.h"
 
 using namespace xcore;
 using namespace xfilesystem;

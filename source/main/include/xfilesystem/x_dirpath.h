@@ -1,6 +1,6 @@
 #ifndef __X_FILESYSTEM_DIRPATH_H__
 #define __X_FILESYSTEM_DIRPATH_H__
-#include "xbase\x_target.h"
+#include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
@@ -8,10 +8,10 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_debug.h"
-#include "xbase\x_chars.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_chars.h"
 
-#include "xfilesystem\x_enumerator.h"
+#include "xfilesystem/x_enumerator.h"
 
 //==============================================================================
 namespace xcore

@@ -1,12 +1,12 @@
-#include "xbase\x_target.h"
-#include "xbase\x_debug.h"
-#include "xbase\x_string_ascii.h"
-#include "xbase\x_string_utf.h"
+#include "xbase/x_target.h"
+#include "xbase/x_debug.h"
+#include "xbase/x_string.h"
+#include "xbase/x_string_std.h"
 
-#include "xfilesystem\private\x_devicealias.h"
-#include "xfilesystem\private\x_filesystem_common.h"
-#include "xfilesystem\x_filepath.h"
-#include "xfilesystem\x_dirpath.h"
+#include "xfilesystem/private/x_devicealias.h"
+#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_dirpath.h"
 
 //==============================================================================
 namespace xcore
