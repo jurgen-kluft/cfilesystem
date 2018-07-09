@@ -1,8 +1,7 @@
 #include "xbase\x_target.h"
-#include "xbase\x_types.h"
 #include "xbase\x_debug.h"
-#include "xbase\x_string.h"
-#include "xbase\x_string_std.h"
+#include "xbase\x_string_ascii.h"
+#include "xbase\x_string_utf.h"
 
 #include "xfilesystem\private\x_devicealias.h"
 #include "xfilesystem\private\x_filesystem_common.h"
@@ -22,52 +21,63 @@ namespace xcore
 		{
 			return xfilesystem::xfs_common::s_instance()->isPathUNIXStyle() ? '/' : '\\';
 		}
-// 		static inline const char*	sGetDeviceEnd()
-// 		{
-// 			return xfilesystem::isPathUNIXStyle() ? ":/" : ":\\";
-// 		}
+		static inline char			sGetOtherSlashChar(char c)
+		{
+			return c == '\\' ? '/' : '\\';
+		}
+
+		static inline const char*	sGetDeviceEnd()
+		{
+			return xfilesystem::xfs_common::s_instance()->isPathUNIXStyle() ? ":/" : ":\\";
+ 		}
 
 		xdirpath::xdirpath()
-			: mString(mStringBuffer, sizeof(mStringBuffer)),
-			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
 		{
 		}
 		xdirpath::xdirpath(const char* str)
-			: mString(mStringBuffer, sizeof(mStringBuffer), str),
-			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
 		{
+			mString = str;
 			fixSlashes();
-			//mStringForDevice = mString; // already copied mString in fixSlashesForDevice
-			fixSlashesForDevice();
-		//	x_printf("Constructing xdirpath(%s), mStringForDevice=%s mString=%s\n", str, mStringForDevice.c_str(), mString.c_str());
 		}
 		xdirpath::xdirpath(const xdirpath& dirpath)
-			: mString(mStringBuffer, sizeof(mStringBuffer), dirpath.c_str()),
-			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
 		{
 			mString = dirpath.mString;
-			mStringForDevice = dirpath.mStringForDevice;
 		}
 		xdirpath::~xdirpath()
 		{
 		}
 
-		void			xdirpath::clear()										{ mString.clear(); mStringForDevice.clear();}
+		void			xdirpath::clear()										{ mString.clear(); }
 
-		s32				xdirpath::getLength() const								{ return mString.getLength(); }
-		s32				xdirpath::getMaxLength() const							{ return mString.getMaxLength(); }
-		bool			xdirpath::isEmpty() const								{ return mString.isEmpty(); }
+		s32				xdirpath::getLength() const								{ return mString.size(); }
+		s32				xdirpath::getMaxLength() const							{ return mString.SIZE; }
+		bool			xdirpath::isEmpty() const								{ return mString.is_empty(); }
 
-		void			xdirpath::enumLevels(enumerate_delegate<char>& folder_enumerator, bool right_to_left) const
+		class dirpath_iterator
+		{
+		public:
+			dirpath_iterator(xcuchars dirPath)
+			void			begin(xuchars& device)
+			{
+
+			}
+
+			bool			next(xuchars& folder);
+
+			xcuchars		mDirPath;
+			xcuchars		mPart;
+		};
+
+		void			xdirpath::enumLevels(enumerate_delegate<xucharz<256>>& folder_enumerator, bool right_to_left) const
 		{
 			if (isEmpty())
 				return;
 
-			const s32 devicePos = mString.find(":\\");
-			const s32 startPos = devicePos>=0 ? devicePos + 2 : 0;
+			xcuchars device(":\\");
+			xcuchars::const_iterator afterDeviceIter = mString.find_after(device);
+			xcuchars::const_iterator startIter = (afterDeviceIter == mString.end()) ? mString.begin() : afterDeviceIter;
 
-			char folderNameBuffer[128 + 2];
-			xcstring folderName(folderNameBuffer, sizeof(folderNameBuffer));
+			xucharz<256> folderName;
 
 			if (right_to_left == false)
 			{
@@ -87,7 +97,7 @@ namespace xcore
 
 						folderName.clear();
 						folderName.insert(folder_start, folder_end - folder_start);
-						folder_enumerator(level, folderName.c_str(), terminate);
+						folder_enumerator(level, folderName, terminate);
 						folder_end+=1;
 						level++;
 					}
@@ -112,7 +122,7 @@ namespace xcore
 
 						folderName.clear();
 						folderName.insert(folder_start, folder_end - folder_start);
-						folder_enumerator(level, folderName.c_str(), terminate);
+						folder_enumerator(level, folderName, terminate);
 						folder_start-=1;
 						level++;
 					}
@@ -121,12 +131,12 @@ namespace xcore
 			}
 		}
 
-		struct folder_counting_enumerator : public enumerate_delegate<char>
+		struct folder_counting_enumerator : public enumerate_delegate<xucharz<256>>
 		{
 			s32				mLevels;
 							folder_counting_enumerator() : mLevels(0) {}
 							virtual void operator () (s32 level,const char& folder,bool& terminate) { }
-			virtual void	operator () (s32 level, const char* folder, bool& terminate)	{ terminate = false; mLevels++; }
+			virtual void	operator () (s32 level, const xucharz<256>& folder, bool& terminate)	{ terminate = false; mLevels++; }
 		};
 
 		s32				xdirpath::getLevels() const
@@ -136,42 +146,29 @@ namespace xcore
 			return e.mLevels;
 		}
 
-		struct folder_search_enumerator : public enumerate_delegate<char>
+		struct folder_search_enumerator : public enumerate_delegate<xucharz<256>>
 		{
-			const char*		mFolderName;
-			s32				mFolderNameLen;
-
+			xucharz<256>	mFolderName;
 			s32				mLevel;
 							
-			folder_search_enumerator(const char* folderName, s32 folderNameLen) : mFolderName(folderName), mFolderNameLen(folderNameLen), mLevel(-1) {}
-			virtual void operator () (s32 level, const char& folder,bool& terminate) {}
-			virtual void	operator () (s32 level, const char* folder, bool& terminate)	
+			folder_search_enumerator(const xcuchars& folder) : mFolderName(folder), mLevel(-1) {}
+
+			virtual void operator () (s32 level, const xucharz<256>& folder, bool& terminate)
 			{
 				terminate = false; 
 			
-				const s32 len1 = x_strlen(folder);
-				const s32 len2 = mFolderNameLen;
-				if (len1 == len2)
+				bool equal = mFolderName == folder;
+				if (equal)
 				{
-					const char* s1 = folder;
-					//const char* e1 = s1 + len1;
-					const char* s2 = mFolderName;
-					bool equal = x_strCompareNoCase(s1, len1, s2, len2) == 0;
-					if (equal)
-					{
-						terminate = true;
-						mLevel = level;
-					}
+					terminate = true;
+					mLevel = level;
 				}
 			}
 		};
 
-		s32				xdirpath::getLevelOf(const char* folderName, s32 numChars) const
+		s32				xdirpath::getLevelOf(const xcuchars& folderName) const
 		{
-			if (numChars==-1)
-				numChars = x_strlen(folderName);
-
-			folder_search_enumerator e(folderName, numChars);
+			folder_search_enumerator e(folderName);
 			enumLevels(e);
 			return e.mLevel;
 		}
@@ -180,14 +177,10 @@ namespace xcore
 		{
 			// PARENT:   c:\disk
 			// THIS:     c:\disk\child
-			if(parent.mString.getLength() > mString.getLength())
-					return -1;
 			s32 level = -1;
-			const char* thisSrc = mString.c_str();
-			const char* thisEnd = mString.c_str() + mString.getLength();
+			xcuchars thisSrc = mString;
+			xcuchars parentSrc = parent.mString;
 
-			const char* parentSrc = parent.mString.c_str();
-			const char* parentEnd = parent.mString.c_str() + parent.mString.getLength();
 			bool terminate = false;
 			bool match = true;
 			while (parentSrc < parentEnd && match)
@@ -237,9 +230,6 @@ namespace xcore
 			if (pos < 0)	pos = 0;
 			else			pos += 2;
 			mString.remove(0, pos);
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
 		}
 
 		void			xdirpath::makeRelativeTo(const xdirpath& parent)
@@ -303,9 +293,6 @@ namespace xcore
 			{
 				mString.insert(parent.mString.c_str(), folder_start - parent.mString.c_str());
 				fixSlashes();
-				mStringForDevice.clear();
-				mStringForDevice = mString;
-				fixSlashesForDevice();
 			}
 			else
 			{
@@ -326,9 +313,6 @@ namespace xcore
 					lastSlashPos += 1;
 					mString.remove(lastSlashPos, getLength() - lastSlashPos);
 					fixSlashes();
-					mStringForDevice.clear();
-					mStringForDevice = mString;
-					fixSlashesForDevice();
 				}
 			}
 		}
@@ -337,9 +321,6 @@ namespace xcore
 		{
 			mString += subDir;
 			fixSlashes();
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
 		}
 
 		// e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\; sub=="sub\\folder\\";
@@ -369,15 +350,11 @@ namespace xcore
 
 			mString.left(split_pos, parent.mString);
 			parent.fixSlashes();
-			parent.mStringForDevice = parent.mString;
-			parent.fixSlashesForDevice();
 			mString.right(mString.getLength() - split_pos, subDir.mString);
 			subDir.fixSlashes();
-			subDir.mStringForDevice = subDir.mString;
-			subDir.fixSlashesForDevice();
 		}
 
-		bool			xdirpath::getName(xcstring& outName) const
+		bool			xdirpath::getName(xuchars& outName) const
 		{
 			const s32 endPos = mString.lastChar()=='\\' ? mString.getLength() - 1 : mString.getLength();
 			const s32 slashPos = mString.rfind('\\', endPos - 1);
@@ -389,9 +366,9 @@ namespace xcore
 			return false;
 		}
 
-		bool			xdirpath::hasName(const char* inName) const
+		bool			xdirpath::hasName(const xcuchars& inName) const
 		{
-			folder_search_enumerator e(inName, x_strlen(inName));
+			folder_search_enumerator e(inName);
 			enumLevels(e);
 			return e.mLevel != -1;
 		}
@@ -410,18 +387,8 @@ namespace xcore
 			xfiledevice* device = alias->device();
 			return device;
 		}
-		void xdirpath::fixSlashesForDevice()		
-		{ 
-			mStringForDevice = mString;
-			const char slash = sGetSlashChar();
-			mStringForDevice.replace('\\' , slash);
-		}
-		const char* xdirpath::c_str_device() const
-		{
-			return mStringForDevice.c_str();
-		}
 
-		xfiledevice*	xdirpath::getSystem(xcstring& outDirPath) const
+		xfiledevice*	xdirpath::getSystem(xuchars& outDirPath) const
 		{
 			const xdevicealias* alias = getAlias();
 			if (alias==NULL)
@@ -466,28 +433,22 @@ namespace xcore
 			return true;
 		}
 
-		bool			xdirpath::getSubDir(const char* subDir, xdirpath& outSubDirPath) const
+		bool			xdirpath::getSubDir(xcuchars const& subDir, xdirpath& outSubDirPath) const
 		{
-			char subDirPathBuffer[XDIRPATH_BUFFER_SIZE];
-			xcstring subDirPath(subDirPathBuffer, sizeof(subDirPathBuffer), subDir);
-
 			outSubDirPath = *this;
 			outSubDirPath.down(subDir);
 			return true;
 		}
 
-		const char*		xdirpath::c_str() const										{ return mString.c_str(); }
+		const xcuchars&	xdirpath::cchars() const	{ return mString; }
 
-		void			xdirpath::setDeviceName(const char* inDeviceName)
+		void			xdirpath::setDeviceName(const xcuchars& inDeviceName)
 		{
 			setOrReplaceDeviceName(mString, inDeviceName);
 			fixSlashes(); 
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
 		}
 
-		bool			xdirpath::getDeviceName(xcstring& outDeviceName) const
+		bool			xdirpath::getDeviceName(xuchars& outDeviceName) const
 		{
 			s32 pos = mString.find(":\\");
 			if (pos >= 0)
@@ -495,16 +456,13 @@ namespace xcore
 			return (pos >= 0);
 		}
 
-		void			xdirpath::setDevicePart(const char* inDevicePart)
+		void			xdirpath::setDevicePart(const xcuchars& inDevicePart)
 		{
 			setOrReplaceDevicePart(mString, inDevicePart);
 			fixSlashes(); 
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
 		}
 
-		bool			xdirpath::getDevicePart(xcstring& outDevicePart) const
+		bool			xdirpath::getDevicePart(xuchars& outDevicePart) const
 		{
 			s32 pos = mString.find(":\\");
 			if (pos >= 0)
@@ -517,32 +475,19 @@ namespace xcore
 			if (this == &path)
 				return *this;
 			mString = path.mString;
-			mStringForDevice = path.mStringForDevice;
 			return *this;
 		}
 
-		xdirpath&		xdirpath::operator =  ( const char* str )
+		xdirpath&		xdirpath::operator = (const xcuchars& str )
 		{
-			if (c_str() == str)
-				return *this;
 			mString.clear();
 			mString += str;
 			fixSlashes();
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
 			return *this; 
 		}
 
-		xdirpath&		xdirpath::operator += ( const char* str )					{ mString += str; fixSlashes(); mStringForDevice = mString;fixSlashesForDevice(); return *this; }
-
-		bool			xdirpath::operator == ( const char* rhs) const				{ return x_strCompareNoCase(rhs, c_str()) == 0; }
-		bool			xdirpath::operator != ( const char* rhs) const				{ return x_strCompareNoCase(rhs, c_str()) != 0; }
-
-		bool			xdirpath::operator == ( const xdirpath& rhs) const			{ return (rhs.getLength() == getLength()) && x_strCompareNoCase(rhs.c_str(), c_str()) == 0; }
-		bool			xdirpath::operator != ( const xdirpath& rhs) const			{ return (rhs.getLength() != getLength()) || x_strCompareNoCase(rhs.c_str(), c_str()) != 0; }
-
-		char			xdirpath::operator [] (s32 index) const						{ return mString[index]; }
+		bool			xdirpath::operator == ( const xdirpath& rhs) const			{ return rhs.mString.compare(mString) == 0; }
+		bool			xdirpath::operator != ( const xdirpath& rhs) const			{ return rhs.mString.compare(mString) != 0; }
 
 #ifdef TARGET_PS3
 		bool			xdirpath::makeRelativeForPS3()
@@ -558,7 +503,7 @@ namespace xcore
 		}
 #endif
 
-		void			xdirpath::setOrReplaceDeviceName(xcstring& ioStr, const char* inDeviceName) const
+		void			xdirpath::setOrReplaceDeviceName(xuchars& ioStr, xcuchars const& inDeviceName) const
 		{
 			s32 len = 0;
 			s32 pos = ioStr.find(":\\");
@@ -581,7 +526,7 @@ namespace xcore
 			}
 		}
 
-		void			xdirpath::setOrReplaceDevicePart(xcstring& ioStr, const char* inDevicePart) const
+		void			xdirpath::setOrReplaceDevicePart(xuchars& ioStr, xcuchars const& inDevicePart) const
 		{
 			s32 len = ioStr.find(":\\");
 			if (len>=0)	len+=2;

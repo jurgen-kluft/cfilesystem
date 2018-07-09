@@ -8,10 +8,7 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase\x_types.h"
 #include "xbase\x_integer.h"
-#include "xatomic\x_atomic.h"
-#include "xatomic\x_queue.h"
 #include "xfilesystem\private\x_filesystem_constants.h"
 #include "xfilesystem\private\x_filesystem_constants.h"
 
@@ -30,54 +27,35 @@ namespace xcore
 
 			bool					init(x_iallocator* _allocator, u32 size)
 			{
-				mFifo = (atomic::fifo::link*)_allocator->allocate((size+1) * sizeof(atomic::fifo::link), 8);
-				mLifo = (atomic::lifo::link*)_allocator->allocate((size+1) * sizeof(atomic::lifo::link), 8);
-
 				mElementSize = x_intu::alignUp(sizeof(TElement), X_ALIGNMENT_DEFAULT);
 				mElementBufferSize = (size+1) * mElementSize;
 				mElementBuffer = (xbyte*)_allocator->allocate(mElementBufferSize, X_ALIGNMENT_DEFAULT);
-				mElementRefBuffer = (atomic::atom_s32*)_allocator->allocate((size+1) * sizeof(atomic::atom_s32), X_ALIGNMENT_DEFAULT);
-				for (u32 i=0; i<=size; ++i)
-				{
-					mElementRefBuffer[i] = atomic::atom_s32();
-				}
-				return mQueue.init(mFifo, size+1, mLifo, size+1, mElementBuffer, mElementBufferSize, mElementSize, mElementRefBuffer);
 			}
 
 			void					clear(x_iallocator* _allocator)
 			{
-				mQueue.clear();
-
-				_allocator->deallocate(mFifo);
-				_allocator->deallocate(mLifo);
 				_allocator->deallocate(mElementBuffer);
 				_allocator->deallocate(mElementRefBuffer);
 
-				mFifo = NULL;
-				mLifo = NULL;
 				mElementBuffer = NULL;
 				mElementSize = 0;
 				mElementBufferSize = 0;
-				mElementRefBuffer = NULL;
 			}
 
 			bool					push(TElement const& element, u32& outIndex);
 			bool					pop(TElement& element);
 
-			bool					inside(u32 index) const					{ return mQueue.inside(index); }
+			bool					inside(u32 index) const { return false; }
 
 			bool					empty() const;
 			bool					full() const;
 			xcore::u32				size() const;
 
 		private:
-			atomic::fifo::link*		mFifo;
-			atomic::lifo::link*		mLifo;
 			xbyte*					mElementBuffer;
 			u32						mElementSize;
 			u32						mElementBufferSize;
-			atomic::atom_s32*		mElementRefBuffer;
-			atomic::queue<void*>	mQueue;
+
 		};
 
 		///< Producer only: Adds item to the circular queue. 
@@ -89,9 +67,7 @@ namespace xcore
 		template<typename TElement>
 		bool cqueue<TElement>::push(TElement const& element, u32& outIndex)
 		{
-			void* ptr = (void*)element;
-			bool r = mQueue.push(ptr, outIndex);
-			return r;
+			return false;
 		}
 
 		/// Consumer only: Removes and returns item from the queue
@@ -103,10 +79,7 @@ namespace xcore
 		template<typename TElement>
 		bool cqueue<TElement>::pop(TElement& element)
 		{
-			void* ptr;
-			bool r = mQueue.pop(ptr);
-			element = (TElement)ptr;
-			return r;
+			return false;
 		}
 
 		/// Useful for testing and Consumer check of status
@@ -117,7 +90,7 @@ namespace xcore
 		template<typename TElement>
 		bool cqueue<TElement>::empty() const
 		{
-			return mQueue.empty();
+			return false;
 		}
 
 		/// Useful for testing and Producer check of status
@@ -128,7 +101,7 @@ namespace xcore
 		template<typename TElement>
 		bool cqueue<TElement>::full() const
 		{
-			return mQueue.room() == 0;
+			return false;
 		}
 
 		/// Returns the number of items in the queue
@@ -137,7 +110,7 @@ namespace xcore
 		template<typename TElement>
 		xcore::u32 cqueue<TElement>::size() const
 		{
-			return mQueue.size();
+			return 0;
 		}
 	}
 }

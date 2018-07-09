@@ -27,13 +27,10 @@ namespace xcore
 		class xfilepath
 		{
 		public:
-			enum ESettings { XFILEPATH_BUFFER_SIZE = 256, XFILEPATH_MAX = XFILEPATH_BUFFER_SIZE-2 };
+			enum ESettings { MAXPATH_SIZE = 256, MAX = MAXPATH_SIZE - 2 };
 
 		private:
-			char					mStringBuffer[XFILEPATH_BUFFER_SIZE];
-			xcstring				mString;
-			char					mStringBufferForDevice[XFILEPATH_BUFFER_SIZE];
-			xcstring				mStringForDevice;
+			xucharz<MAXPATH_SIZE>	mString;
 
 		public:
 									xfilepath();

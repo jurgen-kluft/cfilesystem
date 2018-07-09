@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/jurgen-kluft/xcode"
-	"github.com/jurgen-kluft/xtime/package"
+	"github.com/jurgen-kluft/xfilesystem/package"
 )
 
 func main() {

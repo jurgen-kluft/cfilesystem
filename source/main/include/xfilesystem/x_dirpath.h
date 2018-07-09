@@ -9,6 +9,7 @@
 // INCLUDES
 //==============================================================================
 #include "xbase\x_debug.h"
+#include "xbase\x_chars.h"
 
 #include "xfilesystem\x_enumerator.h"
 
@@ -30,14 +31,11 @@ namespace xcore
 		class xdirpath
 		{
 		public:
-			enum ESettings { XDIRPATH_BUFFER_SIZE = 256, XDIRPATH_MAX = XDIRPATH_BUFFER_SIZE-2 };
+			enum ESettings { MAXPATH_SIZE = 256, MAX = MAXPATH_SIZE-2 };
 
 		protected:
 			friend class xfilepath;
-			char					mStringBuffer[XDIRPATH_BUFFER_SIZE];
-			xcstring				mString;
-			char					mStringBufferForDevice[XDIRPATH_BUFFER_SIZE];
-			xcstring				mStringForDevice;
+			xucharz<MAXPATH_SIZE>	mString;
 
 		public:
 									xdirpath();
@@ -51,9 +49,9 @@ namespace xcore
 			s32						getMaxLength() const;
 			bool					isEmpty() const;
 
-			void					enumLevels(enumerate_delegate<char>& folder_enumerator, bool right_to_left = false) const;
+			void					enumLevels(enumerate_delegate<xucharz<256>>& folder_enumerator, bool right_to_left = false) const;
 			s32						getLevels() const;
-			s32						getLevelOf(const char* folderName, s32 numChars=-1) const;
+			s32						getLevelOf(const xcuchars& folderName) const;
 			s32						getLevelOf(const xdirpath& parent) const;
 
 			bool					isRoot() const;
@@ -65,48 +63,41 @@ namespace xcore
 			void					makeRelativeTo(const xdirpath& parent);
 
 			void					up();
-			void					down(const char* subDir);
+			void					down(const xcuchars& subDir);
 			void					split(s32 cnt, xdirpath& parent, xdirpath& subDir) const;	///< e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\; sub=="sub\\folder\\";
 
-			bool					getName(xcstring& outName) const;
-			bool					hasName(const char* inName) const;
+			bool					getName(xuchars& outName) const;
+			bool					hasName(const xcuchars& inName) const;
 			const xdevicealias*		getAlias() const;
 			xfiledevice*			getDevice() const;
-			xfiledevice*			getSystem(xcstring& outSystemDirPath) const;
+			xfiledevice*			getSystem(xuchars& outSystemDirPath) const;
 			bool					getRoot(xdirpath& outRootDirPath) const;
 			bool					getParent(xdirpath& outParentDirPath) const;
-			bool					getSubDir(const char* subDir, xdirpath& outSubDirPath) const;
+			bool					getSubDir(const xcuchars& subDir, xdirpath& outSubDirPath) const;
 
-			void					setDeviceName(const char* deviceName);
-			bool					getDeviceName(xcstring& outDeviceName) const;
-			void					setDevicePart(const char* devicePart);
-			bool					getDevicePart(xcstring& outDevicePart) const;
+			void					setDeviceName(const xcuchars& deviceName);
+			bool					getDeviceName(xuchars& outDeviceName) const;
+			void					setDevicePart(const xcuchars& devicePart);
+			bool					getDevicePart(xuchars& outDevicePart) const;
 			
 			xdirpath&				operator =  (const xdirpath&);
 
-			xdirpath&				operator =  (const char*);
-			xdirpath&				operator += (const char*);
+			xdirpath&				operator =  (const xcuchars&);
+			xdirpath&				operator += (const xcuchars&);
 
-			bool					operator == (const char* rhs) const;
-			bool					operator != (const char* rhs) const;
+			bool					operator == (const xcuchars&) const;
+			bool					operator != (const xcuchars&) const;
 
 			bool					operator == (const xdirpath& rhs) const;
 			bool					operator != (const xdirpath& rhs) const;
 
-			char					operator [] (s32 index) const;
+			const xcuchars&			cchars() const;
 
-			const char*				c_str() const;
-
-			const char*               c_str_device() const;
-#ifdef TARGET_PS3
-			bool					makeRelativeForPS3();	
-#endif
 		private:
-			void					setOrReplaceDeviceName(xcstring&, const char*) const;
-			void					setOrReplaceDevicePart(xcstring&, const char*) const;
+			void					setOrReplaceDeviceName(xuchars& ioStr, xcuchars const& inDeviceName) const;
+			void					setOrReplaceDevicePart(xuchars& ioStr, xcuchars const& inDeviceName) const;
 
 			void					fixSlashes();									///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.
-			void					fixSlashesForDevice();
 		};
 
 		//==============================================================================
