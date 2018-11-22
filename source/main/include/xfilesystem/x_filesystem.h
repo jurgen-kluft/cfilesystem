@@ -10,37 +10,73 @@
 //==============================================================================
 #include "xbase/x_debug.h"
 
-//==============================================================================
-// xcore namespace
-//==============================================================================
 namespace xcore
 {
 	///< Forward declares
-	class x_iallocator;
+	class xalloc;
 
-	namespace xfilesystem
+	class xfilesystem;
+	class xio_thread;
+
+	///< Initialization
+	extern xfilesystem*		create_fs( u32 max_open_streams, xio_thread* io_thread, xalloc* allocator );
+	extern void				destroy_fs( xfilesystem* );
+
+	///< doIO; user has to call this from either the main thread or an Io thread.
+	///< This call will block the calling thread and it will stay in a do-while
+	///< until threading->loop() is false.
+	extern void				doIO	( xio_thread* );
+
+	class xfile;
+	class xinfo;
+	class xwriter;
+	class xreader;
+	class xfilepath;
+
+	class xfilesystem
 	{
-		///< Forward declares
-		class xio_thread;
+	public:
+		enum emode
+		{
+			READ       = 0x1,
+			WRITE      = 0x2,
+			OPEN       = 0x10 | READ,
+			CREATE     = 0x20 | WRITE,
+			DISCARD    = 0x40 | WRITE,
+			APPEND     = 0x80 | WRITE,
+			INVALID    = 0xffffffff,
+		};
 
-		///< Initialization
-		extern void				init	( u32 max_open_streams, xio_thread* io_thread, x_iallocator* allocator );
-		extern void				exit	( void );
+		xfile*		open(xfilepath const& filename, emode mode);
+		xwriter*	writer(xfile*);
+		xreader*	reader(xfile*);
+		
+		void		close(xfile*);
+		void		close(xinfo*);
+		void		close(xreader*);
+		void		close(xwriter*);
 
-		///< doIO; user has to call this from either the main thread or an Io thread.
-		///< This call will block the calling thread and it will stay in a do-while
-		///< until threading->loop() is false.
-		extern void				doIO	( xio_thread* );
+		s64			get_pos(xfile*);
+		s64			set_pos(xfile*, s64 pos);
+
+		xinfo*		info(xfilepath const& path);
+		bool		exists(xinfo*);
+		s64			size(xinfo*);
+		xfile*		open(xinfo*, emode mode);
+		void		rename(xinfo*, xfilepath const&);
+		void		move(xinfo* src, xinfo* dst);
+		void		copy(xinfo* src, xinfo* dst);
+		void		remove(xinfo*);
+
+		s32			read(reader*, xbuffer&);
+		s32			write(writer*, xcbuffer const&);
+
+		void		read_async(reader*, xbuffer&);
+		s32			wait_async(reader*);
+
+		xfs_imp*	mInstance;
 	};
 
-	//==============================================================================
-	// END xcore namespace
-	//==============================================================================
 };
 
-//==============================================================================
-// END __X_FILESYSTEM_H__
-//==============================================================================
-
-
-#endif
+#endif	// __X_FILESYSTEM_H__

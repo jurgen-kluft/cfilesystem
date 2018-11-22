@@ -21,7 +21,6 @@ namespace xcore
 	namespace xfilesystem
 	{
 		// Forward declares
-		class xdevicealias;
 		class xdirinfo;
 		class xfilestream;
 
@@ -35,9 +34,7 @@ namespace xcore
 									xfileinfo(const char* filename);
 									xfileinfo(const xfilepath& filename);
 
-			const xfilepath&		getFullName() const;
-			void					getName(xcstring& outName) const;
-			void					getExtension(xcstring& outExtension) const;
+			xfilepath				getFilepath() const;
 			
 			u64						getLength() const;
 			void					setLength(u64 length);
@@ -45,17 +42,18 @@ namespace xcore
 			bool					isValid() const;
 			bool					isRooted() const;
 			
-			bool					isArchive() const;
-			bool					isReadOnly() const;
-			bool					isHidden() const;
-			bool					isSystem() const;
+			xattributes				getAttrs() const;
+			xfiletimes				getTimes() const;
+
+			bool					setAttrs(xattributes attrs);
+			bool					setTimes(xfiletimes times);
 
 			bool					exists() const;
-			bool					create();
-			bool					create(xfilestream& outFileStream);
 			bool					remove();
 			void					refresh();
 
+			bool					create();
+			bool					create(xfilestream& outFileStream);
 			bool					openRead(xfilestream& outFileStream);
 			bool					openWrite(xfilestream& outFileStream);
 
@@ -63,29 +61,7 @@ namespace xcore
 			u64						writeAllBytes(const xbyte* buffer, u64 count);
 
 			bool					copy(const xfilepath& toFilename, bool overwrite);
-			bool					move(const xfilepath& toFilename);
-
-			const xdevicealias*		getAlias() const;
-
-			void					getPath(xdirinfo& outInfo) const;
-			bool					getRoot(xdirinfo& outInfo) const;
-			bool					getParent(xdirinfo& outInfo) const;
-			void					getSubDir(const char* subDir, xdirinfo& outInfo) const;
-	
-			xfileinfo&				onlyFilename();
-
-			xfileinfo				getFilename() const;
-			void					up();
-			void					down(const char* subDir);
-
-			bool					getTime(xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
-			bool					getCreationTime  (xdatetime&) const;
-			bool					getLastAccessTime(xdatetime&) const;
-			bool					getLastWriteTime (xdatetime&) const;
-			bool					setTime(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
-			bool					setCreationTime(const xdatetime&);
-			bool					setLastAccessTime(const xdatetime&);
-			bool					setLastWriteTime (const xdatetime&);
+			bool					move(const xfilepath& toFilename, bool overwrite);
 
 			xfileinfo&				operator = (const xfileinfo&);
 			xfileinfo&				operator = (const xfilepath&);
@@ -130,17 +106,8 @@ namespace xcore
 			static bool				sMove(const xfilepath& sourceFilename, const xfilepath& destFilename);
 		};
 
-		//==============================================================================
-		// END xfilesystem namespace
-		//==============================================================================
 	};
 
-	//==============================================================================
-	// END xcore namespace
-	//==============================================================================
 };
 
-//==============================================================================
-// END __X_FILESYSTEM_FILE_INFO_H__
-//==============================================================================
 #endif
