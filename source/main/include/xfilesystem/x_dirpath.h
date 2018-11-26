@@ -18,11 +18,8 @@ namespace xcore
 {
 	namespace xfilesystem
 	{
-		class xpath;
 		class xfilepath;
 		class xfilesystem;
-		class xfiledevice;
-		class xdevicealias;
 
 		//==============================================================================
 		// xdirpath: 
@@ -33,12 +30,14 @@ namespace xcore
 		{
 		protected:
 			friend class xfilepath;
+			friend class xfilesystem;
+			
 			xfilesystem*			mParent;
 			xstring					mString;
 
-		public:
 									xdirpath(xfilesystem* fs);
 									xdirpath(xfilesystem* fs, xstring const& str);
+		public:
 									xdirpath(const xdirpath& dir);
 									~xdirpath();
 
@@ -72,21 +71,13 @@ namespace xcore
 			bool					getSubDir(const xstring& subDir, xdirpath& outSubDirPath) const;
 
 			void					setDeviceName(const xstring& deviceName);
-			bool					getDeviceName(xuchars& outDeviceName) const;
+			bool					getDeviceName(xstring& outDeviceName) const;
 			void					setDevicePart(const xstring& devicePart);
-			bool					getDevicePart(xuchars& outDevicePart) const;
+			bool					getDevicePart(xstring& outDevicePart) const;
 
-			const xdevicealias*		getAlias() const;
-			xfiledevice*			getDevice() const;
-			xfiledevice*			getSystem(xuchars& outSystemDirPath) const;
-
+			xdirpath&				operator =  (const xfilepath&);
 			xdirpath&				operator =  (const xdirpath&);
-
-			xdirpath&				operator =  (const xstring&);
-			xdirpath&				operator += (const xstring&);
-
-			bool					operator == (const xstring&) const;
-			bool					operator != (const xstring&) const;
+			xfilepath&				operator += (const xfilepath&);
 
 			bool					operator == (const xdirpath& rhs) const;
 			bool					operator != (const xdirpath& rhs) const;

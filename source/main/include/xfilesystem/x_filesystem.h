@@ -74,6 +74,8 @@ namespace xcore
 		void		read_async(reader*, xbuffer&);
 		s32			wait_async(reader*);
 
+		bool		register_alias (xstring const& alias, xstring const& target);
+
 		xfs_imp*	mInstance;
 	};
 

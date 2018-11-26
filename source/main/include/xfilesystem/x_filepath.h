@@ -13,65 +13,51 @@
 //==============================================================================
 namespace xcore
 {
-	namespace xfilesystem
+	class xpath;
+	class xdirpath;
+	class xfilesystem;
+
+	//==============================================================================
+	// xfilepath: 
+	//		- Relative:		Folder\Filename.Extension
+	//		- Absolute:		Device:\Folder\Folder\Filename.Extension
+	//==============================================================================
+	class xfilepath
 	{
-		class xpath;
-		class xdirpath;
-		class xfilesystem;
-		class xfiledevice;
+	protected:
+		friend class xdirpath;
+		friend class xfilesystem;
 
-		//==============================================================================
-		// xfilepath: 
-		//		- Relative:		Folder\Filename.Extension
-		//		- Absolute:		Device:\Folder\Folder\Filename.Extension
-		//==============================================================================
-		class xfilepath
-		{
-		protected:
-			friend class xdirpath;
+		xfilesystem*			mParent;
+		xstring					mString;
 
-			xfilesystem*			mParent;
-			xstring					mString;
+								xfilepath(xstring const& str);
+	public:
+								xfilepath();
+								xfilepath(const xfilepath& filepath);
+		explicit				xfilepath(const xdirpath& dir, const xfilepath& filename);
+								~xfilepath();
 
-		public:
-									xfilepath();
-									xfilepath(xstring const& str);
-									xfilepath(const xfilepath& filepath);
-			explicit				xfilepath(const xdirpath& dir, const xfilepath& filename);
-									~xfilepath();
+		void					clear();
 
-			void					clear();
+		bool					isEmpty() const;
+		bool					isRooted() const;
 
-			bool					isEmpty() const;
-			bool					isRooted() const;
+		void					makeRelative(xdirpath&);
+		void					makeRelative(xdirpath&, xfilepath&) const;
+		
+		xstring					getFilepath() const;
+		xstring					getFilename() const;
+		xstring					getFilenameWithoutExtension() const;
+		xstring					getExtension() const;
+		xdirpath				getDirname() const;
 
-			void					relative(xfilepath&) const;
-			void					makeRelative();
-			
-			xstring					getFilepath() const;
-			xstring					getFilename() const;
-			xstring					getFilenameWithoutExtension() const;
-			xstring					getExtension() const;
-			xdirpath				getDirname() const;
-
-			xfiledevice*			getSystem(xcstring& outSystemFilePath) const;
-
-			xfilepath&				operator =  (const xstring&);
-			xfilepath&				operator =  (const xfilepath&);
-			xfilepath&				operator += (const xstring&);
-			xfilepath&				operator += (const xfilepath&);
-
-			bool					operator == (const xfilepath&) const;
-			bool					operator != (const xfilepath&) const;
-
-		private:
-			void					fixSlashes();														///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/'.		
-			void					fixSlashesForDevice();
-		};
-
-		inline xfilepath	operator + (const xdirpath& dir, const xfilepath& filename)	{ return xfilepath(dir, filename); }
-
+		xfilepath&				operator =  (const xfilepath&);
+		bool					operator == (const xfilepath&) const;
+		bool					operator != (const xfilepath&) const;
 	};
+
+	inline xfilepath	operator + (const xdirpath& dir, const xfilepath& filename)	{ return xfilepath(dir, filename); }
 
 };
 

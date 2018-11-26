@@ -11,25 +11,17 @@
 #include "xbase/x_types.h"
 #include "xbase/x_debug.h"
 
-//==============================================================================
-// xcore namespace
-//==============================================================================
 namespace xcore
 {
-	namespace xfilesystem
+	class xio_thread
 	{
-		// IO Thread and Stream synchronization
-		class xio_thread
-		{
-		public:
-			virtual				~xio_thread() {}
+	public:
+		virtual				~xio_thread() {}
 
-			virtual void		sleep(u32 ms) = 0;
-			virtual bool		loop() const = 0;
-			virtual void		wait() = 0;
-			virtual void		signal() = 0;
-		};
-
+		virtual void		sleep(u32 ms) = 0;
+		virtual bool		loop() const = 0;
+		virtual void		wait() = 0;
+		virtual void		signal() = 0;
 	};
 
 };
