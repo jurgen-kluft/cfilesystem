@@ -47,18 +47,13 @@ namespace xcore
 		virtual void			close() = 0; 														///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
 		virtual void			flush() = 0;														///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
 
-		virtual u64				read(xbyte* buffer, u64 offset, u64 count) = 0; 					///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
-		virtual u64				readByte(xbyte& outByte) = 0;										///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
-		virtual u64				write(const xbyte* buffer, u64 offset, u64 count) = 0;				///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
-		virtual u64				writeByte(xbyte inByte) = 0;							 			///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
+		virtual u64				read(xbyte* buffer, u64 count) = 0; 								///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
+		virtual u64				write(const xbyte* buffer, u64 count) = 0;							///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 
-		virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback) = 0;  		///< Begins an asynchronous read operation.
-//			virtual void			endRead(xasync_result& asyncResult) = 0;												///< Waits for the pending asynchronous read to complete.
-		virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback) = 0;	///< Begins an asynchronous write operation.
-//			virtual void			endWrite(xasync_result& asyncResult) = 0;												///< Ends an asynchronous write operation.
-
-		virtual void			copyTo(xistream* dst) = 0;											///< Reads the bytes from the current stream and writes them to the destination stream.
-		virtual void			copyTo(xistream* dst, u64 count) = 0;								///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
+		virtual bool			beginRead(xbyte* buffer, u64 count) = 0;  							///< Begins an asynchronous read operation.
+		virtual bool			endRead(bool block) = 0;											///< Waits for the pending asynchronous read to complete.
+		virtual bool			beginWrite(const xbyte* buffer, u64 count) = 0;						///< Begins an asynchronous write operation.
+		virtual bool			endWrite(bool block) = 0;											///< Ends an asynchronous write operation.
 	};
 
 };

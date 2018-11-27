@@ -82,7 +82,7 @@ namespace xcore
 			virtual bool			setDirAttr(const char* szDirPath, const xattributes& attr) const;
 			virtual bool			getDirAttr(const char* szDirPath, xattributes& attr) const;
 
-			virtual bool			enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth = 0) const;
+			virtual bool			enumerate(const char* szDirPath, enumerate_delegate* enumerator, s32 depth = 0) const;
 
 			enum ESeekMode { __SEEK_ORIGIN = 1, __SEEK_CURRENT = 2, __SEEK_END = 3, };
 			bool					seek(u32 nFileHandle, ESeekMode mode, u64 pos, u64& newPos) const;
@@ -451,29 +451,36 @@ namespace xcore
 			return (x_strcmp(str,".")==0 || x_strcmp(str,"..")==0);
 		}
 
-		struct enumerate_delegate_dirs_copy_dir : public enumerate_delegate<xdirinfo>
+		struct enumerate_delegate_dirs_copy_dir : public enumerate_delegate
 		{
 			cstack<const xdirinfo* > dirStack;
-			enumerate_delegate_dirs_copy_dir() { dirStack.init(getAllocator(),MAX_ENUM_SEARCH_DIRS);}
-			virtual ~enumerate_delegate_dirs_copy_dir() { dirStack.clear(); }
-			virtual void operator () (s32 depth, const xdirinfo& inf, bool& terminate) { }
-			virtual void operator () (s32 depth, const xdirinfo* inf,bool& terminate)
+							enumerate_delegate_dirs_copy_dir() { dirStack.init(getAllocator(),MAX_ENUM_SEARCH_DIRS);}
+			virtual			~enumerate_delegate_dirs_copy_dir() { dirStack.clear(); }
+
+			virtual bool operator () (s32 depth, const xfileinfo* finf, const xdirinfo* dinf)
 			{
-				terminate = false;
-				dirStack.push(inf);
+				if (dinf != nullptr)
+				{
+					dirStack.push(inf);
+				}
+				return true;
 			}
 		};
 
-		struct enumerate_delegate_files_copy_dir : public enumerate_delegate<xfileinfo>
+		struct enumerate_delegate_files_copy_dir : public enumerate_delegate
 		{
-			cstack<const xfileinfo* > fileStack;
-			enumerate_delegate_files_copy_dir() { fileStack.init(getAllocator(),MAX_ENUM_SEARCH_FILES); }
-			virtual ~enumerate_delegate_files_copy_dir() { fileStack.clear(); }
-			virtual void operator () (s32 depth, const xfileinfo& inf, bool& terminate) { }
-			virtual void operator () (s32 depth, const xfileinfo* inf,bool& terminate)
+			cstack< const xfileinfo* > fileStack;
+
+						enumerate_delegate_files_copy_dir() { fileStack.init(getAllocator(), MAX_ENUM_SEARCH_FILES); }
+			virtual		~enumerate_delegate_files_copy_dir() { fileStack.clear(); }
+
+			virtual bool operator () (s32 depth, const xfileinfo* finf, const xdirinfo* dinf)
 			{
-				terminate = false;
-				fileStack.push(inf);
+				if (finf != nullptr)
+				{
+					fileStack.push(finf);
+				}
+				return true;
 			}
 		};
 
@@ -623,24 +630,30 @@ namespace xcore
 			return true;
 		}
 
-		struct enumerate_delegate_files_delete_dir : public enumerate_delegate<xfileinfo>
+		struct enumerate_delegate_files_delete_dir : public enumerate_delegate
 		{
-			virtual void operator () (s32 depth, const xfileinfo& inf, bool& terminate)
+			virtual bool operator () (s32 depth, const xfileinfo* finf, const xdirinfo* dinf)
 			{
-				terminate = false;
-				DWORD dwFileAttributes = ::GetFileAttributes((LPCTSTR)inf.getFullName().c_str_device());
-				if (dwFileAttributes & FILE_ATTRIBUTE_READONLY)	// change read-only file mode
-					::SetFileAttributes((LPCTSTR)inf.getFullName().c_str_device(), dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
-				::DeleteFile((LPCTSTR)inf.getFullName().c_str_device());
+				if (finf != nullptr)
+				{
+					DWORD dwFileAttributes = ::GetFileAttributes((LPCTSTR)inf.getFullName().c_str_device());
+					if (dwFileAttributes & FILE_ATTRIBUTE_READONLY)	// change read-only file mode
+						::SetFileAttributes((LPCTSTR)inf.getFullName().c_str_device(), dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
+					::DeleteFile((LPCTSTR)inf.getFullName().c_str_device());
+				}
+				return true;
 			}
 		};
 
-		struct enumerate_delegate_dirs_delete_dir : public enumerate_delegate<xdirinfo>
+		struct enumerate_delegate_dirs_delete_dir : public enumerate_delegate
 		{
-			virtual void operator () (s32 depth, const xdirinfo& inf, bool& terminate)
+			virtual bool operator () (s32 depth, const xfileinfo* finf, const xdirinfo* dinf)
 			{
-				terminate = false;
-				::RemoveDirectory((LPCTSTR)inf.getFullName().c_str_device()); // remove the empty directory
+				if (dinf != nullptr)
+				{
+					::RemoveDirectory((LPCTSTR)dinf.getFullName().c_str_device()); // remove the empty directory
+				}
+				return true;
 			}
 		};
 
@@ -726,7 +739,7 @@ namespace xcore
 			return true;
 		}
 
-		bool FileDevice_PC_System::enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth) const
+		bool FileDevice_PC_System::enumerate(const char* szDirPath, enumerate_delegate* enumerator, s32 depth) const
 		{
 			HANDLE hFind;  // file handle
 

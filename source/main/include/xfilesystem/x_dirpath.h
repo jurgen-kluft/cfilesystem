@@ -47,7 +47,7 @@ namespace xcore
 			s32						getMaxLength() const;
 			bool					isEmpty() const;
 
-			void					enumLevels(enumerate_delegate<xstring>& folder_enumerator, bool right_to_left = false) const;
+			void					enumLevels(enumerate_delegate& enumerator, bool right_to_left = false) const;
 			s32						getLevels() const;
 			s32						getLevelOf(const xstring& folderName) const;
 			s32						getLevelOf(const xdirpath& parent) const;
@@ -62,8 +62,9 @@ namespace xcore
 
 			void					up();
 			void					down(const xstring& subDir);
-			void					split(s32 cnt, xdirpath& parent, xdirpath& subDir) const;	///< e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\; sub=="sub\\folder\\";
+			void					split(s32 level, xdirpath& parent, xdirpath& subDir) const;	///< e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\; sub=="sub\\folder\\";
 
+			void					getFull(xstring& full) const;
 			bool					getName(xstring& outName) const;
 			bool					hasName(const xstring& inName) const;
 			bool					getRoot(xdirpath& outRootDirPath) const;
@@ -81,19 +82,8 @@ namespace xcore
 
 			bool					operator == (const xdirpath& rhs) const;
 			bool					operator != (const xdirpath& rhs) const;
-
-			const xstring&			str() const;
-
-		private:
-			void					setOrReplaceDeviceName(xstring& ioStr, xstring const& inDeviceName) const;
-			void					setOrReplaceDevicePart(xstring& ioStr, xstring const& inDeviceName) const;
-
-			void					fixSlashes();		///< Fix slashes, replace '/' with '\'. For Unix, replace '\' with '/' (depends on xfilesystem configuration)
 		};
-
 	};
-
 };
-
 
 #endif	// __X_FILESYSTEM_DIRPATH_H__

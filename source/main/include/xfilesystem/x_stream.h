@@ -57,31 +57,28 @@ namespace xcore
 		void				close(); 																		///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
 		void				flush();																		///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
 
-		u64					read(xbyte* buffer, u64 offset, u64 count); 									///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
-		u64					readByte(xbyte& outByte);										 								///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
-		u64					write(const xbyte* buffer, u64 offset, u64 count);								///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
-		u64					writeByte(xbyte inByte);							 							///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
+		u64					read(xbyte* buffer,  u64 count); 												///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
+		u64					write(const xbyte* buffer,  u64 count);											///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 
-		bool				beginRead(xbyte* buffer, u64 offset, u64 count);
-		bool				beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);  		///< Begins an asynchronous read operation.
-//			bool				endRead(xasync_result& asyncResult, bool block=true);												///< Waits for the pending asynchronous read to complete.
+		bool				beginRead(xbyte* buffer, u64 count);									  		///< Begins an asynchronous read operation.
+		bool				endRead(bool block=true);														///< Waits for the pending asynchronous read to complete.
 		
-		bool				beginWrite(const xbyte* buffer, u64 offset, u64 count);
-		bool				beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);	///< Begins an asynchronous write operation.
-//			bool				endWrite(xasync_result& asyncResult, bool block=true);												///< Ends an asynchronous write operation.
+		bool				beginWrite(const xbyte* buffer, u64 count);										///< Begins an asynchronous write operation.
+		bool				endWrite(bool block=true);														///< Ends an asynchronous write operation.
 
-		void				copyTo(xstream& dst);															///< Reads the bytes from the current stream and writes them to the destination stream.
-		void				copyTo(xstream& dst, u64 count);												///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
-
-		xstream&			operator = (const xstream&);
 		bool				operator == (const xstream&);
 		bool				operator != (const xstream&);
 
 	protected:
 							xstream(xistream*);
 
+		xstream&			operator = (const xstream&)														{ return *this; } 
+
 		xistream*			mImplementation;
 	};
+
+	void			xstream_copy(xstream* src, xstream* dst);												///< Reads the bytes from the current stream and writes them to the destination stream.
+	void			xstream_copy(xstream* src, xstream* dst, u64 count);										///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
 
 };
 

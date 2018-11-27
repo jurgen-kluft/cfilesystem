@@ -68,7 +68,7 @@ namespace xcore
 		virtual bool			setDirAttr(xstring const& szDirPath, const xattributes& attr) const = 0;
 		virtual bool			getDirAttr(xstring const& szDirPath, xattributes& attr) const = 0;
 
-		virtual bool			enumerate(xstring const& szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth=0) const = 0;
+		virtual bool			enumerate(xstring const& szDirPath, enumerate_delegate* enumerator) const = 0;
 	
 	};
 

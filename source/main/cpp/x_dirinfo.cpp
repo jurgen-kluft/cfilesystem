@@ -104,14 +104,9 @@ namespace xcore
 		}
 
 
-		void					xdirinfo::enumerateFiles(enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories)
+		void					xdirinfo::enumerate(enumerate_delegate& enumerator)
 		{
-			sEnumerateFiles(mDirPath, enumerator, searchSubDirectories);
-		}
-
-		void					xdirinfo::enumerateDirs(enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories)
-		{
-			sEnumerateDirs(mDirPath, enumerator, searchSubDirectories);
+			sEnumerateFiles(mDirPath, enumerator);
 		}
 
 
@@ -267,31 +262,13 @@ namespace xcore
 			return device!=NULL && device->hasDir(systemDir.c_str());
 		}
 
-		void					xdirinfo::sEnumerate(const xdirpath& directory, enumerate_delegate<xfileinfo>& file_enumerator, enumerate_delegate<xdirinfo>& dir_enumerator, bool searchSubDirectories)
+		void					xdirinfo::sEnumerate(const xdirpath& directory, enumerate_delegate& enumerator)
 		{
 			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
 			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
 			xfiledevice* device = directory.getSystem(systemDir);
 			if (device!=NULL)
-				device->enumerate(directory.c_str(), searchSubDirectories, &file_enumerator, &dir_enumerator);
-		}
-
-		void					xdirinfo::sEnumerateFiles(const xdirpath& directory, enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories)
-		{
-			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-			xfiledevice* device = directory.getSystem(systemDir);
-			if (device!=NULL)
-				device->enumerate(systemDir.c_str(), searchSubDirectories, &enumerator, NULL);
-		}
-
-		void					xdirinfo::sEnumerateDirs(const xdirpath& directory, enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories)
-		{
-			char systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-			xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-			xfiledevice* device = directory.getSystem(systemDir);
-			if (device!=NULL)
-				device->enumerate(systemDir.c_str(), searchSubDirectories, NULL, &enumerator);
+				device->enumerate(directory.c_str(), &enumerator);
 		}
 
 		bool					xdirinfo::sSetTime(const xdirpath& directory, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime)

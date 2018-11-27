@@ -46,11 +46,12 @@ namespace xcore
 		void					makeRelative(xdirpath&);
 		void					makeRelative(xdirpath&, xfilepath&) const;
 		
-		xstring					getFilepath() const;
-		xstring					getFilename() const;
-		xstring					getFilenameWithoutExtension() const;
-		xstring					getExtension() const;
-		xdirpath				getDirname() const;
+		void					getFull(xstring& ) const;
+		void					getFilepath(xstring& ) const;
+		void					getFilename(xstring&) const;
+		void					getFilenameWithoutExtension(xstring&) const;
+		void					getExtension(xstring&) const;
+		void					getDirname(xdirpath&) const;
 
 		xfilepath&				operator =  (const xfilepath&);
 		bool					operator == (const xfilepath&) const;

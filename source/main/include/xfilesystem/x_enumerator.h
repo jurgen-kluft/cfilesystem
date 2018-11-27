@@ -8,14 +8,14 @@
 
 namespace xcore
 {
-	template<typename _Arg>
 	struct enumerate_delegate
 	{
-		///< Return false to terminate the breadth first traversal
-		virtual void operator () (s32 depth, const _Arg& inf, bool& terminate) = 0;
-		virtual void operator() (s32 depth, const _Arg* inf, bool& terminate ) {}
-	protected:
-		virtual ~enumerate_delegate() {}
+		// When you receive a 'dirinfo' and return true you indicate that you want to
+		// recurse into that directory. When returning 'false' you indicate that do not
+		// want to recurse into that directory.
+		// When you receive a 'fileinfo' and return false you indicate that you want to
+		// terminate the iteration.
+		virtual bool operator () (s32 depth, const fileinfo* fi, const dirinfo* di) = 0;
 	};
 
 };

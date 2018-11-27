@@ -49,8 +49,7 @@ namespace xcore
 		void					copy(const xdirpath& toDirectory, xbool overwrite=xFALSE);
 		void					move(const xdirpath& toDirectory);
 
-		void					enumerateFiles(enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories);
-		void					enumerateDirs(enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories);
+		void					enumerate(enumerate_delegate& enumerator);
 
 		bool					getRoot(xdirinfo& outRootDirInfo) const;
 		bool					getParent(xdirinfo& outParentDirInfo) const;
@@ -75,9 +74,7 @@ namespace xcore
 		static bool				sCreate(const xdirpath& directory);
 		static bool				sDelete(const xdirpath& directory);
 
-		static void				sEnumerate(const xdirpath& directory, enumerate_delegate<xfileinfo>& file_enumerator, enumerate_delegate<xdirinfo>& dir_enumerator, bool searchSubDirectories);
-		static void				sEnumerateFiles(const xdirpath& directory, enumerate_delegate<xfileinfo>& enumerator, bool searchSubDirectories);
-		static void				sEnumerateDirs(const xdirpath& directory, enumerate_delegate<xdirinfo>& enumerator, bool searchSubDirectories);
+		static void				sEnumerate(const xdirpath& directory, enumerate_delegate& dir_enumerator);
 
 		static bool				sSetTime(const xdirpath& directory, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
 		static bool				sGetTime(const xdirpath& directory, xdatetime& creationTime, xdatetime& lastAccessTime, xdatetime& lastWriteTime);

@@ -55,9 +55,7 @@ namespace xcore
 		void		close(xinfo*);
 		void		close(xreader*);
 		void		close(xwriter*);
-
-		s64			get_pos(xfile*);
-		s64			set_pos(xfile*, s64 pos);
+		void		close(xstream*);
 
 		xinfo*		info(xfilepath const& path);
 		bool		exists(xinfo*);
@@ -75,6 +73,8 @@ namespace xcore
 		s32			wait_async(reader*);
 
 		bool		register_alias (xstring const& alias, xstring const& target);
+
+		xstream*	filestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
 
 		xfs_imp*	mInstance;
 	};

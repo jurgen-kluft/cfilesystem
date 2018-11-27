@@ -68,7 +68,7 @@ namespace xcore
 			xcuchars		mPart;
 		};
 
-		void			xdirpath::enumLevels(enumerate_delegate<xucharz<256>>& folder_enumerator, bool right_to_left) const
+		void			xdirpath::enumLevels(enumerate_delegate& enumerator, bool right_to_left) const
 		{
 			if (isEmpty())
 				return;
@@ -97,7 +97,7 @@ namespace xcore
 
 						folderName.clear();
 						folderName.insert(folder_start, folder_end - folder_start);
-						folder_enumerator(level, folderName, terminate);
+						terminate = !enumerator(level, folderName);
 						folder_end+=1;
 						level++;
 					}
