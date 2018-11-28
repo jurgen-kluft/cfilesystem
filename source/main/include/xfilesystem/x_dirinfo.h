@@ -28,6 +28,7 @@ namespace xcore
 		friend class xfilesystem;
 		friend class xdirpath;
 		friend class xfileinfo;
+		friend class xfilepath;
 		
 		xfilesystem*			mParent;
 		xdirpath				mDirPath;
@@ -50,11 +51,11 @@ namespace xcore
 
 		void					enumerate(enumerate_delegate& enumerator);
 
+		bool					getDirpath(xdirpath& outDirpath) const;
 		bool					getRoot(xdirinfo& outRootDirInfo) const;
 		bool					getParent(xdirinfo& outParentDirInfo) const;
-		bool					getSubdir(xstring const& subDir, xdirinfo& outSubDirInfo) const;
-
-		xfiletimes				getTimes() const;
+	
+		bool					getTimes(xfiletimes& times) const;
 		bool					setTimes(xfiletimes times);
 
 		xfileattrs				getAttrs() const;
@@ -78,8 +79,8 @@ namespace xcore
 
 		static void				sEnumerate(const xdirpath& directory, enumerate_delegate& dir_enumerator);
 
-		static bool				sSetTime(const xdirpath& directory, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
-		static bool				sGetTime(const xdirpath& directory, xdatetime& creationTime, xdatetime& lastAccessTime, xdatetime& lastWriteTime);
+		static bool				sSetTime(const xdirpath& directory, const xfiletimes& ftimes);
+		static bool				sGetTime(const xdirpath& directory, xfiletimes& ftimes);
 
 		static bool				sSetCreationTime(const xdirpath& directory, const xdatetime& lastCreationTime);
 		static bool				sGetCreationTime(const xdirpath& directory, xdatetime& outCreationTime);

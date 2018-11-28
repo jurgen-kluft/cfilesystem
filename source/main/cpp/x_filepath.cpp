@@ -1,377 +1,156 @@
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
-#include "xbase/x_string.h"
-#include "xbase/x_string_std.h"
+#include "xstring/x_string.h"
 
-#include "xfilesystem/x_devicealias.h"
-#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/private/x_enumerator.h"
 #include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/x_filepath.h"
 
-//==============================================================================
 namespace xcore
 {
-	namespace xfilesystem
-	{
-		static inline char			sGetSlashChar()
-		{
-			return xfilesystem::xfs_common::s_instance()->isPathUNIXStyle() ? '/' : '\\';
-		}
-// 		static inline const char*	sGetDeviceEnd()
-// 		{
-// 			return xfilesystem::isPathUNIXStyle() ? ":/" : ":\\";
-// 		}
+    namespace xfilesystem_utilities
+    {
+        void fixSlashes(xstring &str, uchar32 slash)
+        {
+            // Replace incorrect slashes with the correct one
+            if (slash == '\\')
+                replace(str, '/', '\\');
+            else
+                replace(str, '\\', '/');
 
-		//==============================================================================
-		// xfilepath: Device:\\Folder\Folder\Filename.Extension
-		//==============================================================================
+            // Remove double slashes like '\\' or '//'
 
-		xfilepath::xfilepath()
-			: mString(mStringBuffer, sizeof(mStringBuffer)),
-			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
-		{
-		}
-		xfilepath::xfilepath(const char* str)
-			: mString(mStringBuffer, sizeof(mStringBuffer)),
-			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
-		{
-			mString += str;
-			fixSlashes();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
+            // Remove slashes at the start and end of this string
+            trimDelimiters(str, rightSlash, rightSlash);
+        }
+    }    // namespace xfilesystem_utilities
 
-			//x_printf("Constructing xfilepath(%s), mStringForDevice = %s, mString=%s\n", str, mStringForDevice.c_str(), mString.c_str());
-		}
-		xfilepath::xfilepath(const xfilepath& filepath)
-			: mString(mStringBuffer, sizeof(mStringBuffer)),
-			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
-		{
-			mString += filepath.mString;
-			mStringForDevice += filepath.mStringForDevice;
-		}
-		xfilepath::xfilepath(const xdirpath& dir, const xfilepath& filename)
-			: mString(mStringBuffer, sizeof(mStringBuffer)),
-			mStringForDevice(mStringBufferForDevice,sizeof(mStringBufferForDevice))
-		{
-			*this = filename;
-			makeRelative();
-			mString.insert(dir.mString);
-			fixSlashes();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
-		}
-		xfilepath::~xfilepath()
-		{
-		}
+    xfilepath::xfilepath() : mParent(nullptr), mString() {}
+    xfilepath::xfilepath(xfilesystem *parent, xstring const &str) : mParent(parent), mString(str)
+    {
+        fixSlashes(mString);
+    }
 
-		void			xfilepath::clear()										{ mString.clear(); mStringForDevice.clear();}
+    xfilepath::xfilepath(const xfilepath &filepath) : mParent(filepath.mParent), mString()
+    {
+        mString += copy(filepath.mString);
+    }
 
-		s32				xfilepath::getLength() const							{ return mString.getLength(); }
-		s32				xfilepath::getMaxLength() const							{ return mString.getMaxLength(); }
-		bool			xfilepath::isEmpty() const								{ return mString.isEmpty(); }
-		bool			xfilepath::isRooted() const
-		{
-			s32 pos = mString.find(":\\");
-			return pos >= 0;
-		}
+    xfilepath::xfilepath(const xdirpath &dirpath, const xfilepath &filepath) : mParent(filepath.mParent), mString()
+    {
+        if (!filepath.isRooted())
+        {
+            mString = copy(dirpath.mString);
+            mString = mString + xstring("\\") + filepath.mString;
+        }
+        fixSlashes();
+    }
 
-		void			xfilepath::relative(xfilepath& outRelative) const
-		{
-			outRelative = *this;
-			outRelative.makeRelative();
-		}
+    xfilepath::~xfilepath() {}
 
-		void			xfilepath::makeRelative()
-		{
-			s32 pos = mString.find(":\\");
-			if (pos < 0) pos = 0;
-			else         pos += 2;
-			mString.remove(0, pos);
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
-		}
+    void xfilepath::clear() { mString.clear(); }
 
-		void			xfilepath::onlyFilename()
-		{
-			s32 slashPos = mString.rfind('\\');
-			if (slashPos >= 0)
-			{
-				mString.remove(0, slashPos+1);
-				mStringForDevice.clear();
-				mStringForDevice = mString;
-				fixSlashesForDevice();
-			}
-		}
+    bool xfilepath::isEmpty() const { return mString.isEmpty(); }
+    bool xfilepath::isRooted() const
+    {
+        xstring fnd = find(mString, ":\\");
+        return !fnd.is_empty();
+    }
 
-		xfilepath		xfilepath::getFilename() const
-		{
-			xfilepath p(*this);
-			p.onlyFilename();
-			return p;
-		}
+    void xfilepath::makeRelative(const xdirpath &root)
+    {
+        xstring pos = find(mString, ":\\");
+        if (pos < 0)
+            pos = 0;
+        else
+            pos += 2;
+        mString.remove(0, pos);
+        mStringForDevice.clear();
+        mStringForDevice = mString;
+        fixSlashesForDevice();
+    }
 
-		void			xfilepath::up()
-		{
-			s32 lastSlashPos = mString.rfind('\\');
-			if (lastSlashPos > 0)
-			{
-				s32 oneToLastSlashPos = mString.rfind('\\', lastSlashPos - 1);
-				if (oneToLastSlashPos < 0)
-					oneToLastSlashPos = 0;
-				// Remove this folder
-				if (oneToLastSlashPos < lastSlashPos)
-					mString.remove(oneToLastSlashPos, lastSlashPos - oneToLastSlashPos);
-			}
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
-		}
+    void xfilepath::onlyFilename()
+    {
+        s32 slashPos = mString.rfind('\\');
+        if (slashPos >= 0)
+        {
+            mString.remove(0, slashPos + 1);
+            mStringForDevice.clear();
+            mStringForDevice = mString;
+            fixSlashesForDevice();
+        }
+    }
 
-		void			xfilepath::down(const char* subDir)
-		{
-			s32 lastSlashPos = mString.rfind('\\');
-			if (lastSlashPos > 0)
-			{
-				lastSlashPos += 1;
-				xccstring s(subDir);
-				mString.insert(lastSlashPos, '\\');
-				mString.insert(lastSlashPos, subDir);
-				fixSlashes();
-			}
-			else
-			{
-				xccstring s(subDir);
-				if (s.firstChar() != '\\' && s.firstChar() != '/')
-					mString.insert('\\');
-				mString.insert(0, subDir);
-				fixSlashes();
-			}
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
-		}
+    void xfilepath::getName(xstring &outName) const
+    {
+        s32 pos = mString.rfind('\\');
+        if (pos < 0)
+            pos = 0;
+        pos++;
+        s32 len = mString.rfind('.');
+        if (len < 0)
+            len = mString.getLength();
+        len = len - pos;
+        mString.mid(pos, outName, len);
+    }
 
-		void			xfilepath::getName(xcstring& outName) const
-		{
-			s32 pos = mString.rfind('\\');
-			if (pos < 0) pos = 0;
-			pos++;
-			s32 len = mString.rfind('.');
-			if (len < 0) len = mString.getLength();
-			len = len - pos;
-			mString.mid(pos, outName, len);
-		}
+    void xfilepath::getExtension(xstring &outExtension) const
+    {
+        s32 pos = mString.rfind(".");
+        if (pos >= 0)
+            outExtension = mString.c_str() + pos;
+        else
+            outExtension = "";
+    }
 
-		void			xfilepath::getExtension(xcstring& outExtension) const
-		{
-			s32 pos = mString.rfind(".");
-			if (pos >= 0)
-				outExtension = mString.c_str() + pos;
-			else
-				outExtension = "";
-		}
+    void xfilepath::getDirname(xdirpath &outDirPath) const
+    {
+        // Remove the filename.ext part at the end
+        s32 lastSlashPos = mString.rfind('\\');
+        if (lastSlashPos > 0)
+        {
+            mString.substring(0, outDirPath.mString, lastSlashPos + 1);
+            outDirPath.mStringForDevice.clear();
+            outDirPath.mStringForDevice = outDirPath.mString;
+            outDirPath.mStringForDevice.replace('/', '\\');
+        }
+        else
+        {
+            outDirPath.clear();
+        }
+    }
 
-		void xfilepath::fixSlashesForDevice()
-		{
-			mStringForDevice = mString;
-			const char slash = sGetSlashChar();
-			mStringForDevice.replace('\\' , slash);
-		}
-		const char* xfilepath::c_str_device() const
-		{
-			return mStringForDevice.c_str();
-		}
+    bool xfilepath::getRoot(xdirpath &outRootDirPath) const
+    {
+        xdirpath d;
+        getDirPath(d);
+        return d.getRoot(outRootDirPath);
+    }
 
-		xfiledevice*	xfilepath::getSystem(xcstring& outSystemFilePath) const
-		{
-			return xfs_common::s_instance()->createSystemPath(mString.c_str(), outSystemFilePath);
-		}
+    bool xfilepath::getParent(xdirpath &outParentDirPath) const
+    {
+        xdirpath d;
+        getDirPath(d);
+        return d.getParent(outParentDirPath);
+    }
 
-		void			xfilepath::getDirPath(xdirpath& outDirPath) const
-		{
-			// Remove the filename.ext part at the end
-			s32 lastSlashPos = mString.rfind('\\');
-			if (lastSlashPos>0)
-			{
-				mString.substring(0, outDirPath.mString, lastSlashPos+1);
-				outDirPath.mStringForDevice.clear();
-				outDirPath.mStringForDevice = outDirPath.mString;
-				outDirPath.mStringForDevice.replace('/','\\');
-			}
-			else
-			{
-				outDirPath.clear();
-			}
-		}
+    void xfilepath::getSubDir(const char *subDir, xdirpath &outSubDirPath) const
+    {
+        xdirpath d;
+        getDirPath(d);
+        d.getSubDir(subDir, outSubDirPath);
+    }
 
-		bool			xfilepath::getRoot(xdirpath& outRootDirPath) const
-		{
-			xdirpath d;
-			getDirPath(d);
-			return d.getRoot(outRootDirPath);
-		}
+    xfilepath &xfilepath::operator=(const xfilepath &path)
+    {
+        if (this == &path)
+            return *this;
+        mParent = path.mParent;
+        mString = copy(path.mString);
+        return *this;
+    }
 
-		bool			xfilepath::getParent(xdirpath& outParentDirPath) const
-		{
-			xdirpath d;
-			getDirPath(d);
-			return d.getParent(outParentDirPath);
-		}
-
-		void			xfilepath::getSubDir(const char* subDir, xdirpath& outSubDirPath) const
-		{
-			xdirpath d;
-			getDirPath(d);
-			d.getSubDir(subDir, outSubDirPath);
-		}
-
-		const char*		xfilepath::c_str() const								{ return mString.c_str(); }
-
-		void			xfilepath::setDeviceName(const char* inDeviceName)
-		{
-			char deviceNameBuffer[64+2];
-			xcstring deviceName(deviceNameBuffer, sizeof(deviceNameBuffer));
-			getDeviceName(deviceName);
-			s32 len = deviceName.getLength();
-			if (inDeviceName!=NULL)
-				mString.replace(0, len, inDeviceName);
-			else if (len > 0)
-				mString.remove(0, len + 2);
-			fixSlashes();
-			mString.trimLeft(':');
-			mString.trimLeft('\\');
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
-		}
-
-		void			xfilepath::getDeviceName(xcstring& outDeviceName) const
-		{
-		s32 pos = mString.find(":\\");
-		if (pos >= 0)
-			mString.left(pos, outDeviceName);
-		else
-			outDeviceName.clear();
-		}
-
-		void			xfilepath::setDevicePart(const char* inDevicePart)
-		{
-			char devicePartBuffer[64+2];
-			xcstring devicePart(devicePartBuffer, sizeof(devicePartBuffer));
-			getDevicePart(devicePart);
-			s32 len = devicePart.getLength();
-			if (inDevicePart!=NULL)
-				mString.replace(0, len, inDevicePart);
-			else
-				mString.remove(0, len);
-			fixSlashes();
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
-		}
-
-		void			xfilepath::getDevicePart(xcstring& outDevicePart) const
-		{
-			s32 pos = mString.find(":\\");
-			if (pos >= 0)
-				mString.left(pos + 2, outDevicePart);
-			else
-				outDevicePart.clear();
-		}
-
-		xfilepath&		xfilepath::operator =  ( const char* str )
-		{
-			mString.clear();
-			mString += str;
-			fixSlashes();
-			mStringForDevice.clear();
-			mStringForDevice+=mString;
-			fixSlashesForDevice();
-			return *this;
-		}
-		xfilepath&		xfilepath::operator =  ( const xfilepath& path )
-		{
-			if (this == &path)
-				return *this;
-			mString = path.mString;
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
-			return *this;
-		}
-
-		xfilepath&		xfilepath::operator += ( const char* str )
-		{
-			mString += str;
-			fixSlashes();
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
-			return *this;
-		}
-		xfilepath&		xfilepath::operator += ( const xfilepath& str )
-		{
-			mString += str.c_str();
-			fixSlashes();
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			fixSlashesForDevice();
-			return *this;
-		}
-
-		bool			xfilepath::operator == ( const xfilepath& rhs) const	{ return (rhs.getLength() == getLength()) && x_strCompare(rhs.c_str(), c_str()) == 0; }
-		bool			xfilepath::operator != ( const xfilepath& rhs) const	{ return (rhs.getLength() != getLength()) || x_strCompare(rhs.c_str(), c_str()) != 0; }
-
-		char			xfilepath::operator [] (s32 index) const				{ return mString[index]; }
-
-#ifdef TARGET_PS3
-		bool			xfilepath::makeRelativeForPS3()
-		{
-			s32 leftPos = mString.find("\\");
-			if (leftPos <= 0)
-				return false;
-			mString.remove(0,leftPos+1);
-			fixSlashes();
-			mStringForDevice.clear();
-			mStringForDevice = mString;
-			return true;
-		}
-#endif
-
-		void			xfilepath::fixSlashes()
-		{
-			// Replace incorrect slashes with the correct one
-			const char slash = sGetSlashChar();
-			const char rightSlash = '\\';
-			mString.replace('/' , rightSlash);
-			// Remove double slashes like '\\' or '//'
-			char doubleSlash[4];
-			doubleSlash[0] = rightSlash;
-			doubleSlash[1] = rightSlash;
-			doubleSlash[2] = '\0';
-			doubleSlash[3] = '\0';
-			mString.replace(doubleSlash, &doubleSlash[1]);
-			// Remove slashes at the start and end of this string
-			//	mString.trimDelimiters(rightSlash, rightSlash);
-			s32 leftPos = mString.find(rightSlash);
-			s32 rightPos = mString.rfind(rightSlash);
-			if (leftPos == 0)
-				mString.remove(0,1);
-			if (rightPos == mString.getLength()-1)
-				mString.remove(rightPos,1);
-		}
-
-		//==============================================================================
-		// END xfilesystem namespace
-		//==============================================================================
-	};
-
-	//==============================================================================
-	// END xcore namespace
-	//==============================================================================
+    bool xfilepath::operator==(const xfilepath &rhs) const { return compare(mString, rhs.mString) == 0; }
+    bool xfilepath::operator!=(const xfilepath &rhs) const { return compare(mString, rhs.mString) != 0; }
 };
-
-//==============================================================================
-// END __X_FILEPATH_H__
-//==============================================================================
