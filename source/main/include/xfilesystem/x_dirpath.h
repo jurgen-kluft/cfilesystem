@@ -47,8 +47,8 @@ namespace xcore
 			s32						getMaxLength() const;
 			bool					isEmpty() const;
 
-			void					enumLevels(enumerate_delegate& enumerator, bool right_to_left = false) const;
 			s32						getLevels() const;
+			bool					getLevel(s32 level, xstring& name) const;
 			s32						getLevelOf(const xstring& folderName) const;
 			s32						getLevelOf(const xdirpath& parent) const;
 

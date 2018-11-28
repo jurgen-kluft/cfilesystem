@@ -9,27 +9,10 @@
 // INCLUDES
 //==============================================================================
 #include "xbase/x_debug.h"
+#include "xfilesystem/private/x_enumerations.h"
 
-#include "xfilesystem/x_async_result.h"
-#include "xfilesystem/private/x_filesystem_constants.h"
-
-//==============================================================================
-// xcore namespace
-//==============================================================================
 namespace xcore
 {
-	class xfilepath;
-	class xistream;
-
-
-
-	enum ESeekOrigin
-	{
-		Seek_Begin, 						///< Specifies the beginning of a stream.
-		Seek_Current,						///< Specifies the current position within a stream.
-		Seek_End,	 						///< Specifies the end of a stream.
-	};
-
 	///< xstream object
 	///< The main interface of a stream object, user deals with this object most of the time.
 	///< The derived class xfilestream is a constructor object and can be constructed as a xstream
@@ -38,7 +21,6 @@ namespace xcore
 	{
 	public:
 							xstream();
-							xstream(const xstream&);
 							~xstream();
 
 		bool				canRead() const;																///< Gets a value indicating whether the current stream supports reading.
@@ -50,10 +32,9 @@ namespace xcore
 
 		u64					getLength() const;																///< Gets the length in bytes of the stream.
 		void				setLength(u64 length);							 								///< When overridden in a derived class, sets the length of the current stream.
-		u64					getPosition() const;															///< Gets the current position of this stream.
-		u64					setPosition(u64 Pos);															///< Sets the current position of this stream and returns the resulting position.
 
 		u64					seek(s64 offset, ESeekOrigin origin);		 									///< When overridden in a derived class, sets the position within the current stream.
+
 		void				close(); 																		///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
 		void				flush();																		///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
 
@@ -71,10 +52,12 @@ namespace xcore
 
 	protected:
 							xstream(xistream*);
+							xstream(const xstream&);
 
 		xstream&			operator = (const xstream&)														{ return *this; } 
-
 		xistream*			mImplementation;
+
+		friend class		xfilesystem;
 	};
 
 	void			xstream_copy(xstream* src, xstream* dst);												///< Reads the bytes from the current stream and writes them to the destination stream.

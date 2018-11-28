@@ -11,17 +11,13 @@
 #include "xbase/x_types.h"
 #include "xbase/x_debug.h"
 
-#include "xfilesystem/x_async_result.h"
-#include "xfilesystem/x_stream.h"
-#include "xfilesystem/private/x_filesystem_constants.h"
+#include "xfilesystem/private/x_enumerations.h"
 
 //==============================================================================
 // xcore namespace
 //==============================================================================
 namespace xcore
 {
-	class xfilepath;
-
 	///< xstream implementation interface
 	///< User doesn't deal with this object, it is meant for extendability
 	class xistream
@@ -40,10 +36,9 @@ namespace xcore
 		virtual bool			isAsync() const = 0;												///< Gets a value indicating whether the FileStream was opened asynchronously or synchronously.
 		virtual u64				getLength() const = 0;												///< Gets the length in bytes of the stream.
 		virtual void			setLength(u64 length) = 0;							 				///< When overridden in a derived class, sets the length of the current stream.
-		virtual u64				getPosition() const = 0;											///< Gets the current position of this stream.
-		virtual u64				setPosition(u64 Pos) = 0;											///< Sets the current position of this stream.
 
 		virtual u64				seek(s64 offset, ESeekOrigin origin) = 0;		 					///< When overridden in a derived class, sets the position within the current stream.
+
 		virtual void			close() = 0; 														///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
 		virtual void			flush() = 0;														///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
 

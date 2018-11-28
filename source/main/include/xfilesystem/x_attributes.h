@@ -30,10 +30,10 @@ namespace xcore
 		void					setHidden(bool);
 		void					setSystem(bool);
 
-		xattributes&			operator = (const xattributes&);
+		xfileattrs&				operator = (const xfileattrs&);
 
-		bool					operator == (const xattributes&) const;
-		bool					operator != (const xattributes&) const;
+		bool					operator == (const xfileattrs&) const;
+		bool					operator != (const xfileattrs&) const;
 
 	private:
 		xcore::u32				mFlags;
@@ -42,15 +42,20 @@ namespace xcore
 
 	struct xfiletimes
 	{
-		bool					getTime(xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
-		bool					getCreationTime  (xdatetime&) const;
-		bool					getLastAccessTime(xdatetime&) const;
-		bool					getLastWriteTime (xdatetime&) const;
+		void					getTime(xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
+		void					getCreationTime  (xdatetime&) const;
+		void					getLastAccessTime(xdatetime&) const;
+		void					getLastWriteTime (xdatetime&) const;
 
-		bool					setTime(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
-		bool					setCreationTime(const xdatetime&);
-		bool					setLastAccessTime(const xdatetime&);
-		bool					setLastWriteTime (const xdatetime&);
+		void					setTime(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
+		void					setCreationTime(const xdatetime&);
+		void					setLastAccessTime(const xdatetime&);
+		void					setLastWriteTime (const xdatetime&);
+
+		xfiletimes&				operator = (const xfiletimes&);
+
+		bool					operator == (const xfiletimes&) const;
+		bool					operator != (const xfiletimes&) const;
 
 	private:
 		xdatetime				m_creationtime;

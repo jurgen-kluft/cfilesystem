@@ -36,18 +36,7 @@ namespace xcore
 	class xfilesystem
 	{
 	public:
-		enum emode
-		{
-			READ       = 0x1,
-			WRITE      = 0x2,
-			OPEN       = 0x10 | READ,
-			CREATE     = 0x20 | WRITE,
-			DISCARD    = 0x40 | WRITE,
-			APPEND     = 0x80 | WRITE,
-			INVALID    = 0xffffffff,
-		};
-
-		xfile*		open(xfilepath const& filename, emode mode);
+		xfile*		open(xfilepath const& filename, EFileMode mode);
 		xwriter*	writer(xfile*);
 		xreader*	reader(xfile*);
 		

@@ -37,7 +37,6 @@ namespace xcore
 								xdirinfo(const xdirinfo& dirinfo);
 		explicit				xdirinfo(const xdirpath& dir);
 
-		bool					isValid() const;
 		bool					isRoot() const;
 		bool					isRooted() const;
 
@@ -57,6 +56,9 @@ namespace xcore
 
 		xfiletimes				getTimes() const;
 		bool					setTimes(xfiletimes times);
+
+		xfileattrs				getAttrs() const;
+		bool					setAttrs(xfileattrs attrs);
 		
 		xdirinfo&				operator = (const xdirinfo&);
 		xdirinfo&				operator = (const xdirpath&);
@@ -79,7 +81,7 @@ namespace xcore
 		static bool				sSetTime(const xdirpath& directory, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
 		static bool				sGetTime(const xdirpath& directory, xdatetime& creationTime, xdatetime& lastAccessTime, xdatetime& lastWriteTime);
 
-		static bool				sSetCreationTime(const xdirpath& directory, const xdatetime& lastWriteTime);
+		static bool				sSetCreationTime(const xdirpath& directory, const xdatetime& lastCreationTime);
 		static bool				sGetCreationTime(const xdirpath& directory, xdatetime& outCreationTime);
 		static bool				sSetLastAccessTime(const xdirpath& directory, const xdatetime& lastAccessTime);
 		static bool				sGetLastAccessTime(const xdirpath& directory, xdatetime& outLastAccessTime);

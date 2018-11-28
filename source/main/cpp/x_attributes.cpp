@@ -3,23 +3,13 @@
 //==============================================================================
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
-#include "xbase/x_string_std.h"
+
+#include "xstring/x_string.h"
 
 #include "xfilesystem/x_attributes.h"
 
-//==============================================================================
-// xcore namespace
-//==============================================================================
 namespace xcore
 {
-	//------------------------------------------------------------------------------------------
-	//------------------------------------------------------------------------------------------
-	//----------------------- xattributes implementation ---------------------------------------
-	//------------------------------------------------------------------------------------------
-	//------------------------------------------------------------------------------------------
-
-	namespace xfilesystem
-	{
 		enum EAttributes
 		{
 			FILE_ATTRIBUTE_ARCHIVE	= 1,
@@ -28,17 +18,17 @@ namespace xcore
 			FILE_ATTRIBUTE_SYSTEM	= 8,
 		};
 
-		xattributes::xattributes()
+		xfileattrs::xfileattrs()
 			: mFlags(0)
 		{
 		}
 
-		xattributes::xattributes(const xattributes& other)
+		xfileattrs::xfileattrs(const xfileattrs& other)
 			: mFlags(other.mFlags)
 		{
 		}
 
-		xattributes::xattributes(bool boArchive, bool boReadonly, bool boHidden, bool boSystem)
+		xfileattrs::xfileattrs(bool boArchive, bool boReadonly, bool boHidden, bool boSystem)
 			: mFlags(0)
 		{
 			setArchive(boArchive);
@@ -47,27 +37,27 @@ namespace xcore
 			setSystem(boSystem);
 		}
 
-		bool					xattributes::isArchive() const
+		bool					xfileattrs::isArchive() const
 		{
 			return (mFlags & FILE_ATTRIBUTE_ARCHIVE) != 0;
 		}
 
-		bool					xattributes::isReadOnly() const
+		bool					xfileattrs::isReadOnly() const
 		{
 			return (mFlags & FILE_ATTRIBUTE_READONLY) != 0;
 		}
 
-		bool					xattributes::isHidden() const
+		bool					xfileattrs::isHidden() const
 		{
 			return (mFlags & FILE_ATTRIBUTE_HIDDEN) != 0;
 		}
 
-		bool					xattributes::isSystem() const
+		bool					xfileattrs::isSystem() const
 		{
 			return (mFlags & FILE_ATTRIBUTE_SYSTEM) != 0;
 		}
 
-		void					xattributes::setArchive(bool enable)
+		void					xfileattrs::setArchive(bool enable)
 		{
 			if (enable)
 				mFlags = mFlags | FILE_ATTRIBUTE_ARCHIVE;
@@ -75,7 +65,7 @@ namespace xcore
 				mFlags = mFlags & ~FILE_ATTRIBUTE_ARCHIVE;
 		}
 
-		void					xattributes::setReadOnly(bool enable)
+		void					xfileattrs::setReadOnly(bool enable)
 		{
 			if (enable)
 				mFlags = mFlags | FILE_ATTRIBUTE_READONLY;
@@ -83,7 +73,7 @@ namespace xcore
 				mFlags = mFlags & ~FILE_ATTRIBUTE_READONLY;
 		}
 
-		void					xattributes::setHidden(bool enable)
+		void					xfileattrs::setHidden(bool enable)
 		{
 			if (enable)
 				mFlags = mFlags | FILE_ATTRIBUTE_HIDDEN;
@@ -91,7 +81,7 @@ namespace xcore
 				mFlags = mFlags & ~FILE_ATTRIBUTE_HIDDEN;
 		}
 
-		void					xattributes::setSystem(bool enable)
+		void					xfileattrs::setSystem(bool enable)
 		{
 			if (enable)
 				mFlags = mFlags | FILE_ATTRIBUTE_SYSTEM;
@@ -99,18 +89,18 @@ namespace xcore
 				mFlags = mFlags & ~FILE_ATTRIBUTE_SYSTEM;
 		}
 
-		xattributes&			xattributes::operator = (const xattributes& other)
+		xfileattrs&				xfileattrs::operator = (const xfileattrs& other)
 		{
 			mFlags = other.mFlags;
 			return *this;
 		}
 
-		bool					xattributes::operator == (const xattributes& other) const
+		bool					xfileattrs::operator == (const xfileattrs& other) const
 		{
 			return mFlags == other.mFlags;
 		}
 
-		bool					xattributes::operator != (const xattributes& other) const
+		bool					xfileattrs::operator != (const xfileattrs& other) const
 		{
 			return mFlags != other.mFlags;
 		}
@@ -118,7 +108,67 @@ namespace xcore
 	};
 
 
-	//==============================================================================
-	// END xcore namespace
-	//==============================================================================
+	void					xfiletimes::getTime(xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const
+	{
+		outCreationTime = m_creationtime;
+		outLastAccessTime = m_lastaccesstime;
+		outLastWriteTime = m_lastwritetime;
+	}
+
+	void					xfiletimes::getCreationTime  (xdatetime& dt) const
+	{
+		dt = m_creationtime;
+	}
+
+	void					xfiletimes::getLastAccessTime(xdatetime& dt) const
+	{
+		dt = m_lastaccesstime;
+	}
+
+	void					xfiletimes::getLastWriteTime (xdatetime& d ) const
+	{
+		dt = m_lastwritetime;
+	}
+
+
+	void					xfiletimes::setTime(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime)
+	{
+		m_creationtime = outCreationTime;
+		m_lastaccesstime = outLastAccessTime;
+		m_lastwritetime = outLastWriteTime;
+	}
+
+	void					xfiletimes::setCreationTime(const xdatetime& dt)
+	{
+		m_creationtime = dt;
+	}
+
+	void					xfiletimes::setLastAccessTime(const xdatetime& dt)
+	{
+		m_lastaccesstime = dt;
+	}
+
+	void					xfiletimes::setLastWriteTime (const xdatetime& dt)
+	{
+		m_lastwritetime = dt;
+	}
+
+	xfiletimes&				xfiletimes::operator = (const xfiletimes& other)
+	{
+		m_creationtime = other.m_creationtime;
+		m_lastaccesstime = other.m_lastaccesstime;
+		m_lastwritetime = other.m_lastwritetime;
+		return *this;
+	}
+
+	bool					xfiletimes::operator == (const xfiletimes& other) const
+	{
+		return m_creationtime == other.m_creationtime && m_lastaccesstime == other.m_lastaccesstime && m_lastwritetime == other.m_lastwritetime;
+	}
+
+	bool					xfxfiletimesileattrs::operator != (const xfiletimes& other) const
+	{
+		return m_creationtime != other.m_creationtime || m_lastaccesstime != other.m_lastaccesstime || m_lastwritetime != other.m_lastwritetime;
+	}
+
 };

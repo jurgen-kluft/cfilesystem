@@ -27,6 +27,7 @@ namespace xcore
 	{
 		xfilesystem*			mParent;
 		xfilepath				mFilePath;
+		void*					mFileHandle;
 		bool					mFileExists;
 		xfiletimes				mFileTimes;
 		xfileattrs				mFileAttributes;
