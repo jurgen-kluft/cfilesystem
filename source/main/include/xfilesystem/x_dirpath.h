@@ -32,11 +32,12 @@ namespace xcore
 		friend class xdirinfo;
 		friend class xfilesystem;
 		
-		xfilesystem*			mParent;
-		xstring					mString;
+        xfilesystem *mParent;
+        utf16::alloc *mAlloc;
+        utf16::runes mString;
 
 								xdirpath(xfilesystem* fs);
-								xdirpath(xfilesystem* fs, xstring const& str);
+								xdirpath(xfilesystem* fs, utf16::alloc* allocator, utf16::runes& str);
 	public:
 								xdirpath(const xdirpath& dir);
 								~xdirpath();
@@ -46,9 +47,8 @@ namespace xcore
 		bool					isEmpty() const;
 
 		s32						getLevels() const;
-		bool					getLevel(s32 level, xstring& name) const;
-		s32						getLevelOf(const xstring& folderName) const;
-		s32						getLevelOf(const xdirpath& parent) const;
+		bool					getLevel(s32 level, xdirpath& name) const;
+		s32						getLevelOf(const xdirpath& name) const;
 
 		bool					isRoot() const;
 		bool					isRooted() const;
@@ -60,15 +60,14 @@ namespace xcore
 
 		void					split(s32 level, xdirpath& parent, xdirpath& subDir) const;	///< e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\; sub=="sub\\folder\\";
 
-		void					getFull(xstring& full) const;
-		bool					getName(xstring& outName) const;
-		bool					hasName(const xstring& inName) const;
+		bool					getName(xfilepath& outName) const;
+		bool					hasName(const xfilepath& inName) const;
 		bool					getRoot(xdirpath& outRootDirPath) const;
 		bool					getParent(xdirpath& outParentDirPath) const;
-		bool					getSubDir(const xstring& subDir, xdirpath& outSubDirPath) const;
+		bool					getSubDir(const xfilepath& subDir, xdirpath& outSubDirPath) const;
 
-		void					setDevice(const xstring& deviceName);
-		bool					getDevice(xstring& outDeviceName) const;
+		void					setRoot(const xdirpath& device);
+		bool					getRoot(xdirpath& outDevice) const;
 
 		xdirpath&				operator =  (const xfilepath&);
 		xdirpath&				operator =  (const xdirpath&);

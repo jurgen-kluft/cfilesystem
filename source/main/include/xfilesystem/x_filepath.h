@@ -9,7 +9,7 @@
 // INCLUDES
 //==============================================================================
 #include "xbase/x_debug.h"
-#include "xstring/x_string.h"
+#include "xbase/x_runes.h"
 
 //==============================================================================
 namespace xcore
@@ -22,6 +22,15 @@ namespace xcore
     // xfilepath:
     //		- Relative:		Folder\Filename.Extension
     //		- Absolute:		Device:\Folder\Folder\Filename.Extension
+    //
+    // What about making the following classes:
+    // - xfilext; for file extensions, ".JPG"
+    // - xfilename; for file names, "MyImage"
+    // - xroot; for device part, "Device:\"
+    //
+    // "C:\" + "Windows\" + "DBGHELP" + ".DLL"
+    // xroot + xdirpath + xfilename + xfilext
+    // 
     //==============================================================================
     class xfilepath
     {
@@ -30,9 +39,18 @@ namespace xcore
         friend class xfilesystem;
 
         xfilesystem *mParent;
-        xstring      mString;
+        utf16::alloc *mAlloc;
+        utf16::runes mString;
 
-        xfilepath(xfilesystem *parent, xstring const &str);
+        /*
+        It seems that a utf16::runes should be sufficient here and a special allocator
+        for allocating utf16 slices should be the most sufficient way of dealing with
+        strings here in the filesystem.
+        Filepath should always make sure that it is the sole owner of the utf16 slice and
+        no sharing should be allowed outside of this class.
+        */
+
+        xfilepath(xfilesystem *parent, utf16::alloc *allocator, utf16::runes& str);
 
       public:
         xfilepath();
@@ -48,11 +66,10 @@ namespace xcore
         void makeRelative(const xdirpath &);
         void makeRelative(xdirpath &, xfilepath &) const;
 
-        void getFull(xstring &) const;
-        void getFilepath(xstring &) const;
-        void getFilename(xstring &) const;
-        void getFilenameWithoutExtension(xstring &) const;
-        void getExtension(xstring &) const;
+        void getFilepath(xfilepath &) const;
+        void getFilename(xfilepath &) const;
+        void getFilenameWithoutExtension(xfilepath &) const;
+        void getExtension(xfilepath &) const;
         void getDirname(xdirpath &) const;
 
         xfilepath &operator=(const xfilepath &);

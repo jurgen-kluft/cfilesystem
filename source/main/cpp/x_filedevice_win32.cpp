@@ -735,6 +735,11 @@ namespace xcore
         return true;
     }
 
+    /*
+    We should have two very long utf16::slice that can be used to use for the dirinfo and fileinfo objects when
+    calling the enumerate_delegate. Also when we recurse into a subdirectory we only have to append the current
+    directory name. When we 'return' we can pop the appended directory etc...
+    */
     bool FileDevice_PC_System::enumerate(const xstring &szDirPath, enumerate_delegate *enumerator, s32 depth) const
     {
         HANDLE hFind;    // file handle
