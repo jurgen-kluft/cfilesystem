@@ -14,71 +14,74 @@
 //==============================================================================
 namespace xcore
 {
-    class xpath;
-    class xdirpath;
-    class xfilesystem;
+	class xpath;
+	class xdirpath;
+	class xfilesystem;
 
-    //==============================================================================
-    // xfilepath:
-    //		- Relative:		Folder\Filename.Extension
-    //		- Absolute:		Device:\Folder\Folder\Filename.Extension
-    //
-    // What about making the following classes:
-    // - xfilext; for file extensions, ".JPG"
-    // - xfilename; for file names, "MyImage"
-    // - xroot; for device part, "Device:\"
-    //
-    // "C:\" + "Windows\" + "DBGHELP" + ".DLL"
-    // xroot + xdirpath + xfilename + xfilext
-    // 
-    //==============================================================================
-    class xfilepath
-    {
-      protected:
-        friend class xdirpath;
-        friend class xfilesystem;
+	//==============================================================================
+	// xfilepath:
+	//		- Relative:		Folder\Filename.Extension
+	//		- Absolute:		Device:\Folder\Folder\Filename.Extension
+	//
+	// What about making the following classes:
+	// - xfilext; for file extensions, ".JPG"
+	// - xfilename; for file names, "MyImage"
+	// - xroot; for device part, "Device:\"
+	//
+	// "C:\" + "Windows\" + "DBGHELP" + ".DLL"
+	// xroot + xdirpath + xfilename + xfilext
+	//
+	//==============================================================================
+	class xfilepath
+	{
+	protected:
+		friend class xdirpath;
+		friend class xfilesystem;
 
-        xfilesystem *mParent;
-        utf16::alloc *mAlloc;
-        utf16::runes mString;
+		xfilesystem*  mParent;
+		utf16::alloc* mAlloc;
+		utf16::runes  mRunes;
 
-        /*
-        It seems that a utf16::runes should be sufficient here and a special allocator
-        for allocating utf16 slices should be the most sufficient way of dealing with
-        strings here in the filesystem.
-        Filepath should always make sure that it is the sole owner of the utf16 slice and
-        no sharing should be allowed outside of this class.
-        */
+		/*
+		It seems that a utf16::runes should be sufficient here and a special allocator
+		for allocating utf16 slices should be the most sufficient way of dealing with
+		strings here in the filesystem.
+		Filepath should always make sure that it is the sole owner of the utf16 slice and
+		no sharing should be allowed outside of this class.
+		*/
 
-        xfilepath(xfilesystem *parent, utf16::alloc *allocator, utf16::runes& str);
+		xfilepath(xfilesystem* parent, utf16::alloc* allocator, utf16::runes& str);
 
-      public:
-        xfilepath();
-        xfilepath(const xfilepath &filepath);
-        explicit xfilepath(const xdirpath &dir, const xfilepath &filename);
-        ~xfilepath();
+	public:
+		xfilepath();
+		xfilepath(const xfilepath& filepath);
+		explicit xfilepath(const xdirpath& dir, const xfilepath& filename);
+		~xfilepath();
 
-        void clear();
+		void clear();
 
-        bool isEmpty() const;
-        bool isRooted() const;
+		bool isEmpty() const;
+		bool isRooted() const;
 
-        void makeRelative(const xdirpath &);
-        void makeRelative(xdirpath &, xfilepath &) const;
+		void makeRelative(const xdirpath&);
+		void makeRelative(xdirpath&, xfilepath&) const;
 
-        void getFilepath(xfilepath &) const;
-        void getFilename(xfilepath &) const;
-        void getFilenameWithoutExtension(xfilepath &) const;
-        void getExtension(xfilepath &) const;
-        void getDirname(xdirpath &) const;
+		void getFilepath(xfilepath&) const;
+		void getFilename(xfilepath&) const;
+		void getFilenameWithoutExtension(xfilepath&) const;
+		void getExtension(xfilepath&) const;
+		void getDirname(xdirpath&) const;
 
-        xfilepath &operator=(const xfilepath &);
-        bool       operator==(const xfilepath &) const;
-        bool       operator!=(const xfilepath &) const;
-    };
+		xfilepath& operator=(const xfilepath&);
+		bool	   operator==(const xfilepath&) const;
+		bool	   operator!=(const xfilepath&) const;
+	};
 
-    inline xfilepath operator+(const xdirpath &dir, const xfilepath &filename) { return xfilepath(dir, filename); }
+	inline xfilepath operator+(const xdirpath& dir, const xfilepath& filename)
+	{
+		return xfilepath(dir, filename);
+	}
 
-};    // namespace xcore
+}; // namespace xcore
 
 #endif
