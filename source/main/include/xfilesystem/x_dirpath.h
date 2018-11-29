@@ -34,7 +34,7 @@ namespace xcore
 		
         xfilesystem *mParent;
         utf16::alloc *mAlloc;
-        utf16::runes mString;
+        utf16::runes mRunes;
 
 								xdirpath(xfilesystem* fs);
 								xdirpath(xfilesystem* fs, utf16::alloc* allocator, utf16::runes& str);

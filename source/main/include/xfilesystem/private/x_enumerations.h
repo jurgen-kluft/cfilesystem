@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_CONSTANTS_H__
-#define __X_FILESYSTEM_CONSTANTS_H__
+#ifndef __X_FILESYSTEM_ENUMERATIONS_H__
+#define __X_FILESYSTEM_ENUMERATIONS_H__
 #include "xbase/x_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -95,4 +95,4 @@ namespace xcore
 
 };
 
-#endif
+#endif // __X_FILESYSTEM_ENUMERATIONS_H__
