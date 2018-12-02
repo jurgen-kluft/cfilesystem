@@ -21,8 +21,8 @@ namespace xcore
 
 	//==============================================================================
 	// xdirpath: 
-	//		- Relative:		FolderA\FolderB\
-	//		- Absolute:		Device:\FolderA\FolderB\
+	//		- Relative:		FolderA\FolderB\ 
+	//		- Absolute:		Device:\FolderA\FolderB\ 
 	//==============================================================================
 	class xdirpath
 	{
@@ -36,7 +36,7 @@ namespace xcore
         utf16::alloc *mAlloc;
         utf16::runes mRunes;
 
-								xdirpath(xfilesystem* fs);
+								xdirpath(xfilesystem* fs, utf16::alloc* allocator);
 								xdirpath(xfilesystem* fs, utf16::alloc* allocator, utf16::runes& str);
 	public:
 								xdirpath(const xdirpath& dir);
@@ -48,6 +48,7 @@ namespace xcore
 
 		s32						getLevels() const;
 		bool					getLevel(s32 level, xdirpath& name) const;
+		s32						getLevelOf(const runes& name) const;
 		s32						getLevelOf(const xdirpath& name) const;
 
 		bool					isRoot() const;
@@ -58,7 +59,7 @@ namespace xcore
 		void					makeRelativeTo(const xdirpath& parent);
 		void					makeRelativeTo(const xdirpath& parent, xdirpath& sub) const;
 
-		void					split(s32 level, xdirpath& parent, xdirpath& subDir) const;	///< e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\; sub=="sub\\folder\\";
+		bool					split(s32 level, xdirpath& parent, xdirpath& subDir) const;	///< e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\; sub=="sub\\folder\\";
 
 		bool					getName(xfilepath& outName) const;
 		bool					hasName(const xfilepath& inName) const;

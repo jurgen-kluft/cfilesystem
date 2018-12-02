@@ -66,7 +66,6 @@ namespace xcore
 		void makeRelative(const xdirpath&);
 		void makeRelative(xdirpath&, xfilepath&) const;
 
-		void getFilepath(xfilepath&) const;
 		void getFilename(xfilepath&) const;
 		void getFilenameWithoutExtension(xfilepath&) const;
 		void getExtension(xfilepath&) const;
