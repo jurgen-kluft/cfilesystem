@@ -1,15 +1,15 @@
 #include "xbase/x_target.h"
-#include "xbase/x_types.h"
 #include "xbase/x_debug.h"
+#include "xbase/x_runes.h"
 
 #include "xtime/x_datetime.h"
-#include "xstring/x_string_std.h"
 
 #include "xfilesystem/x_dirinfo.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_attributes.h"
 #include "xfilesystem/x_enumerator.h"
+#include "xfilesystem/private/x_filedevice.h"
 
 //==============================================================================
 namespace xcore
@@ -36,9 +36,13 @@ namespace xcore
 
     void xdirinfo::move(const xdirpath &toDirectory) { sMove(mDirPath, toDirectory); }
 
-    void xdirinfo::enumerate(enumerate_delegate &enumerator) { sEnumerateFiles(mDirPath, enumerator); }
+    void xdirinfo::enumerate(enumerate_delegate &enumerator) { sEnumerate(mDirPath, enumerator); }
 
-    bool xdirinfo::getDirpath(xdirpath &outDirpath) const { return mDirPath; }
+    bool xdirinfo::getDirpath(xdirpath& outDirpath) const
+	{
+		outDirpath = mDirPath;
+		return true;
+	}
 
     bool xdirinfo::getRoot(xdirinfo &outRootDirPath) const { return (mDirPath.getRoot(outRootDirPath.mDirPath)); }
 
@@ -47,9 +51,9 @@ namespace xcore
         return (mDirPath.getParent(outParentDirPath.mDirPath));
     }
 
-    bool xdirinfo::getTimes(xfiletimes &times) const { return sGetTime(mDirPath, outTime); }
+    bool xdirinfo::getTimes(xfiletimes& times) const { return sGetTime(mDirPath, times); }
 
-    bool xdirinfo::setLastWriteTime(xfiletimes times) const { return sSetTime(mDirPath, times); }
+    bool xdirinfo::setTimes(xfiletimes times) { return sSetTime(mDirPath, times); }
 
     xdirinfo &xdirinfo::operator=(const xdirinfo &other)
     {
@@ -78,67 +82,52 @@ namespace xcore
     bool xdirinfo::operator!=(const xdirinfo &other) const { return mDirPath != other.mDirPath; }
 
     ///< Static functions
-    bool xdirinfo::sCreate(const xdirpath &directory)
+    bool xdirinfo::sCreate(const xdirpath &dirpath)
     {
-        const xdevicealias *_alias = sGetAlias(directory);
+		xfiledevice* device;
+		xdirpath syspath = dirpath.resolve(device);
+        return (device != nullptr && device->createDir(syspath));
+    }
 
-        char     systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        directory.getSystem(systemDir);
+    bool xdirinfo::sDelete(const xdirpath& dirpath)
+    {
+		xfiledevice* device;
+		xdirpath	 syspath = dirpath.resolve(device);
+		return (device != nullptr && device->deleteDir(syspath));
+    }
 
-        if (_alias != NULL && _alias->device()->createDir(systemDir.c_str()))
-        {
-            return true;
-        }
+    bool xdirinfo::sExists(const xdirpath& dirpath)
+    {
+		xfiledevice* device;
+		xdirpath	 syspath = dirpath.resolve(device);
+		return (device != nullptr && device->hasDir(syspath));
+    }
+
+    void xdirinfo::sEnumerate(const xdirpath& dirpath, enumerate_delegate& enumerator)
+    {
+		xfiledevice* device;
+		xdirpath	 syspath = dirpath.resolve(device);
+		if (device != nullptr)
+			device->enumerate(syspath, &enumerator);
+    }
+
+    bool xdirinfo::sSetTime(const xdirpath& dirpath, const xfiletimes& ftimes)
+    {
+		xfiledevice* device;
+		xdirpath	 syspath = dirpath.resolve(device);
+		if (device != nullptr)
+			return device->setDirTime(syspath, ftimes);
         return false;
     }
 
-    bool xdirinfo::sDelete(const xdirpath &directory)
+    bool xdirinfo::sGetTime(const xdirpath &directory, xfiletimes& ftimes)
     {
-        const xdevicealias *_alias = sGetAlias(directory);
+		xfiledevice* device;
+		xdirpath	 syspath = dirpath.resolve(device);
+		if (device != nullptr)
+			return device->setDirTime(syspath, ftimes);
 
-        char     systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        directory.getSystem(systemDir);
-
-        return _alias != NULL && _alias->device()->deleteDir(systemDir.c_str());
-    }
-
-    bool xdirinfo::sExists(const xdirpath &directory)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        return device != NULL && device->hasDir(systemDir.c_str());
-    }
-
-    void xdirinfo::sEnumerate(const xdirpath &directory, enumerate_delegate &enumerator)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        if (device != NULL)
-            device->enumerate(directory.c_str(), &enumerator);
-    }
-
-    bool xdirinfo::sSetTime(const xdirpath &directory, const xdatetime &creationTime, const xdatetime &lastAccessTime,
-        const xdatetime &lastWriteTime)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        if (device != NULL)
-            return device->setDirTime(systemDir.c_str(), creationTime, lastAccessTime, lastWriteTime);
-        return false;
-    }
-
-    bool xdirinfo::sGetTime(
-        const xdirpath &directory, xdatetime &creationTime, xdatetime &lastAccessTime, xdatetime &lastWriteTime)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        if (device != NULL && device->getDirTime(systemDir.c_str(), creationTime, lastAccessTime, lastWriteTime))
+		if (device != NULL && device->getDirTime(systemDir.c_str(), creationTime, lastAccessTime, lastWriteTime))
             return true;
         creationTime   = xdatetime::sMinValue;
         lastAccessTime = xdatetime::sMinValue;

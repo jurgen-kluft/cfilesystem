@@ -17,6 +17,7 @@
 namespace xcore
 {
 	class xfilepath;
+	class xfiledevice;
 	class xfilesystem;
 
 	//==============================================================================
@@ -32,14 +33,19 @@ namespace xcore
 		friend class xdirinfo;
 		friend class xfilesystem;
 		
-        xfilesystem *mParent;
-        utf16::alloc *mAlloc;
-        utf16::runes mRunes;
+		xdirpath				resolve(xfiledevice*& outdevice) const;
 
 								xdirpath(xfilesystem* fs, utf16::alloc* allocator);
-								xdirpath(xfilesystem* fs, utf16::alloc* allocator, utf16::runes& str);
+								xdirpath(xfilesystem* fs, utf16::alloc* allocator, const utf16::runes& str);
+
 	public:
-								xdirpath(const xdirpath& dir);
+		xfilesystem*  mParent;
+		utf16::alloc* mAlloc;
+		utf16::runes  mRunes;
+
+	public:
+		xdirpath();
+		xdirpath(const xdirpath& dir);
 								~xdirpath();
 
 		void					clear();
@@ -48,7 +54,6 @@ namespace xcore
 
 		s32						getLevels() const;
 		bool					getLevel(s32 level, xdirpath& name) const;
-		s32						getLevelOf(const runes& name) const;
 		s32						getLevelOf(const xdirpath& name) const;
 
 		bool					isRoot() const;
@@ -56,6 +61,7 @@ namespace xcore
 		bool					isSubDirOf(const xdirpath&) const;
 		
 		void					relative(xdirpath& outRelative) const;
+		void					makeRelative();
 		void					makeRelativeTo(const xdirpath& parent);
 		void					makeRelativeTo(const xdirpath& parent, xdirpath& sub) const;
 

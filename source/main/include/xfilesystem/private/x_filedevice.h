@@ -8,8 +8,8 @@
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase/x_types.h"
 #include "xfilesystem/x_enumerator.h"
+
 #define MAX_ENUM_SEARCH_FILES 32
 #define MAX_ENUM_SEARCH_DIRS 16
 
@@ -44,8 +44,8 @@ namespace xcore
 
 		virtual bool			getDeviceInfo(u64& totalSpace, u64& freeSpace) const = 0;
 
-		virtual bool			openFile(xstring const& szFilename, bool boRead, bool boWrite, void*& outHandle) const = 0;
-		virtual bool			createFile(xstring const& szFilename, bool boRead, bool boWrite, void*& outHandle) const = 0;
+		virtual bool			openFile(xfilepath const& szFilename, bool boRead, bool boWrite, void*& outHandle) const = 0;
+		virtual bool			createFile(xfilepath const& szFilename, bool boRead, bool boWrite, void*& outHandle) const		= 0;
 		virtual bool			readFile(void* pHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const = 0;
 		virtual bool			writeFile(void* pHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) const = 0;
 		virtual bool			closeFile(void* pHandle) const = 0;
@@ -55,26 +55,26 @@ namespace xcore
 
 		virtual bool			setFileTime(void* pHandle, const xfiletimes& times) const = 0;
 		virtual bool			getFileTime(void* pHandle, xfiletimes& outTimes) const = 0;
-		virtual bool			setFileAttr(void* pHandle, const xattributes& attr) const = 0;
-		virtual bool			getFileAttr(void* pHandle, xattributes& attr) const = 0;
+		virtual bool			setFileAttr(void* pHandle, const xfileattrs& attr) const  = 0;
+		virtual bool			getFileAttr(void* pHandle, xfileattrs& attr) const		  = 0;
 
-		virtual bool			hasFile(xstring const& szFilename) const = 0;
-		virtual bool			moveFile(xstring const& szFilename, xstring const& szToFilename) const = 0;
-		virtual bool			copyFile(xstring const& szFilename, xstring const& szToFilename, bool boOverwrite) const = 0;
-		virtual bool			deleteFile(xstring const& szFilename) const = 0;
+		virtual bool			hasFile(xfilepath const& szFilename) const												 = 0;
+		virtual bool			moveFile(xfilepath const& szFilename, xfilepath const& szToFilename) const					 = 0;
+		virtual bool			copyFile(xfilepath const& szFilename, xfilepath const& szToFilename, bool boOverwrite) const = 0;
+		virtual bool			deleteFile(xfilepath const& szFilename) const											   = 0;
 
-		virtual bool			hasDir(xstring const& szDirPath) const = 0;
-		virtual bool			moveDir(xstring const& szDirPath, xstring const& szToDirPath) const = 0;
-		virtual bool			copyDir(xstring const& szDirPath, xstring const& szToDirPath, bool boOverwrite) const = 0;
-		virtual bool			createDir(xstring const& szDirPath) const = 0;
-		virtual bool			deleteDir(xstring const& szDirPath) const = 0;
+		virtual bool			hasDir(xdirpath const& szDirPath) const = 0;
+		virtual bool			moveDir(xdirpath const& szDirPath, xdirpath const& szToDirPath) const				   = 0;
+		virtual bool			copyDir(xdirpath const& szDirPath, xdirpath const& szToDirPath, bool boOverwrite) const = 0;
+		virtual bool			createDir(xdirpath const& szDirPath) const												= 0;
+		virtual bool			deleteDir(xdirpath const& szDirPath) const												= 0;
 
-		virtual bool			setDirTime(xstring const& szDirPath, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const = 0;
-		virtual bool			getDirTime(xstring const& szDirPath, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const = 0;
-		virtual bool			setDirAttr(xstring const& szDirPath, const xattributes& attr) const = 0;
-		virtual bool			getDirAttr(xstring const& szDirPath, xattributes& attr) const = 0;
+		virtual bool			setDirTime(xdirpath const& szDirPath, const xfiletimes& ftimes) const = 0;
+		virtual bool			getDirTime(xdirpath const& szDirPath, xfiletimes& ftimes) const = 0;
+		virtual bool			setDirAttr(xdirpath const& szDirPath, const xfileattrs& attr) const   = 0;
+		virtual bool			getDirAttr(xdirpath const& szDirPath, xfileattrs& attr) const		  = 0;
 
-		virtual bool			enumerate(xstring const& szDirPath, enumerate_delegate* enumerator) const = 0;
+		virtual bool			enumerate(xdirpath const& szDirPath, enumerate_delegate* enumerator) const = 0;
 	
 	};
 

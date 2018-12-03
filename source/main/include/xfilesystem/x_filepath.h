@@ -40,7 +40,6 @@ namespace xcore
 
 		xfilesystem*  mParent;
 		utf16::alloc* mAlloc;
-		utf16::runes  mRunes;
 
 		/*
 		It seems that a utf16::runes should be sufficient here and a special allocator
@@ -51,6 +50,9 @@ namespace xcore
 		*/
 
 		xfilepath(xfilesystem* parent, utf16::alloc* allocator, utf16::runes& str);
+
+	public:
+		utf16::runes mRunes;
 
 	public:
 		xfilepath();

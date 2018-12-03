@@ -36,7 +36,7 @@ namespace xcore
 
     xfilepath::xfilepath(const xfilepath& filepath) : mParent(filepath.mParent), mAlloc(filepath.mAlloc), mRunes()
     {
-        copy(filepath, mRunes, mAlloc, 16);
+        copy(filepath.mRunes, mRunes, mAlloc, 16);
     }
 
     xfilepath::xfilepath(const xdirpath& dirpath, const xfilepath& filepath) : mParent(filepath.mParent), mRunes()
@@ -61,22 +61,22 @@ namespace xcore
 
     void xfilepath::makeRelative(const xdirpath& root)
     {
-        runes devicepart = selectUntil(mRunes, runez<4>(":\\"));
+        runes devicepart = findSelectUntil(mRunes, runez<4>(":\\"));
         remove(mRunes, devicepart);
-        insert(mRunes, root);
+        insert(mRunes, root.mRunes);
     }
 
     void xfilepath::getFilename(xfilepath& filename) const
     {
-        runes filenamepart = rselectUntil(mRunes, '\\');
+		runes filenamepart = findLastSelectAfter(mRunes, '\\');
         filename.mRunes.clear();
         concatenate(filename.mRunes, filenamepart, filename.mAlloc, 16);
     }
 
     void xfilepath::getFilenameWithoutExtension(xfilepath& filename) const
     {
-        runes filenamepart = rselectUntil(mRunes, '\\');
-        filenamepart       = selectUntilLast(filenamepart, '.');
+		runes filenamepart = findLastSelectAfter(mRunes, '\\');
+		filenamepart	   = findLastSelectUntil(filenamepart, '.');
         filename.mRunes.clear();
         concatenate(filename.mRunes, filenamepart, filename.mAlloc, 16);
     }
@@ -86,7 +86,7 @@ namespace xcore
         outDirPath.mRunes.clear();
 
         // Select a string until and included the last '\'
-        runes dirpart = selectUntilIncludedLast(mRunes, '\\');
+		runes dirpart = findLastSelectUntilIncluded(mRunes, '\\');
         if (dirpart.is_empty() == false)
         {
             copy(outDirPath.mRunes, dirpart, outDirPath.mAlloc, 16);
@@ -103,7 +103,7 @@ namespace xcore
             mAlloc->deallocate(mRunes);
         }
         mAlloc = path.mAlloc;
-        copy(mRunes, path.mRunes, mAlloc, 16);
+		copy(path.mRunes, mRunes, mAlloc, 16);
         return *this;
     }
 

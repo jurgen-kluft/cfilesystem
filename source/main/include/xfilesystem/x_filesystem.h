@@ -9,6 +9,7 @@
 // INCLUDES
 //==============================================================================
 #include "xbase/x_debug.h"
+#include "xbase/x_buffer.h"
 
 namespace xcore
 {
@@ -48,15 +49,18 @@ namespace xcore
         xinfo *  info(xfilepath const &path);
         bool     exists(xinfo *);
         s64      size(xinfo *);
-        xfile *  open(xinfo *, emode mode);
+		xfile*   open(xinfo*, EFileMode mode);
         void     rename(xinfo *, xfilepath const &);
         void     move(xinfo *src, xinfo *dst);
         void     copy(xinfo *src, xinfo *dst);
         void     remove(xinfo *);
-        s32      read(reader *, xbuffer &);
-        s32      write(writer *, xcbuffer const &);
-        void     read_async(reader *, xbuffer &);
-        s32      wait_async(reader *);
+        s32      read(xreader *, xbuffer &);
+        s32      write(xwriter *, xcbuffer const &);
+        void     read_async(xreader *, xbuffer &);
+        s32      wait_async(xreader *);
+
+		xfilepath resolve(xfilepath const&) const;
+		xdirpath resolve(xdirpath const&) const;
 
       private:
         xfs_imp *mInstance;

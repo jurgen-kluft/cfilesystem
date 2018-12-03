@@ -1,10 +1,7 @@
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
-#include "xbase/x_string.h"
-#include "xbase/x_string_std.h"
+#include "xbase/x_runes.h"
 
-#include "xfilesystem/private/x_devicealias.h"
-#include "xfilesystem/private/x_filesystem_common.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
 
@@ -28,19 +25,20 @@ namespace xcore
         // Make sure there is a slash at the end of the path
     }
 
-    xdirpath::xdirpath(xfilesystem* fs, utf16::alloc* allocator) : mParent(fs), mAlloc(allocator) {}
-    xdirpath::xdirpath(xfilesystem* fs, utf16::alloc* allocator, runes const& str) : mParent(fs), mAlloc(allocator)
+    xdirpath::xdirpath(xfilesystem* fs, alloc* allocator) : mParent(fs), mAlloc(allocator) {}
+    xdirpath::xdirpath(xfilesystem* fs, alloc* allocator, runes const& str) : mParent(fs), mAlloc(allocator)
     {
-        copy(str, mRunes, mAlloc, 16);
+        utf16::copy(str, mRunes, mAlloc, 16);
         fix_slashes(mRunes);
     }
-    xdirpath::xdirpath(const xdirpath& dirpath) : mParent(dirpath.mParent), mAlloc(dirpath.mAlloc)
+	xdirpath::xdirpath() : mParent(nullptr), mAlloc(nullptr), mRunes() { }
+	xdirpath::xdirpath(const xdirpath& dirpath) : mParent(dirpath.mParent), mAlloc(dirpath.mAlloc)
     {
         copy(dirpath.mRunes, mRunes, mAlloc, 16);
     }
     xdirpath::~xdirpath()
     {
-        if (mAlloc != null)
+        if (mAlloc != nullptr)
             mAlloc->deallocate(mRunes);
     }
 
@@ -59,7 +57,7 @@ namespace xcore
         runez<4> device(":\\");
 
         s32   level = 0;
-        runes path  = selectAfter(dirpath, device);
+        runes path  = findSelectAfter(dirpath, device);
         if (right_to_left == false)
         {
             runes dir = selectBetween(path, '\\', '\\');
@@ -75,7 +73,7 @@ namespace xcore
         }
         else
         {
-            runes dir = rselectBetween(path, '\\', '\\');
+            runes dir = selectBetweenLast(path, '\\', '\\');
             while (dir.is_empty() == false)
             {
                 if (enumerator(level, dir) == false)
@@ -83,7 +81,7 @@ namespace xcore
                     break;
                 }
                 level++;
-                dir = rselectNextBetween(path, dir, '\\', '\\');
+                dir = selectPreviousBetween(path, dir, '\\', '\\');
             }
         }
     }
@@ -113,7 +111,7 @@ namespace xcore
         runez<4> device(":\\");
 
         s32   level = 0;
-        runes path  = selectAfter(mRunes, device);
+		runes path  = findSelectAfter(mRunes, device);
         if (path.is_empty())
             return false;
         runes dir = selectBetween(mRunes, '\\', '\\');
@@ -124,7 +122,8 @@ namespace xcore
         }
         if (!dir.is_empty())
         {
-            outpath = selectUntilEndIncluded(mRunes, dir);
+            runes path = selectUntilEndIncluded(mRunes, dir);
+			copy(path, outpath.mRunes, outpath.mAlloc, 16);
             return true;
         }
         return false;
@@ -146,14 +145,7 @@ namespace xcore
             return mFound;
         }
     };
-
-    s32 xdirpath::getLevelOf(const runes& folderName) const
-    {
-        folder_search_enumerator e(folderName);
-        enumerate_fn(e);
-        return e.mFound ? e.mLevel : -1;
-    }
-
+	
     s32 xdirpath::getLevelOf(const xdirpath& parent) const
     {
         // PARENT:   c:\disk
@@ -165,20 +157,20 @@ namespace xcore
     bool xdirpath::isRoot() const
     {
         runez<4> device(":\\");
-        runes    path = selectAfter(mRunes, device);
+		runes	path = findSelectAfter(mRunes, device);
         if (path.is_empty())
             return false;
 
         // Now determine if we are an actual root, which means that we
         // do not have any folders after our device statement.
-        runes path = selectAfter(mRunes, device);
+		runes path = findSelectAfter(mRunes, device);
         return path.size() == 0;
     }
 
     bool xdirpath::isRooted() const
     {
         runez<4> device(":\\");
-        runes    path = selectAfter(mRunes, device);
+		runes	path = findSelectAfter(mRunes, device);
         return (!path.is_empty());
     }
 
@@ -197,7 +189,7 @@ namespace xcore
         if (parent.isRooted())
         {
             runes remainder;
-            runes overlap = selectOverlap(parent, mRunes, remainder);
+            runes overlap = selectOverlap(parent.mRunes, mRunes, remainder);
             return (!overlap.is_empty()) && !remainder.is_empty();
         }
         return false;
@@ -212,7 +204,7 @@ namespace xcore
     void xdirpath::makeRelative()
     {
         runez<4> device(":\\");
-        runes    devicepart = selectUntilIncluded(mRunes, device);
+        runes    devicepart = findSelectUntilIncluded(mRunes, device);
         if (!devicepart.is_empty())
         {
             remove(mRunes, devicepart);
@@ -228,9 +220,9 @@ namespace xcore
 		// RESULT:   e\f\ 
         runez<4> device(":\\");
         runes parentpath = parent.mRunes;
-        if (parent.IsRooted())
+        if (parent.isRooted())
         {
-            parentpath = selectAfter(parentpath, device);
+            parentpath = findSelectAfter(parentpath, device);
         }
 
         runes remainder;
@@ -252,7 +244,7 @@ namespace xcore
         runez<4> device(":\\");
 
         s32   level = 0;
-        runes path  = selectAfter(mRunes, device);
+        runes path  = findSelectAfter(mRunes, device);
         if (path.is_empty())
             return false;
         runes dir = selectBetween(mRunes, '\\', '\\');
@@ -263,7 +255,8 @@ namespace xcore
         }
         if (!dir.is_empty())
         {
-            outpath = selectUntilEndIncluded(mRunes, dir);
+            runes path = selectUntilEndIncluded(mRunes, dir);
+			copy(path, parent.mRunes, parent.mAlloc, 16);
             return true;
         }
 
@@ -278,7 +271,7 @@ namespace xcore
 
     bool xdirpath::getParent(xdirpath& outParentDirPath) const { return true; }
 
-    bool xdirpath::getSubDir(xcuchars const& subDir, xdirpath& outSubDirPath) const { return true; }
+    bool xdirpath::getSubDir(const xfilepath& subDir, xdirpath& outSubDirPath) const { return true; }
 
     void xdirpath::setRoot(const xdirpath& inRoot) {}
 
@@ -286,8 +279,6 @@ namespace xcore
 
     xdirpath& xdirpath::operator=(const xfilepath& path)
     {
-        if (this == &path)
-            return *this;
 
         return *this;
     }
@@ -300,7 +291,7 @@ namespace xcore
         return *this;
     }
 
-    bool xdirpath::operator==(const xdirpath& rhs) const { return rhs.mString.compare(mString) == 0; }
-    bool xdirpath::operator!=(const xdirpath& rhs) const { return rhs.mString.compare(mString) != 0; }
+    bool xdirpath::operator==(const xdirpath& rhs) const { return compare(rhs.mRunes, mRunes) == 0; }
+	bool xdirpath::operator!=(const xdirpath& rhs) const { return compare(rhs.mRunes, mRunes) != 0; }
 
 }; // namespace xcore

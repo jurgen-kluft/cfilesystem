@@ -8,6 +8,9 @@
 
 namespace xcore
 {
+	class xfileinfo;
+	class xdirinfo;
+
 	struct enumerate_delegate
 	{
 		// When you receive a 'dirinfo' and return true you indicate that you want to
@@ -15,7 +18,7 @@ namespace xcore
 		// want to recurse into that directory.
 		// When you receive a 'fileinfo' and return false you indicate that you want to
 		// terminate the iteration.
-		virtual bool operator () (s32 depth, const fileinfo* fi, const dirinfo* di) = 0;
+		virtual bool operator () (s32 depth, const xfileinfo* fi, const xdirinfo* di) = 0;
 	};
 
 };
