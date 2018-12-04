@@ -11,14 +11,15 @@ namespace xcore
 	class xfileinfo;
 	class xdirinfo;
 
-	struct enumerate_delegate
+	class enumerate_delegate
 	{
+	public:
 		// When you receive a 'dirinfo' and return true you indicate that you want to
 		// recurse into that directory. When returning 'false' you indicate that do not
 		// want to recurse into that directory.
 		// When you receive a 'fileinfo' and return false you indicate that you want to
 		// terminate the iteration.
-		virtual bool operator () (s32 depth, const xfileinfo* fi, const xdirinfo* di) = 0;
+		virtual bool operator()(s32 depth, xfileinfo const* fi, xdirinfo const* di) = 0;
 	};
 
 };

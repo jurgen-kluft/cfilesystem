@@ -14,235 +14,173 @@
 //==============================================================================
 namespace xcore
 {
-    xdirinfo::xdirinfo() {}
+	xdirinfo::xdirinfo() {}
 
-    xdirinfo::xdirinfo(const xdirinfo &dirinfo) : mDirPath(dirinfo.mDirPath) {}
+	xdirinfo::xdirinfo(const xdirinfo& dirinfo) : mDirPath(dirinfo.mDirPath) {}
 
-    xdirinfo::xdirinfo(const xdirpath &dir) : mDirPath(dir) {}
+	xdirinfo::xdirinfo(const xdirpath& dir) : mDirPath(dir) {}
 
-    bool xdirinfo::isRoot() const { return mDirPath.isRoot(); }
+	bool xdirinfo::isRoot() const { return mDirPath.isRoot(); }
 
-    bool xdirinfo::isRooted() const { return mDirPath.isRooted(); }
+	bool xdirinfo::isRooted() const { return mDirPath.isRooted(); }
 
-    bool xdirinfo::exists() const { return sExists(mDirPath); }
+	bool xdirinfo::exists() const { return sExists(mDirPath); }
 
-    bool xdirinfo::create() { return sCreate(mDirPath); }
+	bool xdirinfo::create() { return sCreate(mDirPath); }
 
-    bool xdirinfo::remove() { return sDelete(mDirPath); }
+	bool xdirinfo::remove() { return sDelete(mDirPath); }
 
-    void xdirinfo::refresh() {}
+	void xdirinfo::refresh() {}
 
-    void xdirinfo::copy(const xdirpath &toDirectory, xbool overwrite) { sCopy(mDirPath, toDirectory, overwrite); }
+	void xdirinfo::copy(const xdirpath& toDirectory, xbool overwrite) { sCopy(mDirPath, toDirectory, overwrite); }
 
-    void xdirinfo::move(const xdirpath &toDirectory) { sMove(mDirPath, toDirectory); }
+	void xdirinfo::move(const xdirpath& toDirectory) { sMove(mDirPath, toDirectory); }
 
-    void xdirinfo::enumerate(enumerate_delegate &enumerator) { sEnumerate(mDirPath, enumerator); }
+	void xdirinfo::enumerate(enumerate_delegate& enumerator) { sEnumerate(mDirPath, enumerator); }
 
-    bool xdirinfo::getDirpath(xdirpath& outDirpath) const
+	bool xdirinfo::getDirpath(xdirpath& outDirpath) const
 	{
 		outDirpath = mDirPath;
 		return true;
 	}
 
-    bool xdirinfo::getRoot(xdirinfo &outRootDirPath) const { return (mDirPath.getRoot(outRootDirPath.mDirPath)); }
+	bool xdirinfo::getRoot(xdirinfo& outRootDirPath) const { return (mDirPath.getRoot(outRootDirPath.mDirPath)); }
 
-    bool xdirinfo::getParent(xdirinfo &outParentDirPath) const
-    {
-        return (mDirPath.getParent(outParentDirPath.mDirPath));
-    }
+	bool xdirinfo::getParent(xdirinfo& outParentDirPath) const { return (mDirPath.getParent(outParentDirPath.mDirPath)); }
 
-    bool xdirinfo::getTimes(xfiletimes& times) const { return sGetTime(mDirPath, times); }
+	bool xdirinfo::getTimes(xfiletimes& times) const { return sGetTime(mDirPath, times); }
 
-    bool xdirinfo::setTimes(xfiletimes times) { return sSetTime(mDirPath, times); }
+	bool xdirinfo::setTimes(xfiletimes times) { return sSetTime(mDirPath, times); }
 
-    xdirinfo &xdirinfo::operator=(const xdirinfo &other)
-    {
-        if (this == &other)
-            return *this;
+	bool xdirinfo::getAttrs(xfileattrs& fattrs) const { return sGetAttrs(mDirPath, fattrs); }
 
-        mDirPath = other.mDirPath;
-        return *this;
-    }
+	bool xdirinfo::setAttrs(xfileattrs fattrs) { return sSetAttrs(mDirPath, fattrs); }
 
-    xdirinfo &xdirinfo::operator=(const xdirpath &other)
-    {
-        if (&mDirPath == &other)
-            return *this;
+	xdirinfo& xdirinfo::operator=(const xdirinfo& other)
+	{
+		if (this == &other)
+			return *this;
 
-        mDirPath = other;
-        return *this;
-    }
+		mDirPath = other.mDirPath;
+		return *this;
+	}
 
-    bool xdirinfo::operator==(const xdirpath &other) const { return mDirPath == other; }
+	xdirinfo& xdirinfo::operator=(const xdirpath& other)
+	{
+		if (&mDirPath == &other)
+			return *this;
 
-    bool xdirinfo::operator!=(const xdirpath &other) const { return mDirPath != other; }
+		mDirPath = other;
+		return *this;
+	}
 
-    bool xdirinfo::operator==(const xdirinfo &other) const { return mDirPath == other.mDirPath; }
+	bool xdirinfo::operator==(const xdirpath& other) const { return mDirPath == other; }
 
-    bool xdirinfo::operator!=(const xdirinfo &other) const { return mDirPath != other.mDirPath; }
+	bool xdirinfo::operator!=(const xdirpath& other) const { return mDirPath != other; }
 
-    ///< Static functions
-    bool xdirinfo::sCreate(const xdirpath &dirpath)
-    {
+	bool xdirinfo::operator==(const xdirinfo& other) const { return mDirPath == other.mDirPath; }
+
+	bool xdirinfo::operator!=(const xdirinfo& other) const { return mDirPath != other.mDirPath; }
+
+	///< Static functions
+	bool xdirinfo::sCreate(const xdirpath& dirpath)
+	{
 		xfiledevice* device;
-		xdirpath syspath = dirpath.resolve(device);
-        return (device != nullptr && device->createDir(syspath));
-    }
+		xdirpath	 syspath = dirpath.resolve(device);
+		return (device != nullptr && device->createDir(syspath));
+	}
 
-    bool xdirinfo::sDelete(const xdirpath& dirpath)
-    {
+	bool xdirinfo::sDelete(const xdirpath& dirpath)
+	{
 		xfiledevice* device;
 		xdirpath	 syspath = dirpath.resolve(device);
 		return (device != nullptr && device->deleteDir(syspath));
-    }
+	}
 
-    bool xdirinfo::sExists(const xdirpath& dirpath)
-    {
+	bool xdirinfo::sExists(const xdirpath& dirpath)
+	{
 		xfiledevice* device;
 		xdirpath	 syspath = dirpath.resolve(device);
 		return (device != nullptr && device->hasDir(syspath));
-    }
+	}
 
-    void xdirinfo::sEnumerate(const xdirpath& dirpath, enumerate_delegate& enumerator)
-    {
+	void xdirinfo::sEnumerate(const xdirpath& dirpath, enumerate_delegate& enumerator)
+	{
 		xfiledevice* device;
 		xdirpath	 syspath = dirpath.resolve(device);
 		if (device != nullptr)
-			device->enumerate(syspath, &enumerator);
-    }
+			device->enumerate(syspath, enumerator);
+	}
 
-    bool xdirinfo::sSetTime(const xdirpath& dirpath, const xfiletimes& ftimes)
-    {
-		xfiledevice* device;
-		xdirpath	 syspath = dirpath.resolve(device);
-		if (device != nullptr)
-			return device->setDirTime(syspath, ftimes);
-        return false;
-    }
-
-    bool xdirinfo::sGetTime(const xdirpath &directory, xfiletimes& ftimes)
-    {
+	bool xdirinfo::sSetTime(const xdirpath& dirpath, const xfiletimes& ftimes)
+	{
 		xfiledevice* device;
 		xdirpath	 syspath = dirpath.resolve(device);
 		if (device != nullptr)
 			return device->setDirTime(syspath, ftimes);
+		return false;
+	}
 
-		if (device != NULL && device->getDirTime(systemDir.c_str(), creationTime, lastAccessTime, lastWriteTime))
-            return true;
-        creationTime   = xdatetime::sMinValue;
-        lastAccessTime = xdatetime::sMinValue;
-        lastWriteTime  = xdatetime::sMinValue;
-        return false;
-    }
+	bool xdirinfo::sGetTime(const xdirpath& dirpath, xfiletimes& ftimes)
+	{
+		xfiledevice* device;
+		xdirpath	 syspath = dirpath.resolve(device);
+		if (device != nullptr)
+			return device->setDirTime(syspath, ftimes);
 
-    bool xdirinfo::sSetCreationTime(const xdirpath &directory, const xdatetime &creationTime)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        if (device != NULL)
-        {
-            xdatetime _creationTime, _lastAccessTime, _lastWriteTime;
-            if (device->getDirTime(systemDir.c_str(), _creationTime, _lastAccessTime, _lastWriteTime))
-                if (device->setDirTime(systemDir.c_str(), creationTime, _lastAccessTime, _lastWriteTime))
-                    return true;
-        }
-        return false;
-    }
+		if (device != NULL && device->getDirTime(syspath, ftimes))
+			return true;
 
-    bool xdirinfo::sGetCreationTime(const xdirpath &directory, xdatetime &outCreationTime)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        xdatetime    _lastAccessTime, _lastWriteTime;
-        if (device != NULL && device->getDirTime(systemDir.c_str(), outCreationTime, _lastAccessTime, _lastWriteTime))
-            return true;
-        outCreationTime = xdatetime::sMinValue;
-        return false;
-    }
+		ftimes = xfiletimes();
+		return false;
+	}
 
-    bool xdirinfo::sSetLastAccessTime(const xdirpath &directory, const xdatetime &lastAccessTime)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        if (device != NULL)
-        {
-            xdatetime _creationTime, _lastAccessTime, _lastWriteTime;
-            if (device->getDirTime(systemDir.c_str(), _creationTime, _lastAccessTime, _lastWriteTime))
-                if (device->setDirTime(systemDir.c_str(), _creationTime, lastAccessTime, _lastWriteTime))
-                    return true;
-        }
-        return false;
-    }
+		bool xdirinfo::sSetAttrs(const xdirpath& dirpath, const xfileattrs& fattrs)
+	{
+		xfiledevice* device;
+		xdirpath	 syspath = dirpath.resolve(device);
+		if (device != nullptr)
+			return device->setDirAttr(syspath, fattrs);
+		return false;
+	}
 
-    bool xdirinfo::sGetLastAccessTime(const xdirpath &directory, xdatetime &outLastAccessTime)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        xdatetime    _creationTime, _lastWriteTime;
-        if (device != NULL && device->getDirTime(systemDir.c_str(), _creationTime, outLastAccessTime, _lastWriteTime))
-            return true;
-        outLastAccessTime = xdatetime::sMinValue;
-        return false;
-    }
+	bool xdirinfo::sGetAttrs(const xdirpath& dirpath, xfileattrs& fattrs)
+	{
+		xfiledevice* device;
+		xdirpath	 syspath = dirpath.resolve(device);
+		if (device != nullptr)
+		{
+			return device->getDirAttr(syspath, fattrs);
+		}
+		fattrs = xfileattrs();
+		return false;
+	}
 
-    bool xdirinfo::sSetLastWriteTime(const xdirpath &directory, const xdatetime &lastWriteTime)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        if (device != NULL)
-        {
-            xdatetime _creationTime, _lastAccessTime, _lastWriteTime;
-            if (device->getDirTime(systemDir.c_str(), _creationTime, _lastAccessTime, _lastWriteTime))
-                if (device->setDirTime(systemDir.c_str(), _creationTime, _lastAccessTime, lastWriteTime))
-                    return true;
-        }
-        return false;
-    }
+	bool xdirinfo::sCopy(const xdirpath& srcdirpath, const xdirpath& dstdirpath, xbool overwrite)
+	{
+		xfiledevice* srcdevice;
+		xdirpath	 srcsyspath = srcdirpath.resolve(srcdevice);
 
-    bool xdirinfo::sGetLastWriteTime(const xdirpath &directory, xdatetime &outLastWriteTime)
-    {
-        char         systemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     systemDir(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice *device = directory.getSystem(systemDir);
-        xdatetime    _creationTime, _lastAccessTime;
-        if (device != NULL && device->getDirTime(systemDir.c_str(), _creationTime, _lastAccessTime, outLastWriteTime))
-            return true;
-        outLastWriteTime = xdatetime::sMinValue;
-        return false;
-    }
+		xfiledevice* dstdevice;
+		xdirpath	 dstsyspath = dstdirpath.resolve(dstdevice);
 
-    bool xdirinfo::sCopy(const xdirpath &sourceDirectory, const xdirpath &destDirectory, xbool overwrite)
-    {
-        char         srcSystemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     srcSystemDir(srcSystemDirBuffer, sizeof(srcSystemDirBuffer));
-        xfiledevice *src_device = sourceDirectory.getSystem(srcSystemDir);
-        char         dstSystemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     dstSystemDir(dstSystemDirBuffer, sizeof(dstSystemDirBuffer));
-        xfiledevice *dst_device = destDirectory.getSystem(dstSystemDir);
+		if (srcdevice != nullptr && dstdevice != nullptr)
+			return srcdevice->copyDir(srcdirpath, dstdirpath, overwrite);
 
-        if (src_device != NULL && dst_device != NULL)
-            return src_device->copyDir(srcSystemDir.c_str(), dstSystemDir.c_str(), overwrite);
+		return false;
+	}
 
-        return false;
-    }
+	bool xdirinfo::sMove(const xdirpath& srcdirpath, const xdirpath& dstdirpath)
+	{
+		xfiledevice* srcdevice;
+		xdirpath	 srcsyspath = srcdirpath.resolve(srcdevice);
 
-    bool xdirinfo::sMove(const xdirpath &sourceDirectory, const xdirpath &destDirectory)
-    {
-        char         srcSystemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     srcSystemDir(srcSystemDirBuffer, sizeof(srcSystemDirBuffer));
-        xfiledevice *src_device = sourceDirectory.getSystem(srcSystemDir);
-        char         dstSystemDirBuffer[xdirpath::XDIRPATH_BUFFER_SIZE];
-        xcstring     dstSystemDir(dstSystemDirBuffer, sizeof(dstSystemDirBuffer));
-        xfiledevice *dst_device = destDirectory.getSystem(dstSystemDir);
+		xfiledevice* dstdevice;
+		xdirpath	 dstsyspath = dstdirpath.resolve(dstdevice);
 
-        if (src_device != NULL && dst_device != NULL)
-            return src_device->moveDir(srcSystemDir.c_str(), dstSystemDir.c_str());
+		if (srcdevice != nullptr && dstdevice != nullptr)
+			return srcdevice->moveDir(srcdirpath, dstdirpath);
 
-        return false;
-    }
+		return false;
+	}
 };

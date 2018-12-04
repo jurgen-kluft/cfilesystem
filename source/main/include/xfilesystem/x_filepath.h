@@ -38,21 +38,14 @@ namespace xcore
 		friend class xdirpath;
 		friend class xfilesystem;
 
-		xfilesystem*  mParent;
-		utf16::alloc* mAlloc;
-
-		/*
-		It seems that a utf16::runes should be sufficient here and a special allocator
-		for allocating utf16 slices should be the most sufficient way of dealing with
-		strings here in the filesystem.
-		Filepath should always make sure that it is the sole owner of the utf16 slice and
-		no sharing should be allowed outside of this class.
-		*/
-
 		xfilepath(xfilesystem* parent, utf16::alloc* allocator, utf16::runes& str);
 
 	public:
-		utf16::runes mRunes;
+		xfilesystem*  mFileSystem;
+		utf16::alloc* mAlloc;
+		utf16::runes  mRunes;
+
+		xfilepath resolve(xfiledevice*&) const;
 
 	public:
 		xfilepath();
@@ -65,13 +58,15 @@ namespace xcore
 		bool isEmpty() const;
 		bool isRooted() const;
 
+		void makeRelative();
 		void makeRelative(const xdirpath&);
 		void makeRelative(xdirpath&, xfilepath&) const;
 
+		bool getRoot(xdirpath&) const;
+		bool getDirname(xdirpath&) const;
 		void getFilename(xfilepath&) const;
 		void getFilenameWithoutExtension(xfilepath&) const;
 		void getExtension(xfilepath&) const;
-		void getDirname(xdirpath&) const;
 
 		xfilepath& operator=(const xfilepath&);
 		bool	   operator==(const xfilepath&) const;
