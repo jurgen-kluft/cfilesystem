@@ -14,69 +14,64 @@
 //==============================================================================
 namespace xcore
 {
-	class xpath;
-	class xdirpath;
-	class xfilesystem;
+    class xpath;
+    class xdirpath;
+    class xfilesystem;
 
-	//==============================================================================
-	// xfilepath:
-	//		- Relative:		Folder\Filename.Extension
-	//		- Absolute:		Device:\Folder\Folder\Filename.Extension
-	//
-	// What about making the following classes:
-	// - xfilext; for file extensions, ".JPG"
-	// - xfilename; for file names, "MyImage"
-	// - xroot; for device part, "Device:\"
-	//
-	// "C:\" + "Windows\" + "DBGHELP" + ".DLL"
-	// xroot + xdirpath + xfilename + xfilext
-	//
-	//==============================================================================
-	class xfilepath
-	{
-	protected:
-		friend class xdirpath;
-		friend class xfilesystem;
+    //==============================================================================
+    // xfilepath:
+    //		- Relative:		Folder\Filename.Extension
+    //		- Absolute:		Device:\Folder\Folder\Filename.Extension
+    //
+    // What about making the following classes:
+    // - xfilext; for file extensions, ".JPG"
+    // - xfilename; for file names, "MyImage"
+    // - xroot; for device part, "Device:\"
+    //
+    // "C:\" + "Windows\" + "DBGHELP" + ".DLL"
+    // xroot + xdirpath + xfilename + xfilext
+    //
+    //==============================================================================
+    class xfilepath
+    {
+    protected:
+        friend class xdirpath;
+        friend class xfilesystem;
 
-		xfilepath(xfilesystem* parent, utf16::alloc* allocator, utf16::runes& str);
+        xfilepath(xfilesystem* parent, utf16::alloc* allocator, utf16::runes& str);
 
-	public:
-		xfilesystem*  mFileSystem;
-		utf16::alloc* mAlloc;
-		utf16::runes  mRunes;
+    public:
+        xfilesystem*  mFileSystem;
+        utf16::alloc* mAlloc;
+        utf16::runes  mRunes;
 
-		xfilepath resolve(xfiledevice*&) const;
+    public:
+        xfilepath();
+        xfilepath(const xfilepath& filepath);
+        explicit xfilepath(const xdirpath& dir, const xfilepath& filename);
+        ~xfilepath();
 
-	public:
-		xfilepath();
-		xfilepath(const xfilepath& filepath);
-		explicit xfilepath(const xdirpath& dir, const xfilepath& filename);
-		~xfilepath();
+        void clear();
 
-		void clear();
+        bool isEmpty() const;
+        bool isRooted() const;
 
-		bool isEmpty() const;
-		bool isRooted() const;
+        void makeRelative();
+        void makeRelative(const xdirpath&);
+        void makeRelative(xdirpath&, xfilepath&) const;
 
-		void makeRelative();
-		void makeRelative(const xdirpath&);
-		void makeRelative(xdirpath&, xfilepath&) const;
+        bool getRoot(xdirpath&) const;
+        bool getDirname(xdirpath&) const;
+        void getFilename(xfilepath&) const;
+        void getFilenameWithoutExtension(xfilepath&) const;
+        void getExtension(xfilepath&) const;
 
-		bool getRoot(xdirpath&) const;
-		bool getDirname(xdirpath&) const;
-		void getFilename(xfilepath&) const;
-		void getFilenameWithoutExtension(xfilepath&) const;
-		void getExtension(xfilepath&) const;
+        xfilepath& operator=(const xfilepath&);
+        bool       operator==(const xfilepath&) const;
+        bool       operator!=(const xfilepath&) const;
+    };
 
-		xfilepath& operator=(const xfilepath&);
-		bool	   operator==(const xfilepath&) const;
-		bool	   operator!=(const xfilepath&) const;
-	};
-
-	inline xfilepath operator+(const xdirpath& dir, const xfilepath& filename)
-	{
-		return xfilepath(dir, filename);
-	}
+    inline xfilepath operator+(const xdirpath& dir, const xfilepath& filename) { return xfilepath(dir, filename); }
 
 }; // namespace xcore
 
