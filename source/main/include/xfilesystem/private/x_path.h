@@ -40,6 +40,7 @@ namespace xcore
         utf16::alloc* m_alloc;
         utf16::runes  m_path;
 
+        xpath();
         xpath(utf16::alloc* allocator);
 
         xpath resolve(xfilesystem* filesystem, xfiledevice*& outdevice) const;
@@ -73,7 +74,7 @@ namespace xcore
         void getFilenameWithoutExtension(xpath& out_filename_no_ext) const;
         void getExtension(xpath& out_ext) const;
 
-        xpath& operator=(const xpath&) const;
+        xpath& operator=(const xpath&);
 
         bool operator==(const xpath&) const;
         bool operator!=(const xpath&) const;
