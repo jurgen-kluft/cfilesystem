@@ -36,7 +36,7 @@ namespace xcore
     {
     protected:
         friend class xdirpath;
-        friend class xfilesystem;
+        friend class _xfilesystem_;
 
         xfilepath(xfilesystem* parent, utf16::alloc* allocator, utf16::runes& str);
 

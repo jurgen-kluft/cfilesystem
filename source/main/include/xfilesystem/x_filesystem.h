@@ -15,56 +15,70 @@ namespace xcore
 {
     ///< Forward declares
     class xalloc;
-
     class xfilesystem;
-    class xio_thread;
+
+    struct xfilesyscfg
+    {
+        inline xfilesyscfg() : m_max_open_stream(32), m_default_slash('/'), m_allocator(nullptr) {}
+        u32     m_max_open_stream;
+        char    m_default_slash;
+        xalloc* m_allocator;
+    };
 
     ///< Initialization
-    extern xfilesystem* create_fs(u32 max_open_streams, xio_thread* io_thread, xalloc* allocator);
+    extern xfilesystem* create_fs(xfilesyscfg const& cfg);
     extern void         destroy_fs(xfilesystem*);
 
-    ///< doIO; user has to call this from either the main thread or an Io thread.
-    ///< This call will block the calling thread and it will stay in a do-while
-    ///< until threading->loop() is false.
-    extern void doIO(xio_thread*);
-
     class xfile;
-    class xinfo;
     class xwriter;
     class xreader;
     class xfilepath;
+    class xfileinfo;
+    class xdirpath;
+    class xdirinfo;
 
+    class _xfilesystem_;
     class xfilesystem
     {
     public:
-        xfile*   open(xfilepath const& filename, EFileMode mode);
-        xstream* open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
-        xwriter* writer(xfile*);
-        xreader* reader(xfile*);
-        void     close(xfile*);
-        void     close(xinfo*);
-        void     close(xreader*);
-        void     close(xwriter*);
-        void     close(xstream*);
-        xinfo*   info(xfilepath const& path);
-        bool     exists(xinfo*);
-        s64      size(xinfo*);
-        xfile*   open(xinfo*, EFileMode mode);
-        void     rename(xinfo*, xfilepath const&);
-        void     move(xinfo* src, xinfo* dst);
-        void     copy(xinfo* src, xinfo* dst);
-        void     remove(xinfo*);
-        s32      read(xreader*, xbuffer&);
-        s32      write(xwriter*, xcbuffer const&);
-        void     read_async(xreader*, xbuffer&);
-        s32      wait_async(xreader*);
-
-        xfilepath resolve(xfilepath const&) const;
-        xdirpath  resolve(xdirpath const&) const;
+        xfile*     open(xfilepath const& filename, EFileMode mode);
+        xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
+        xwriter*   writer(xfile*);
+        xreader*   reader(xfile*);
+        void       close(xfile*);
+        void       close(xfileinfo*);
+        void       close(xdirinfo*);
+        void       close(xreader*);
+        void       close(xwriter*);
+        void       close(xstream*);
+        xfileinfo* info(xfilepath const& path);
+        xdirinfo*  info(xdirpath const& path);
+        bool       exists(xfileinfo*);
+        bool       exists(xdirinfo*);
+        s64        size(xfileinfo*);
+        xfile*     open(xfileinfo*, EFileMode mode);
+        void       rename(xfileinfo*, xfilepath const&);
+        void       move(xfileinfo* src, xfileinfo* dst);
+        void       copy(xfileinfo* src, xfileinfo* dst);
+        void       rm(xfileinfo*);
+        void       rm(xdirinfo*);
+        s32        read(xreader*, xbuffer&);
+        s32        write(xwriter*, xcbuffer const&);
+        void       read_async(xreader*, xbuffer&);
+        s32        wait_async(xreader*);
 
     private:
-        xfs_imp* mInstance;
+        _xfilesystem_* mImpl;
     };
+
+    ///< doIO; user has to call this from either the main thread or an IO thread.
+    ///< This call will block the calling thread and it will stay in a do-while
+    ///< until threading->loop() is false.
+    class xio_thread;
+    extern void doIO(xio_thread*);
+
+    extern xfilesystem* create_fs(u32 max_open_streams, xio_thread* io_thread, xalloc* allocator);
+
 }; // namespace xcore
 
 #endif // __X_FILESYSTEM_H__

@@ -8,7 +8,7 @@
 
 namespace xcore
 {
-    using namespace utf16;
+    using namespace utf32;
 
     static void fix_slashes(utf16::runes& str)
     {
@@ -16,7 +16,7 @@ namespace xcore
 
         // Replace incorrect slashes with the correct one
         if (slash == '\\')
-            replace(str, (uchar32)'/', (uchar32)'\\');
+            findReplace(str, (uchar32)'/', (uchar32)'\\');
         else
             replace(str, (uchar32)'\\', (uchar32)'/');
 
