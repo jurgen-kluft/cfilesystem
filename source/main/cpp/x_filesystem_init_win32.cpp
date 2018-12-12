@@ -11,20 +11,14 @@
 #include <stdio.h>
 
 #include "xbase/x_debug.h"
-#include "xbase/x_string_std.h"
 #include "xbase/x_va_list.h"
 
-#include "xfilesystem/x_filedevice.h"
-#include "xfilesystem/private/x_filesystem_common.h"
-#include "xfilesystem/private/x_filesystem_win32.h"
-#include "xfilesystem/private/x_devicealias.h"
+#include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_devicemanager.h"
 
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
 
-//==============================================================================
-// xcore namespace
-//==============================================================================
 namespace xcore
 {
 	namespace xfilesystem
@@ -62,7 +56,7 @@ namespace xcore
 			"a:\\","b:\\","c:\\","d:\\","e:\\","f:\\","g:\\","h:\\","i:\\","j:\\","k:\\","l:\\","m:\\","n:\\","o:\\","p:\\","q:\\","r:\\","s:\\","t:\\","u:\\","v:\\","w:\\","x:\\","y:\\","z:\\"
 		};
 
-		static void x_FileSystemRegisterSystemAliases()
+		static void x_FileSystemRegisterSystemAliases(xdevicemanager* devman)
 		{
 			// Get all logical drives.
 			DWORD		drives	= GetLogicalDrives();
@@ -72,14 +66,11 @@ namespace xcore
 				if (drives&1)
 				{
 					const char*	driveLetter = sSystemDeviceLetters[driveIdx];
-
-					char drive_name[64];
-					drive_name[0] = '\0';
-					x_sprintf(drive_name, sizeof(drive_name)-1, "%s%s", x_va(driveLetter), x_va(":\\"));
+					const char*	devicePath = sSystemDevicePaths[driveIdx];
 
 					xbool boCanWrite = true;
 					EDriveTypes eDriveType = DRIVE_TYPE_UNKNOWN;
-					const u32 uDriveTypeWin32 = 1 << (GetDriveTypeA(drive_name));
+					const u32 uDriveTypeWin32 = 1 << (GetDriveTypeA(devicePath));
 					if (uDriveTypeWin32 & (1<<DRIVE_TYPE_REMOVABLE))
 					{
 						eDriveType = DRIVE_TYPE_REMOVABLE;
@@ -98,15 +89,21 @@ namespace xcore
 						eDriveType = DRIVE_TYPE_FIXED;
 					}
 
-					if (xdevicealias::sFind(driveLetter) == NULL)
+					// Convert driveLetter to a utf32::runes!
+
+					if (devman->find_device(driveLetter) == nullptr)
 					{
 						if (sFileDevices[eDriveType]==NULL)
-							sFileDevices[eDriveType] = x_CreateFileDevicePC(sSystemDevicePaths[driveIdx], boCanWrite);
+							sFileDevices[eDriveType] = x_CreateFileDevice(sSystemDevicePaths[driveIdx], boCanWrite);
 						xfiledevice* device = sFileDevices[eDriveType];
 
 						char local_alias[1024];
 						local_alias[0] = '\0';
 						DWORD ret_val = ::QueryDosDeviceA(driveLetter, local_alias, sizeof(local_alias));
+						// Should this be A or W?
+
+						// Convert to utf32::runes ??
+
 						if (ret_val!=0 && x_strFind(local_alias, "\\??\\")!=0)
 						{
 							// Remove windows text crap.
@@ -119,12 +116,15 @@ namespace xcore
 								alias_len++;
 							}
 
-							xdevicealias::sRegister(xfilesystem::xdevicealias(driveLetter, device, sSystemDevicePaths[driveIdx]));
+							// sSystemDevicePaths[driveIdx] to utf32::runes
+							// What todo with local alias, add as an alias ?
+
+							devman->add_device(sSystemDevicePaths[driveIdx], device);
 						}
 						else
 						{
 							// Register system device.
-							xdevicealias::sRegister(xfilesystem::xdevicealias(driveLetter, device, sSystemDevicePaths[driveIdx]));
+							devman->add_device(sSystemDevicePaths[driveIdx], device);
 						}
 					}
 
@@ -149,12 +149,12 @@ namespace xcore
 		//------------------------------------------------------------------------------
 		static char sAppDir[1024] = { '\0' };										///< Needs to end with a backslash!
 		static char sWorkDir[1024] = { '\0' };										///< Needs to end with a backslash!
-		void init(u32 max_open_streams, xio_thread* io_thread, x_iallocator* allocator)
+		void init(u32 max_open_streams, xio_thread* io_thread, xalloc* allocator)
 		{
 			xfilesystem::setAllocator(allocator);
 
+			// TODO create xdevicemanager 
 			xdevicealias::init();
-
 
 			// Get the application directory (by removing the executable filename)
 			::GetModuleFileName(0, sAppDir, sizeof(sAppDir) - 1);
@@ -209,7 +209,6 @@ namespace xcore
 		//------------------------------------------------------------------------------
 		void exit()
 		{
-
 			xfilesystem::shutdown();
 			xdevicealias::exit();
 
@@ -218,19 +217,15 @@ namespace xcore
 				xfiledevice* device = sFileDevices[i];
 				if (device != NULL)
 				{
-					x_DestroyFileDevicePC(device);
+					x_DestroyFileDevice(device);
 					sFileDevices[i] = NULL;
 				}
 			}
-
 
 			xfilesystem::setAllocator(NULL);
 		}
 	}
 
-	//==============================================================================
-	// END xcore namespace
-	//==============================================================================
 };
 
 #endif // TARGET_PC

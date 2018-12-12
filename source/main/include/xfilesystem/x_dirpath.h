@@ -9,15 +9,14 @@
 // INCLUDES
 //==============================================================================
 #include "xbase/x_debug.h"
-#include "xbase/x_runes.h"
 
 #include "xfilesystem/x_enumerator.h"
+#include "xfilesystem/private/x_path.h"
 
 //==============================================================================
 namespace xcore
 {
     class xfilepath;
-    class xfiledevice;
     class xfilesystem;
 
     //==============================================================================
@@ -33,13 +32,11 @@ namespace xcore
         friend class xdirinfo;
         friend class xfilesystem;
 
-        xdirpath(xfilesystem* fs, utf16::alloc* allocator);
-        xdirpath(xfilesystem* fs, utf16::alloc* allocator, const utf16::runes& str);
+        xdirpath(xfilesystem* fs, xpath& path);
 
     public:
-        xfilesystem*  mParent;
-        utf16::alloc* mAlloc;
-        utf16::runes  mRunes;
+        xfilesystem* mParent;
+        xpath        mPath;
 
     public:
         xdirpath();
@@ -48,10 +45,6 @@ namespace xcore
         ~xdirpath();
 
         void clear();
-
-        s32  getLevels() const;
-        bool getLevel(s32 level, xdirpath& name) const;
-        s32  getLevelOf(const xdirpath& name) const;
 
         bool isEmpty() const;
         bool isRoot() const;
@@ -63,13 +56,14 @@ namespace xcore
         void makeRelativeTo(const xdirpath& parent);
         void makeRelativeTo(const xdirpath& parent, xdirpath& sub) const;
 
+        s32  getLevels() const;
+        bool getLevel(s32 level, xdirpath& name) const;
+        s32  getLevelOf(const xdirpath& name) const;
         bool split(s32 level, xdirpath& parent, xdirpath& subDir) const;
 
         bool getName(xfilepath& outName) const;
         bool hasName(const xfilepath& inName) const;
-        bool getRoot(xdirpath& outRootDirPath) const;
         bool getParent(xdirpath& outParentDirPath) const;
-
         void setRoot(const xdirpath& device);
         bool getRoot(xdirpath& outDevice) const;
 

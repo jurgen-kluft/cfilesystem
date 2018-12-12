@@ -2,19 +2,18 @@
 // INCLUDES
 //==============================================================================
 #include "xbase/x_target.h"
+#include "xbase/x_bit_field.h"
 #include "xbase/x_debug.h"
 #include "xbase/x_limits.h"
-#include "xbase/x_string_std.h"
 #include "xbase/x_va_list.h"
-#include "xbase/x_bit_field.h"
 
 #include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_filestream.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_stream.h"
-#include "xfilesystem/x_istream.h"
 
-#include "xfilesystem/private/x_filesystem_common.h"
+#include "xfilesystem/private/x_enumerations.h"
+#include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_istream.h"
 
 //==============================================================================
 // xcore namespace
@@ -23,8 +22,10 @@ namespace xcore
 {
 	class xifilestream : public xistream
 	{
+		xfiledevice*			mFs;
 		s32						mRefCount;
-		s32						mFileHandle;
+		void*					mFileHandle;
+		u64						mOffset;
 
 		enum ECaps
 		{
@@ -38,20 +39,18 @@ namespace xcore
 			USE_WRITE	= 0x4000,
 			USE_ASYNC	= 0x8000,
 		};
-		x_bitfield<u32>		mCaps;
-		x_asyncio_callback_struct mCallback;
+		xbits<u32>		mCaps;
 
 	public:
 		xifilestream()
 			: mRefCount(2)
 			, mFileHandle(INVALID_FILE_HANDLE)
+			, mCaps(0)
 		{
 		}
 
-		xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct callback);
+		xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
 		~xifilestream(void);
-
-		XFILESYSTEM_OBJECT_NEW_DELETE()
 
 		virtual void			hold()																{ mRefCount++; }
 		virtual s32				release()															{ --mRefCount; return mRefCount; }
@@ -64,80 +63,36 @@ namespace xcore
 		virtual bool			isAsync() const;													///< Gets a value indicating whether the stream was opened asynchronously or synchronously.
 		virtual u64				getLength() const;													///< Gets the length in bytes of the stream. (Overrides xstream.Length.)
 		virtual void			setLength(u64 length);								 				///< When overridden in a derived class, sets the length of the current stream.
-		virtual u64				getPosition() const;												///< Gets the current position of this stream. (Overrides xstream.Position.)
-		virtual u64				setPosition(u64 Pos);												///< Sets the current position of this stream. (Overrides xstream.Position.)
 
 		virtual u64				seek(s64 offset, ESeekOrigin origin);			 					///< When overridden in a derived class, sets the position within the current stream.
 		virtual void			close(); 															///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
 		virtual void			flush();															///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
 
-		virtual u64				read(xbyte* buffer, u64 offset, u64 count);		 					///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
-		virtual u64				readByte(xbyte& outByte);							 				///< Reads a byte from the stream and advances the position within the stream by one byte, or returns -1 if at the end of the stream.
-		virtual u64				write(const xbyte* buffer, u64 offset, u64 count);					///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
-		virtual u64				writeByte(xbyte value);								 				///< Writes a byte to the current position in the stream and advances the position within the stream by one byte.
+		virtual u64				read(xbyte* buffer, u64 count);					 					///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
+		virtual u64				write(const xbyte* buffer, u64 count);								///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
 
-		virtual bool			beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);	  	///< Begins an asynchronous read operation.
-//			virtual void			endRead(xasync_result& asyncResult);												///< Waits for the pending asynchronous read to complete.
-		virtual bool			beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback);	///< Begins an asynchronous write operation.
-//			virtual void			endWrite(xasync_result& asyncResult);												///< Ends an asynchronous write operation.
+		virtual bool			beginRead(xbyte* buffer, u64 count);		  						///< Begins an asynchronous read operation.
+		virtual s64				endRead(bool block);												///< Waits for the pending asynchronous read to complete.
+		virtual bool			beginWrite(const xbyte* buffer, u64 count);							///< Begins an asynchronous write operation.
+		virtual s64				endWrite(bool block);												///< Ends an asynchronous write operation.
 
 		virtual void			copyTo(xistream* dst);												///< Reads the bytes from the current stream and writes them to the destination stream.
 		virtual void			copyTo(xistream* dst, u64 count);									///< Reads all the bytes from the current stream and writes them to a destination stream, using a specified buffer size.
 	};
 
-	// -------------------------- xfilestream --------------------------
-
-	xfilestream::xfilestream() 
-		: xstream()
-	{
-	}
-
-	xfilestream::xfilestream(const xfilestream& other)
-		: xstream(other.mImplementation)
-	{
-	}
-
-	xfilestream::xfilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct callback)
-	{
-		mImplementation = new xifilestream(filename, mode, access, op, callback);
-	}
-
-	xfilestream::~xfilestream()
-	{
-	}
-
-	xfilestream&			xfilestream::operator =			(const xfilestream& other)
-	{
-		if (this == &other)
-			return *this;
-
-		if (mImplementation->release() == 0)
-			mImplementation->destroy();
-		mImplementation = other.mImplementation;
-		mImplementation->hold();
-		return *this;
-	}
-
-	bool					xfilestream::operator ==		(const xfilestream& other) const
-	{
-		return other.mImplementation == mImplementation;
-	}
-
-	bool					xfilestream::operator !=		(const xfilestream& other) const
-	{
-		return other.mImplementation != mImplementation;
-	}
-
 	// ---------------------------------------------------------------------------------------------
 
-	xifilestream::xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op, x_asyncio_callback_struct callback)
+	xifilestream::xifilestream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
 		: mRefCount(1)
 		, mFileHandle(INVALID_FILE_HANDLE)
 		, mCaps(NONE)
-		, mCallback(callback)
 	{
 		bool can_read, can_write, can_seek, can_async;
-		xfilesystem::xfs_common::s_instance()->caps(filename, can_read, can_write, can_seek, can_async);
+		//mFs->caps(filename, can_read, can_write, can_seek, can_async);
+		can_read = true;
+		can_write = true;
+		can_seek = true;
+		can_async = true;
 		mCaps.set(CAN_WRITE, can_write);
 		mCaps.set(CAN_READ, can_read);
 		mCaps.set(CAN_SEEK, can_seek);
@@ -148,45 +103,40 @@ namespace xcore
 		mCaps.set(USE_WRITE, can_write && ((access&FileAccess_Write)!=0));
 		mCaps.set(USE_ASYNC, can_async && (op == FileOp_Async));
 
-		// check if we use async, it is properly setup
-		ASSERT(op == FileOp_Sync || callback.callback != NULL);
-
 		switch(mode)
 		{
 			case FileMode_CreateNew:
 				{
-					if (mCaps.isSet(CAN_WRITE))
+					if (mCaps.is_set(CAN_WRITE))
 					{
-						if (xfilesystem::xfs_common::s_instance()->exists(filename.c_str()) == xFALSE)
+						if (mFs->hasFile(filename) == xFALSE)
 						{
-							//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
-							mFileHandle = xfilesystem::xfs_common::s_instance()->createFile(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-							xfilesystem::xfs_common::s_instance()->setLength(mFileHandle, 0);
+							mFs->openFile(filename, mCaps.is_set(USE_READ), mCaps.is_set(USE_WRITE), mFileHandle);
+							mFs->setLengthOfFile(mFileHandle, 0);
 						}
 					}
 				} break;
 			case FileMode_Create:
 				{
-					if (mCaps.isSet(CAN_WRITE))
+					if (mCaps.is_set(CAN_WRITE))
 					{
-						if (xfilesystem::xfs_common::s_instance()->exists(filename.c_str()) == xTRUE)
+						if (mFs->hasFile(filename) == xTRUE)
 						{
-							mFileHandle = xfilesystem::xfs_common::s_instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-							xfilesystem::xfs_common::s_instance()->setLength(mFileHandle, 0);
+							mFs->openFile(filename, mCaps.is_set(USE_READ), mCaps.is_set(USE_WRITE), mFileHandle);
+							mFs->setLengthOfFile(mFileHandle, 0);
 						}
 						else
 						{
-							//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
-							mFileHandle = xfilesystem::xfs_common::s_instance()->createFile(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-							xfilesystem::xfs_common::s_instance()->setLength(mFileHandle, 0);
+							mFs->openFile(filename, mCaps.is_set(USE_READ), mCaps.is_set(USE_WRITE), mFileHandle);
+							mFs->setLengthOfFile(mFileHandle, 0);
 						}
 					}
 				} break;
 			case FileMode_Open:
 				{
-					if (xfilesystem::xfs_common::s_instance()->exists(filename.c_str()) == xTRUE)
+					if (mFs->hasFile(filename) == xTRUE)
 					{
-						mFileHandle = xfilesystem::xfs_common::s_instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+						mFs->openFile(filename, mCaps.is_set(USE_READ), mCaps.is_set(USE_WRITE), mFileHandle);
 					}
 					else
 					{
@@ -196,44 +146,44 @@ namespace xcore
 			case FileMode_OpenOrCreate:
 				{
 					{
-						if (xfilesystem::xfs_common::s_instance()->exists(filename.c_str()) == xTRUE)
+						if (mFs->hasFile(filename) == xTRUE)
 						{
-							mFileHandle = xfilesystem::xfs_common::s_instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-							xfilesystem::xfs_common::s_instance()->setLength(mFileHandle, 0);
+							mFs->openFile(filename, mCaps.is_set(USE_READ), mCaps.is_set(USE_WRITE), mFileHandle);
+							mFs->setLengthOfFile(mFileHandle, 0);
 						}
 						else
 						{
-							//mFileHandle = xfilesystem::open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE), NULL);
-							mFileHandle = xfilesystem::xfs_common::s_instance()->createFile(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
-							xfilesystem::xfs_common::s_instance()->setLength(mFileHandle, 0);
+							//mFileHandle = xfilesystem::open(filename, mCaps.is_set(USE_READ), mCaps.is_set(USE_WRITE), NULL);
+							mFs->createFile(filename, mCaps.is_set(USE_READ), mCaps.is_set(USE_WRITE), mFileHandle);
+							mFs->setLengthOfFile(mFileHandle, 0);
 						}
 					}
 				} break;
 			case FileMode_Truncate:
 				{
-					if (mCaps.isSet(CAN_WRITE))
+					if (mCaps.is_set(CAN_WRITE))
 					{
-						if (xfilesystem::xfs_common::s_instance()->exists(filename.c_str()) == xTRUE)
+						if (mFs->hasFile(filename) == xTRUE)
 						{
-							mFileHandle = xfilesystem::xfs_common::s_instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+							mFs->openFile(filename, mCaps.is_set(USE_READ), mCaps.is_set(USE_WRITE), mFileHandle);
 							if (mFileHandle != INVALID_FILE_HANDLE)
 							{
-								xfilesystem::xfs_common::s_instance()->setLength(mFileHandle, 0);
+								mFs->setLengthOfFile(mFileHandle, 0);
 							}
 						}
 					}
 				} break;
 			case FileMode_Append:
 				{
-					if (mCaps.isSet(CAN_WRITE))
+					if (mCaps.is_set(CAN_WRITE))
 					{
-						if (xfilesystem::xfs_common::s_instance()->exists(filename.c_str()) == xTRUE)
+						if (mFs->hasFile(filename) == xTRUE)
 						{
-							mFileHandle = xfilesystem::xfs_common::s_instance()->open(filename.c_str(), mCaps.isSet(USE_READ), mCaps.isSet(USE_WRITE));
+							mFs->openFile(filename, mCaps.is_set(USE_READ), mCaps.is_set(USE_WRITE), mFileHandle);
 							if (mFileHandle != INVALID_FILE_HANDLE)
 							{
 								mCaps.set(USE_READ, false);
-								mCaps.set(USE_SEEK, true);
+								mCaps.set(USE_SEEK, false);
 								mCaps.set(USE_WRITE, true);
 							}
 						}
@@ -248,17 +198,17 @@ namespace xcore
 
 	bool			xifilestream::canRead() const
 	{
-		return mCaps.isSet( (CAN_READ|USE_READ) );
+		return mCaps.is_set( (CAN_READ|USE_READ) );
 	}
 
 	bool			xifilestream::canSeek() const
 	{
-		return mCaps.isSet((CAN_SEEK|USE_SEEK));
+		return mCaps.is_set((CAN_SEEK|USE_SEEK));
 	}
 
 	bool			xifilestream::canWrite() const
 	{
-		return mCaps.isSet((CAN_WRITE|USE_WRITE));
+		return mCaps.is_set((CAN_WRITE|USE_WRITE));
 	}
 
 	bool			xifilestream::isOpen() const
@@ -268,49 +218,42 @@ namespace xcore
 
 	bool			xifilestream::isAsync() const
 	{
-		return mCaps.isSet((CAN_ASYNC|USE_ASYNC));
+		return mCaps.is_set((CAN_ASYNC|USE_ASYNC));
 	}
 
 	u64				xifilestream::getLength() const
 	{
-		return xfilesystem::xfs_common::s_instance()->getLength(mFileHandle);
+		u64 length;
+		if (mFs->getLengthOfFile(mFileHandle, length))
+			return length;
+		return 0;
 	}
 	
 	void			xifilestream::setLength(u64 length)
 	{
-		xfilesystem::xfs_common::s_instance()->setLength(mFileHandle, length);
-	}
-
-	u64				xifilestream::getPosition() const
-	{
-		return (u64)xfilesystem::xfs_common::s_instance()->getpos(mFileHandle);
-	}
-
-	u64				xifilestream::setPosition(u64 Pos)
-	{
-		return xfilesystem::xfs_common::s_instance()->setpos(mFileHandle, Pos);
+		mFs->setLengthOfFile(mFileHandle, length);
 	}
 
 	u64				xifilestream::seek(s64 offset, ESeekOrigin origin)
 	{
-		u64 pos=0;
-		if (mCaps.isSet(USE_SEEK))
+		u64 offset = mOffset;
+		if (mCaps.is_set(USE_SEEK))
 		{
 			switch (origin)
 			{
-				case Seek_Begin  : pos=xfilesystem::xfs_common::s_instance()->setpos(mFileHandle, offset); break;
-				case Seek_Current: pos=xfilesystem::xfs_common::s_instance()->setpos(mFileHandle, getPosition() + offset); break;
-				case Seek_End    : pos=xfilesystem::xfs_common::s_instance()->setpos(mFileHandle, (s64)getLength() + offset); break;
+				case Seek_Begin  : mOffset = offset; break;
+				case Seek_Current: mOffset = mOffset + offset; break;
+				case Seek_End    : mOffset = getLength() - offset; break;
 			}
 		}
-		return pos;
+		return offset;
 	}
 
 	void			xifilestream::close()
 	{
 		if (mFileHandle != INVALID_FILE_HANDLE)
 		{
-			xfilesystem::xfs_common::s_instance()->close(mFileHandle);
+			mFs->closeFile(mFileHandle);
 		}
 	}
 
@@ -318,112 +261,94 @@ namespace xcore
 	{
 	}
 
-	u64				xifilestream::read(xbyte* buffer, u64 offset, u64 count)
+	u64				xifilestream::read(xbyte* buffer, u64 count)
 	{
-		if (mCaps.isSet(USE_READ))
+		if (mCaps.is_set(USE_READ))
 		{
-			//u64 p = getPosition();
-			u64 n = xfilesystem::xfs_common::s_instance()->read(mFileHandle, offset, count, buffer);
-			return n;
-		} else return 0;
-	}
-
-	u64				xifilestream::readByte(xbyte& outByte)
-	{
-		if (mCaps.isSet(USE_READ))
-		{
-			xbyte data[4];
-			u64 p = getPosition();
-			u64 n = xfilesystem::xfs_common::s_instance()->read(mFileHandle, p, 1, data);
-			outByte = (s32)data[0];
+			u64 n;
+			if (mFs->readFile(mFileHandle, mOffset, buffer, count, n))
+			{
+				mOffset += n;
+			}
 			return n;
 		}
-		else return 0;
+		return 0;
 	}
-
-	u64				xifilestream::write(const xbyte* buffer, u64 offset, u64 count)
+	
+	u64				xifilestream::write(const xbyte* buffer, u64 count)
 	{
-		if (mCaps.isSet(USE_WRITE))
+		if (mCaps.is_set(USE_WRITE))
 		{
-			//u64 p = getPosition();
-			u64 n = xfilesystem::xfs_common::s_instance()->write(mFileHandle, offset, count, buffer);
+			u64 n;
+			if (mFs->writeFile(mFileHandle, mOffset, buffer, count, n))
+			{
+				mOffset += n;
+			}
 			return n;
 		}
-		else return 0;
+		return 0;
 	}
 
-	u64				xifilestream::writeByte(xbyte value)
+	s64 xifilestream::endWrite(bool block)
 	{
-		if (mCaps.isSet(USE_WRITE))
-		{
-			xbyte data[4];
-			data[0] = value;
-			u64 p = getPosition();
-			u64 n = xfilesystem::xfs_common::s_instance()->write(mFileHandle, p, 1, data);
-			return n;
-		}
-		else return 0;
+		return 0;
 	}
 
-	bool	xifilestream::beginRead(xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback)
+	bool	xifilestream::beginRead(xbyte* buffer, u64 count)
 	{
-		if (mCaps.isSet(USE_READ))
+		if (mCaps.is_set(USE_READ))
 		{
-			u64 p = 0; // call get position in the IO thread, not here. //getPosition();
-
-			x_asyncio_callback_struct currCallback = mCallback;
-
-			if(callback.callback != NULL)
-				currCallback = callback;
-
-			xfilesystem::xfs_common::s_instance()->read(mFileHandle, p, count, &buffer[offset], currCallback);
-			return true;
-		}
-		else return false;
-	}
-
-
-	bool xifilestream::beginWrite(const xbyte* buffer, u64 offset, u64 count, x_asyncio_callback_struct callback)
-	{
-		if (mCaps.isSet(USE_WRITE))
-		{
-			// TODO: fix proper offset??
-			u64 p = 0; //= getPosition(); // This is not synchronized, must do this in the io thread NOT main thread!!!!
-
-			x_asyncio_callback_struct currCallback = mCallback;
-
-			if(callback.callback != NULL)
-				currCallback = callback;
-
-			xfilesystem::xfs_common::s_instance()->write(mFileHandle, p, count, &buffer[offset], currCallback);
-			return true;	
+			u64 n;
+			if (mFs->readFile(mFileHandle, mOffset, buffer, count, n))
+			{
+				
+				return true;
+			}
 		}
 		return false;
 	}
 
-
-	void			xifilestream::copyTo(xistream* dst)
+	s64 xifilestream::endRead(bool block)
 	{
-		u64 streamLength = getLength();
-		xbyte* buffer = (xbyte*)heapAlloc(u32(streamLength) ,X_ALIGNMENT_DEFAULT);
-		seek(0,Seek_Begin);
-		dst->seek(0,Seek_Begin);
-		read(buffer,0,streamLength);
-		dst->write(buffer,0,streamLength);
-		heapFree(buffer);
+		//mOffset += n;
+		return 0;
 	}
 
-	void			xifilestream::copyTo(xistream* dst, u64 count)
+	bool xifilestream::beginWrite(const xbyte* buffer, u64 count)
 	{
-		u64 streamLength = getLength();
-		if (count > streamLength)
-			count = streamLength;
-		xbyte* buffer =(xbyte*)heapAlloc(u32(count),X_ALIGNMENT_DEFAULT);
-		seek(0,Seek_Begin);
-		dst->seek(0,Seek_Begin);
-		read(buffer,0,count);
-		dst->write(buffer,0,count);
-		heapFree(buffer);
+		if (mCaps.is_set(USE_WRITE))
+		{
+			u64 n;
+			if (mFs->writeFile(mFileHandle, mOffset, buffer, count, n))
+			{
+				
+				return true;	
+			}
+		}
+		return false;
+	}
+
+	s64 xifilestream::endWrite(bool block)
+	{
+		//mOffset += n;
+		return 0;
+	}
+
+
+	void			xstream_copy(xstream* src, xstream* dst, xbuffer& buffer)
+	{
+		s64 streamLength = (s64)src->getLength();
+		while (streamLength > 0)
+		{
+			u64 const r = src->read(buffer.m_mutable, buffer.m_len);
+			dst->write(buffer.m_mutable, buffer.m_len);
+			streamLength -= r;
+		}
+	}
+
+	void			xstream_copy(xstream* src, xstream* dst, u64 count)
+	{
+
 	}
 
 };

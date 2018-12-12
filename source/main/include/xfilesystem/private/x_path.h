@@ -37,13 +37,22 @@ namespace xcore
 
     struct xpath
     {
-        utf16::alloc* m_alloc;
-        utf16::runes  m_path;
+        typedef utf32::runes __runes;
+        typedef utf32::alloc __alloc;
+
+        __alloc* m_alloc;
+        __runes  m_path;
 
         xpath();
-        xpath(utf16::alloc* allocator);
+        xpath(__alloc* allocator);
+        xpath(const xpath& path);
+        xpath(const xpath& lhspath, const xpath& rhspath);
 
         xpath resolve(xfilesystem* filesystem, xfiledevice*& outdevice) const;
+
+        void set_filepath(xpath::__runes& runes, xpath::__alloc* allocator);
+        void set_dirpath(xpath::__runes& runes, xpath::__alloc* allocator);
+        void combine(const xpath& dirpath, const xpath& filepath);
 
         void clear();
         void erase();
@@ -52,10 +61,6 @@ namespace xcore
         bool isRoot() const;
         bool isRooted() const;
         bool isSubDirOf(const xpath& dirpath) const;
-
-        void set_filepath(utf16::runes& runes, utf16::alloc* allocator);
-        void set_dirpath(utf16::runes& runes, utf16::alloc* allocator);
-        void set_combine(xpath const& dirpath, xpath const& filepath);
 
         s32  getLevels() const;
         bool getLevel(s32 level, xpath& dirpath) const;
@@ -67,8 +72,7 @@ namespace xcore
 
         void setRootDir(const xpath& in_root_dirpath);
         bool getRootDir(xpath& out_root_dirpath) const;
-        bool getParentDir(xpath& out_parent_dirpath) const;
-        bool getDir(xpath& out_dirpath) const;
+        bool getDirname(xpath& out_dirpath) const;
 
         void getFilename(xpath& out_filename) const;
         void getFilenameWithoutExtension(xpath& out_filename_no_ext) const;

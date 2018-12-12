@@ -31,11 +31,13 @@ namespace xcore
 		FS_MEM_ALIGNMENT			= 128,
 	};
 
-	enum EFileHandle
+	enum
 	{
-		PENDING_FILE_HANDLE			= -2,
-		INVALID_FILE_HANDLE			= -1,
+		PENDING_FILE_HANDLE			= (s64)(void*)-2,
+		
 	};
+
+	void*	INVALID_FILE_HANDLE	= (void*)-1;
 
 	enum ESeekOrigin
 	{
@@ -66,14 +68,6 @@ namespace xcore
 		FileOp_Sync,
 		FileOp_Async,
 	};
-
-
-	#define XFILESYSTEM_OBJECT_NEW_DELETE()																					\
-		void*	operator new(xcore::xsize_t num_bytes)				{ return heapAlloc(num_bytes, X_ALIGNMENT_DEFAULT); }	\
-		void*	operator new(xcore::xsize_t num_bytes, void* mem)	{ return mem; }											\
-		void	operator delete(void* mem)							{ heapFree(mem); }										\
-		void	operator delete(void* mem, void* )					{ }						
-
 
 	enum EError
 	{

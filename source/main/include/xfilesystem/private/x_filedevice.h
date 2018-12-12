@@ -21,6 +21,7 @@ namespace xcore
     class xfileinfo;
     class xdirinfo;
     struct xfileattrs;
+	struct xfiletimes;
     class xstream;
 
     // System file device
