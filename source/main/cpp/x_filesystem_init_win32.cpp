@@ -21,7 +21,7 @@
 
 namespace xcore
 {
-	namespace xfilesystem
+	namespace 
 	{
 		// Register all system devices for windows.
 		enum EDriveTypes
@@ -118,6 +118,7 @@ namespace xcore
 
 							// sSystemDevicePaths[driveIdx] to utf32::runes
 							// What todo with local alias, add as an alias ?
+							devman->add_alias(alias, sSystemDevicePaths[driveIdx]);
 
 							devman->add_device(sSystemDevicePaths[driveIdx], device);
 						}
@@ -149,9 +150,9 @@ namespace xcore
 		//------------------------------------------------------------------------------
 		static char sAppDir[1024] = { '\0' };										///< Needs to end with a backslash!
 		static char sWorkDir[1024] = { '\0' };										///< Needs to end with a backslash!
-		void init(u32 max_open_streams, xio_thread* io_thread, xalloc* allocator)
+		void create_fs(xfilesyscfg const& cfg)
 		{
-			xfilesystem::setAllocator(allocator);
+			
 
 			// TODO create xdevicemanager 
 			xdevicealias::init();
@@ -209,21 +210,26 @@ namespace xcore
 		//------------------------------------------------------------------------------
 		void exit()
 		{
-			xfilesystem::shutdown();
-			xdevicealias::exit();
 
-			for (s32 i=0; i<DRIVE_TYPE_NUM; ++i)
-			{
-				xfiledevice* device = sFileDevices[i];
-				if (device != NULL)
-				{
-					x_DestroyFileDevice(device);
-					sFileDevices[i] = NULL;
-				}
-			}
-
-			xfilesystem::setAllocator(NULL);
 		}
+	}
+
+    xfilesystem* create_fs(xfilesyscfg const& cfg)
+	{
+		// Create _xfilesystem_
+		// Create xdevicemanager
+		// Create xfilesystem giving it the instance of _xfilesystem_ and xdevicemanager
+
+	}
+
+    void         destroy_fs(xfilesystem* fs)
+	{
+		// Get the devman = xdevicemanager from _xfilesystem_ instance
+		// devman->exit();
+		// delete devman
+		// Destroy the _xfilesystem_ instance
+
+	
 	}
 
 };

@@ -10,6 +10,7 @@
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/private/x_devicemanager.h"
+#include "xfilesystem/private/x_filedevice.h"
 #include "xfilesystem/private/x_path.h"
 
 namespace xcore
@@ -23,6 +24,20 @@ namespace xcore
 		mNumDevices = 0;
 		for (s32 i=0; i<MAX_FILE_ALIASES; ++i)
 			mDeviceList[i] = device_t();
+	}
+
+	void				xdevicemanager::exit()
+	{
+		for (s32 i=0; i<mNumDevices; ++i)
+		{
+			xfiledevice* device = mDeviceList[i].mDevice;
+			if (device != nullptr)
+			{
+				x_DestroyFileDevice(device);
+				mDeviceList[i].mDevice = nullptr;
+			}
+		}
+		mNumDevices = 0;
 	}
 
 	//==============================================================================

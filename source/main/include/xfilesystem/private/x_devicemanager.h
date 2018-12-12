@@ -39,6 +39,7 @@ namespace xcore
 								xdevicemanager();
 
 		void					clear();
+		void					exit();
 
 		bool					add_device(const utf32::crunes& devname, xfiledevice* );
 		bool					add_alias(const utf32::crunes& remap, const utf32::crunes& devname);
