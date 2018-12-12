@@ -6,10 +6,7 @@
 #endif
 
 //==============================================================================
-// INCLUDES
-//==============================================================================
-#include "xstring/x_string.h"
-
+#include "xfilesystem/private/x_path.h"
 
 namespace xcore
 {
@@ -35,29 +32,44 @@ namespace xcore
 			MAX_FILE_ALIASES = 64,
 			MAX_FILE_DEVICES = 64,
 		};
+		typedef utf32::runes	runes;
+		typedef utf32::rune		rune;
 
 	public:
 								xdevicemanager();
 
 		void					clear();
 
-		bool					add_device(const xstring& devname, xfiledevice* );
-		bool					add_alias(const xstring& remap, const xstring& devname);
+		bool					add_device(const utf32::crunes& devname, xfiledevice* );
+		bool					add_alias(const utf32::crunes& remap, const utf32::crunes& devname);
 
-		xfiledevice*			find_device(const xfilepath& );
-		xfiledevice*			find_device(const xdirpath& );
+		// Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
+		xfiledevice*			find_device(const utf32::crunes& devname);
 
 		struct alias_t
 		{
-			inline					device_t() : mAliasStr(), mTargetStr() {}
-			xstring					mAliasStr;						///< data
-			xstring					mTargetStr;						///< "d:\project\data\bin.pc\", data:\file.txt to d:\project\data\bin.pc\file.txt
+			inline					alias_t() 
+				: mAlias(mAliasRunes, mAliasRunes, mAliasRunes+sizeof(mAliasRunes)-1)
+				, mTarget(mTargetRunes, mTargetRunes, mTargetRunes+sizeof(mTargetRunes)-1)
+			{
+				mAliasRunes[sizeof(mAliasRunes)-1]='\0'; 
+				mTargetRunes[sizeof(mTargetRunes)-1]='\0'; 
+			}
+			rune					mAliasRunes[32];
+			rune					mTargetRunes[32];
+			runes					mAlias;							///< data
+			runes					mTarget;						///< "d:\project\data\bin.pc\", data:\file.txt to d:\project\data\bin.pc\file.txt
 		};
 
 		struct device_t
 		{
-			inline					device_t() : mDevName(), mDevice(nullptr) {}
-			xstring					mDevName;
+			inline					device_t() 
+				: mDevName(mDevNameRunes, mDevNameRunes, mDevNameRunes+sizeof(mDevNameRunes)-1), mDevice(nullptr)
+			{ 
+				mDevNameRunes[sizeof(mDevNameRunes)-1]='\0'; 
+			}
+			rune					mDevNameRunes[32];
+			runes					mDevName;
 			xfiledevice*			mDevice;
 		};
 

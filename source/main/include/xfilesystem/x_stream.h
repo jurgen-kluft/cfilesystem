@@ -13,6 +13,8 @@
 
 namespace xcore
 {
+    class xistream;
+
     ///< xstream object
     ///< The main interface of a stream object, user deals with this object most of the time.
     class xstream
@@ -31,7 +33,8 @@ namespace xcore
         u64  getLength() const;
         void setLength(u64 length);
 
-        u64 seek(s64 offset, ESeekOrigin origin);
+        s64  getPos() const;
+        s64  setPos(s64 pos);
 
         void close();
         void flush();
@@ -40,26 +43,24 @@ namespace xcore
         u64 write(const xbyte* buffer, u64 count);
 
         bool beginRead(xbyte* buffer, u64 count);
-        bool endRead(bool block = true);
+        s64 endRead(bool block = true);
 
         bool beginWrite(const xbyte* buffer, u64 count);
-        bool endWrite(bool block = true);
+        s64 endWrite(bool block = true);
 
     protected:
         xstream(xistream*);
         xstream(const xstream&);
 
-        xstream&  operator=(const xstream&) { return *this; }
-        xistream* mImplementation;
+        xstream& operator=(const xstream&) { return *this; }
+
+        xistream* m_pimpl;
 
         friend class xfilesystem;
     };
 
-	bool operator==(const xstream*, const xstream*);
-	bool operator!=(const xstream*, const xstream*);
-
-    void xstream_copy(xstream* src, xstream* dst);
-    void xstream_copy(xstream* src, xstream* dst, u64 count);
+    void xstream_copy(xstream* src, xstream* dst, xbuffer& buffer);
+    void xstream_copy(xstream* src, xstream* dst, u64 count, xbuffer& buffer);
 
 }; // namespace xcore
 

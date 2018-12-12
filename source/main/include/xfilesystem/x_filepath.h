@@ -11,6 +11,8 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 
+#include "xfilesystem/private/x_path.h"
+
 //==============================================================================
 namespace xcore
 {
@@ -38,12 +40,11 @@ namespace xcore
         friend class xdirpath;
         friend class _xfilesystem_;
 
-        xfilepath(xfilesystem* parent, utf16::alloc* allocator, utf16::runes& str);
+        xfilepath(xfilesystem* parent, xpath& path);
 
     public:
-        xfilesystem*  mFileSystem;
-        utf16::alloc* mAlloc;
-        utf16::runes  mRunes;
+        xfilesystem* mFileSystem;
+        xpath        mPath;
 
     public:
         xfilepath();
@@ -58,7 +59,6 @@ namespace xcore
 
         void makeRelative();
         void makeRelative(const xdirpath&);
-        void makeRelative(xdirpath&, xfilepath&) const;
 
         bool getRoot(xdirpath&) const;
         bool getDirname(xdirpath&) const;
@@ -67,8 +67,9 @@ namespace xcore
         void getExtension(xfilepath&) const;
 
         xfilepath& operator=(const xfilepath&);
-        bool       operator==(const xfilepath&) const;
-        bool       operator!=(const xfilepath&) const;
+
+        bool operator==(const xfilepath&) const;
+        bool operator!=(const xfilepath&) const;
     };
 
     inline xfilepath operator+(const xdirpath& dir, const xfilepath& filename) { return xfilepath(dir, filename); }

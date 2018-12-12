@@ -1,14 +1,13 @@
 #ifndef __XFILESYSTEM_XISTREAM_H__
 #define __XFILESYSTEM_XISTREAM_H__
 #include "xbase/x_target.h"
-#ifdef USE_PRAGMA_ONCE 
-#pragma once 
+#ifdef USE_PRAGMA_ONCE
+#pragma once
 #endif
 
 //==============================================================================
 // INCLUDES
 //==============================================================================
-#include "xbase/x_types.h"
 #include "xbase/x_debug.h"
 
 #include "xfilesystem/private/x_enumerations.h"
@@ -18,39 +17,37 @@
 //==============================================================================
 namespace xcore
 {
-	///< xstream implementation interface
-	///< User doesn't deal with this object, it is meant for extendability
-	class xistream
-	{
-	public:
-		virtual					~xistream(void) {}
+    ///< xstream private implementation interface
+    class xistream
+    {
+    public:
+        virtual ~xistream(void) {}
 
-		virtual void			hold() = 0;															///< Reference count, increment
-		virtual s32				release() = 0;														///< Reference count, decrement, ==0 means it should be 'destroy'ed
-		virtual void			destroy() = 0;
+        virtual void hold()    = 0;
+        virtual s32  release() = 0;
+        virtual void destroy() = 0;
 
-		virtual bool			canRead() const = 0;												///< Gets a value indicating whether the current stream supports reading.
-		virtual bool			canSeek() const = 0;												///< Gets a value indicating whether the current stream supports seeking.
-		virtual bool			canWrite() const = 0;												///< Gets a value indicating whether the current stream supports writing.
-		virtual bool			isOpen() const = 0;													///< Gets a value indicating whether the FileStream was opened asynchronously or synchronously.
-		virtual bool			isAsync() const = 0;												///< Gets a value indicating whether the FileStream was opened asynchronously or synchronously.
-		virtual u64				getLength() const = 0;												///< Gets the length in bytes of the stream.
-		virtual void			setLength(u64 length) = 0;							 				///< When overridden in a derived class, sets the length of the current stream.
+        virtual bool canRead() const       = 0;
+        virtual bool canSeek() const       = 0;
+        virtual bool canWrite() const      = 0;
+        virtual bool isOpen() const        = 0;
+        virtual bool isAsync() const       = 0;
+        virtual u64  getLength() const     = 0;
+        virtual void setLength(u64 length) = 0;
+        virtual s64  getPos() const = 0;
+        virtual s64  setPos(s64 pos)       = 0;
 
-		virtual u64				seek(s64 offset, ESeekOrigin origin) = 0;		 					///< When overridden in a derived class, sets the position within the current stream.
+        virtual void close() = 0;
+        virtual void flush() = 0;
 
-		virtual void			close() = 0; 														///< Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
-		virtual void			flush() = 0;														///< When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.
+        virtual u64 read(xbyte* buffer, u64 count)        = 0;
+        virtual u64 write(const xbyte* buffer, u64 count) = 0;
 
-		virtual u64				read(xbyte* buffer, u64 count) = 0; 								///< When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
-		virtual u64				write(const xbyte* buffer, u64 count) = 0;							///< When overridden in a derived class, writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
-
-		virtual bool			beginRead(xbyte* buffer, u64 count) = 0;  							///< Begins an asynchronous read operation.
-		virtual bool			endRead(bool block) = 0;											///< Waits for the pending asynchronous read to complete.
-		virtual bool			beginWrite(const xbyte* buffer, u64 count) = 0;						///< Begins an asynchronous write operation.
-		virtual bool			endWrite(bool block) = 0;											///< Ends an asynchronous write operation.
-	};
-
+        virtual bool beginRead(xbyte* buffer, u64 count)        = 0;
+        virtual s64  endRead(bool block)                        = 0;
+        virtual bool beginWrite(const xbyte* buffer, u64 count) = 0;
+        virtual s64  endWrite(bool block)                       = 0;
+    };
 };
 
 #endif

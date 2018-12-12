@@ -3,20 +3,27 @@
 #include "xbase/x_runes.h"
 
 #include "xfilesystem/private/x_path.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_enumerator.h"
 
 namespace xcore
 {
-    using namespace utf16;
+    using namespace utf32;
 
-    static void fix_slashes(utf16::runes& str)
+    static rune   sSlash                 = '\\';
+    static rune   sSemiColumnSlashStr[3] = {':', '\\', 0};
+    static crunes sSemiColumnSlash(sSemiColumnSlashStr, sSemiColumnSlashStr + 2);
+
+    static void fix_slashes(runes& str)
     {
         uchar32 slash = '\\';
 
         // Replace incorrect slashes with the correct one
         if (slash == '\\')
-            replace(str, (uchar32)'/', (uchar32)'\\');
+            findReplace(str, (uchar32)'/', sSlash);
         else
-            replace(str, (uchar32)'\\', (uchar32)'/');
+            findReplace(str, sSlash, (uchar32)'/');
 
         // Remove double slashes like '\\' or '//'
 
@@ -24,136 +31,314 @@ namespace xcore
         trimDelimiters(str, slash, slash);
     }
 
-    xpath::xpath() : m_alloc(nullptr), m_path() {}
+    xpath::xpath()
+        : m_alloc(nullptr)
+        , m_path()
+    {
+    }
 
-    xpath::xpath(utf16::alloc* allocator)
-        : m_alloc(allocator), m_path()
+    xpath::xpath(xpath::__alloc* allocator)
+        : m_alloc(allocator)
+        , m_path()
     {
         fix_slashes(m_path);
     }
 
-    xpath::xpath(const xpath& path) : m_alloc(path.m_alloc), m_path()
+    xpath::xpath(const xpath& path)
+        : m_alloc(path.m_alloc)
+        , m_path()
     {
         copy(path.m_path, m_path, m_alloc, 16);
+    }
+
+    xpath::xpath(const xpath& lhspath, const xpath& rhspath) {}
+
+    xpath xpath::resolve(xfilesystem* filesystem, xfiledevice*& outdevice) const { return xpath(*this); }
+
+    void xpath::clear() { m_path.clear(); }
+    void xpath::erase()
+    {
+        if (m_alloc != nullptr)
+            m_alloc->deallocate(m_path);
     }
 
     bool xpath::isEmpty() const { return m_path.is_empty(); }
     bool xpath::isRoot() const
     {
-        runes rootpart = find(m_path, runez<4>(":\\"));
+        runes rootpart = find(m_path, sSemiColumnSlash);
         if (rootpart.is_empty())
             return false;
+        // Now determine if we are an actual root, which means that we
+        // do not have any folders after our device statement.
         runes pathpart = selectUntilEndExcludeSelection(m_path, rootpart);
         return pathpart.is_empty();
     }
 
     bool xpath::isRooted() const
     {
-        runes pos = find(m_path, runez<4>(":\\"));
+        runes pos = find(m_path, sSemiColumnSlash);
         return !pos.is_empty();
     }
 
-    bool xpath::isSubDirOf(const xpath& dirpath) const
+    bool xpath::isSubDirOf(const xpath& parent) const
     {
+        // example:
+        // parent = E:\data\files\music\ 
+		// this = files\music\rnb\ 
+		// overlap = files\music\ 
+		// remainder = rnb\ 
+		if (isRooted())
+        {
+            return false;
+        }
 
+        if (parent.isRooted())
+        {
+            runes remainder;
+            runes overlap = selectOverlap(parent.m_path, m_path, remainder);
+            return (!overlap.is_empty()) && !remainder.is_empty();
+        }
+        return false;
     }
 
-    void xpath::set_filepath(utf16::runes& runes, utf16::alloc* allocator)
+    void xpath::set_filepath(xpath::__runes& runes, xpath::__alloc* allocator)
     {
         erase();
         m_alloc = allocator;
-        m_path = runes;
-
-        uchar32 slash = '\\';
+        m_path  = runes;
 
         // Replace incorrect slashes with the correct one
-        replace(m_path, (uchar32)'/', (uchar32)'\\');
+        findReplace(m_path, (uchar32)'/', sSlash);
 
         // Remove double slashes like '\\' or '//'
 
         // Remove slash at the beginning and end
-        trim(m_path, slash);
-
+        trim(m_path, sSlash);
     }
-    
-    void xpath::set_dirpath(utf16::runes& runes, utf16::alloc* allocator)
+
+    void xpath::set_dirpath(xpath::__runes& runes, xpath::__alloc* allocator)
     {
         erase();
         m_alloc = allocator;
-        m_path = runes;
-
-        uchar32 slash = '\\';
+        m_path  = runes;
 
         // Replace incorrect slashes with the correct one
-        replace(m_path, (uchar32)'/', (uchar32)'\\');
+        findReplace(m_path, (uchar32)'/', sSlash);
 
         // Remove double slashes like '\\' or '//'
 
         // Remove slash at the beginning
-        trimLeft(m_path, slash);
+        trimLeft(m_path, sSlash);
 
         // Ensure slash at the end
-        if (!ends_with(m_path, '\\'))
+        if (!ends_with(m_path, sSlash))
         {
-            runez<4> slashstr("\\");
+            crunes slashstr(sSemiColumnSlashStr + 1, sSemiColumnSlashStr + 2);
             concatenate(m_path, slashstr, m_alloc, 16);
         }
     }
 
-    void xpath::set_combine(const xpath& dirpath, const xpath& filepath)
+    void xpath::combine(const xpath& dirpath, const xpath& otherpath)
     {
         erase();
 
         m_alloc = dirpath.m_alloc;
-        if (filepath.isRooted())
+        if (otherpath.isRooted())
         {
-            runes relativefilepath = findSelectAfter(filepath.m_path, runez<4>(":\\"));
+            runes relativefilepath = findSelectAfter(otherpath.m_path, sSemiColumnSlash);
             concatenate(m_path, dirpath.m_path, relativefilepath, m_alloc, 16);
         }
         else
         {
-            concatenate(m_path, dirpath.m_path, filepath.m_path, m_alloc, 16);
+            concatenate(m_path, dirpath.m_path, otherpath.m_path, m_alloc, 16);
         }
     }
 
-    void xpath::clear() { m_path.clear(); }
-    void xpath::erase() { if (m_alloc!=nullptr) m_alloc->deallocate(m_path); }
+    class enumerate_runes
+    {
+    public:
+        virtual bool operator()(s32 level, const runes& folder) = 0;
+    };
+
+    static void enumerate_fn(const runes& dirpath, enumerate_runes& enumerator, bool right_to_left)
+    {
+        s32   level = 0;
+        runes path  = findSelectAfter(dirpath, sSemiColumnSlash);
+        if (right_to_left == false)
+        {
+            runes dir = selectBetween(path, sSlash, sSlash);
+            while (dir.is_empty() == false)
+            {
+                if (enumerator(level, dir) == false)
+                {
+                    break;
+                }
+                level++;
+                dir = selectNextBetween(path, dir, sSlash, sSlash);
+            }
+        }
+        else
+        {
+            runes dir = selectBetweenLast(path, sSlash, sSlash);
+            while (dir.is_empty() == false)
+            {
+                if (enumerator(level, dir) == false)
+                {
+                    break;
+                }
+                level++;
+                dir = selectPreviousBetween(path, dir, sSlash, sSlash);
+            }
+        }
+    }
+
+    class folder_counting_enumerator : public enumerate_runes
+    {
+    public:
+        s32 mLevels;
+        folder_counting_enumerator()
+            : mLevels(0)
+        {
+        }
+        virtual bool operator()(s32 level, const runes& folder)
+        {
+            mLevels++;
+            return true;
+        }
+    };
+
+    s32 xpath::getLevels() const
+    {
+        folder_counting_enumerator e;
+        enumerate_fn(m_path, e, false);
+        return e.mLevels;
+    }
+
+    bool xpath::getLevel(s32 level, xpath& outpath) const
+    {
+        // Return the path at level @level
+        runez<4> device(":\\");
+
+        s32   level = 0;
+        runes path  = findSelectAfter(m_path, device);
+        if (path.is_empty())
+            return false;
+        runes dir = selectBetween(m_path, sSlash, sSlash);
+        while (level > 0 && !dir.is_empty())
+        {
+            dir = selectNextBetween(m_path, dir, sSlash, sSlash);
+            level--;
+        }
+        if (!dir.is_empty())
+        {
+            runes path = selectUntilEndIncludeSelection(m_path, dir);
+            copy(path, outpath.m_path, outpath.m_alloc, 16);
+            return true;
+        }
+        return false;
+    }
+
+    class folder_search_enumerator : public enumerate_delegate
+    {
+    public:
+        runes mFolderName;
+        bool  mFound;
+        s32   mLevel;
+
+        folder_search_enumerator(const runes& folder)
+            : mFolderName(folder)
+            , mFound(false)
+            , mLevel(-1)
+        {
+        }
+
+        virtual bool operator()(s32 level, const runes& folder)
+        {
+            mFound = (mFolderName == folder);
+            mLevel = level;
+            return mFound;
+        }
+    };
+
+    s32 xpath::getLevelOf(const xpath& parent) const
+    {
+        // PARENT:   c:\disk
+        // THIS:     c:\disk\child
+        // RETURN 0
+        if (starts_with(m_path, parent.m_path))
+        {
+        }
+    }
+
+    bool xpath::split(s32 level, xpath& parent_dirpath, xpath& relative_filepath) const
+    {
+        // Split the path at level @level
+        runes path = findSelectAfter(m_path, sSemiColumnSlash);
+        if (path.is_empty())
+            return false;
+
+        runes dir = selectBetween(m_path, sSlash, sSlash);
+        while (level > 0 && !dir.is_empty())
+        {
+            dir = selectNextBetween(m_path, dir, sSlash, sSlash);
+            level--;
+        }
+
+        if (!dir.is_empty())
+        {
+            runes parent_path(m_path.m_str, dir.m_str, m_path.m_end);
+            copy(parent_path, parent_dirpath.m_path, parent_dirpath.m_alloc, 16);
+            runes relative_path = selectUntilEndIncludeSelection(m_path, dir);
+            copy(relative_path, relative_filepath.m_path, relative_filepath.m_alloc, 16);
+            return true;
+        }
+
+        return false;
+    }
 
     void xpath::makeRelative()
     {
         if (isRooted())
         {
-            runes pos = findSelectUntilIncluded(m_path, runez<4>(":\\"));
-            remove(m_path, pos);
+            runes pos = findSelectUntilIncluded(m_path, sSemiColumnSlash);
+            removeSelection(m_path, pos);
         }
     }
 
-    void xpath::makeRelativeTo(const xpath& root)
+    void xpath::makeRelativeTo(const xpath& parent)
     {
-        if (isRooted())
-        {
-            // We are rooted, now check if the incoming root path is
-            // matching our current root path
+        makeRelative();
 
+        // PARENT:   a\b\c\d\ 
+        // THIS:     c\d\e\f\ 
+		// RESULT:   e\f\ 
+        runes parentpath = parent.m_path;
+        if (parent.isRooted())
+        {
+            parentpath = findSelectAfter(parentpath, sSemiColumnSlash);
         }
+
+        runes remainder;
+        runes overlap = selectOverlap(parentpath, m_path, remainder);
+        keepOnlySelection(m_path, remainder);
     }
 
     void xpath::setRootDir(const xpath& in_root_dirpath)
     {
-        runes rootpart = findSelectUntilIncluded(m_path, runez<4>(":\\"));
+        runes rootpart = findSelectUntilIncluded(m_path, sSemiColumnSlash);
         if (rootpart.is_empty() == false)
         {
             insert(m_path, in_root_dirpath.m_path, m_alloc, 16);
         }
         else
         {
-            replaceSelection(m_path, rootpart, in_root_dirpath, m_alloc, 16);
+            replaceSelection(m_path, rootpart, in_root_dirpath.m_path, m_alloc, 16);
         }
     }
-     
+
     bool xpath::getRootDir(xpath& root) const
     {
-        runes rootpart = findSelectUntilIncluded(m_path, runez<4>(":\\"));
+        runes rootpart = findSelectUntilIncluded(m_path, sSemiColumnSlash);
         if (rootpart.is_empty() == false)
         {
             root.erase();
@@ -166,7 +351,7 @@ namespace xcore
         }
     }
 
-    bool xpath::getDir(xpath& outDirPath) const
+    bool xpath::getDirname(xpath& outDirPath) const
     {
         if (isEmpty())
             return false;
@@ -175,7 +360,7 @@ namespace xcore
         outDirPath.m_alloc = m_alloc;
 
         // Select a string until and included the last '\'
-        runes dirpart = findLastSelectUntilIncluded(m_path, '\\');
+        runes dirpart = findLastSelectUntilIncluded(m_path, sSlash);
         if (dirpart.is_empty() == false)
         {
             copy(dirpart, outDirPath.m_path, outDirPath.m_alloc, 16);
@@ -186,7 +371,7 @@ namespace xcore
 
     void xpath::getFilename(xpath& filename) const
     {
-        runes filenamepart = findLastSelectAfter(m_path, '\\');
+        runes filenamepart = findLastSelectAfter(m_path, sSlash);
         if (!filenamepart.is_empty())
         {
             filename.clear();
@@ -197,10 +382,10 @@ namespace xcore
     void xpath::getFilenameWithoutExtension(xpath& filename) const
     {
         filename.clear();
-        runes filenamepart = findLastSelectAfter(m_path, '\\');
+        runes filenamepart = findLastSelectAfter(m_path, sSlash);
         if (!filenamepart.is_empty())
         {
-            filenamepart       = findLastSelectUntil(filenamepart, '.');
+            filenamepart = findLastSelectUntil(filenamepart, '.');
             concatenate(filename.m_path, filenamepart, filename.m_alloc, 16);
         }
     }
@@ -208,9 +393,9 @@ namespace xcore
     void xpath::getExtension(xpath& filename) const
     {
         filename.clear();
-        runes filenamepart = findLastSelectAfter(m_path, '\\');
+        runes filenamepart = findLastSelectAfter(m_path, sSlash);
         runes filenameonly = findLastSelectUntil(filenamepart, '.');
-        runes fileext = selectUntilEndExcludeSelection(filenamepart, filenameonly);
+        runes fileext      = selectUntilEndExcludeSelection(filenamepart, filenameonly);
         concatenate(filename.m_path, fileext, filename.m_alloc, 16);
     }
 
