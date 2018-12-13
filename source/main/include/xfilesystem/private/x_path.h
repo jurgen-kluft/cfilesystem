@@ -78,6 +78,14 @@ namespace xcore
         void getFilenameWithoutExtension(xpath& out_filename_no_ext) const;
         void getExtension(xpath& out_ext) const;
 
+        // These should be used carefully, since they are modifying the
+        // utf32::runes array from holding utf32::rune characters to
+        // utf16::rune characters. You should also use these 2 functions
+        // as a begin/end pair. Do not leave this structure hanging in
+        // utf16 format.
+        void to_utf16(utf16::runes& runes) const;
+        void to_utf32(utf16::runes& runes);
+
         xpath& operator=(const xpath&);
 
         bool operator==(const xpath&) const;

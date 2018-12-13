@@ -399,6 +399,31 @@ namespace xcore
         concatenate(filename.m_path, fileext, filename.m_alloc, 16);
     }
 
+    void xpath::to_utf16(utf16::runes& runes) const
+    {
+        runes.m_str = (utf16::prune)m_path.m_str;
+        runes.m_end = (utf16::prune)m_path.m_end;
+        runes.m_eos = (utf16::prune)m_path.m_eos;
+        utf32::pcrune src = (utf32::pcrune)m_path.m_str;
+        while (src <= m_path.m_end)
+        {
+            uchar32 c = *src++;
+            utf::write(c, runes.m_end, runes.m_eos);
+        }
+    }
+    
+    void xpath::to_utf32(utf16::runes& runes)
+    {
+        utf16::pcrune src = (utf16::pcrune)runes.m_str;
+        utf32::prune dst = (utf32::prune)m_path.m_str;
+        while (src < runes.m_end)
+        {
+            uchar32 c = utf::read(src, runes.m_end);
+            utf::write(c, dst, m_path.m_end);
+        }
+    }
+
+
     xpath& xpath::operator=(const xpath& path)
     {
         if (this == &path)
