@@ -27,53 +27,62 @@
 
 namespace xcore
 {
+	class FileDevice_PC_System;
+
+	static void xpath_to_utf16(xpath const& path, utf16::runes& dst);
+
     class FileDevice_PC_System : public xfiledevice
     {
-        xalloc*  mAllocator;
-        xdirpath mDrivePath;
-        xbool    mCanWrite;
+        xalloc*            mAllocator;
+        xdirpath           mDrivePath;
+        xbool              mCanWrite;
+        utf16::runez<1024> wstr[2];
 
     public:
-        FileDevice_PC_System(const xdirpath& pDrivePath, xbool boCanWrite) : mDrivePath(pDrivePath), mCanWrite(boCanWrite) {}
+        FileDevice_PC_System(const xdirpath& pDrivePath, xbool boCanWrite)
+            : mDrivePath(pDrivePath)
+            , mCanWrite(boCanWrite)
+        {
+        }
         virtual ~FileDevice_PC_System() {}
 
-        virtual bool canSeek() const { return true; }
-        virtual bool canWrite() const { return mCanWrite; }
+        virtual bool canSeek() { return true; }
+        virtual bool canWrite() { return mCanWrite; }
 
-        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const;
+        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace);
 
-        virtual bool openFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle) const;
-        virtual bool createFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle) const;
+        virtual bool openFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle);
+        virtual bool createFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle);
 
-        virtual bool readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const;
-        virtual bool writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) const;
-        virtual bool closeFile(void* nFileHandle) const;
+        virtual bool readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead);
+        virtual bool writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten);
+        virtual bool closeFile(void* nFileHandle);
 
-        virtual bool setLengthOfFile(void* nFileHandle, u64 inLength) const;
-        virtual bool getLengthOfFile(void* nFileHandle, u64& outLength) const;
+        virtual bool setLengthOfFile(void* nFileHandle, u64 inLength);
+        virtual bool getLengthOfFile(void* nFileHandle, u64& outLength);
 
-        virtual bool setFileTime(const xfilepath& szFilename, const xfiletimes& ftimes) const;
-        virtual bool getFileTime(const xfilepath& szFilename, xfiletimes& ftimes) const;
-        virtual bool setFileAttr(const xfilepath& szFilename, const xfileattrs& attr) const;
-        virtual bool getFileAttr(const xfilepath& szFilename, xfileattrs& attr) const;
+        virtual bool setFileTime(const xfilepath& szFilename, const xfiletimes& ftimes);
+        virtual bool getFileTime(const xfilepath& szFilename, xfiletimes& ftimes);
+        virtual bool setFileAttr(const xfilepath& szFilename, const xfileattrs& attr);
+        virtual bool getFileAttr(const xfilepath& szFilename, xfileattrs& attr);
 
-        virtual bool hasFile(const xfilepath& szFilename) const;
-        virtual bool moveFile(const xfilepath& szFilename, const xfilepath& szToFilename) const;
-        virtual bool copyFile(const xfilepath& szFilename, const xfilepath& szToFilename, bool boOverwrite) const;
-        virtual bool deleteFile(const xfilepath& szFilename) const;
+        virtual bool hasFile(const xfilepath& szFilename);
+        virtual bool moveFile(const xfilepath& szFilename, const xfilepath& szToFilename);
+        virtual bool copyFile(const xfilepath& szFilename, const xfilepath& szToFilename, bool boOverwrite);
+        virtual bool deleteFile(const xfilepath& szFilename);
 
-        virtual bool hasDir(const xdirpath& szDirPath) const;
-        virtual bool createDir(const xdirpath& szDirPath) const;
-        virtual bool moveDir(const xdirpath& szDirPath, const xdirpath& szToDirPath) const;
-        virtual bool copyDir(const xdirpath& szDirPath, const xdirpath& szToDirPath, bool boOverwrite) const;
-        virtual bool deleteDir(const xdirpath& szDirPath) const;
+        virtual bool hasDir(const xdirpath& szDirPath);
+        virtual bool createDir(const xdirpath& szDirPath);
+        virtual bool moveDir(const xdirpath& szDirPath, const xdirpath& szToDirPath);
+        virtual bool copyDir(const xdirpath& szDirPath, const xdirpath& szToDirPath, bool boOverwrite);
+        virtual bool deleteDir(const xdirpath& szDirPath);
 
-        virtual bool setDirTime(const xdirpath& szDirPath, const xfiletimes& ftimes) const;
-        virtual bool getDirTime(const xdirpath& szDirPath, xfiletimes& ftimes) const;
-        virtual bool setDirAttr(const xdirpath& szDirPath, const xfileattrs& attr) const;
-        virtual bool getDirAttr(const xdirpath& szDirPath, xfileattrs& attr) const;
+        virtual bool setDirTime(const xdirpath& szDirPath, const xfiletimes& ftimes);
+        virtual bool getDirTime(const xdirpath& szDirPath, xfiletimes& ftimes);
+        virtual bool setDirAttr(const xdirpath& szDirPath, const xfileattrs& attr);
+        virtual bool getDirAttr(const xdirpath& szDirPath, xfileattrs& attr);
 
-        virtual bool enumerate(const xdirpath& szDirPath, enumerate_delegate& enumerator, s32 depth = 0) const;
+        virtual bool enumerate(const xdirpath& szDirPath, enumerate_delegate& enumerator, s32 depth = 0);
 
         enum ESeekMode
         {
@@ -81,10 +90,10 @@ namespace xcore
             __SEEK_CURRENT = 2,
             __SEEK_END     = 3,
         };
-        bool seek(void* nFileHandle, ESeekMode mode, u64 pos, u64& newPos) const;
-        bool seekOrigin(void* nFileHandle, u64 pos, u64& newPos) const;
-        bool seekCurrent(void* nFileHandle, u64 pos, u64& newPos) const;
-        bool seekEnd(void* nFileHandle, u64 pos, u64& newPos) const;
+        bool seek(void* nFileHandle, ESeekMode mode, u64 pos, u64& newPos);
+        bool seekOrigin(void* nFileHandle, u64 pos, u64& newPos);
+        bool seekCurrent(void* nFileHandle, u64 pos, u64& newPos);
+        bool seekEnd(void* nFileHandle, u64 pos, u64& newPos);
     };
 
     xfiledevice* x_CreateFileDevicePC(const xdirpath& pDrivePath, xbool boCanWrite)
@@ -99,10 +108,11 @@ namespace xcore
         delete file_device;
     }
 
-    bool FileDevice_PC_System::getDeviceInfo(u64& totalSpace, u64& freeSpace) const
+    bool FileDevice_PC_System::getDeviceInfo(u64& totalSpace, u64& freeSpace)
     {
-        ULARGE_INTEGER totalbytes, freebytes;
-        if (GetDiskFreeSpaceExW((LPCWSTR)mDrivePath.mRunes.m_str, NULL, &totalbytes, &freebytes) == 0)
+        ULARGE_INTEGER    totalbytes, freebytes;
+        xpath_to_utf16(mDrivePath.path(), wstr[0]);
+        if (GetDiskFreeSpaceExW((LPCWSTR)wstr[0].m_str, NULL, &totalbytes, &freebytes) == 0)
             return false;
 
         freeSpace  = freebytes.QuadPart;
@@ -110,15 +120,16 @@ namespace xcore
         return true;
     }
 
-    bool FileDevice_PC_System::hasFile(const xfilepath& szFilename) const
+    bool FileDevice_PC_System::hasFile(const xfilepath& szFilename)
     {
         u32 shareType   = FILE_SHARE_READ;
         u32 fileMode    = GENERIC_READ;
         u32 disposition = OPEN_EXISTING;
         u32 attrFlags   = FILE_ATTRIBUTE_NORMAL;
 
-        HANDLE nFileHandle =
-            ::CreateFileW(LPCWSTR(szFilename.mRunes.m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        xpath_to_utf16(szFilename.path(), wstr[0]);
+
+        HANDLE nFileHandle = ::CreateFileW(LPCWSTR(wstr[0].m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
         if (nFileHandle != INVALID_HANDLE_VALUE)
         {
             ::CloseHandle((HANDLE)nFileHandle);
@@ -127,33 +138,35 @@ namespace xcore
         return false;
     }
 
-    bool FileDevice_PC_System::openFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle) const
+    bool FileDevice_PC_System::openFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle)
     {
         u32 shareType   = FILE_SHARE_READ;
         u32 fileMode    = !boWrite ? GENERIC_READ : GENERIC_WRITE | GENERIC_READ;
         u32 disposition = OPEN_EXISTING;
         u32 attrFlags   = FILE_ATTRIBUTE_NORMAL;
 
-        HANDLE handle =
-            ::CreateFileW(LPCWSTR(szFilename.mRunes.m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
-        nFileHandle = handle;
+        xpath_to_utf16(szFilename.path(), wstr[0]);
+
+        HANDLE handle = ::CreateFileW(LPCWSTR(wstr[0].m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        nFileHandle   = handle;
         return nFileHandle != INVALID_HANDLE_VALUE;
     }
 
-    bool FileDevice_PC_System::createFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle) const
+    bool FileDevice_PC_System::createFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle)
     {
         u32 shareType   = FILE_SHARE_READ;
         u32 fileMode    = !boWrite ? GENERIC_READ : GENERIC_WRITE | GENERIC_READ;
         u32 disposition = CREATE_ALWAYS;
         u32 attrFlags   = FILE_ATTRIBUTE_NORMAL;
 
-        HANDLE handle =
-            ::CreateFileW((LPCWSTR)szFilename.mRunes.m_str, fileMode, shareType, NULL, disposition, attrFlags, NULL);
-        nFileHandle = handle;
+        xpath_to_utf16(szFilename.path(), wstr[0]);
+
+        HANDLE handle = ::CreateFileW((LPCWSTR)wstr[0].m_str, fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        nFileHandle   = handle;
         return nFileHandle != INVALID_HANDLE_VALUE;
     }
 
-    bool FileDevice_PC_System::readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const
+    bool FileDevice_PC_System::readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead)
     {
         u64 newPos;
         if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
@@ -184,8 +197,7 @@ namespace xcore
         }
         return false;
     }
-    bool FileDevice_PC_System::writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count,
-                                         u64& outNumBytesWritten) const
+    bool FileDevice_PC_System::writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten)
     {
         u64 newPos;
         if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
@@ -217,42 +229,47 @@ namespace xcore
         return false;
     }
 
-    bool FileDevice_PC_System::moveFile(const xfilepath& szFilename, const xfilepath& szToFilename) const
+    bool FileDevice_PC_System::moveFile(const xfilepath& szFilename, const xfilepath& szToFilename)
     {
         if (!canWrite())
             return false;
 
-        LPCWSTR wfilename   = (LPCWSTR)szFilename.mRunes.m_str;
-        LPCWSTR wtofilename = (LPCWSTR)szToFilename.mRunes.m_str;
+        xpath_to_utf16(szFilename.path(), wstr[0]);
+		xpath_to_utf16(szToFilename.path(), wstr[1]);
+        LPCWSTR wfilename   = (LPCWSTR)wstr[0].m_str;
+        LPCWSTR wtofilename = (LPCWSTR)wstr[1].m_str;
         return ::MoveFileW(wfilename, wtofilename) != 0;
     }
 
-    bool FileDevice_PC_System::copyFile(const xfilepath& szFilename, const xfilepath& szToFilename, bool boOverwrite) const
+    bool FileDevice_PC_System::copyFile(const xfilepath& szFilename, const xfilepath& szToFilename, bool boOverwrite)
     {
         if (!canWrite())
             return false;
 
         const bool failIfExists = boOverwrite == false;
-        LPCWSTR    wfilename    = (LPCWSTR)szFilename.mRunes.m_str;
-        LPCWSTR    wtofilename  = (LPCWSTR)szToFilename.mRunes.m_str;
+        xpath_to_utf16(szFilename.path(), wstr[0]);
+		xpath_to_utf16(szToFilename.path(), wstr[1]);
+        LPCWSTR wfilename   = (LPCWSTR)wstr[0].m_str;
+        LPCWSTR wtofilename = (LPCWSTR)wstr[1].m_str;
         return ::CopyFileW(wfilename, wtofilename, failIfExists) != 0;
     }
 
-    bool FileDevice_PC_System::closeFile(void* nFileHandle) const
+    bool FileDevice_PC_System::closeFile(void* nFileHandle)
     {
         if (!::CloseHandle((HANDLE)nFileHandle))
             return false;
         return true;
     }
 
-    bool FileDevice_PC_System::deleteFile(const xfilepath& szFilename) const
+    bool FileDevice_PC_System::deleteFile(const xfilepath& szFilename)
     {
-        if (!::DeleteFileW(LPCWSTR(szFilename.mRunes.m_str)))
+        xpath_to_utf16(szFilename.path(), wstr[0]);
+        if (!::DeleteFileW(LPCWSTR(wstr[0].m_str)))
             return false;
         return true;
     }
 
-    bool FileDevice_PC_System::setLengthOfFile(void* nFileHandle, u64 inLength) const
+    bool FileDevice_PC_System::setLengthOfFile(void* nFileHandle, u64 inLength)
     {
         xsize_t distanceLow  = (xsize_t)inLength;
         xsize_t distanceHigh = (xsize_t)(inLength >> 32);
@@ -261,7 +278,7 @@ namespace xcore
         return true;
     }
 
-    bool FileDevice_PC_System::getLengthOfFile(void* nFileHandle, u64& outLength) const
+    bool FileDevice_PC_System::getLengthOfFile(void* nFileHandle, u64& outLength)
     {
         DWORD lowSize, highSize;
         lowSize   = ::GetFileSize((HANDLE)nFileHandle, &highSize);
@@ -272,7 +289,7 @@ namespace xcore
         return true;
     }
 
-    bool FileDevice_PC_System::setFileTime(const xfilepath& szFilename, const xfiletimes& ftimes) const
+    bool FileDevice_PC_System::setFileTime(const xfilepath& szFilename, const xfiletimes& ftimes)
     {
         void* nFileHandle;
         if (openFile(szFilename, true, true, nFileHandle))
@@ -306,7 +323,7 @@ namespace xcore
         return false;
     }
 
-    bool FileDevice_PC_System::getFileTime(const xfilepath& szFilename, xfiletimes& ftimes) const
+    bool FileDevice_PC_System::getFileTime(const xfilepath& szFilename, xfiletimes& ftimes)
     {
         void* nFileHandle;
         if (openFile(szFilename, true, false, nFileHandle))
@@ -315,12 +332,9 @@ namespace xcore
             FILETIME _lastAccessTime;
             FILETIME _lastWriteTime;
             ::GetFileTime((HANDLE)nFileHandle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
-            xdatetime CreationTime =
-                xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
-            xdatetime LastAccessTime = xdatetime::sFromFileTime(
-                (u64)xmem_utils::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
-            xdatetime LastWriteTime =
-                xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
+            xdatetime CreationTime   = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
+            xdatetime LastAccessTime = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
+            xdatetime LastWriteTime  = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
             ftimes.setCreationTime(CreationTime);
             ftimes.setLastAccessTime(LastAccessTime);
             ftimes.setLastWriteTime(LastWriteTime);
@@ -330,7 +344,7 @@ namespace xcore
         return false;
     }
 
-    bool FileDevice_PC_System::setFileAttr(const xfilepath& szFilename, const xfileattrs& attr) const
+    bool FileDevice_PC_System::setFileAttr(const xfilepath& szFilename, const xfileattrs& attr)
     {
         DWORD dwFileAttributes = 0;
         if (attr.isArchive())
@@ -342,13 +356,15 @@ namespace xcore
         if (attr.isSystem())
             dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_SYSTEM;
 
-        return ::SetFileAttributesW(LPCWSTR(szFilename.mRunes.m_str), dwFileAttributes) == TRUE;
+        xpath_to_utf16(szFilename.path(), wstr[0]);
+        return ::SetFileAttributesW(LPCWSTR(wstr[0].m_str), dwFileAttributes) == TRUE;
     }
 
-    bool FileDevice_PC_System::getFileAttr(const xfilepath& szFilename, xfileattrs& attr) const
+    bool FileDevice_PC_System::getFileAttr(const xfilepath& szFilename, xfileattrs& attr)
     {
         DWORD dwFileAttributes = 0;
-        dwFileAttributes       = ::GetFileAttributesW(LPCWSTR(szFilename.mRunes.m_str));
+        xpath_to_utf16(szFilename.path(), wstr[0]);
+        dwFileAttributes       = ::GetFileAttributesW(LPCWSTR(wstr[0].m_str));
         if (dwFileAttributes == INVALID_FILE_ATTRIBUTES)
             return false;
 
@@ -373,50 +389,49 @@ namespace xcore
 
     static void sCloseDir(HANDLE handle) { ::CloseHandle(handle); }
 
-    bool FileDevice_PC_System::hasDir(const xdirpath& szDirPath) const
+    bool FileDevice_PC_System::hasDir(const xdirpath& szDirPath)
     {
-        HANDLE handle = sOpenDir(LPCWSTR(szDirPath.mRunes.m_str));
+        xpath_to_utf16(szDirPath.path(), wstr[0]);
+        HANDLE handle = sOpenDir(LPCWSTR(wstr[0].m_str));
         if (handle == INVALID_HANDLE_VALUE)
             return false;
         sCloseDir(handle);
         return true;
     }
 
-    bool FileDevice_PC_System::createDir(const xdirpath& szDirPath) const
-    {
-        return ::CreateDirectoryW(LPCWSTR(szDirPath.mRunes.m_str), NULL) != 0;
-    }
+    bool FileDevice_PC_System::createDir(const xdirpath& szDirPath) 
+	{
+        xpath_to_utf16(szDirPath.path(), wstr[0]);
+		return ::CreateDirectoryW(LPCWSTR(wstr[0].m_str), NULL) != 0; 
+	}
 
-    bool FileDevice_PC_System::moveDir(const xdirpath& szDirPath, const xdirpath& szToDirPath) const
+    bool FileDevice_PC_System::moveDir(const xdirpath& szDirPath, const xdirpath& szToDirPath)
     {
         u32 dwFlags = MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED;
-        return ::MoveFileExW(LPCWSTR(szDirPath.mRunes.m_str), (LPCWSTR)szToDirPath.mRunes.m_str, dwFlags) != 0;
+        xpath_to_utf16(szDirPath.path(), wstr[0]);
+        xpath_to_utf16(szToDirPath.path(), wstr[1]);
+        return ::MoveFileExW(LPCWSTR(wstr[0].m_str), (LPCWSTR)wstr[1].m_str, dwFlags) != 0;
     }
 
-    static void changeDirPath(const xdirpath& src, const xdirpath& dst, const xdirinfo& src_dirinfo, xdirpath& result)
+    static void changeDirPath(const xdirpath& src, const xdirpath& dst, xdirinfo const * src_dirinfo, xdirpath& result)
     {
-        s32      srcdepth = src.getLevels();
-        xdirpath dirpath;
-        src_dirinfo.getDirpath(dirpath);
-        xdirpath parent, child;
-        dirpath.split(srcdepth, parent, child);
-        result = dst + child;
+        xdirpath srcdirpath(src);
+		xdirpath curdirpath;
+		src_dirinfo->getDirpath(curdirpath);
+		curdirpath.makeRelativeTo(srcdirpath);
+        result = dst + curdirpath;
     }
 
-    static void changeFilePath(const xdirpath& src, const xdirpath& dst, const xfileinfo& src_fileinfo, xfilepath& result)
+    static void changeFilePath(const xdirpath& src, const xdirpath& dst, xfileinfo const * src_fileinfo, xfilepath& result)
     {
-        s32      srcdepth = src.getLevels();
-        xdirpath dirpath;
-        src_fileinfo.g(dirpath);
-        xdirpath parent, child;
-        dirpath.split(srcdepth, parent, child);
-        result = dst + child;
+        xdirpath srcdirpath(src);
+		xfilepath curfilepath;
+		src_fileinfo->getFilepath(curfilepath);
+		curfilepath.makeRelativeTo(srcdirpath);
+        result = dst + curfilepath;
     }
 
-    static bool sIsDots(LPCWSTR str)
-    {
-        return (str[0] == '.' && str[1] == '\0') || (str[0] == '.' && str[1] == '.' && str[2] == '\0');
-    }
+    static bool sIsDots(LPCWSTR str) { return (str[0] == '.' && str[1] == '\0') || (str[0] == '.' && str[1] == '.' && str[2] == '\0'); }
 
     struct xdirwalker
     {
@@ -431,15 +446,20 @@ namespace xcore
         xnode* mDirStack;
         s32    mLevel;
 
-        xdirpath  mDirPath;
-        xfilepath mFilePath;
+		utf32::alloc* mRuneAlloc;
+        utf32::runes mDirPath;
+        utf32::runes mFilePath;
+
+		utf16::runes mDirPath16;
 
         xdirinfo  mDirInfo;
         xfileinfo mFileInfo;
 
-        utf16::runez<4> mWildcard;
+        utf32::runez<4> mWildcard;
 
-        xdirwalker(xalloc* allocator, xdirpath const& dirpath) : mNodeHeap(allocator), mDirPath(dirpath)
+        xdirwalker(xalloc* allocator, utf32::runes const& dirpath)
+            : mNodeHeap(allocator)
+            , mDirPath(dirpath)
         {
             *mWildcard.m_end++ = '*';
             *mWildcard.m_end   = '\0';
@@ -449,12 +469,16 @@ namespace xcore
         {
             xnode* nextnode = mNodeHeap.construct<xdirwalker::xnode>();
 
-            utf16::concatenate(mDirPath.mRunes, mWildcard, mDirPath.mAlloc, 16);
+            utf32::concatenate(mDirPath, mWildcard, mRuneAlloc, 16);
 
-            nextnode->mFindHandle = ::FindFirstFileW(LPCWSTR(mDirPath.mRunes.m_str), &nextnode->mFindData);
+			mDirPath16.clear();
+			// TODO: make sure mDirPath16 has enough space
+			utf::copy(mDirPath, mDirPath16);
 
-            mDirPath.mRunes.m_end -= 1;
-            *mDirPath.mRunes.m_end = '\0';
+            nextnode->mFindHandle = ::FindFirstFileW(LPCWSTR(mDirPath16.m_str), &nextnode->mFindData);
+
+            mDirPath.m_end -= 1;
+            *mDirPath.m_end = '\0';
 
             if (nextnode->mFindHandle != INVALID_HANDLE_VALUE)
             {
@@ -470,22 +494,21 @@ namespace xcore
             }
         }
 
-        inline bool is_dots() const { return (sIsDots(mDirStack->mFindData.cFileName)); }
+        inline bool is_dots() { return (sIsDots(mDirStack->mFindData.cFileName)); }
 
-        bool is_dir() const { return ((mDirStack->mFindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)); }
+        bool is_dir() { return ((mDirStack->mFindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)); }
         bool next() { return ::FindNextFileW(mDirStack->mFindHandle, &mDirStack->mFindData); }
 
         bool push_dir()
         {
-            utf16::runez<4> slash;
+            utf32::runez<4> slash;
             *slash.m_end++ = '\\';
             *slash.m_end   = '\0';
 
-            utf16::runes dirname;
+            utf16::crunes dirname;
             dirname.m_str = (utf16::prune)mDirStack->mFindData.cFileName;
             dirname.m_end = dirname.m_str;
-            dirname.m_eos = (utf16::prune)mDirStack->mFindData.cFileName[sizeof(mDirStack->mFindData.cFileName) - 1];
-            while (dirname.m_end < dirname.m_eos && *dirname.m_end != '\0')
+            while (*dirname.m_end != '\0')
             {
                 dirname.m_end++;
             }
@@ -547,10 +570,7 @@ namespace xcore
         }
     };
 
-    static bool enumerateCopyDir(xalloc* allocator, const xdirpath& szDirPath, enumerate_delegate& enumerator, s32 depth)
-    {
-        return true;
-    }
+    static bool enumerateCopyDir(xalloc* allocator, const xdirpath& szDirPath, enumerate_delegate& enumerator, s32 depth) { return true; }
 
     struct enumerate_delegate_copy : public enumerate_delegate
     {
@@ -583,7 +603,7 @@ namespace xcore
         }
     };
 
-    bool FileDevice_PC_System::copyDir(const xdirpath& szDirPath, const xdirpath& szToDirPath, bool boOverwrite) const
+    bool FileDevice_PC_System::copyDir(const xdirpath& szDirPath, const xdirpath& szToDirPath, bool boOverwrite)
     {
         enumerate_delegate_copy copy_enum;
         enumerateCopyDir(mAllocator, szDirPath, copy_enum, 0);
@@ -593,27 +613,37 @@ namespace xcore
 
     struct enumerate_delegate_delete_dir : public enumerate_delegate
     {
+		utf16::runes mFilepath;
+		utf16::alloc* mStrAlloc;
+
+		void copy(xpath const& path)
+		{
+				// TODO: make sure mFilepath has enough space!
+		}
+
         virtual bool operator()(s32 depth, const xfileinfo* finf, const xdirinfo* dinf)
         {
             if (finf != nullptr)
             {
-                DWORD dwFileAttributes = ::GetFileAttributesW((LPCTSTR)inf.getFullName().c_str_device());
+				xpath const& filepath = finf->getFilepath().path();
+				copy(filepath);
+
+                DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)mFilepath.m_str);
                 if (dwFileAttributes & FILE_ATTRIBUTE_READONLY) // change read-only file mode
-                    ::SetFileAttributesW((LPCTSTR)inf.getFullName().c_str_device(),
-                                         dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
-                ::DeleteFileW((LPCTSTR)inf.getFullName().c_str_device());
+                    ::SetFileAttributesW((LPCWSTR)mFilepath.m_str, dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
+                ::DeleteFileW((LPCWSTR)mFilepath.m_str);
             }
             return true;
         }
     };
 
-    bool FileDevice_PC_System::deleteDir(const xdirpath& szDirPath) const
+    bool FileDevice_PC_System::deleteDir(const xdirpath& szDirPath)
     {
         enumerate_delegate_delete_dir enumerator;
-        return enumerate(szDirPath, &enumerator, 0);
+        return enumerate(szDirPath, enumerator, 0);
     }
 
-    bool FileDevice_PC_System::setDirTime(const xdirpath& szDirPath, const xfiletimes& ftimes) const
+    bool FileDevice_PC_System::setDirTime(const xdirpath& szDirPath, const xfiletimes& ftimes)
     {
         HANDLE handle = sOpenDir(szDirPath);
         if (handle != INVALID_HANDLE_VALUE)
@@ -647,7 +677,7 @@ namespace xcore
         return false;
     }
 
-    bool FileDevice_PC_System::getDirTime(const xdirpath& szDirPath, xfiletimes& ftimes) const
+    bool FileDevice_PC_System::getDirTime(const xdirpath& szDirPath, xfiletimes& ftimes)
     {
         HANDLE handle = sOpenDir(szDirPath);
         if (handle != INVALID_HANDLE_VALUE)
@@ -660,12 +690,9 @@ namespace xcore
             xdatetime  outCreationTime;
             xdatetime& outLastAccessTime;
             xdatetime& outLastWriteTime;
-            outCreationTime =
-                xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
-            outLastAccessTime = xdatetime::sFromFileTime(
-                (u64)xmem_utils::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
-            outLastWriteTime =
-                xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
+            outCreationTime   = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
+            outLastAccessTime = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
+            outLastWriteTime  = xdatetime::sFromFileTime((u64)xmem_utils::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
             ftimes.setCreationTime(outCreationTime);
             ftimes.setLastAccessTime(outLastAccessTime);
             ftimes.setLastWriteTime(outLastWriteTime);
@@ -675,7 +702,7 @@ namespace xcore
         return false;
     }
 
-    bool FileDevice_PC_System::setDirAttr(const xdirpath& szDirPath, const xfileattrs& attr) const
+    bool FileDevice_PC_System::setDirAttr(const xdirpath& szDirPath, const xfileattrs& attr)
     {
         DWORD dwFileAttributes = 0;
         if (attr.isArchive())
@@ -690,7 +717,7 @@ namespace xcore
         return ::SetFileAttributes(szDirPath, dwFileAttributes) == TRUE;
     }
 
-    bool FileDevice_PC_System::getDirAttr(const xdirpath& szDirPath, xattributes& attr) const
+    bool FileDevice_PC_System::getDirAttr(const xdirpath& szDirPath, xattributes& attr)
     {
         DWORD dwFileAttributes = 0;
         dwFileAttributes       = ::GetFileAttributes(szDirPath);
@@ -705,7 +732,7 @@ namespace xcore
         return true;
     }
 
-    bool FileDevice_PC_System::enumerate(const xdirpath& szDirPath, enumerate_delegate& enumerator, s32 depth) const
+    bool FileDevice_PC_System::enumerate(const xdirpath& szDirPath, enumerate_delegate& enumerator, s32 depth)
     {
         xdirwalker walker(mAllocator, szDirPath);
 
@@ -743,7 +770,7 @@ namespace xcore
         return true;
     }
 
-    bool FileDevice_PC_System::seek(void* nFileHandle, ESeekMode mode, u64 pos, u64& newPos) const
+    bool FileDevice_PC_System::seek(void* nFileHandle, ESeekMode mode, u64 pos, u64& newPos)
     {
         s32 hardwareMode = 0;
         switch (mode)
@@ -773,20 +800,11 @@ namespace xcore
         newPos = newFilePointer.LowPart;
         return true;
     }
-    bool FileDevice_PC_System::seekOrigin(void* nFileHandle, u64 pos, u64& newPos) const
-    {
-        return seek(nFileHandle, __SEEK_ORIGIN, pos, newPos);
-    }
+    bool FileDevice_PC_System::seekOrigin(void* nFileHandle, u64 pos, u64& newPos) { return seek(nFileHandle, __SEEK_ORIGIN, pos, newPos); }
 
-    bool FileDevice_PC_System::seekCurrent(void* nFileHandle, u64 pos, u64& newPos) const
-    {
-        return seek(nFileHandle, __SEEK_CURRENT, pos, newPos);
-    }
+    bool FileDevice_PC_System::seekCurrent(void* nFileHandle, u64 pos, u64& newPos) { return seek(nFileHandle, __SEEK_CURRENT, pos, newPos); }
 
-    bool FileDevice_PC_System::seekEnd(void* nFileHandle, u64 pos, u64& newPos) const
-    {
-        return seek(nFileHandle, __SEEK_END, pos, newPos);
-    }
+    bool FileDevice_PC_System::seekEnd(void* nFileHandle, u64 pos, u64& newPos) { return seek(nFileHandle, __SEEK_END, pos, newPos); }
 }; // namespace xcore
 
 #endif // TARGET_PC

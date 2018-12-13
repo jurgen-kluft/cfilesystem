@@ -12,7 +12,7 @@ namespace xcore
     // xdirpath: Device:\\Folder\Folder\ 
 	//==============================================================================
 
-    xdirpath::xdirpath(xfilesystem* fs, xpath& path) : mParent(fs)
+    xdirpath::xdirpath(_xfilesystem_* fs, xpath& path) : mParent(fs)
 	{
 		mPath.m_alloc = path.m_alloc;
 		mPath.m_path = path.m_path;
@@ -104,8 +104,6 @@ namespace xcore
 
     void xdirpath::setRoot(const xdirpath& inRoot) {}
 
-    bool xdirpath::getRoot(xdirpath& outRoot) const { return false; }
-
     xfilepath xdirpath::operator+=(const xfilepath& other) { return xfilepath(*this, other); }
     xdirpath& xdirpath::operator+=(const xdirpath& other) 
 	{
@@ -130,6 +128,6 @@ namespace xcore
     bool xdirpath::operator!=(const xdirpath& rhs) const { return rhs.mPath != mPath; }
 
     xdirpath operator+(const xdirpath& lhs, const xdirpath& rhs) { return xdirpath(lhs, rhs); }
-    xfilepath operator+(const xdirpath& dp, const xfilepath& fp) { return xfilepath(dp, fp); }
+
 
 }; // namespace xcore

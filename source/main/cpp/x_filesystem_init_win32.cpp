@@ -14,6 +14,7 @@
 #include "xbase/x_va_list.h"
 
 #include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/private/x_devicemanager.h"
 
 #include "xfilesystem/x_filesystem.h"
@@ -47,17 +48,19 @@ namespace xcore
 			NULL
 		};
 
-		static const char* sSystemDeviceLetters[] =
+		static const wchar_t* sSystemDeviceLetters[] =
 		{
-			"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"
+			L"a",L"b",L"c",L"d",L"e",L"f",L"g",L"h",L"i",L"j",L"k",L"l",L"m",L"n",L"o",L"p",L"q",L"r",L"s",L"t",L"u",L"v",L"w",L"x",L"y",L"z"
 		};
-		static const char* sSystemDevicePaths[] =
+		static const wchar_t* sSystemDevicePaths[] =
 		{
-			"a:\\","b:\\","c:\\","d:\\","e:\\","f:\\","g:\\","h:\\","i:\\","j:\\","k:\\","l:\\","m:\\","n:\\","o:\\","p:\\","q:\\","r:\\","s:\\","t:\\","u:\\","v:\\","w:\\","x:\\","y:\\","z:\\"
+			L"a:\\",L"b:\\",L"c:\\",L"d:\\",L"e:\\",L"f:\\",L"g:\\",L"h:\\",L"i:\\",L"j:\\",L"k:\\",L"l:\\",L"m:\\",L"n:\\",L"o:\\",L"p:\\",L"q:\\",L"r:\\",L"s:\\",L"t:\\",L"u:\\",L"v:\\",L"w:\\",L"x:\\",L"y:\\",L"z:\\"
 		};
 
 		static void x_FileSystemRegisterSystemAliases(xdevicemanager* devman)
 		{
+			utf32::runez<255> string32;
+
 			// Get all logical drives.
 			DWORD		drives	= GetLogicalDrives();
 			s32			driveIdx = 0;
@@ -65,12 +68,12 @@ namespace xcore
 			{
 				if (drives&1)
 				{
-					const char*	driveLetter = sSystemDeviceLetters[driveIdx];
-					const char*	devicePath = sSystemDevicePaths[driveIdx];
+					const wchar_t*	driveLetter = sSystemDeviceLetters[driveIdx];
+					const wchar_t*	devicePath = sSystemDevicePaths[driveIdx];
 
 					xbool boCanWrite = true;
 					EDriveTypes eDriveType = DRIVE_TYPE_UNKNOWN;
-					const u32 uDriveTypeWin32 = 1 << (GetDriveTypeA(devicePath));
+					const u32 uDriveTypeWin32 = 1 << (GetDriveTypeW(devicePath));
 					if (uDriveTypeWin32 & (1<<DRIVE_TYPE_REMOVABLE))
 					{
 						eDriveType = DRIVE_TYPE_REMOVABLE;
@@ -89,43 +92,55 @@ namespace xcore
 						eDriveType = DRIVE_TYPE_FIXED;
 					}
 
-					// Convert driveLetter to a utf32::runes!
+					// Convert driveLetter (Ascii) to utf-32
+					utf16::crunes driveLetter16((utf16::pcrune)driveLetter);
+					utf::copy(driveLetter16, string32);
 
-					if (devman->find_device(driveLetter) == nullptr)
+					if (devman->find_device(string32) == nullptr)
 					{
 						if (sFileDevices[eDriveType]==NULL)
-							sFileDevices[eDriveType] = x_CreateFileDevice(sSystemDevicePaths[driveIdx], boCanWrite);
+						{
+							utf32::runes devicePath32(string32);
+							utf16::crunes devicePath16((utf16::pcrune)devicePath);
+							utf::copy(devicePath16, devicePath32);
+							sFileDevices[eDriveType] = x_CreateFileDevice(devicePath32, boCanWrite);
+						}
 						xfiledevice* device = sFileDevices[eDriveType];
 
-						char local_alias[1024];
+						wchar_t local_alias[255];
 						local_alias[0] = '\0';
-						DWORD ret_val = ::QueryDosDeviceA(driveLetter, local_alias, sizeof(local_alias));
-						// Should this be A or W?
+						DWORD ret_val = ::QueryDosDeviceW(driveLetter, local_alias, sizeof(local_alias));
 
-						// Convert to utf32::runes ??
+						utf32::runes local_alias32(string32);
+						utf16::crunes local_alias16((utf16::pcrune)local_alias);
+						utf::copy(local_alias16, local_alias32);
 
-						if (ret_val!=0 && x_strFind(local_alias, "\\??\\")!=0)
+						utf32::runez<3> wincrap("\\??\\");
+						utf32::runes wincrapsel = utf32::find(local_alias32, wincrap);
+
+						utf32::runez<255> string32b;
+						utf32::runes devicePath32(string32b);
+						utf16::crunes devicePath16((utf16::pcrune)devicePath);
+						utf::copy(devicePath16, devicePath32);
+
+						if (ret_val!=0 && !wincrapsel.is_empty())
 						{
 							// Remove windows text crap.
-							char* alias = &local_alias[4];
-							s32 alias_len = x_strlen(alias);
-							if (alias_len>0 && alias[alias_len-1] != '\\')
+							utf32::runes alias32 = utf32::selectUntilEndExcludeSelection(local_alias32, wincrapsel);
+							if (alias32.size() > 0 && alias32.m_end[-1] != '\\')
 							{
-								alias[alias_len  ] = '\\';
-								alias[alias_len+1] = '\0';
-								alias_len++;
+								alias32.m_end[0] = '\\';
+								alias32.m_end[1] = '\0';
+								alias32.m_end++;
 							}
 
-							// sSystemDevicePaths[driveIdx] to utf32::runes
-							// What todo with local alias, add as an alias ?
-							devman->add_alias(alias, sSystemDevicePaths[driveIdx]);
-
-							devman->add_device(sSystemDevicePaths[driveIdx], device);
+							devman->add_alias(alias32, devicePath32);
+							devman->add_device(devicePath32, device);
 						}
 						else
 						{
 							// Register system device.
-							devman->add_device(sSystemDevicePaths[driveIdx], device);
+							devman->add_device(devicePath32, device);
 						}
 					}
 
@@ -148,51 +163,69 @@ namespace xcore
 		// See Also:
 		//      xfilesystem::exit()
 		//------------------------------------------------------------------------------
-		static char sAppDir[1024] = { '\0' };										///< Needs to end with a backslash!
-		static char sWorkDir[1024] = { '\0' };										///< Needs to end with a backslash!
+		class fs_utfalloc : public utf32::alloc
+		{
+			xalloc*		m_allocator;
+		public:
+			fs_utfalloc(xalloc* _allocator) : m_allocator(_allocator) {}
+
+            virtual utf32::runes allocate(s32 len, s32 cap)
+			{
+				if (len > cap)
+					cap = len;
+				utf32::runes str;
+				str.m_str = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
+				str.m_end = str.m_str + len;
+				str.m_eos = str.m_str + cap;
+				str.m_str[cap] = '\0';
+				str.m_str[len] = '\0';
+				return str;
+			}
+            
+			virtual void  deallocate(utf32::runes& slice)
+			{
+				m_allocator->deallocate(slice.m_str);
+				slice = utf32::runes();
+			}
+		};
+
 		void create_fs(xfilesyscfg const& cfg)
 		{
-			
+			xheap heap(cfg.m_allocator);
 
-			// TODO create xdevicemanager 
-			xdevicealias::init();
+			xdevicemanager* deviceman = heap.construct<xdevicemanager>();
+			x_FileSystemRegisterSystemAliases(deviceman);
+
+			utf32::rune adir32[512] = { '\0' };
 
 			// Get the application directory (by removing the executable filename)
-			::GetModuleFileName(0, sAppDir, sizeof(sAppDir) - 1);
-			char* lastBackSlash = sAppDir + x_strlen(sAppDir);
-			while (lastBackSlash > sAppDir) { if (*lastBackSlash == '\\') break; lastBackSlash--; }
-			if (lastBackSlash > sAppDir)
+			wchar_t dir[512] = { '\0' }; // Needs to end with a backslash!
+			DWORD result = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
+			if (result != 0)
 			{
-				++lastBackSlash;													///< Keep the backslash
-				*lastBackSlash = '\0';
+				utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
+				utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
+				utf32::runes appdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
+				deviceman->add_alias("appdir", appdir);
 			}
 
 			// Get the working directory
-			::GetCurrentDirectory(sizeof(sWorkDir)-1, sWorkDir);
-			if (sWorkDir[x_strlen(sWorkDir)-1] != '\\')								///< Make sure the path ends with a backslash
+			result = ::GetCurrentDirectoryW(sizeof(dir)-1, dir);
+			if (result != 0)
 			{
-				sWorkDir[x_strlen(sWorkDir)] = '\\';
-				sWorkDir[x_strlen(sWorkDir)+1] = '\0';
+				utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
+				utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
+				utf32::runes curdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
+				deviceman->add_alias("curdir", curdir);
 			}
+			
+			_xfilesystem_* _xfs_ = heap.construct<_xfilesystem_>();
+			_xfs_->m_slash = cfg.m_default_slash;
+			_xfs_->m_allocator = cfg.m_allocator;
+			_xfs_->m_stralloc = heap.construct<fs_utfalloc>(cfg.m_allocator);
+			_xfs_->m_devman = deviceman;
 
-			x_FileSystemRegisterSystemAliases();
-
-			// Determine the source type of the app and work dir
-			const xfilesystem::xdevicealias* workDirAlias = xdevicealias::sFind(xfilepath(sWorkDir));
-			const xfilesystem::xdevicealias* appDirAlias  = xdevicealias::sFind(xfilepath(sAppDir));
-
-			// After this, user can initialize the aliases
-			xdevicealias::sRegister(xfilesystem::xdevicealias("appdir", appDirAlias->device(), sAppDir));
-			xdevicealias::sRegister(xfilesystem::xdevicealias("curdir", workDirAlias->device(), sWorkDir));
-
-			xdevicealias::sRegister(xfilesystem::xdevicealias("host", sFileDevices[DRIVE_TYPE_FIXED], ""));
-			xdevicealias::sRegister(xfilesystem::xdevicealias("dvd", sFileDevices[DRIVE_TYPE_CDROM], ""));
-			xdevicealias::sRegister(xfilesystem::xdevicealias("hdd", sFileDevices[DRIVE_TYPE_FIXED], ""));
-
-
-			xfilesystem::initialise(max_open_streams);
-
-			xfilesystem::xfs_common::s_instance()->setIoThreadInterface(io_thread);
+			_xfilesystem_::create_fs(_xfs_);
 		}
 
 		//------------------------------------------------------------------------------
@@ -212,24 +245,6 @@ namespace xcore
 		{
 
 		}
-	}
-
-    xfilesystem* create_fs(xfilesyscfg const& cfg)
-	{
-		// Create _xfilesystem_
-		// Create xdevicemanager
-		// Create xfilesystem giving it the instance of _xfilesystem_ and xdevicemanager
-
-	}
-
-    void         destroy_fs(xfilesystem* fs)
-	{
-		// Get the devman = xdevicemanager from _xfilesystem_ instance
-		// devman->exit();
-		// delete devman
-		// Destroy the _xfilesystem_ instance
-
-	
 	}
 
 };

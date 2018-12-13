@@ -41,7 +41,7 @@ namespace xcore
     struct xfiletimes
     {
         xfiletimes();
-        xfiletimes(const xfileattrs&);
+        xfiletimes(const xfiletimes&);
         xfiletimes(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
 
         void getTime(xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;

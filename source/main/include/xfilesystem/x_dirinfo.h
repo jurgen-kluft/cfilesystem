@@ -25,13 +25,13 @@ namespace xcore
     class xdirinfo
     {
     protected:
-        friend class xfilesystem;
+        friend class _xfilesystem_;
         friend class xdirpath;
         friend class xfileinfo;
         friend class xfilepath;
 
     public:
-        xfilesystem* mParent;
+        _xfilesystem_* mParent;
         xdirpath     mDirPath;
 
     public:

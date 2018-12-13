@@ -6,10 +6,10 @@
 #endif
 
 //==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_debug.h"
 #include "xbase/x_buffer.h"
+
+#include "xfilesystem/private/x_enumerations.h"
 
 namespace xcore
 {
@@ -37,7 +37,6 @@ namespace xcore
     class xdirpath;
     class xdirinfo;
 
-    class _xfilesystem_;
     class xfilesystem
     {
     public:
@@ -67,17 +66,16 @@ namespace xcore
         void       read_async(xreader*, xbuffer&);
         s32        wait_async(xreader*);
 
-    private:
+    protected:
+		friend class _xfilesystem_;
         _xfilesystem_* mImpl;
     };
 
-    ///< doIO; user has to call this from either the main thread or an IO thread.
-    ///< This call will block the calling thread and it will stay in a do-while
-    ///< until threading->loop() is false.
+    // doIO; user has to call this from either the main thread or an IO thread.
+    // This call will block the calling thread and it will stay in a do-while
+    // until threading->loop() is false.
     class xio_thread;
     extern void doIO(xio_thread*);
-
-    extern xfilesystem* create_fs(u32 max_open_streams, xio_thread* io_thread, xalloc* allocator);
 
 }; // namespace xcore
 

@@ -9,6 +9,7 @@
 #include "xbase/x_allocator.h"
 #include "xbase/x_runes.h"
 
+#include "xfilesystem/private/x_filesystemprivate.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
 
@@ -17,24 +18,25 @@ namespace xcore
     class xdatetime;
 
     class xfiledevice;
+	class xdevicemanager;
     class xfileinfo;
     class xdirinfo;
     struct xfileattrs;
     struct xfiletimes;
     class xstream;
 
-    class _xfilesystem_
+    class _xfilesystem_ : public xfilesystemprivate
     {
     public:
-        char          m_slash;
-        xalloc*       m_allocator;
-        utf32::alloc* m_stralloc;
+        char            m_slash;
+        xalloc*         m_allocator;
+        utf32::alloc*   m_stralloc;
+        xdevicemanager* m_devman;
 
-        xfilepath m_filepath; // Clone root
-        xdirpath  m_dirpath;
+        xfilepath resolve(xfilepath const&, xfiledevice*& device) const;
+        xdirpath  resolve(xdirpath const&, xfiledevice*& device) const;
 
-        xfilepath resolve(xfilepath const&) const;
-        xdirpath  resolve(xdirpath const&) const;
+        static xfilesystem* create_fs(_xfilesystem_* _fs_);
     };
 
 }; // namespace xcore

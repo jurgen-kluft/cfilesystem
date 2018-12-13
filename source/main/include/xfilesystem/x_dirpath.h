@@ -12,6 +12,7 @@
 
 #include "xfilesystem/x_enumerator.h"
 #include "xfilesystem/private/x_path.h"
+#include "xfilesystem/private/x_filesystemprivate.h"
 
 //==============================================================================
 namespace xcore
@@ -27,16 +28,16 @@ namespace xcore
     class xdirpath
     {
     protected:
-        friend class xfilepath;
-        friend class xfileinfo;
-        friend class xdirinfo;
-        friend class xfilesystem;
+		friend class xfilepath;
+		friend class xfileinfo;
+		friend class xdirinfo;
+		friend class xdirpathz;
+		friend class xdirpathc;
 
-        xdirpath(xfilesystem* fs, xpath& path);
-
-    public:
-        xfilesystem* mParent;
+        _xfilesystem_* mParent;
         xpath        mPath;
+
+        xdirpath(_xfilesystem_* fs, xpath& path);
 
     public:
         xdirpath();
@@ -67,6 +68,8 @@ namespace xcore
         void setRoot(const xdirpath& device);
         bool getRoot(xdirpath& outDevice) const;
 
+		xpath const path() const;
+
         xdirpath& operator=(const xdirpath&);
         xdirpath& operator=(const xfilepath&);
         xdirpath& operator+=(const xdirpath&);
@@ -77,7 +80,7 @@ namespace xcore
     };
 
     xdirpath  operator+(const xdirpath&, const xdirpath&);
-    xfilepath operator+(const xdirpath&, const xfilepath&);
+
 }; // namespace xcore
 
 #endif // __X_FILESYSTEM_DIRPATH_H__

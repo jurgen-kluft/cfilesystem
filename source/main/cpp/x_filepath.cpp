@@ -49,7 +49,7 @@ namespace xcore
 
     void xfilepath::makeRelative() { mPath.makeRelative(); }
 
-    void xfilepath::makeRelative(const xdirpath& root) { mPath.makeRelativeTo(root.mPath); }
+    void xfilepath::makeRelativeTo(const xdirpath& root) { mPath.makeRelativeTo(root.mPath); }
 
     bool xfilepath::getRoot(xdirpath& root) const { return mPath.getRootDir(root.mPath); }
 

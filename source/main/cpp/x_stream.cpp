@@ -30,8 +30,8 @@ namespace xcore
         virtual u64  getLength() const { return 0; }
         virtual void setLength(u64 length) {}
 
-        virtual s64  getPos() const { return 0; }
-        virtual s64  setPos(s64 length) {}
+        virtual s64 getPos() const { return 0; }
+        virtual s64 setPos(s64 length) {}
 
         virtual void close() {}
         virtual void flush() {}
@@ -40,9 +40,9 @@ namespace xcore
         virtual u64 write(const xbyte* buffer, u64 count) { return 0; }
 
         virtual bool beginRead(xbyte* buffer, u64 count) { return false; }
-        virtual s64 endRead(bool block) { return 0; }
+        virtual s64  endRead(bool block) { return 0; }
         virtual bool beginWrite(const xbyte* buffer, u64 count) { return false; }
-        virtual s64 endWrite(bool block) { return 0; }
+        virtual s64  endWrite(bool block) { return 0; }
     };
 
     static xstream_nil sNullStreamImp;
@@ -106,8 +106,8 @@ namespace xcore
     u64 xstream::write(const xbyte* buffer, u64 count) { return m_pimpl->write(buffer, count); }
 
     bool xstream::beginRead(xbyte* buffer, u64 count) { return m_pimpl->beginRead(buffer, count); }
-    s64 xstream::endRead(bool block) { return m_pimpl->endRead(block); }
+    s64  xstream::endRead(bool block) { return m_pimpl->endRead(block); }
 
     bool xstream::beginWrite(const xbyte* buffer, u64 count) { return m_pimpl->beginWrite(buffer, count); }
-    s64 xstream::endWrite(bool block) { return m_pimpl->endWrite(block); }
+    s64  xstream::endWrite(bool block) { return m_pimpl->endWrite(block); }
 };

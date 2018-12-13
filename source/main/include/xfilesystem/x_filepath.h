@@ -16,7 +16,6 @@
 //==============================================================================
 namespace xcore
 {
-    class xpath;
     class xdirpath;
     class xfilesystem;
 
@@ -38,11 +37,12 @@ namespace xcore
     {
     protected:
         friend class xdirpath;
-        friend class _xfilesystem_;
+		friend class xfileinfo;
+		friend class xdirinfo;
+		friend class xfilepathz;
+		friend class xfilepathc;
 
         xfilepath(xfilesystem* parent, xpath& path);
-
-    public:
         xfilesystem* mFileSystem;
         xpath        mPath;
 
@@ -58,13 +58,15 @@ namespace xcore
         bool isRooted() const;
 
         void makeRelative();
-        void makeRelative(const xdirpath&);
+        void makeRelativeTo(const xdirpath& dirpath);
 
         bool getRoot(xdirpath&) const;
         bool getDirname(xdirpath&) const;
         void getFilename(xfilepath&) const;
         void getFilenameWithoutExtension(xfilepath&) const;
         void getExtension(xfilepath&) const;
+
+		xpath const path() const;
 
         xfilepath& operator=(const xfilepath&);
 

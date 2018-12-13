@@ -73,6 +73,7 @@ namespace xcore
         bool copy_to(const xfilepath& toFilename, bool overwrite);
         bool move_to(const xfilepath& toFilename, bool overwrite);
 
+		xfilepath const& getFilepath() const;
         xfileinfo& operator=(const xfileinfo&);
         xfileinfo& operator=(const xfilepath&);
 

@@ -80,6 +80,8 @@ namespace xcore
         return false;
     }
 
+	void xfileinfo::getFilepath(xfilepath& filepath) const { filepath = mFilePath; }
+
     void xfileinfo::getDirpath(xdirpath& dirpath) const { mFilePath.getDirname(dirpath); }
 
     void xfileinfo::getFilename(xfilepath& filename) const { mFilePath.getFilename(filename); }

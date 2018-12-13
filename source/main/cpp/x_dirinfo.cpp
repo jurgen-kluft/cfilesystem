@@ -10,6 +10,7 @@
 #include "xfilesystem/x_attributes.h"
 #include "xfilesystem/x_enumerator.h"
 #include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem.h"
 
 //==============================================================================
 namespace xcore
@@ -75,39 +76,36 @@ namespace xcore
     }
 
     bool xdirinfo::operator==(const xdirpath& other) const { return mDirPath == other; }
-
     bool xdirinfo::operator!=(const xdirpath& other) const { return mDirPath != other; }
-
     bool xdirinfo::operator==(const xdirinfo& other) const { return mDirPath == other.mDirPath; }
-
     bool xdirinfo::operator!=(const xdirinfo& other) const { return mDirPath != other.mDirPath; }
 
-    ///< Static functions
+    // Static functions
     bool xdirinfo::sCreate(const xdirpath& dirpath)
     {
         xfiledevice* device;
-        xdirpath     syspath = dirpath.resolve(device);
+        xdirpath     syspath = dirpath.mParent->resolve(dirpath, device);
         return (device != nullptr && device->createDir(syspath));
     }
 
     bool xdirinfo::sDelete(const xdirpath& dirpath)
     {
         xfiledevice* device;
-        xdirpath     syspath = dirpath.resolve(device);
+        xdirpath     syspath = dirpath.mParent->resolve(dirpath, device);
         return (device != nullptr && device->deleteDir(syspath));
     }
 
     bool xdirinfo::sExists(const xdirpath& dirpath)
     {
         xfiledevice* device;
-        xdirpath     syspath = dirpath.resolve(device);
+        xdirpath     syspath = dirpath.mParent->resolve(dirpath, device);
         return (device != nullptr && device->hasDir(syspath));
     }
 
     void xdirinfo::sEnumerate(const xdirpath& dirpath, enumerate_delegate& enumerator)
     {
         xfiledevice* device;
-        xdirpath     syspath = dirpath.resolve(device);
+        xdirpath     syspath = dirpath.mParent->resolve(dirpath, device);
         if (device != nullptr)
             device->enumerate(syspath, enumerator);
     }
@@ -115,7 +113,7 @@ namespace xcore
     bool xdirinfo::sSetTime(const xdirpath& dirpath, const xfiletimes& ftimes)
     {
         xfiledevice* device;
-        xdirpath     syspath = dirpath.resolve(device);
+        xdirpath     syspath = dirpath.mParent->resolve(dirpath, device);
         if (device != nullptr)
             return device->setDirTime(syspath, ftimes);
         return false;
@@ -124,7 +122,7 @@ namespace xcore
     bool xdirinfo::sGetTime(const xdirpath& dirpath, xfiletimes& ftimes)
     {
         xfiledevice* device;
-        xdirpath     syspath = dirpath.resolve(device);
+        xdirpath     syspath = dirpath.mParent->resolve(dirpath, device);
         if (device != nullptr)
             return device->setDirTime(syspath, ftimes);
 
@@ -138,7 +136,7 @@ namespace xcore
     bool xdirinfo::sSetAttrs(const xdirpath& dirpath, const xfileattrs& fattrs)
     {
         xfiledevice* device;
-        xdirpath     syspath = dirpath.resolve(device);
+        xdirpath     syspath = dirpath.mParent->resolve(dirpath, device);
         if (device != nullptr)
             return device->setDirAttr(syspath, fattrs);
         return false;
@@ -147,7 +145,7 @@ namespace xcore
     bool xdirinfo::sGetAttrs(const xdirpath& dirpath, xfileattrs& fattrs)
     {
         xfiledevice* device;
-        xdirpath     syspath = dirpath.resolve(device);
+        xdirpath     syspath = dirpath.mParent->resolve(dirpath, device);
         if (device != nullptr)
         {
             return device->getDirAttr(syspath, fattrs);
@@ -159,10 +157,10 @@ namespace xcore
     bool xdirinfo::sCopy(const xdirpath& srcdirpath, const xdirpath& dstdirpath, xbool overwrite)
     {
         xfiledevice* srcdevice;
-        xdirpath     srcsyspath = srcdirpath.resolve(srcdevice);
+        xdirpath     srcsyspath = srcdirpath.mParent->resolve(srcdirpath, srcdevice);
 
         xfiledevice* dstdevice;
-        xdirpath     dstsyspath = dstdirpath.resolve(dstdevice);
+        xdirpath     dstsyspath = dstdirpath.mParent->resolve(dstdirpath, dstdevice);
 
         if (srcdevice != nullptr && dstdevice != nullptr)
             return srcdevice->copyDir(srcdirpath, dstdirpath, overwrite);
@@ -173,10 +171,10 @@ namespace xcore
     bool xdirinfo::sMove(const xdirpath& srcdirpath, const xdirpath& dstdirpath)
     {
         xfiledevice* srcdevice;
-        xdirpath     srcsyspath = srcdirpath.resolve(srcdevice);
+        xdirpath     srcsyspath = srcdirpath.mParent->resolve(srcdirpath, srcdevice);
 
         xfiledevice* dstdevice;
-        xdirpath     dstsyspath = dstdirpath.resolve(dstdevice);
+        xdirpath     dstsyspath = dstdirpath.mParent->resolve(dstdirpath, dstdevice);
 
         if (srcdevice != nullptr && dstdevice != nullptr)
             return srcdevice->moveDir(srcdirpath, dstdirpath);
