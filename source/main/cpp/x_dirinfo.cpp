@@ -39,11 +39,7 @@ namespace xcore
 
     void xdirinfo::enumerate(enumerate_delegate& enumerator) { sEnumerate(mDirPath, enumerator); }
 
-    bool xdirinfo::getDirpath(xdirpath& outDirpath) const
-    {
-        outDirpath = mDirPath;
-        return true;
-    }
+    xdirpath const& xdirinfo::getDirpath() const { return mDirPath; }
 
     bool xdirinfo::getRoot(xdirinfo& outRootDirPath) const { return (mDirPath.getRoot(outRootDirPath.mDirPath)); }
 
@@ -168,7 +164,7 @@ namespace xcore
         return false;
     }
 
-    bool xdirinfo::sMove(const xdirpath& srcdirpath, const xdirpath& dstdirpath)
+    bool xdirinfo::sMove(const xdirpath& srcdirpath, const xdirpath& dstdirpath, xbool overwrite)
     {
         xfiledevice* srcdevice;
         xdirpath     srcsyspath = srcdirpath.mParent->resolve(srcdirpath, srcdevice);
@@ -177,8 +173,9 @@ namespace xcore
         xdirpath     dstsyspath = dstdirpath.mParent->resolve(dstdirpath, dstdevice);
 
         if (srcdevice != nullptr && dstdevice != nullptr)
-            return srcdevice->moveDir(srcdirpath, dstdirpath);
+            return srcdevice->moveDir(srcdirpath, dstdirpath, overwrite);
 
         return false;
     }
+
 }; // namespace xcore

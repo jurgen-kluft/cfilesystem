@@ -16,8 +16,8 @@ namespace xcore
         , mPath()
     {
     }
-    xfilepath::xfilepath(xfilesystem* parent, xpath& path)
-        : mFileSystem(parent)
+    xfilepath::xfilepath(xfilesys* fsys, xpath& path)
+        : mFileSystem(fsys)
         , mPath()
     {
         mPath.m_alloc = path.m_alloc;

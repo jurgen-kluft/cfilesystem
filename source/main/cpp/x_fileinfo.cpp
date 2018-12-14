@@ -9,6 +9,8 @@
 #include "xfilesystem/x_stream.h"
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem.h"
+#include "xfilesystem/private/x_istream.h"
 
 //==============================================================================
 namespace xcore
@@ -26,7 +28,7 @@ namespace xcore
     bool xfileinfo::isValid() const
     {
         xfiledevice* device;
-        xfilepath    sysfilepath = mFilePath.resolve(device);
+        xfilepath    sysfilepath = mFileSystem->resolve(mFilePath, device);
         return device != nullptr;
     }
 
@@ -45,19 +47,20 @@ namespace xcore
         return false;
     }
 
-    bool xfileinfo::create(xstream*& outFilestream) const { return (sCreate(mFilePath, outFilestream)); }
 
     bool xfileinfo::remove() { return sDelete(mFilePath); }
 
     void xfileinfo::refresh() {}
 
+	bool xfileinfo::open(xstream*& outFilestream) { return (sCreate(mFilePath, outFilestream)); }
+
     bool xfileinfo::openRead(xstream*& outFileStream) { return sOpenRead(mFilePath, outFileStream); }
 
     bool xfileinfo::openWrite(xstream*& outFileStream) { return sOpenWrite(mFilePath, outFileStream); }
 
-    u64 xfileinfo::readAllBytes(xbyte* buffer, u64 count) { return sReadAllBytes(mFilePath, buffer, 0, count); }
+    u64 xfileinfo::readAllBytes(xbyte* buffer, u64 count) { return sReadAllBytes(mFilePath, buffer, count); }
 
-    u64 xfileinfo::writeAllBytes(const xbyte* buffer, u64 count) { return sWriteAllBytes(mFilePath, buffer, 0, count); }
+    u64 xfileinfo::writeAllBytes(const xbyte* buffer, u64 count) { return sWriteAllBytes(mFilePath, buffer, count); }
 
     bool xfileinfo::getParent(xdirpath& parent) const
     {
@@ -82,6 +85,8 @@ namespace xcore
 
 	void xfileinfo::getFilepath(xfilepath& filepath) const { filepath = mFilePath; }
 
+	xfilepath const& xfileinfo::getFilepath() const { return mFilePath; }
+
     void xfileinfo::getDirpath(xdirpath& dirpath) const { mFilePath.getDirname(dirpath); }
 
     void xfileinfo::getFilename(xfilepath& filename) const { mFilePath.getFilename(filename); }
@@ -90,6 +95,11 @@ namespace xcore
     {
         mFilePath.getFilenameWithoutExtension(extension);
     }
+
+	void xfileinfo::getExtension(xfilepath& extension) const
+	{
+        mFilePath.getExtension(extension);
+	}
 
     bool xfileinfo::copy_to(const xfilepath& toFilename, bool overwrite) { return sCopy(mFilePath, toFilename, overwrite); }
 
@@ -129,16 +139,16 @@ namespace xcore
     bool xfileinfo::sExists(const xfilepath& filepath)
     {
         xfiledevice* device;
-        xfilepath    syspath = filepath.resolve(device);
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
         if (device != nullptr)
             return device->hasFile(syspath);
         return false;
     }
 
-    bool sGetFileAttributes(const xfilepath& filepath, xfileattrs& outAttr)
+    bool xfileinfo::sGetFileAttributes(const xfilepath& filepath, xfileattrs& outAttr)
     {
         xfiledevice* device;
-        xfilepath    syspath = filepath.resolve(device);
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
 
         if (device != nullptr)
             return device->getFileAttr(syspath, outAttr);
@@ -178,10 +188,36 @@ namespace xcore
         return false;
     }
 
-    bool xfileinfo::sCreate(const xfilepath& filepath, xstream*& outFileStream)
+    bool xfileinfo::sOpen(const xfilepath& filepath, xstream*& outFileStream)
     {
         xfiledevice* device;
-        xfilepath    syspath = filepath.resolve(device);
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
+        if (device != nullptr)
+        {
+            if (device->createStream(syspath, true, true, outFileStream))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    bool xfileinfo::sOpenRead(const xfilepath& filepath, xstream*& outFileStream)
+    {
+        xfiledevice* device;
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
+        if (device != nullptr)
+        {
+            if (device->createStream(syspath, true, true, outFileStream))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    bool xfileinfo::sOpenWrite(const xfilepath& filepath, xstream*& outFileStream)
+    {
+        xfiledevice* device;
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
         if (device != nullptr)
         {
             if (device->createStream(syspath, true, true, outFileStream))
@@ -195,7 +231,7 @@ namespace xcore
     bool xfileinfo::sDelete(const xfilepath& filepath)
     {
         xfiledevice* device;
-        xfilepath    syspath = filepath.resolve(device);
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
         if (device != nullptr)
         {
             return device->deleteFile(filepath);
@@ -208,7 +244,7 @@ namespace xcore
         u64 fileLength = X_U64_MAX;
 
         xfiledevice* device;
-        xfilepath    syspath = filepath.resolve(device);
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
         if (device != nullptr)
         {
             void* nFileHandle;
@@ -224,7 +260,7 @@ namespace xcore
     void xfileinfo::sSetLength(const xfilepath& filepath, u64 fileLength)
     {
         xfiledevice* device;
-        xfilepath    syspath = filepath.resolve(device);
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
         if (device != nullptr)
         {
             void* nFileHandle;
@@ -236,106 +272,78 @@ namespace xcore
         }
     }
 
-    bool xfileinfo::sOpen(const xfilepath& filepath, xstream*& outFileStream)
+    u64 xfileinfo::sReadAllBytes(const xfilepath& filepath, xbyte* buffer, u64 count)
     {
-        xfilesystem* fs = filename.mParent;
-        open_stream
-
-            outFileStream = xfilestream(filename, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync);
-        return outFileStream.isOpen();
-    }
-
-    bool xfileinfo::sOpenRead(const xfilepath& filepath, xstream* outFileStream)
-    {
-        outFileStream = xfilestream(filename, FileMode_Open, FileAccess_Read, FileOp_Sync);
-        return outFileStream.isOpen();
-    }
-
-    bool xfileinfo::sOpenWrite(const xfilepath& filepath, xstream* outFileStream)
-    {
-        outFileStream = xfilestream(filename, FileMode_Open, FileAccess_Write, FileOp_Sync);
-        return outFileStream.isOpen();
-    }
-
-    u64 xfileinfo::sReadAllBytes(const xfilepath& filename, xbyte* buffer, u64 offset, u64 count)
-    {
-        u64         rc = 0;
-        xfilestream fs(filename, FileMode_Open, FileAccess_Read, FileOp_Sync);
-        if (fs.isOpen())
+        u64 rc = 0;
+        xistream* stream = xfilesys::create_filestream(filepath, FileMode_Open, FileAccess_Read, FileOp_Sync);
+        if (stream->isOpen())
         {
-            rc = fs.read(buffer, offset, count);
-            fs.close();
+            rc = stream->read(buffer, count);
+            stream->close();
         }
+		xfilesys::destroy(stream);
         return rc;
     }
 
-    u64 xfileinfo::sWriteAllBytes(const xfilepath& filepath, const xbyte* buffer, u64 offset, u64 count)
+    u64 xfileinfo::sWriteAllBytes(const xfilepath& filepath, const xbyte* buffer, u64 count)
     {
-        u64         rc = 0;
-        xfilestream fs(filename, FileMode_Open, FileAccess_Write, FileOp_Sync);
-        if (fs.isOpen())
+        u64 rc = 0;
+        xistream* stream = xfilesys::create_filestream(filepath, FileMode_Open, FileAccess_Write, FileOp_Sync);
+        if (stream->isOpen())
         {
-            fs.setLength(0);
-            rc = fs.write(buffer, offset, count);
-            fs.close();
+            stream->setLength(0);
+            rc = stream->write(buffer, count);
+            stream->close();
         }
+		xfilesys::destroy(stream);
         return rc;
     }
 
     bool xfileinfo::sSetTime(const xfilepath& filepath, const xfiletimes& ftimes)
     {
-        char         systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
-        xcstring     systemFile(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice* device = filename.getSystem(systemFile);
-        if (device != NULL)
+		xfiledevice* device;
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
+        if (device != nullptr)
         {
-            return device->setFileTime(systemFile.c_str(), creationTime, lastAccessTime, lastWriteTime);
-        }
+			return device->setFileTime(syspath, ftimes);
+		}
         return false;
     }
 
     bool xfileinfo::sGetTime(const xfilepath& filepath, xfiletimes& ftimes)
     {
-        char         systemDirBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
-        xcstring     systemFile(systemDirBuffer, sizeof(systemDirBuffer));
-        xfiledevice* device = filename.getSystem(systemFile);
-
-        if (device != NULL && device->getFileTime(systemFile.c_str(), outCreationTime, outLastAccessTime, outLastWriteTime))
-            return true;
-
-        outCreationTime   = xdatetime::sMinValue;
-        outLastAccessTime = xdatetime::sMinValue;
-        outLastWriteTime  = xdatetime::sMinValue;
+		xfiledevice* device;
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
+        if (device != nullptr)
+        {
+			return device->getFileTime(syspath, ftimes);
+		}
         return false;
     }
 
     bool xfileinfo::sCopy(const xfilepath& srcfilepath, const xfilepath& dstfilepath, bool overwrite)
     {
-        char         srcSystemFileBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
-        xcstring     srcSystemFile(srcSystemFileBuffer, sizeof(srcSystemFileBuffer));
-        xfiledevice* src_device = filename.getSystem(srcSystemFile);
-        char         dstSystemFileBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
-        xcstring     dstSystemFile(dstSystemFileBuffer, sizeof(dstSystemFileBuffer));
-        xfiledevice* dst_device = toFilename.getSystem(dstSystemFile);
+		xfiledevice* srcdevice;
+        xfilepath    srcsyspath = xfilesys::resolve(srcfilepath, srcdevice);
+		xfiledevice* dstdevice;
+        xfilepath    dstsyspath = xfilesys::resolve(dstfilepath, dstdevice);
 
-        if (src_device != NULL && dst_device != NULL)
-            return src_device->copyFile(srcSystemFile.c_str(), dstSystemFile.c_str(), overwrite);
+        if (srcdevice != NULL && dstdevice != NULL)
+            return srcdevice->copyFile(srcsyspath, dstsyspath, overwrite);
 
         return false;
     }
 
-    bool xfileinfo::sMove(const xfilepath& srcfilepath, const xfilepath& dstfilepath)
+    bool xfileinfo::sMove(const xfilepath& srcfilepath, const xfilepath& dstfilepath, bool overwrite)
     {
-        char         srcSystemFileBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
-        xcstring     srcSystemFile(srcSystemFileBuffer, sizeof(srcSystemFileBuffer));
-        xfiledevice* src_device = filename.getSystem(srcSystemFile);
-        char         dstSystemFileBuffer[xfilepath::XFILEPATH_BUFFER_SIZE];
-        xcstring     dstSystemFile(dstSystemFileBuffer, sizeof(dstSystemFileBuffer));
-        xfiledevice* dst_device = toFilename.getSystem(dstSystemFile);
+		xfiledevice* srcdevice;
+        xfilepath    srcsyspath = xfilesys::resolve(srcfilepath, srcdevice);
+		xfiledevice* dstdevice;
+        xfilepath    dstsyspath = xfilesys::resolve(dstfilepath, dstdevice);
 
-        if (src_device != NULL && dst_device != NULL)
-            return src_device->moveFile(srcSystemFile.c_str(), dstSystemFile.c_str());
-
+        if (srcdevice != NULL && dstdevice != NULL)
+            return srcdevice->moveFile(srcsyspath, dstsyspath, overwrite);
+		        
         return false;
     }
 } // namespace xcore

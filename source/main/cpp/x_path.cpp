@@ -94,9 +94,8 @@ namespace xcore
 
         if (parent.isRooted())
         {
-            runes remainder;
-            runes overlap = selectOverlap(parent.m_path, m_path, remainder);
-            return (!overlap.is_empty()) && !remainder.is_empty();
+            runes overlap = selectOverlap(parent.m_path, m_path);
+            return !overlap.is_empty();
         }
         return false;
     }
@@ -254,7 +253,7 @@ namespace xcore
 
         virtual bool operator()(s32 level, const runes& folder)
         {
-            mFound = (mFolderName == folder);
+            mFound = utf32::compare(mFolderName, folder) == 0;
             mLevel = level;
             return mFound;
         }
@@ -318,9 +317,12 @@ namespace xcore
             parentpath = findSelectAfter(parentpath, sSemiColumnSlash);
         }
 
-        runes remainder;
-        runes overlap = selectOverlap(parentpath, m_path, remainder);
-        keepOnlySelection(m_path, remainder);
+        runes overlap = selectOverlap(parentpath, m_path);
+		if (overlap.is_empty() == false)
+		{
+			runes remainder = selectUntilEndExcludeSelection(parentpath, overlap);
+			keepOnlySelection(m_path, remainder);
+		}
     }
 
     void xpath::setRootDir(const xpath& in_root_dirpath)
@@ -399,10 +401,40 @@ namespace xcore
         concatenate(filename.m_path, fileext, filename.m_alloc, 16);
     }
 
+    xpath& xpath::operator=(const xpath& path)
+    {
+        if (this == &path)
+            return *this;
+
+        if (m_alloc != nullptr)
+        {
+			if (path.m_alloc == m_alloc)
+			{
+		        copy(path.m_path, m_path, m_alloc, 16);
+			}
+            else
+			{	// Allocator changed
+				m_alloc->deallocate(m_path);
+				m_alloc = path.m_alloc;
+		        copy(path.m_path, m_path, m_alloc, 16);
+			}
+        }
+		else
+		{
+	        m_alloc = path.m_alloc;
+	        copy(path.m_path, m_path, m_alloc, 16);
+		}
+        return *this;
+    }
+
+    bool xpath::operator==(const xpath& rhs) const { return compare(m_path, rhs.m_path) == 0; }
+    bool xpath::operator!=(const xpath& rhs) const { return compare(m_path, rhs.m_path) != 0; }
+
+	
     void xpath::to_utf16(utf16::runes& runes) const
     {
         runes.m_str = (utf16::prune)m_path.m_str;
-        runes.m_end = (utf16::prune)m_path.m_end;
+        runes.m_end = (utf16::prune)m_path.m_str;
         runes.m_eos = (utf16::prune)m_path.m_eos;
         utf32::pcrune src = (utf32::pcrune)m_path.m_str;
         while (src <= m_path.m_end)
@@ -412,7 +444,7 @@ namespace xcore
         }
     }
     
-    void xpath::to_utf32(utf16::runes& runes)
+    void xpath::to_utf32(utf16::runes& runes) const
     {
         utf16::pcrune src = (utf16::pcrune)runes.m_str;
         utf32::prune dst = (utf32::prune)m_path.m_str;
@@ -422,23 +454,5 @@ namespace xcore
             utf::write(c, dst, m_path.m_end);
         }
     }
-
-
-    xpath& xpath::operator=(const xpath& path)
-    {
-        if (this == &path)
-            return *this;
-
-        if (m_alloc != nullptr)
-        {
-            m_alloc->deallocate(m_path);
-        }
-        m_alloc = path.m_alloc;
-        copy(path.m_path, m_path, m_alloc, 16);
-        return *this;
-    }
-
-    bool xpath::operator==(const xpath& rhs) const { return compare(m_path, rhs.m_path) == 0; }
-    bool xpath::operator!=(const xpath& rhs) const { return compare(m_path, rhs.m_path) != 0; }
 
 } // namespace xcore

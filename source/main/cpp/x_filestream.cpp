@@ -58,11 +58,6 @@ namespace xcore
             --mRefCount;
             return mRefCount;
         }
-        virtual void destroy()
-        {
-            close();
-            delete this;
-        }
 
         virtual bool canRead() const;
         virtual bool canSeek() const;
@@ -335,4 +330,14 @@ namespace xcore
     }
 
     void xstream_copy(xstream* src, xstream* dst, u64 count) {}
+
+
+	xistream*	xistream::create_filestream(xalloc* allocator, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op)
+	{
+		xheap heap(allocator);
+		xifilestream* filestream = heap.construct<xifilestream>(filepath, mode, access, op);
+		return filestream;
+	}
+	
+
 };

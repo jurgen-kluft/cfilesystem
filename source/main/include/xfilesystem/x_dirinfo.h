@@ -25,13 +25,9 @@ namespace xcore
     class xdirinfo
     {
     protected:
-        friend class _xfilesystem_;
-        friend class xdirpath;
-        friend class xfileinfo;
-        friend class xfilepath;
+        friend class xfilesys;
 
-    public:
-        _xfilesystem_* mParent;
+        xfilesys*	mParent;
         xdirpath     mDirPath;
 
     public:
@@ -52,7 +48,7 @@ namespace xcore
 
         void enumerate(enumerate_delegate& enumerator);
 
-        bool getDirpath(xdirpath& outDirpath) const;
+        xdirpath const& getDirpath() const;
         bool getRoot(xdirinfo& outRootDirInfo) const;
         bool getParent(xdirinfo& outParentDirInfo) const;
 
@@ -86,10 +82,8 @@ namespace xcore
         static bool sSetAttrs(const xdirpath& directory, const xfileattrs& fattrs);
         static bool sGetAttrs(const xdirpath& directory, xfileattrs& fattrs);
 
-        ///< Copies an existing directory to a new directory. Overwriting a directory of the same name is allowed.
-        static bool sCopy(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite = xFALSE);
-        ///< Moves a specified directory to a new location, providing the option to specify a new directory name.
-        static bool sMove(const xdirpath& sourceDirectory, const xdirpath& destDirectory);
+        static bool sCopy(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite = xTRUE);
+        static bool sMove(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite = xTRUE);
     };
 }; // namespace xcore
 

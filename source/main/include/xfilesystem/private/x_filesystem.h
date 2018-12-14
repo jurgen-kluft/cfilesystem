@@ -7,9 +7,10 @@
 
 //==============================================================================
 #include "xbase/x_allocator.h"
+#include "xbase/x_buffer.h"
 #include "xbase/x_runes.h"
 
-#include "xfilesystem/private/x_filesystemprivate.h"
+#include "xfilesystem/private/x_enumerations.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
 
@@ -17,6 +18,7 @@ namespace xcore
 {
     class xdatetime;
 
+	class xfile;
     class xfiledevice;
 	class xdevicemanager;
     class xfileinfo;
@@ -24,8 +26,9 @@ namespace xcore
     struct xfileattrs;
     struct xfiletimes;
     class xstream;
+	class xistream;
 
-    class _xfilesystem_ : public xfilesystemprivate
+    class xfilesys
     {
     public:
         char            m_slash;
@@ -33,8 +36,52 @@ namespace xcore
         utf32::alloc*   m_stralloc;
         xdevicemanager* m_devman;
 
-        xfilepath resolve(xfilepath const&, xfiledevice*& device) const;
-        xdirpath  resolve(xdirpath const&, xfiledevice*& device) const;
+        static xfilepath		resolve(xfilepath const&, xfiledevice*& device);
+        static xdirpath			resolve(xdirpath const&, xfiledevice*& device);
+		
+		static xpath&			get_xpath(xdirinfo& dirinfo);
+		static xpath const&		get_xpath(xdirinfo const& dirinfo);
+		static xpath&			get_xpath(xdirpath& dirpath);
+		static xpath const&		get_xpath(xdirpath const& dirpath);
+		static xpath&			get_xpath(xfilepath& filepath);
+		static xpath const&		get_xpath(xfilepath const& filepath);
+		static xfilesys*		get_filesystem(xdirpath const& dirpath);
+		static xfilesys*		get_filesystem(xfilepath const& filepath);
+
+		static xfiledevice*		get_filedevice(xfilepath const& filepath);
+		static xfiledevice*		get_filedevice(xdirpath const& dirpath);
+
+		static xistream*	create_filestream(const xfilepath& filepath, EFileMode, EFileAccess, EFileOp);
+		static void			destroy(xistream* stream);
+
+		// -----------------------------------------------------------
+        xfile*     open(xfilepath const& filename, EFileMode mode);
+        xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
+        xwriter*   writer(xfile*);
+        xreader*   reader(xfile*);
+        void       close(xfile*);
+        void       close(xfileinfo*);
+        void       close(xdirinfo*);
+        void       close(xreader*);
+        void       close(xwriter*);
+        void       close(xstream*);
+        xfileinfo* info(xfilepath const& path);
+        xdirinfo*  info(xdirpath const& path);
+        bool       exists(xfileinfo*);
+        bool       exists(xdirinfo*);
+        s64        size(xfileinfo*);
+        xfile*     open(xfileinfo*, EFileMode mode);
+        void       rename(xfileinfo*, xfilepath const&);
+        void       move(xfileinfo* src, xfileinfo* dst);
+        void       copy(xfileinfo* src, xfileinfo* dst);
+        void       rm(xfileinfo*);
+        void       rm(xdirinfo*);
+        s32        read(xreader*, xbuffer&);
+        s32        write(xwriter*, xcbuffer const&);
+        void       read_async(xreader*, xbuffer&);
+        s32        wait_async(xreader*);
+
+		// -----------------------------------------------------------
 
         static xfilesystem* create_fs(_xfilesystem_* _fs_);
     };

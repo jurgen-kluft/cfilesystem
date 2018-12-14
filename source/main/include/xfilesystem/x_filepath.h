@@ -18,6 +18,7 @@ namespace xcore
 {
     class xdirpath;
     class xfilesystem;
+	class _xfilesystem_;
 
     //==============================================================================
     // xfilepath:
@@ -36,14 +37,10 @@ namespace xcore
     class xfilepath
     {
     protected:
-        friend class xdirpath;
-		friend class xfileinfo;
-		friend class xdirinfo;
-		friend class xfilepathz;
-		friend class xfilepathc;
+		friend class xfilesys;
 
-        xfilepath(xfilesystem* parent, xpath& path);
-        xfilesystem* mFileSystem;
+        xfilepath(xfilesys* parent, xpath& path);
+        xfilesys*	mFileSystem;
         xpath        mPath;
 
     public:
@@ -65,6 +62,9 @@ namespace xcore
         void getFilename(xfilepath&) const;
         void getFilenameWithoutExtension(xfilepath&) const;
         void getExtension(xfilepath&) const;
+
+		void up();
+		void down(xdirpath const&);
 
 		xpath const path() const;
 

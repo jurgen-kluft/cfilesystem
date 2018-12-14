@@ -4,6 +4,7 @@
 
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/private/x_filesystem.h"
 
 //==============================================================================
 namespace xcore
@@ -112,14 +113,20 @@ namespace xcore
 
     xdirpath& xdirpath::operator=(const xfilepath& fp)
     {
-        fp.getDirname(*this);
+		// Copy the runes
+        xpath const& path = xfilesys::get_xpath(fp);
+		utf32::copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
         return *this;
     }
 
-    xdirpath& xdirpath::operator=(const xdirpath& fp)
+    xdirpath& xdirpath::operator=(const xdirpath& dp)
     {
-        if (this == &fp)
+        if (this == &dp)
             return *this;
+
+		// Copy the runes
+        xpath const& path = xfilesys::get_xpath(dp);
+		utf32::copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
 
         return *this;
     }
