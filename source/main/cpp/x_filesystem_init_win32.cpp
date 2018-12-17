@@ -152,7 +152,6 @@ namespace xcore
 
 		//------------------------------------------------------------------------------
 		// Author:
-		//     Virtuos
 		// Summary:
 		//     Initialize the filesystem
 		// Arguments:
@@ -229,8 +228,6 @@ namespace xcore
 		}
 
 		//------------------------------------------------------------------------------
-		// Author:
-		//     Virtuos
 		// Summary:
 		//     Exit the filesystem.
 		// Arguments:
