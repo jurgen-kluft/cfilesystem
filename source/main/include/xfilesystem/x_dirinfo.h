@@ -27,8 +27,8 @@ namespace xcore
     protected:
         friend class xfilesys;
 
-        xfilesys*	mParent;
-        xdirpath     mDirPath;
+        xfilesys* mParent;
+        xdirpath  mDirPath;
 
     public:
         xdirinfo();
@@ -49,39 +49,30 @@ namespace xcore
         void enumerate(enumerate_delegate& enumerator);
 
         xdirpath const& getDirpath() const;
-        bool getRoot(xdirinfo& outRootDirInfo) const;
-        bool getParent(xdirinfo& outParentDirInfo) const;
-
-        bool getTimes(xfiletimes& times) const;
-        bool setTimes(xfiletimes times);
-
-        bool getAttrs(xfileattrs& attrs) const;
-        bool setAttrs(xfileattrs attrs);
+        bool            getRoot(xdirinfo& outRootDirInfo) const;
+        bool            getParent(xdirinfo& outParentDirInfo) const;
+        bool            getTimes(xfiletimes& times) const;
+        bool            setTimes(xfiletimes times);
+        bool            getAttrs(xfileattrs& attrs) const;
+        bool            setAttrs(xfileattrs attrs);
 
         xdirinfo& operator=(const xdirinfo&);
         xdirinfo& operator=(const xdirpath&);
-
-        bool operator==(const xdirpath&) const;
-        bool operator!=(const xdirpath&) const;
-
-        bool operator==(const xdirinfo&) const;
-        bool operator!=(const xdirinfo&) const;
+        bool      operator==(const xdirpath&) const;
+        bool      operator!=(const xdirpath&) const;
+        bool      operator==(const xdirinfo&) const;
+        bool      operator!=(const xdirinfo&) const;
 
         ///< Static functions
         static bool sIsValid(const xdirpath& directory);
-
         static bool sExists(const xdirpath& directory);
         static bool sCreate(const xdirpath& directory);
         static bool sDelete(const xdirpath& directory);
-
         static void sEnumerate(const xdirpath& directory, enumerate_delegate& dir_enumerator);
-
         static bool sSetTime(const xdirpath& directory, const xfiletimes& ftimes);
         static bool sGetTime(const xdirpath& directory, xfiletimes& ftimes);
-
         static bool sSetAttrs(const xdirpath& directory, const xfileattrs& fattrs);
         static bool sGetAttrs(const xdirpath& directory, xfileattrs& fattrs);
-
         static bool sCopy(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite = xTRUE);
         static bool sMove(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite = xTRUE);
     };

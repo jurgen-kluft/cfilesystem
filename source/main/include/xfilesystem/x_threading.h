@@ -16,10 +16,10 @@ namespace xcore
         virtual ~xio_thread() {}
 
         virtual void sleep(u32 ms) = 0;
-        virtual bool loop() const  = 0;
+        virtual bool quit() const  = 0;
         virtual void wait()        = 0;
         virtual void signal()      = 0;
     };
-};
+}; // namespace xcore
 
 #endif

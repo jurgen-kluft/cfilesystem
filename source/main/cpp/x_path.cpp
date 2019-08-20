@@ -6,6 +6,7 @@
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_enumerator.h"
+#include "xfilesystem/private/x_devicemanager.h"
 
 namespace xcore
 {
@@ -53,7 +54,24 @@ namespace xcore
 
     xpath::xpath(const xpath& lhspath, const xpath& rhspath) {}
 
-    xpath xpath::resolve(xfilesystem* filesystem, xfiledevice*& outdevice) const { return xpath(*this); }
+    xpath xpath::resolve(xfilesys* fs, xfiledevice*& outdevice) const
+    {
+        runes rootpart = find(m_path, sSemiColumnSlash);
+        if (rootpart.is_empty())
+        {
+            outdevice = nullptr;
+            return *this;
+        }
+        else
+        {
+            crunes devname(rootpart);
+            outdevice = fs->m_devman->find_device(devname);
+            if (outdevice != nullptr)
+            {
+                replaceSelection(m_path, rootpart, in_root_dirpath.m_path, m_alloc, 16);
+            }
+        }
+    }
 
     void xpath::clear() { m_path.clear(); }
     void xpath::erase()
@@ -264,9 +282,7 @@ namespace xcore
         // PARENT:   c:\disk
         // THIS:     c:\disk\child
         // RETURN 0
-        if (starts_with(m_path, parent.m_path))
-        {
-        }
+        if (starts_with(m_path, parent.m_path)) {}
     }
 
     bool xpath::split(s32 level, xpath& parent_dirpath, xpath& relative_filepath) const
@@ -318,11 +334,11 @@ namespace xcore
         }
 
         runes overlap = selectOverlap(parentpath, m_path);
-		if (overlap.is_empty() == false)
-		{
-			runes remainder = selectUntilEndExcludeSelection(parentpath, overlap);
-			keepOnlySelection(m_path, remainder);
-		}
+        if (overlap.is_empty() == false)
+        {
+            runes remainder = selectUntilEndExcludeSelection(parentpath, overlap);
+            keepOnlySelection(m_path, remainder);
+        }
     }
 
     void xpath::setRootDir(const xpath& in_root_dirpath)
@@ -408,34 +424,33 @@ namespace xcore
 
         if (m_alloc != nullptr)
         {
-			if (path.m_alloc == m_alloc)
-			{
-		        copy(path.m_path, m_path, m_alloc, 16);
-			}
+            if (path.m_alloc == m_alloc)
+            {
+                copy(path.m_path, m_path, m_alloc, 16);
+            }
             else
-			{	// Allocator changed
-				m_alloc->deallocate(m_path);
-				m_alloc = path.m_alloc;
-		        copy(path.m_path, m_path, m_alloc, 16);
-			}
+            { // Allocator changed
+                m_alloc->deallocate(m_path);
+                m_alloc = path.m_alloc;
+                copy(path.m_path, m_path, m_alloc, 16);
+            }
         }
-		else
-		{
-	        m_alloc = path.m_alloc;
-	        copy(path.m_path, m_path, m_alloc, 16);
-		}
+        else
+        {
+            m_alloc = path.m_alloc;
+            copy(path.m_path, m_path, m_alloc, 16);
+        }
         return *this;
     }
 
     bool xpath::operator==(const xpath& rhs) const { return compare(m_path, rhs.m_path) == 0; }
     bool xpath::operator!=(const xpath& rhs) const { return compare(m_path, rhs.m_path) != 0; }
 
-	
     void xpath::to_utf16(utf16::runes& runes) const
     {
-        runes.m_str = (utf16::prune)m_path.m_str;
-        runes.m_end = (utf16::prune)m_path.m_str;
-        runes.m_eos = (utf16::prune)m_path.m_eos;
+        runes.m_str       = (utf16::prune)m_path.m_str;
+        runes.m_end       = (utf16::prune)m_path.m_str;
+        runes.m_eos       = (utf16::prune)m_path.m_eos;
         utf32::pcrune src = (utf32::pcrune)m_path.m_str;
         while (src <= m_path.m_end)
         {
@@ -443,11 +458,11 @@ namespace xcore
             utf::write(c, runes.m_end, runes.m_eos);
         }
     }
-    
+
     void xpath::to_utf32(utf16::runes& runes) const
     {
         utf16::pcrune src = (utf16::pcrune)runes.m_str;
-        utf32::prune dst = (utf32::prune)m_path.m_str;
+        utf32::prune  dst = (utf32::prune)m_path.m_str;
         while (src < runes.m_end)
         {
             uchar32 c = utf::read(src, runes.m_end);

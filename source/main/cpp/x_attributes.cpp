@@ -16,11 +16,18 @@ namespace xcore
         FILE_ATTRIBUTE_SYSTEM   = 8,
     };
 
-    xfileattrs::xfileattrs() : mFlags(0) {}
+    xfileattrs::xfileattrs()
+        : mFlags(0)
+    {
+    }
 
-    xfileattrs::xfileattrs(const xfileattrs& other) : mFlags(other.mFlags) {}
+    xfileattrs::xfileattrs(const xfileattrs& other)
+        : mFlags(other.mFlags)
+    {
+    }
 
-    xfileattrs::xfileattrs(bool boArchive, bool boReadonly, bool boHidden, bool boSystem) : mFlags(0)
+    xfileattrs::xfileattrs(bool boArchive, bool boReadonly, bool boHidden, bool boSystem)
+        : mFlags(0)
     {
         setArchive(boArchive);
         setReadOnly(boReadonly);
@@ -80,13 +87,16 @@ namespace xcore
 
     xfiletimes::xfiletimes() {}
     xfiletimes::xfiletimes(const xfiletimes& ftimes)
-        : m_creationtime(ftimes.m_creationtime), m_lastaccesstime(ftimes.m_lastaccesstime),
-          m_lastwritetime(ftimes.m_lastwritetime)
+        : m_creationtime(ftimes.m_creationtime)
+        , m_lastaccesstime(ftimes.m_lastaccesstime)
+        , m_lastwritetime(ftimes.m_lastwritetime)
     {
     }
 
     xfiletimes::xfiletimes(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime)
-        : m_creationtime(creationTime), m_lastaccesstime(lastAccessTime), m_lastwritetime(lastWriteTime)
+        : m_creationtime(creationTime)
+        , m_lastaccesstime(lastAccessTime)
+        , m_lastwritetime(lastWriteTime)
     {
     }
 
@@ -126,13 +136,11 @@ namespace xcore
 
     bool xfiletimes::operator==(const xfiletimes& other) const
     {
-        return m_creationtime == other.m_creationtime && m_lastaccesstime == other.m_lastaccesstime &&
-               m_lastwritetime == other.m_lastwritetime;
+        return m_creationtime == other.m_creationtime && m_lastaccesstime == other.m_lastaccesstime && m_lastwritetime == other.m_lastwritetime;
     }
 
     bool xfiletimes::operator!=(const xfiletimes& other) const
     {
-        return m_creationtime != other.m_creationtime || m_lastaccesstime != other.m_lastaccesstime ||
-               m_lastwritetime != other.m_lastwritetime;
+        return m_creationtime != other.m_creationtime || m_lastaccesstime != other.m_lastaccesstime || m_lastwritetime != other.m_lastwritetime;
     }
 } // namespace xcore

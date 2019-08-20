@@ -5,20 +5,14 @@
 #pragma once
 #endif
 
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
-
 #include "xfilesystem/private/x_path.h"
 
-//==============================================================================
 namespace xcore
 {
     class xdirpath;
     class xfilesystem;
-	class _xfilesystem_;
 
     //==============================================================================
     // xfilepath:
@@ -37,11 +31,11 @@ namespace xcore
     class xfilepath
     {
     protected:
-		friend class xfilesys;
+        friend class xfilesys;
 
         xfilepath(xfilesys* parent, xpath& path);
-        xfilesys*	mFileSystem;
-        xpath        mPath;
+        xfilesys* mFileSystem;
+        xpath     mPath;
 
     public:
         xfilepath();
@@ -63,15 +57,14 @@ namespace xcore
         void getFilenameWithoutExtension(xfilepath&) const;
         void getExtension(xfilepath&) const;
 
-		void up();
-		void down(xdirpath const&);
+        void up();
+        void down(xdirpath const&);
 
-		xpath const path() const;
+        xpath const path() const;
 
         xfilepath& operator=(const xfilepath&);
-
-        bool operator==(const xfilepath&) const;
-        bool operator!=(const xfilepath&) const;
+        bool       operator==(const xfilepath&) const;
+        bool       operator!=(const xfilepath&) const;
     };
 
     inline xfilepath operator+(const xdirpath& dir, const xfilepath& filename) { return xfilepath(dir, filename); }

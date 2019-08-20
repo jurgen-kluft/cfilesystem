@@ -5,38 +5,34 @@
 #pragma once
 #endif
 
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_debug.h"
 
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_attributes.h"
 
-//==============================================================================
 namespace xcore
 {
     // Forward declares
-	class xstream;
+    class xstream;
     class xfilestream;
     class xdatetime;
     class xdirinfo;
-	class xfilesys;
+    class xfilesys;
 
     class xfileinfo
     {
-		friend class xdirpath;
-		friend class xfilepath;
-		friend class xdirinfo;
-		friend class xfileinfo;
-		friend class _xfilesystem_;
+        friend class xdirpath;
+        friend class xfilepath;
+        friend class xdirinfo;
+        friend class xfileinfo;
+        friend class _xfilesystem_;
 
         bool       mFileExists;
         xfiletimes mFileTimes;
         xfileattrs mFileAttributes;
 
-        xfilesys*	mFileSystem;
-        xfilepath    mFilePath;
+        xfilesys* mFileSystem;
+        xfilepath mFilePath;
 
     public:
         xfileinfo();
@@ -73,8 +69,8 @@ namespace xcore
         void getFilenameWithoutExtension(xfilepath& filename) const;
         void getExtension(xfilepath& extension) const;
 
-		void getFilepath(xfilepath& ) const;
-		xfilepath const& getFilepath() const;
+        void             getFilepath(xfilepath&) const;
+        xfilepath const& getFilepath() const;
 
         void up();
         void down(xdirpath const& dir);
@@ -84,15 +80,14 @@ namespace xcore
 
         xfileinfo& operator=(const xfileinfo&);
         xfileinfo& operator=(const xfilepath&);
-
-        bool operator==(const xfileinfo&) const;
-        bool operator!=(const xfileinfo&) const;
+        bool       operator==(const xfileinfo&) const;
+        bool       operator!=(const xfileinfo&) const;
 
         static bool sExists(const xfilepath& filename);
         static bool sCreate(const xfilepath& filename, xstream*& outFileStream);
         static bool sDelete(const xfilepath& filename);
 
-	    static bool sGetFileAttributes(const xfilepath& filepath, xfileattrs& outAttr);
+        static bool sGetFileAttributes(const xfilepath& filepath, xfileattrs& outAttr);
 
         static u64  sGetLength(const xfilepath& filename);
         static void sSetLength(const xfilepath& filename, u64 length);

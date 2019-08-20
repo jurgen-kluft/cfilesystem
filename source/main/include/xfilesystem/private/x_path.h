@@ -21,7 +21,11 @@ namespace xcore
     // xdirpath:
     //		- Relative:		FolderA\FolderB\ 
 	//		- Absolute:		Device:\FolderA\FolderB\ 
-	//==============================================================================
+    //
+    // Root                     = Device:\ 
+    // Parent                   = Device:\FolderA\ 
+    // Dir                      = \FolderA\FolderB\
+    //==============================================================================
 
     //==============================================================================
     // xfilepath:
@@ -37,25 +41,22 @@ namespace xcore
 
     struct xpath
     {
-        typedef utf32::runes __runes;
-        typedef utf32::alloc __alloc;
-
-        __alloc* m_alloc;
-        __runes  m_path;
+        utf32::alloc* m_alloc;
+        utf32::runes  m_path;
 
         xpath();
-        xpath(__alloc* allocator);
-		xpath(__alloc* allocator, const utf32::crunes& path);
+        xpath(utf32::alloc* allocator);
+        xpath(utf32::alloc* allocator, const utf32::crunes& path);
         xpath(const xpath& path);
         xpath(const xpath& lhspath, const xpath& rhspath);
 
-        xpath resolve(xfilesystem* filesystem, xfiledevice*& outdevice) const;
+        void resolve(xfilesys* fs, xfiledevice*& outdevice) const;
 
-        void set_filepath(xpath::__runes& runes, xpath::__alloc* allocator);
-        void set_dirpath(xpath::__runes& runes, xpath::__alloc* allocator);
+        void set_filepath(utf32::runes& runes, utf32::alloc* allocator);
+        void set_dirpath(utf32::runes& runes, utf32::alloc* allocator);
         void combine(const xpath& dirpath, const xpath& filepath);
 
-        void copy_dirpath(xpath::__runes& runes);
+        void copy_dirpath(utf32::runes& runes);
 
         void clear();
         void erase();
@@ -77,8 +78,8 @@ namespace xcore
         bool getRootDir(xpath& out_root_dirpath) const;
         bool getDirname(xpath& out_dirpath) const;
 
-		bool up();
-		bool down(xpath::__runes const& runes);
+        bool up();
+        bool down(utf32::runes const& runes);
 
         void getFilename(xpath& out_filename) const;
         void getFilenameWithoutExtension(xpath& out_filename_no_ext) const;
@@ -89,7 +90,7 @@ namespace xcore
         bool operator==(const xpath&) const;
         bool operator!=(const xpath&) const;
 
-		void append_utf16(utf16::crunes const&);
+        void append_utf16(utf16::crunes const&);
 
         // These should be used carefully, since they are modifying the
         // utf32::runes array from holding utf32::rune characters to
@@ -98,7 +99,7 @@ namespace xcore
         // utf16 format.
         void to_utf16(utf16::runes& runes) const;
         void to_utf32(utf16::runes& runes) const;
-	};
+    };
 
 }; // namespace xcore
 

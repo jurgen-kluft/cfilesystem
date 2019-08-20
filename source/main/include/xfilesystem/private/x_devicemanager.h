@@ -47,22 +47,28 @@ namespace xcore
         bool add_device(const utf32::crunes& devname, xfiledevice*);
         bool add_alias(const utf32::crunes& remap, const utf32::crunes& devname);
 
+        void resolve();
+
         // Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
-        xfiledevice* find_device(const utf32::crunes& devname);
+        xfiledevice* find_device(const utf32::crunes& devname, utf32::crunes& device_rootpath);
 
         struct alias_t
         {
             inline alias_t()
                 : mAlias(mAliasRunes, mAliasRunes, mAliasRunes + sizeof(mAliasRunes) - 1)
                 , mTarget(mTargetRunes, mTargetRunes, mTargetRunes + sizeof(mTargetRunes) - 1)
+                , mResolved(mResolvedRunes, mResolvedRunes, mResolvedRunes + sizeof(mResolvedRunes) - 1)
             {
-                mAliasRunes[sizeof(mAliasRunes) - 1]   = '\0';
-                mTargetRunes[sizeof(mTargetRunes) - 1] = '\0';
+                mAliasRunes[sizeof(mAliasRunes) - 1]       = '\0';
+                mTargetRunes[sizeof(mTargetRunes) - 1]     = '\0';
+                mResolvedRunes[sizeof(mResolvedRunes) - 1] = '\0';
             }
             rune  mAliasRunes[32];
             rune  mTargetRunes[32];
-            runes mAlias;  ///< data
-            runes mTarget; ///< "d:\project\data\bin.pc\", data:\file.txt to d:\project\data\bin.pc\file.txt
+            rune  mResolvedRunes[64];
+            runes mAlias;    // "data"
+            runes mTarget;   // "appdir:\data\bin.pc\", "data:\file.txt" to "appdir:\data\bin.pc\file.txt"
+            runes mResolved; // "appdir:\data\bin.pc\" to "d:\project\data\bin.pc\"
         };
 
         struct device_t
@@ -73,7 +79,7 @@ namespace xcore
             {
                 mDevNameRunes[sizeof(mDevNameRunes) - 1] = '\0';
             }
-            rune         mDevNameRunes[32];
+            rune         mDevNameRunes[16];
             runes        mDevName;
             xfiledevice* mDevice;
         };
@@ -84,6 +90,6 @@ namespace xcore
         s32      mNumDevices;
         device_t mDeviceList[MAX_FILE_DEVICES];
     };
-};
+}; // namespace xcore
 
 #endif

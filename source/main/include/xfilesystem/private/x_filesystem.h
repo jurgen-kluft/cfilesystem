@@ -11,22 +11,22 @@
 #include "xbase/x_runes.h"
 
 #include "xfilesystem/private/x_enumerations.h"
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_dirpath.h"
 
 namespace xcore
 {
     class xdatetime;
 
-	class xfile;
+    class xfile;
     class xfiledevice;
-	class xdevicemanager;
+    class xdevicemanager;
     class xfileinfo;
     class xdirinfo;
+    class xfilepath;
+    class xdirpath;
     struct xfileattrs;
     struct xfiletimes;
     class xstream;
-	class xistream;
+    class xistream;
 
     class xfilesys
     {
@@ -36,25 +36,25 @@ namespace xcore
         utf32::alloc*   m_stralloc;
         xdevicemanager* m_devman;
 
-        static xfilepath		resolve(xfilepath const&, xfiledevice*& device);
-        static xdirpath			resolve(xdirpath const&, xfiledevice*& device);
-		
-		static xpath&			get_xpath(xdirinfo& dirinfo);
-		static xpath const&		get_xpath(xdirinfo const& dirinfo);
-		static xpath&			get_xpath(xdirpath& dirpath);
-		static xpath const&		get_xpath(xdirpath const& dirpath);
-		static xpath&			get_xpath(xfilepath& filepath);
-		static xpath const&		get_xpath(xfilepath const& filepath);
-		static xfilesys*		get_filesystem(xdirpath const& dirpath);
-		static xfilesys*		get_filesystem(xfilepath const& filepath);
+        static xfilepath resolve(xfilepath const&, xfiledevice*& device);
+        static xdirpath  resolve(xdirpath const&, xfiledevice*& device);
 
-		static xfiledevice*		get_filedevice(xfilepath const& filepath);
-		static xfiledevice*		get_filedevice(xdirpath const& dirpath);
+        static xpath&       get_xpath(xdirinfo& dirinfo);
+        static xpath const& get_xpath(xdirinfo const& dirinfo);
+        static xpath&       get_xpath(xdirpath& dirpath);
+        static xpath const& get_xpath(xdirpath const& dirpath);
+        static xpath&       get_xpath(xfilepath& filepath);
+        static xpath const& get_xpath(xfilepath const& filepath);
+        static xfilesys*    get_filesystem(xdirpath const& dirpath);
+        static xfilesys*    get_filesystem(xfilepath const& filepath);
 
-		static xistream*	create_filestream(const xfilepath& filepath, EFileMode, EFileAccess, EFileOp);
-		static void			destroy(xistream* stream);
+        static xfiledevice* get_filedevice(xfilepath const& filepath);
+        static xfiledevice* get_filedevice(xdirpath const& dirpath);
 
-		// -----------------------------------------------------------
+        static xistream* create_filestream(const xfilepath& filepath, EFileMode, EFileAccess, EFileOp);
+        static void      destroy(xistream* stream);
+
+        // -----------------------------------------------------------
         xfile*     open(xfilepath const& filename, EFileMode mode);
         xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
         xwriter*   writer(xfile*);
@@ -80,10 +80,6 @@ namespace xcore
         s32        write(xwriter*, xcbuffer const&);
         void       read_async(xreader*, xbuffer&);
         s32        wait_async(xreader*);
-
-		// -----------------------------------------------------------
-
-        static xfilesystem* create_fs(_xfilesystem_* _fs_);
     };
 
 }; // namespace xcore

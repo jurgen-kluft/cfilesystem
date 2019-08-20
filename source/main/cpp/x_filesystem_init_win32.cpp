@@ -1,6 +1,3 @@
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_target.h"
 #ifdef TARGET_PC
 
@@ -22,228 +19,226 @@
 
 namespace xcore
 {
-	namespace 
-	{
-		// Register all system devices for windows.
-		enum EDriveTypes
-		{
-			DRIVE_TYPE_UNKNOWN					= 0,
-			DRIVE_TYPE_NO_ROOT_DIR				= 1,
-			DRIVE_TYPE_REMOVABLE				= 2,
-			DRIVE_TYPE_FIXED					= 3,
-			DRIVE_TYPE_REMOTE					= 4,
-			DRIVE_TYPE_CDROM					= 5,
-			DRIVE_TYPE_RAMDISK					= 6,
-			DRIVE_TYPE_NUM						= 7,
-		};
+    namespace
+    {
+        // Register all system devices for windows.
+        enum EDriveTypes
+        {
+            DRIVE_TYPE_UNKNOWN     = 0,
+            DRIVE_TYPE_NO_ROOT_DIR = 1,
+            DRIVE_TYPE_REMOVABLE   = 2,
+            DRIVE_TYPE_FIXED       = 3,
+            DRIVE_TYPE_REMOTE      = 4,
+            DRIVE_TYPE_CDROM       = 5,
+            DRIVE_TYPE_RAMDISK     = 6,
+            DRIVE_TYPE_NUM         = 7,
+        };
 
-		static xfiledevice*	sFileDevices[DRIVE_TYPE_NUM] =
-		{
-			NULL, 
-			NULL, 
-			NULL, 
-			NULL, 
-			NULL, 
-			NULL, 
-			NULL
-		};
+        static xfiledevice* sFileDevices[DRIVE_TYPE_NUM] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
-		static const wchar_t* sSystemDeviceLetters[] =
-		{
-			L"a",L"b",L"c",L"d",L"e",L"f",L"g",L"h",L"i",L"j",L"k",L"l",L"m",L"n",L"o",L"p",L"q",L"r",L"s",L"t",L"u",L"v",L"w",L"x",L"y",L"z"
-		};
-		static const wchar_t* sSystemDevicePaths[] =
-		{
-			L"a:\\",L"b:\\",L"c:\\",L"d:\\",L"e:\\",L"f:\\",L"g:\\",L"h:\\",L"i:\\",L"j:\\",L"k:\\",L"l:\\",L"m:\\",L"n:\\",L"o:\\",L"p:\\",L"q:\\",L"r:\\",L"s:\\",L"t:\\",L"u:\\",L"v:\\",L"w:\\",L"x:\\",L"y:\\",L"z:\\"
-		};
+        static const wchar_t* sSystemDeviceLetters[] = {L"a", L"b", L"c", L"d", L"e", L"f", L"g", L"h", L"i", L"j", L"k", L"l", L"m",
+                                                        L"n", L"o", L"p", L"q", L"r", L"s", L"t", L"u", L"v", L"w", L"x", L"y", L"z"};
+        static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
+                                                      L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
 
-		static void x_FileSystemRegisterSystemAliases(xdevicemanager* devman)
-		{
-			utf32::runez<255> string32;
+        static void x_FileSystemRegisterSystemAliases(xdevicemanager* devman)
+        {
+            utf32::runez<255> string32;
 
-			// Get all logical drives.
-			DWORD		drives	= GetLogicalDrives();
-			s32			driveIdx = 0;
-			while (drives)
-			{
-				if (drives&1)
-				{
-					const wchar_t*	driveLetter = sSystemDeviceLetters[driveIdx];
-					const wchar_t*	devicePath = sSystemDevicePaths[driveIdx];
+            // Get all logical drives.
+            DWORD drives   = GetLogicalDrives();
+            s32   driveIdx = 0;
+            while (drives)
+            {
+                if (drives & 1)
+                {
+                    const wchar_t* driveLetter = sSystemDeviceLetters[driveIdx];
+                    const wchar_t* devicePath  = sSystemDevicePaths[driveIdx];
 
-					xbool boCanWrite = true;
-					EDriveTypes eDriveType = DRIVE_TYPE_UNKNOWN;
-					const u32 uDriveTypeWin32 = 1 << (GetDriveTypeW(devicePath));
-					if (uDriveTypeWin32 & (1<<DRIVE_TYPE_REMOVABLE))
-					{
-						eDriveType = DRIVE_TYPE_REMOVABLE;
-					}
-					else if (uDriveTypeWin32 & (1<<DRIVE_TYPE_CDROM))
-					{
-						eDriveType = DRIVE_TYPE_CDROM;
-						boCanWrite = false;
-					}
-					else if (uDriveTypeWin32 & (1<<DRIVE_TYPE_REMOTE))
-					{
-						eDriveType = DRIVE_TYPE_REMOTE;
-					}
-					else if (uDriveTypeWin32 & (1<<DRIVE_TYPE_FIXED))
-					{
-						eDriveType = DRIVE_TYPE_FIXED;
-					}
+                    xbool       boCanWrite      = true;
+                    EDriveTypes eDriveType      = DRIVE_TYPE_UNKNOWN;
+                    const u32   uDriveTypeWin32 = 1 << (GetDriveTypeW(devicePath));
+                    if (uDriveTypeWin32 & (1 << DRIVE_TYPE_REMOVABLE))
+                    {
+                        eDriveType = DRIVE_TYPE_REMOVABLE;
+                    }
+                    else if (uDriveTypeWin32 & (1 << DRIVE_TYPE_CDROM))
+                    {
+                        eDriveType = DRIVE_TYPE_CDROM;
+                        boCanWrite = false;
+                    }
+                    else if (uDriveTypeWin32 & (1 << DRIVE_TYPE_REMOTE))
+                    {
+                        eDriveType = DRIVE_TYPE_REMOTE;
+                    }
+                    else if (uDriveTypeWin32 & (1 << DRIVE_TYPE_FIXED))
+                    {
+                        eDriveType = DRIVE_TYPE_FIXED;
+                    }
 
-					// Convert driveLetter (Ascii) to utf-32
-					utf16::crunes driveLetter16((utf16::pcrune)driveLetter);
-					utf::copy(driveLetter16, string32);
+                    // Convert driveLetter (Ascii) to utf-32
+                    utf16::crunes driveLetter16((utf16::pcrune)driveLetter);
+                    utf::copy(driveLetter16, string32);
 
-					if (devman->find_device(string32) == nullptr)
-					{
-						if (sFileDevices[eDriveType]==NULL)
-						{
-							utf32::runes devicePath32(string32);
-							utf16::crunes devicePath16((utf16::pcrune)devicePath);
-							utf::copy(devicePath16, devicePath32);
-							sFileDevices[eDriveType] = x_CreateFileDevice(devicePath32, boCanWrite);
-						}
-						xfiledevice* device = sFileDevices[eDriveType];
+                    if (devman->find_device(string32) == nullptr)
+                    {
+                        if (sFileDevices[eDriveType] == NULL)
+                        {
+                            utf32::runes  devicePath32(string32);
+                            utf16::crunes devicePath16((utf16::pcrune)devicePath);
+                            utf::copy(devicePath16, devicePath32);
+                            sFileDevices[eDriveType] = x_CreateFileDevice(utf32::crunes(devicePath32), boCanWrite);
+                        }
+                        xfiledevice* device = sFileDevices[eDriveType];
 
-						wchar_t local_alias[255];
-						local_alias[0] = '\0';
-						DWORD ret_val = ::QueryDosDeviceW(driveLetter, local_alias, sizeof(local_alias));
+                        wchar_t local_alias[255];
+                        local_alias[0] = '\0';
+                        DWORD ret_val  = ::QueryDosDeviceW(driveLetter, local_alias, sizeof(local_alias));
 
-						utf32::runes local_alias32(string32);
-						utf16::crunes local_alias16((utf16::pcrune)local_alias);
-						utf::copy(local_alias16, local_alias32);
+                        utf32::runes  local_alias32(string32);
+                        utf16::crunes local_alias16((utf16::pcrune)local_alias);
+                        utf::copy(local_alias16, local_alias32);
 
-						utf32::runez<3> wincrap("\\??\\");
-						utf32::runes wincrapsel = utf32::find(local_alias32, wincrap);
+                        utf32::runez<3> wincrap("\\??\\");
+                        utf32::runes    wincrapsel = utf32::find(local_alias32, wincrap);
 
-						utf32::runez<255> string32b;
-						utf32::runes devicePath32(string32b);
-						utf16::crunes devicePath16((utf16::pcrune)devicePath);
-						utf::copy(devicePath16, devicePath32);
+                        utf32::runez<255> string32b;
+                        utf32::runes      devicePath32(string32b);
+                        utf16::crunes     devicePath16((utf16::pcrune)devicePath);
+                        utf::copy(devicePath16, devicePath32);
 
-						if (ret_val!=0 && !wincrapsel.is_empty())
-						{
-							// Remove windows text crap.
-							utf32::runes alias32 = utf32::selectUntilEndExcludeSelection(local_alias32, wincrapsel);
-							if (alias32.size() > 0 && alias32.m_end[-1] != '\\')
-							{
-								alias32.m_end[0] = '\\';
-								alias32.m_end[1] = '\0';
-								alias32.m_end++;
-							}
+                        if (ret_val != 0 && !wincrapsel.is_empty())
+                        {
+                            // Remove windows text crap.
+                            utf32::runes alias32 = utf32::selectUntilEndExcludeSelection(local_alias32, wincrapsel);
+                            if (alias32.size() > 0 && alias32.m_end[-1] != '\\')
+                            {
+                                alias32.m_end[0] = '\\';
+                                alias32.m_end[1] = '\0';
+                                alias32.m_end++;
+                            }
 
-							devman->add_alias(alias32, devicePath32);
-							devman->add_device(devicePath32, device);
-						}
-						else
-						{
-							// Register system device.
-							devman->add_device(devicePath32, device);
-						}
-					}
+                            devman->add_alias(alias32, devicePath32);
+                            devman->add_device(devicePath32, device);
+                        }
+                        else
+                        {
+                            // Register system device.
+                            devman->add_device(devicePath32, device);
+                        }
+                    }
+                }
+                drives >>= 1;
+                driveIdx++;
+            }
+        }
 
-				}
-				drives>>= 1;
-				driveIdx++;
-			}
-		}
+        //------------------------------------------------------------------------------
+        // Author:
+        // Summary:
+        //     Initialize the filesystem
+        // Arguments:
+        //     void
+        // Returns:
+        //     void
+        // Description:
+        // See Also:
+        //      xfilesystem::exit()
+        //------------------------------------------------------------------------------
+        class fs_utfalloc : public utf32::alloc
+        {
+            xalloc* m_allocator;
 
-		//------------------------------------------------------------------------------
-		// Author:
-		// Summary:
-		//     Initialize the filesystem
-		// Arguments:
-		//     void
-		// Returns:
-		//     void
-		// Description:
-		// See Also:
-		//      xfilesystem::exit()
-		//------------------------------------------------------------------------------
-		class fs_utfalloc : public utf32::alloc
-		{
-			xalloc*		m_allocator;
-		public:
-			fs_utfalloc(xalloc* _allocator) : m_allocator(_allocator) {}
+        public:
+            fs_utfalloc(xalloc* _allocator)
+                : m_allocator(_allocator)
+            {
+            }
 
             virtual utf32::runes allocate(s32 len, s32 cap)
-			{
-				if (len > cap)
-					cap = len;
-				utf32::runes str;
-				str.m_str = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
-				str.m_end = str.m_str + len;
-				str.m_eos = str.m_str + cap;
-				str.m_str[cap] = '\0';
-				str.m_str[len] = '\0';
-				return str;
-			}
-            
-			virtual void  deallocate(utf32::runes& slice)
-			{
-				m_allocator->deallocate(slice.m_str);
-				slice = utf32::runes();
-			}
-		};
+            {
+                if (len > cap)
+                    cap = len;
+                utf32::runes str;
+                str.m_str      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
+                str.m_end      = str.m_str + len;
+                str.m_eos      = str.m_str + cap;
+                str.m_str[cap] = '\0';
+                str.m_str[len] = '\0';
+                return str;
+            }
 
-		void create_fs(xfilesyscfg const& cfg)
-		{
-			xheap heap(cfg.m_allocator);
+            virtual void deallocate(utf32::runes& slice)
+            {
+                m_allocator->deallocate(slice.m_str);
+                slice = utf32::runes();
+            }
+        };
 
-			xdevicemanager* deviceman = heap.construct<xdevicemanager>();
-			x_FileSystemRegisterSystemAliases(deviceman);
+        xfilesystem* xfilesystem::create(xfilesyscfg const& cfg)
+        {
+            xheap heap(cfg.m_allocator);
 
-			utf32::rune adir32[512] = { '\0' };
+            xdevicemanager* devman = heap.construct<xdevicemanager>();
+            x_FileSystemRegisterSystemAliases(devman);
 
-			// Get the application directory (by removing the executable filename)
-			wchar_t dir[512] = { '\0' }; // Needs to end with a backslash!
-			DWORD result = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
-			if (result != 0)
-			{
-				utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
-				utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
-				utf32::runes appdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
-				deviceman->add_alias("appdir", appdir);
-			}
+            utf32::rune adir32[512] = {'\0'};
 
-			// Get the working directory
-			result = ::GetCurrentDirectoryW(sizeof(dir)-1, dir);
-			if (result != 0)
-			{
-				utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
-				utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
-				utf32::runes curdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
-				deviceman->add_alias("curdir", curdir);
-			}
-			
-			_xfilesystem_* _xfs_ = heap.construct<_xfilesystem_>();
-			_xfs_->m_slash = cfg.m_default_slash;
-			_xfs_->m_allocator = cfg.m_allocator;
-			_xfs_->m_stralloc = heap.construct<fs_utfalloc>(cfg.m_allocator);
-			_xfs_->m_devman = deviceman;
+            // Get the application directory (by removing the executable filename)
+            wchar_t dir[512] = {'\0'}; // Needs to end with a backslash!
+            DWORD   result   = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
+            if (result != 0)
+            {
+                utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
+                utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
+                utf32::runes appdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
+                devman->add_alias("appdir", appdir);
+            }
 
-			_xfilesystem_::create_fs(_xfs_);
-		}
+            // Get the working directory
+            result = ::GetCurrentDirectoryW(sizeof(dir) - 1, dir);
+            if (result != 0)
+            {
+                utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
+                utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
+                utf32::runes curdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
+                devman->add_alias("curdir", curdir);
+            }
 
-		//------------------------------------------------------------------------------
-		// Summary:
-		//     Exit the filesystem.
-		// Arguments:
-		//     void
-		// Returns:
-		//     void
-		// Description:
-		// See Also:
-		//      xfilesystem::init()
-		//------------------------------------------------------------------------------
-		void exit()
-		{
+            xfilesys* imp    = heap.construct<xfilesys>();
+            imp->m_slash     = cfg.m_default_slash;
+            imp->m_allocator = cfg.m_allocator;
+            imp->m_stralloc  = heap.construct<fs_utfalloc>(cfg.m_allocator);
+            imp->m_devman    = devman;
 
-		}
-	}
+            xfilesystem* fs = heap.construct<xfilesystem>();
+            fs->mImpl       = imp;
+            return fs;
+        }
 
-};
+        //------------------------------------------------------------------------------
+        // Summary:
+        //     Terminate the filesystem.
+        // Arguments:
+        //     void
+        // Returns:
+        //     void
+        // Description:
+        //------------------------------------------------------------------------------
+        void xfilesystem::destroy(xfilesystem*& fs)
+        {
+            xfilesys* xfs = fs->mImpl;
+
+            xfs->m_devman->exit();
+
+            xheap heap(xfs->m_allocator);
+            heap.destruct(xfs->m_stralloc);
+            heap.destruct(xfs->m_devman);
+            heap.destruct(xfs);
+            heap.destruct(fs);
+            fs = nullptr;
+        }
+    } // namespace
+};    // namespace xcore
 
 #endif // TARGET_PC

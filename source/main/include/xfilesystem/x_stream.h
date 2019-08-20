@@ -5,14 +5,10 @@
 #pragma once
 #endif
 
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_debug.h"
 #include "xbase/x_buffer.h"
 
 #include "xfilesystem/private/x_enumerations.h"
-
 
 namespace xcore
 {
@@ -35,19 +31,16 @@ namespace xcore
 
         u64  getLength() const;
         void setLength(u64 length);
-
-        s64 getPos() const;
-        s64 setPos(s64 pos);
+        s64  getPos() const;
+        s64  setPos(s64 pos);
 
         void close();
         void flush();
 
-        u64 read(xbyte* buffer, u64 count);
-        u64 write(const xbyte* buffer, u64 count);
-
+        u64  read(xbyte* buffer, u64 count);
+        u64  write(const xbyte* buffer, u64 count);
         bool beginRead(xbyte* buffer, u64 count);
         s64  endRead(bool block = true);
-
         bool beginWrite(const xbyte* buffer, u64 count);
         s64  endWrite(bool block = true);
 

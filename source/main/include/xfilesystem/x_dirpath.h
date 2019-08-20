@@ -5,20 +5,16 @@
 #pragma once
 #endif
 
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_debug.h"
 
 #include "xfilesystem/x_enumerator.h"
 #include "xfilesystem/private/x_path.h"
-#include "xfilesystem/private/x_filesystemprivate.h"
+#include "xfilesystem/private/x_filesystem.h"
 
-//==============================================================================
 namespace xcore
 {
     class xfilepath;
-    class xfilesystem;
+    class xfilesys;
 
     //==============================================================================
     // xdirpath:
@@ -28,16 +24,16 @@ namespace xcore
     class xdirpath
     {
     protected:
-		friend class xfilepath;
-		friend class xfileinfo;
-		friend class xdirinfo;
-		friend class xdirpathz;
-		friend class xdirpathc;
+        friend class xfilepath;
+        friend class xfileinfo;
+        friend class xdirinfo;
+        friend class xdirpathz;
+        friend class xdirpathc;
 
-        _xfilesystem_* mParent;
-        xpath        mPath;
+        xfilesys* mParent;
+        xpath     mPath;
 
-        xdirpath(_xfilesystem_* fs, xpath& path);
+        xdirpath(xfilesys* fs, xpath& path);
 
     public:
         xdirpath();
@@ -68,18 +64,17 @@ namespace xcore
         void setRoot(const xdirpath& device);
         bool getRoot(xdirpath& outDevice) const;
 
-		xpath const path() const;
+        xpath const path() const;
 
         xdirpath& operator=(const xdirpath&);
         xdirpath& operator=(const xfilepath&);
         xdirpath& operator+=(const xdirpath&);
         xfilepath operator+=(const xfilepath&);
-
-        bool operator==(const xdirpath& rhs) const;
-        bool operator!=(const xdirpath& rhs) const;
+        bool      operator==(const xdirpath& rhs) const;
+        bool      operator!=(const xdirpath& rhs) const;
     };
 
-    xdirpath  operator+(const xdirpath&, const xdirpath&);
+    xdirpath operator+(const xdirpath&, const xdirpath&);
 
 }; // namespace xcore
 

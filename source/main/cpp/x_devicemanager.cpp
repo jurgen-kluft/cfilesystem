@@ -125,17 +125,46 @@ namespace xcore
         add_alias(alias32, devname);
     }
 
+    void xdevicemanager::resolve()
+    {
+        // "data"   - "appdir:\data\"
+        // "appdir" - "c:\projects\a\"
+        // resolves "data" as "c:\projects\a\data\"
+
+        // An alias could target another alias, here we resolve them
+        utf32::rune  targetrunes[128];
+        utf32::runes target(targetrunes, targetrunes, targetrunes + sizeof(targetrunes) - 1);
+
+        for (s32 i = 0; i < mNumAliases; ++i)
+        {
+            utf32::concatenate(mAliasList[i].mTarget, target);
+            utf32::crunes alias = utf32::find(utf32::crunes(target), ':');
+
+            for (s32 j = 0; j < mNumAliases; ++j)
+            {
+                if (j == i)
+                    continue;
+
+                if (utf32::compare(mAliasList[j].mAlias, alias) == 0)
+                {
+                    // Combine targets
+                    break;
+                }
+            }
+        }
+    }
+
     //------------------------------------------------------------------------------
 
-    xfiledevice* xdevicemanager::find_device(const utf32::crunes& devicename)
+    xfiledevice* xdevicemanager::find_device(const utf32::crunes& devicename, utf32::runes& device_rootpath)
     {
-        utf32::rune  devnamerunes[32];
+        utf32::rune  devnamerunes[128];
         utf32::runes devname(devnamerunes, devnamerunes, devnamerunes + sizeof(devnamerunes) - 1);
         utf32::copy(devicename, devname);
 
         for (s32 i = 0; i < mNumAliases; ++i)
         {
-            if (compare(mAliasList[i].mAlias, devicename) == 0)
+            if (compare(mAliasList[i].mAlias, devname) == 0)
             {
                 utf32::copy(mAliasList[i].mTarget, devname);
                 i = -1; // Restart
@@ -145,10 +174,11 @@ namespace xcore
         {
             if (compare(mDeviceList[i].mDevName, devname) == 0)
             {
+                utf32::copy(devname, device_rootpath);
                 return mDeviceList[i].mDevice;
             }
         }
 
         return nullptr;
     }
-};
+}; // namespace xcore
