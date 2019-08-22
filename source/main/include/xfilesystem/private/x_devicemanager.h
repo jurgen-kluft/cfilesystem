@@ -30,8 +30,8 @@ namespace xcore
     {
         enum EConfig
         {
-            MAX_FILE_ALIASES = 64,
-            MAX_FILE_DEVICES = 64,
+            MAX_FILE_ALIASES = 16,
+            MAX_FILE_DEVICES = 48,
         };
         typedef utf32::runes runes;
         typedef utf32::rune  rune;
@@ -64,13 +64,17 @@ namespace xcore
                 mTargetRunes[sizeof(mTargetRunes) - 1]     = '\0';
                 mResolvedRunes[sizeof(mResolvedRunes) - 1] = '\0';
             }
-            rune  mAliasRunes[32];
-            rune  mTargetRunes[32];
-            rune  mResolvedRunes[64];
+            rune  mAliasRunes[16];
+            rune  mTargetRunes[112];
+            rune  mResolvedRunes[128];
             runes mAlias;    // "data"
             runes mTarget;   // "appdir:\data\bin.pc\", "data:\file.txt" to "appdir:\data\bin.pc\file.txt"
             runes mResolved; // "appdir:\data\bin.pc\" to "d:\project\data\bin.pc\"
         };
+
+        // Return index of found alias, otherwise -1
+        s32 find_indexof_alias(const utf32::crunes& path) const;
+        s32 find_indexof_device(const utf32::crunes& path) const;
 
         struct device_t
         {

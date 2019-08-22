@@ -38,7 +38,7 @@ namespace xcore
     {
     }
 
-    xpath::xpath(xpath::__alloc* allocator)
+    xpath::xpath(utf32::alloc* allocator)
         : m_alloc(allocator)
         , m_path()
     {
@@ -60,17 +60,17 @@ namespace xcore
         if (rootpart.is_empty())
         {
             outdevice = nullptr;
-            return *this;
         }
         else
         {
-            crunes devname(rootpart);
-            outdevice = fs->m_devman->find_device(devname);
+            xpath path;
+            outdevice = fs->m_devman->find_device(m_path, path);
             if (outdevice != nullptr)
             {
-                replaceSelection(m_path, rootpart, in_root_dirpath.m_path, m_alloc, 16);
+                return path;
             }
         }
+        return xpath();
     }
 
     void xpath::clear() { m_path.clear(); }
@@ -118,7 +118,7 @@ namespace xcore
         return false;
     }
 
-    void xpath::set_filepath(xpath::__runes& runes, xpath::__alloc* allocator)
+    void xpath::set_filepath(utf32::runes& runes, utf32::alloc* allocator)
     {
         erase();
         m_alloc = allocator;
@@ -133,7 +133,7 @@ namespace xcore
         trim(m_path, sSlash);
     }
 
-    void xpath::set_dirpath(xpath::__runes& runes, xpath::__alloc* allocator)
+    void xpath::set_dirpath(utf32::runes& runes, utf32::alloc* allocator)
     {
         erase();
         m_alloc = allocator;

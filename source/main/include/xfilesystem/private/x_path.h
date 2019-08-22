@@ -50,7 +50,7 @@ namespace xcore
         xpath(const xpath& path);
         xpath(const xpath& lhspath, const xpath& rhspath);
 
-        void resolve(xfilesys* fs, xfiledevice*& outdevice) const;
+        xpath resolve(xfilesys* fs, xfiledevice*& outdevice) const;
 
         void set_filepath(utf32::runes& runes, utf32::alloc* allocator);
         void set_dirpath(utf32::runes& runes, utf32::alloc* allocator);
