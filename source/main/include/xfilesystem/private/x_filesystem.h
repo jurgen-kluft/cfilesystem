@@ -27,6 +27,12 @@ namespace xcore
     struct xfiletimes;
     class xstream;
     class xistream;
+    
+    struct xfile
+    {
+        xfilesys*   m_parent;
+        void*       m_handle;
+    };
 
     class xfilesys
     {
@@ -47,9 +53,6 @@ namespace xcore
         static xpath const& get_xpath(xfilepath const& filepath);
         static xfilesys*    get_filesystem(xdirpath const& dirpath);
         static xfilesys*    get_filesystem(xfilepath const& filepath);
-
-        static xfiledevice* get_filedevice(xfilepath const& filepath);
-        static xfiledevice* get_filedevice(xdirpath const& dirpath);
 
         static xistream* create_filestream(const xfilepath& filepath, EFileMode, EFileAccess, EFileOp);
         static void      destroy(xistream* stream);

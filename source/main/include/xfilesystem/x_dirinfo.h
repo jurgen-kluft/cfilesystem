@@ -28,7 +28,7 @@ namespace xcore
         friend class xfilesys;
 
         xfilesys* mParent;
-        xdirpath  mDirPath;
+        xdirpath  mPath;
 
     public:
         xdirinfo();

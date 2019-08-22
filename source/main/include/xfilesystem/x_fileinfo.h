@@ -25,14 +25,14 @@ namespace xcore
         friend class xfilepath;
         friend class xdirinfo;
         friend class xfileinfo;
-        friend class _xfilesystem_;
+        friend class xfilesys;
 
         bool       mFileExists;
         xfiletimes mFileTimes;
         xfileattrs mFileAttributes;
 
-        xfilesys* mFileSystem;
-        xfilepath mFilePath;
+        xfilesys* mParent;
+        xfilepath mPath;
 
     public:
         xfileinfo();

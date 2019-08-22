@@ -45,8 +45,13 @@ namespace xcore
 
         virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) = 0;
 
-        virtual bool openFile(xfilepath const& szFilename, bool boRead, bool boWrite, void*& outHandle)   = 0;
-        virtual bool createFile(xfilepath const& szFilename, bool boRead, bool boWrite, void*& outHandle) = 0;
+        virtual bool openFile(xfilepath const& szFilename, bool boWrite, void*& outHandle)   = 0;
+        virtual bool openOrCreateFile(xfilepath const& szFilename, void*& outHandle)   = 0;
+        virtual bool createFile(xfilepath const& szFilename, void*& outHandle) = 0;
+        virtual bool createNewFile(xfilepath const& szFilename, void*& outHandle) = 0;
+        virtual bool truncateFile(xfilepath const& szFilename, void*& outHandle) = 0;
+        virtual bool appendFile(xfilepath const& szFilename, void*& outHandle) = 0;
+
         virtual bool readFile(void* pHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead)      = 0;
         virtual bool writeFile(void* pHandle, u64 pos, void const* buffer, u64 count, u64& outNumBytesWritten)  = 0;
         virtual bool closeFile(void* pHandle)                                                             = 0;
@@ -68,12 +73,12 @@ namespace xcore
         virtual bool getFileAttr(void* pHandle, xfileattrs& attr)     = 0;
 
         virtual bool hasFile(xfilepath const& szFilename)                                                   = 0;
-        virtual bool moveFile(xfilepath const& szFilename, xfilepath const& szToFilename, bool boOverwrite)                   = 0;
+        virtual bool moveFile(xfilepath const& szFilename, xfilepath const& szToFilename, bool boOverwrite) = 0;
         virtual bool copyFile(xfilepath const& szFilename, xfilepath const& szToFilename, bool boOverwrite) = 0;
         virtual bool deleteFile(xfilepath const& szFilename)                                                = 0;
 
         virtual bool hasDir(xdirpath const& szDirPath)                                                 = 0;
-        virtual bool moveDir(xdirpath const& szDirPath, xdirpath const& szToDirPath, bool boOverwrite)                   = 0;
+        virtual bool moveDir(xdirpath const& szDirPath, xdirpath const& szToDirPath, bool boOverwrite) = 0;
         virtual bool copyDir(xdirpath const& szDirPath, xdirpath const& szToDirPath, bool boOverwrite) = 0;
         virtual bool createDir(xdirpath const& szDirPath)                                              = 0;
         virtual bool deleteDir(xdirpath const& szDirPath)                                              = 0;

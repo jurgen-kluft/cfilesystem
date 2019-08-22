@@ -1,7 +1,10 @@
 #include "xbase/x_target.h"
 #include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_fileinfo.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_dirinfo.h"
+#include "xfilesystem/private/x_filesystem.h"
 
 namespace xcore
 {
@@ -38,33 +41,90 @@ namespace xcore
     // -----------------------------------------------------------
     // -----------------------------------------------------------
     // -----------------------------------------------------------
-    // private
+    // private implementation
     // -----------------------------------------------------------
     // -----------------------------------------------------------
     // -----------------------------------------------------------
 
-    xfilepath xfilesys::resolve(xfilepath const& fp, xfiledevice*& device){// if @fp has a root search the device using the device part of @fp
-                                                                           // and the device manager.
-                                                                           fp.g}
+    xfilepath xfilesys::resolve(xfilepath const& fp, xfiledevice*& device)
+    {
+        // search the filedevice using the device part of @fp and the device manager.
+        xfilepath device_filepath = m_devman->find_device(fp.mPath, device);
+        return device_filepath;
+    }
 
-    xdirpath xfilesys::resolve(xdirpath const&, xfiledevice*& device);
+    xdirpath xfilesys::resolve(xdirpath const& dp, xfiledevice*& device)
+    {
+        // search the filedevice using the device part of @dp and the device manager.
+        xdirpath device_dirpath = m_devman->find_device(dp.mPath, device);
+        return device_dirpath;
+    }
 
-    xpath&       xfilesys::get_xpath(xdirinfo& dirinfo);
-    xpath const& xfilesys::get_xpath(xdirinfo const& dirinfo);
-    xpath&       xfilesys::get_xpath(xdirpath& dirpath);
-    xpath const& xfilesys::get_xpath(xdirpath const& dirpath);
-    xpath&       xfilesys::get_xpath(xfilepath& filepath);
-    xpath const& xfilesys::get_xpath(xfilepath const& filepath);
-    xfilesys*    xfilesys::get_filesystem(xdirpath const& dirpath);
-    xfilesys*    xfilesys::get_filesystem(xfilepath const& filepath);
+    xpath&       xfilesys::get_xpath(xdirinfo& dirinfo)
+    {
+        return dirinfo.mDirPath.mPath;
+    }
 
-    xfiledevice* xfilesys::get_filedevice(xfilepath const& filepath);
-    xfiledevice* xfilesys::get_filedevice(xdirpath const& dirpath);
+    xpath const& xfilesys::get_xpath(xdirinfo const& dirinfo)
+    {
+        return dirinfo.mDirPath.mPath;
+    }
 
-    xistream* xfilesys::create_filestream(const xfilepath& filepath, EFileMode, EFileAccess, EFileOp);
-    void      xfilesys::destroy(xistream* stream);
+    xpath&       xfilesys::get_xpath(xdirpath& dirpath)
+    {
+        return dirpath.mPath;
+    }
 
-    xfile* xfilesys::open(xfilepath const& filename, EFileMode mode) {}
+    xpath const& xfilesys::get_xpath(xdirpath const& dirpath)
+    {
+        return dirpath.mPath;
+    }
+
+    xpath&       xfilesys::get_xpath(xfilepath& filepath)
+    {
+        return filepath.mPath;
+    }
+
+    xpath const& xfilesys::get_xpath(xfilepath const& filepath)
+    {
+        return filepath.mPath;
+    }
+
+    xfilesys*    xfilesys::get_filesystem(xdirpath const& dirpath)
+    {
+        return dirpath.mParent;
+    }
+
+    xfilesys*    xfilesys::get_filesystem(xfilepath const& filepath)
+    {
+        return filepath.mParent;
+    }
+
+    xistream* xfilesys::create_filestream(const xfilepath& filepath, EFileMode fm, EFileAccess fa, EFileOp fo)
+    {
+        // (xalloc*, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op);
+        xistream* stream = xistream::create_filestream(m_allocator, filepath, fm, fa, fo);
+        return stream;
+    }
+
+    void      xfilesys::destroy(xistream* stream)
+    {
+        xistream::destroy_filestream(m_allocator, stream);
+    }
+
+    xfile* xfilesys::open(xfilepath const& filename, EFileMode fm) 
+    {
+        xfiledevice* fd = nullptr;
+        xfilepath sys_filepath = resolve(filename, xfiledevice*& fd);
+        if (fd == nullptr)
+            return nullptr;
+        xfile* file = xnew<xfile>(m_allocator);
+        file->m_parent = this;
+        file->m_handle = nullptr;
+        // bool openFile(xfilepath const& szFilename, bool boRead, bool boWrite, void*& outHandle)
+        if (fm == FileMode_
+        fd->openFile(sys_filepath, mode == FileMode_)
+    }
 
     xstream* xfilesys::open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op) {}
 

@@ -34,7 +34,7 @@ namespace xcore
         friend class xfilesys;
 
         xfilepath(xfilesys* parent, xpath& path);
-        xfilesys* mFileSystem;
+        xfilesys* mParent;
         xpath     mPath;
 
     public:

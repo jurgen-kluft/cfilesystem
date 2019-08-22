@@ -10,6 +10,7 @@
 
 namespace xcore
 {
+    class xpath;
     class xdirpath;
     class xfilepath;
     class xfiledevice;
@@ -41,16 +42,16 @@ namespace xcore
         void clear();
         void exit();
 
-        bool add_device(const char* devname, xfiledevice*);
-        bool add_alias(const char* remap, const utf32::crunes& devname);
+        bool add_device(const char* device_name, xfiledevice*);
+        bool add_alias(const char* alias_name, const utf32::crunes& alias_target);
 
-        bool add_device(const utf32::crunes& devname, xfiledevice*);
-        bool add_alias(const utf32::crunes& remap, const utf32::crunes& devname);
+        bool add_device(const utf32::crunes& device_name, xfiledevice*);
+        bool add_alias(const utf32::crunes& alias_name, const utf32::crunes& device_name);
 
         void resolve();
 
         // Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
-        xfiledevice* find_device(const utf32::crunes& devname, utf32::crunes& device_rootpath);
+        xfiledevice* find_device(const xpath& path, utf32::crunes& device_rootpath);
 
         struct alias_t
         {

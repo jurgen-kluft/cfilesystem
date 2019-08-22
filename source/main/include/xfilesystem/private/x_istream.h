@@ -45,7 +45,7 @@ namespace xcore
 
 		static xistream*	create_filestream(xalloc*, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op);
 		static void			destroy_filestream(xalloc*, xistream*);
-};
+    };
 
 };
 
