@@ -131,27 +131,119 @@ namespace xcore
         // "appdir" - "c:\projects\a\"
         // resolves "data" as "c:\projects\a\data\"
 
-        // An alias could target another alias, here we resolve them
-        utf32::rune  targetrunes[128];
-        utf32::runes target(targetrunes, targetrunes, targetrunes + sizeof(targetrunes) - 1);
+        struct indexstack_t
+        {
+            s32 m_stack[8];
+            s32 m_index;
 
+            void reset() { m_index = 0; }
+            bool empty() const { return m_index == 0; }
+
+            void push(s32 index)
+            {
+                m_stack[m_index] = index;
+                m_index++;
+            }
+
+            s32 pop()
+            {
+                if (m_index > 0)
+                {
+                    m_index -= 1;
+                }
+                s32 index = m_stack[m_index];
+                return index;
+            }
+
+            bool index_exists(s32 index) const
+            {
+                bool exists = false;
+                for (s32 i = 0; i < m_index && !exists; i++)
+                {
+                    exists = (m_stack[i] == index)
+                }
+                return exists;
+            }
+        };
+
+        indexstack_t stack;
         for (s32 i = 0; i < mNumAliases; ++i)
         {
-            utf32::concatenate(mAliasList[i].mTarget, target);
-            utf32::crunes alias = utf32::find(utf32::crunes(target), ':');
-
-            for (s32 j = 0; j < mNumAliases; ++j)
+            s32  indexof_alias = i;
+            bool valid         = true;
+            while (valid)
             {
-                if (j == i)
-                    continue;
-
-                if (utf32::compare(mAliasList[j].mAlias, alias) == 0)
+                stack.push(indexof_alias);
+                s32 indexof_next_alias = find_indexof_alias(mAliasList[indexof_alias].mTarget);
+                if (indexof_next_alias >= 0)
                 {
-                    // Combine targets
+                    // Target is directing us to another alias, so we need to
+                    // go and find the next alias. First store the current
+                    // alias index.
+                    if (!stack.index_exists(indexof_next_alias))
+                    {
+                        indexof_alias = indexof_next_alias;
+                    }
+                    else
+                    {
+                        valid = false; // We identified an alias looping issue
+                    }
+                }
+                else
+                {
+                    // Target is likely directing us to a device, see if that
+                    // is true. If it is not true then we should store a '-1'
+                    // to indicate on the stack that there is a problem.
+                    s32 indexof_device = find_indexof_device(mAliasList[indexof_alias].mTarget);
+                    valid              = indexof_device >= 0;
                     break;
                 }
             }
+
+            if (valid)
+            {
+                // Walk the stack and concatenate the target strings into 'Resolved'
+                mAliasList[i].mResolved.reset();
+
+                s32 indexof_alias = stack.pop();
+                utf32::concatenate(mAliasList[i].mResolved, mAliasList[indexof_alias].mTarget);
+                while (stack.empty() == false)
+                {
+                    indexof_alias                   = stack.pop();
+                    utf32::crunes target_path       = utf32::crunes(mAliasList[indexof_alias].mTarget);
+                    utf32::crunes alias_target_path = utf32::find(target_path, ':');
+                    alias_target_path               = utf32::selectUntilEndExcludeSelection(target_path, alias_target_path);
+                    utf32::concatenate(mAliasList[i].mResolved, alias_target_path);
+                }
+            }
         }
+    }
+
+    s32 xdevicemanager::find_indexof_alias(const utf32::crunes& path) const
+    {
+        // reduce path to just the alias part
+        utf32::crunes alias = utf32::find(utf32::crunes(path), ':');
+        for (s32 i = 0; i < mNumAliases; ++i)
+        {
+            if (compare(mAliasList[i].mAlias, alias) == 0)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+    s32 xdevicemanager::find_indexof_device(const utf32::crunes& path) const
+    {
+        // reduce path to just the device part
+        utf32::crunes device = utf32::find(utf32::crunes(path), ':');
+        for (s32 i = 0; i < mNumDevices; ++i)
+        {
+            if (compare(mDeviceList[i].mDevName, device) == 0)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     //------------------------------------------------------------------------------
