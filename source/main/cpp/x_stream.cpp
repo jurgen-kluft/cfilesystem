@@ -1,6 +1,3 @@
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
 
@@ -8,9 +5,6 @@
 #include "xfilesystem/private/x_istream.h"
 #include "xfilesystem/private/x_enumerations.h"
 
-//==============================================================================
-// xcore namespace
-//==============================================================================
 namespace xcore
 {
     class xstream_nil : public xistream
@@ -31,7 +25,7 @@ namespace xcore
         virtual void setLength(u64 length) {}
 
         virtual s64 getPos() const { return 0; }
-        virtual s64 setPos(s64 length) {}
+        virtual s64 setPos(s64 length) { return 0; }
 
         virtual void close() {}
         virtual void flush() {}
@@ -68,22 +62,19 @@ namespace xcore
     xstream::~xstream()
     {
         if (m_pimpl->release() == 0)
-            m_pimpl->destroy();
+		{
+			m_pimpl->destroy();
+		}
         m_pimpl = 0;
     }
 
     bool xstream::canRead() const { return m_pimpl->canRead(); }
-
     bool xstream::canSeek() const { return m_pimpl->canSeek(); }
-
     bool xstream::canWrite() const { return m_pimpl->canWrite(); }
-
     bool xstream::isOpen() const { return m_pimpl->isOpen(); }
-
     bool xstream::isAsync() const { return m_pimpl->isAsync(); }
 
     u64 xstream::getLength() const { return m_pimpl->getLength(); }
-
     void xstream::setLength(u64 length) { m_pimpl->setLength(length); }
 
     s64 xstream::getPos() const { return m_pimpl->getPos(); }
@@ -92,9 +83,10 @@ namespace xcore
     void xstream::close()
     {
         m_pimpl->close();
-
         if (m_pimpl->release() == 0)
-            m_pimpl->destroy();
+		{
+			m_pimpl->destroy();
+		}
 
         m_pimpl = &sNullStreamImp;
     }
@@ -102,7 +94,6 @@ namespace xcore
     void xstream::flush() { m_pimpl->flush(); }
 
     u64 xstream::read(xbyte* buffer, u64 count) { return m_pimpl->read(buffer, count); }
-
     u64 xstream::write(const xbyte* buffer, u64 count) { return m_pimpl->write(buffer, count); }
 
     bool xstream::beginRead(xbyte* buffer, u64 count) { return m_pimpl->beginRead(buffer, count); }

@@ -10,10 +10,11 @@
 
 #include "xfilesystem/private/x_enumerations.h"
 
-
 namespace xcore
 {
-    
+    class xalloc;
+	class xfilepath;
+
     class xistream
     {
     public:
@@ -21,6 +22,7 @@ namespace xcore
 
         virtual void hold()    = 0;
         virtual s32  release() = 0;
+        virtual void destroy() = 0;
 
         virtual bool canRead() const       = 0;
         virtual bool canSeek() const       = 0;
@@ -42,6 +44,9 @@ namespace xcore
         virtual s64  endRead(bool block)                        = 0;
         virtual bool beginWrite(const xbyte* buffer, u64 count) = 0;
         virtual s64  endWrite(bool block)                       = 0;
+	
+	protected:
+		friend class xstream;
 
 		static xistream*	create_filestream(xalloc*, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op);
 		static void			destroy_filestream(xalloc*, xistream*);

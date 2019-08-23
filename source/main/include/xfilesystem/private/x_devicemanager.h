@@ -51,7 +51,7 @@ namespace xcore
         void resolve();
 
         // Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
-        xfiledevice* find_device(const xpath& path, utf32::crunes& device_rootpath);
+        xfiledevice* find_device(const xpath& path, utf32::runes& device_rootpath);
 
         struct alias_t
         {
@@ -69,7 +69,9 @@ namespace xcore
             rune  mResolvedRunes[128];
             runes mAlias;    // "data"
             runes mTarget;   // "appdir:\data\bin.pc\", "data:\file.txt" to "appdir:\data\bin.pc\file.txt"
+
             runes mResolved; // "appdir:\data\bin.pc\" to "d:\project\data\bin.pc\"
+			s32 mDeviceIndex; // Index of the device that we resolve to
         };
 
         // Return index of found alias, otherwise -1

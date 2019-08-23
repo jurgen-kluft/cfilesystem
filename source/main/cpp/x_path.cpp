@@ -16,12 +16,12 @@ namespace xcore
     static rune   sSemiColumnSlashStr[3] = {':', '\\', 0};
     static crunes sSemiColumnSlash(sSemiColumnSlashStr, sSemiColumnSlashStr + 2);
 
+	utf32::crunes s_device_separator(sSemiColumnSlashStr, sSemiColumnSlashStr + 2);
+
     static void fix_slashes(runes& str)
     {
-        uchar32 slash = '\\';
-
         // Replace incorrect slashes with the correct one
-        if (slash == '\\')
+        if (slash == sSlash)
             findReplace(str, (uchar32)'/', sSlash);
         else
             findReplace(str, sSlash, (uchar32)'/');
@@ -64,7 +64,7 @@ namespace xcore
         else
         {
             xpath path;
-            outdevice = fs->m_devman->find_device(m_path, path);
+            outdevice = fs->m_devman->find_device(*this, path);
             if (outdevice != nullptr)
             {
                 return path;

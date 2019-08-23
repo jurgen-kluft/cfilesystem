@@ -16,6 +16,7 @@ namespace xcore
 {
     class xfilesystem;
     class xfiledevice;
+	class xfilesys;
 
     //==============================================================================
     // xdirpath:
@@ -43,6 +44,8 @@ namespace xcore
     {
         utf32::alloc* m_alloc;
         utf32::runes  m_path;
+
+		static utf32::crunes s_device_separator;
 
         xpath();
         xpath(utf32::alloc* allocator);

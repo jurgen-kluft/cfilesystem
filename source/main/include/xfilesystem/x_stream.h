@@ -53,10 +53,10 @@ namespace xcore
         xistream* m_pimpl;
 
         friend class xfilesystem;
+		friend class xfilesys;
     };
 
     void xstream_copy(xstream* src, xstream* dst, xbuffer& buffer);
-    void xstream_copy(xstream* src, xstream* dst, u64 count, xbuffer& buffer);
 
 }; // namespace xcore
 

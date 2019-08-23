@@ -160,7 +160,7 @@ namespace xcore
                 bool exists = false;
                 for (s32 i = 0; i < m_index && !exists; i++)
                 {
-                    exists = (m_stack[i] == index)
+                    exists = (m_stack[i] == index);
                 }
                 return exists;
             }
@@ -203,18 +203,34 @@ namespace xcore
             if (valid)
             {
                 // Walk the stack and concatenate the target strings into 'Resolved'
-                mAliasList[i].mResolved.reset();
+				utf32::runes& resolved_path = mAliasList[i].mResolved;
+                resolved_path.reset();
 
                 s32 indexof_alias = stack.pop();
-                utf32::concatenate(mAliasList[i].mResolved, mAliasList[indexof_alias].mTarget);
+                utf32::concatenate(resolved_path, mAliasList[indexof_alias].mTarget);
                 while (stack.empty() == false)
                 {
                     indexof_alias                   = stack.pop();
                     utf32::crunes target_path       = utf32::crunes(mAliasList[indexof_alias].mTarget);
                     utf32::crunes alias_target_path = utf32::find(target_path, ':');
                     alias_target_path               = utf32::selectUntilEndExcludeSelection(target_path, alias_target_path);
-                    utf32::concatenate(mAliasList[i].mResolved, alias_target_path);
+                    utf32::concatenate(resolved_path, alias_target_path);
                 }
+
+				// Cache the device index that our resolved path is referencing
+				mAliasList[i].mDeviceIndex = -1;
+				utf32::runes resolved_devname = utf32::findSelectUntil(resolved_path, ':');
+				if (!resolved_devname.is_empty())
+				{
+					for (s32 di = 0; di < mNumDevices; ++di)
+					{
+						if (compare(mDeviceList[di].mDevName, resolved_devname) == 0)
+						{
+							mAliasList[i].mDeviceIndex = di;
+						}
+					}
+				}
+
             }
         }
     }
@@ -248,29 +264,32 @@ namespace xcore
 
     //------------------------------------------------------------------------------
 
-    xfiledevice* xdevicemanager::find_device(const utf32::crunes& devicename, utf32::runes& device_rootpath)
-    {
-        utf32::rune  devnamerunes[128];
-        utf32::runes devname(devnamerunes, devnamerunes, devnamerunes + sizeof(devnamerunes) - 1);
-        utf32::copy(devicename, devname);
+    xfiledevice* xdevicemanager::find_device(const xpath& path, utf32::runes& device_syspath)
+	{
+		xfiledevice* fd = nullptr;
 
-        for (s32 i = 0; i < mNumAliases; ++i)
-        {
-            if (compare(mAliasList[i].mAlias, devname) == 0)
-            {
-                utf32::copy(mAliasList[i].mTarget, devname);
-                i = -1; // Restart
-            }
-        }
-        for (s32 i = 0; i < mNumDevices; ++i)
-        {
-            if (compare(mDeviceList[i].mDevName, devname) == 0)
-            {
-                utf32::copy(devname, device_rootpath);
-                return mDeviceList[i].mDevice;
-            }
-        }
+        utf32::runes devname = utf32::findSelectUntil(path.m_path, ':');
+		if (!devname.is_empty())
+		{
+			for (s32 i = 0; i < mNumAliases; ++i)
+			{
+				if (compare(mAliasList[i].mAlias, devname) == 0)
+				{
+					utf32::copy(mAliasList[i].mResolved, device_syspath);
 
-        return nullptr;
+					// Concatenate the path (filepath or dirpath) that the user provided to our resolved path
+					utf32::runes relpath = utf32::selectUntilEndExcludeSelection(path.m_path, devname);
+					utf32::trimLeft(relpath, ':');
+					utf32::trimLeft(relpath, '\\');
+					utf32::concatenate(device_syspath, relpath);
+					if (mAliasList[i].mDeviceIndex >= 0)
+					{
+						fd = mDeviceList[mAliasList[i].mDeviceIndex].mDevice;
+					}
+					break;
+				}
+			}
+		}
+        return fd;
     }
 }; // namespace xcore
