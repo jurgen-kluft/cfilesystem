@@ -15,7 +15,7 @@ namespace xcore
     // Forward declares
     class xstream;
     class xfilestream;
-    class xdatetime;
+    class xfiletimes;
     class xdirinfo;
     class xfilesys;
 

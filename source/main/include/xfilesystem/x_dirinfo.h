@@ -18,7 +18,7 @@
 namespace xcore
 {
     // Forward declares
-    class xdatetime;
+    class xfiletimes;
     class xfileinfo;
     class xdirpath;
 
