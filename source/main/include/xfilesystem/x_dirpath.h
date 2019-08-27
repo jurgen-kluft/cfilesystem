@@ -35,6 +35,8 @@ namespace xcore
 
         xdirpath(xfilesys* fs, xpath& path);
 
+        xpath const path() const;
+
     public:
         xdirpath();
         xdirpath(const xdirpath& dir);
@@ -63,8 +65,6 @@ namespace xcore
         bool getParent(xdirpath& outParentDirPath) const;
         void setRoot(const xdirpath& device);
         bool getRoot(xdirpath& outDevice) const;
-
-        xpath const path() const;
 
         xdirpath& operator=(const xdirpath&);
         xdirpath& operator=(const xfilepath&);

@@ -7,6 +7,7 @@
 
 #include "xbase/x_debug.h"
 #include "xbase/x_buffer.h"
+#include "xbase/x_allocator.h"
 #include "xfilesystem/private/x_enumerations.h"
 
 namespace xcore
@@ -67,6 +68,8 @@ namespace xcore
         s32        write(xwriter*, xcbuffer const&);
         void       read_async(xreader*, xbuffer&);
         s32        wait_async(xreader*);
+
+		XCORE_CLASS_PLACEMENT_NEW_DELETE
 
     protected:
         friend class xfilesys;

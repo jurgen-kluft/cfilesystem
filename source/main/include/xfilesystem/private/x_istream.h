@@ -5,25 +5,18 @@
 #pragma once
 #endif
 
-//==============================================================================
 #include "xbase/x_debug.h"
-
 #include "xfilesystem/private/x_enumerations.h"
 
 namespace xcore
 {
     class xalloc;
 	class xfilepath;
+	class xfiledevice;
 
     class xistream
     {
     public:
-        virtual ~xistream(void) {}
-
-        virtual void hold()    = 0;
-        virtual s32  release() = 0;
-        virtual void destroy() = 0;
-
         virtual bool canRead() const       = 0;
         virtual bool canSeek() const       = 0;
         virtual bool canWrite() const      = 0;
@@ -46,9 +39,16 @@ namespace xcore
         virtual s64  endWrite(bool block)                       = 0;
 	
 	protected:
+        xistream() {}
+		virtual ~xistream(void) {}
+
+        virtual void hold()    = 0;
+        virtual s32  release() = 0;
+        virtual void destroy() = 0;
+
 		friend class xstream;
 
-		static xistream*	create_filestream(xalloc*, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op);
+		static xistream*	create_filestream(xalloc*, xfiledevice*, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op);
 		static void			destroy_filestream(xalloc*, xistream*);
     };
 

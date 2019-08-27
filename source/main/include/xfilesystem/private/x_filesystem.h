@@ -17,19 +17,22 @@ namespace xcore
     class xdatetime;
 
     class xfile;
+	class xfilesys;
     class xfiledevice;
     class xdevicemanager;
     class xfileinfo;
     class xdirinfo;
+    class xpath;
     class xfilepath;
     class xdirpath;
-    struct xfileattrs;
-    struct xfiletimes;
+    class xfileattrs;
+    class xfiletimes;
     class xstream;
     class xistream;
     
-    struct xfile
+    class xfile
     {
+	public:
         xfilesys*   m_parent;
         void*       m_handle;
     };
@@ -41,6 +44,8 @@ namespace xcore
         xalloc*         m_allocator;
         utf32::alloc*   m_stralloc;
         xdevicemanager* m_devman;
+
+		XCORE_CLASS_PLACEMENT_NEW_DELETE
 
         static xfilepath resolve(xfilepath const&, xfiledevice*& device);
         static xdirpath  resolve(xdirpath const&, xfiledevice*& device);
@@ -59,8 +64,11 @@ namespace xcore
 
         // -----------------------------------------------------------
         xfile*     open(xfilepath const& filename, EFileMode mode);
-        xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
-        xwriter*   writer(xfile*);
+        xfile*     open(xfileinfo*, EFileMode mode);
+
+		xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
+        
+		xwriter*   writer(xfile*);
         xreader*   reader(xfile*);
         void       close(xfile*);
         void       close(xfileinfo*);
@@ -73,7 +81,6 @@ namespace xcore
         bool       exists(xfileinfo*);
         bool       exists(xdirinfo*);
         s64        size(xfileinfo*);
-        xfile*     open(xfileinfo*, EFileMode mode);
         void       rename(xfileinfo*, xfilepath const&);
         void       move(xfileinfo* src, xfileinfo* dst);
         void       copy(xfileinfo* src, xfileinfo* dst);

@@ -21,15 +21,12 @@ namespace xcore
     static void fix_slashes(runes& str)
     {
         // Replace incorrect slashes with the correct one
-        if (slash == sSlash)
-            findReplace(str, (uchar32)'/', sSlash);
-        else
-            findReplace(str, sSlash, (uchar32)'/');
+        findReplace(str, (uchar32)'/', sSlash);
 
         // Remove double slashes like '\\' or '//'
 
         // Remove slashes at the start and end of this string
-        trimDelimiters(str, slash, slash);
+        trimDelimiters(str, sSlash, sSlash);
     }
 
     xpath::xpath()
@@ -52,7 +49,18 @@ namespace xcore
         copy(path.m_path, m_path, m_alloc, 16);
     }
 
-    xpath::xpath(const xpath& lhspath, const xpath& rhspath) {}
+    xpath::xpath(const xpath& lhspath, const xpath& rhspath) 
+	{
+		// Combine both paths into a new path
+	}
+
+	xpath::~xpath()
+	{
+		if (m_alloc != nullptr)
+		{
+			m_alloc->deallocate(m_path);
+		}
+	}
 
     xpath xpath::resolve(xfilesys* fs, xfiledevice*& outdevice) const
     {
@@ -236,7 +244,6 @@ namespace xcore
         // Return the path at level @level
         runez<4> device(":\\");
 
-        s32   level = 0;
         runes path  = findSelectAfter(m_path, device);
         if (path.is_empty())
             return false;
@@ -283,6 +290,10 @@ namespace xcore
         // THIS:     c:\disk\child
         // RETURN 0
         if (starts_with(m_path, parent.m_path)) {}
+
+		//@TODO: Implement this!
+
+		return 0;
     }
 
     bool xpath::split(s32 level, xpath& parent_dirpath, xpath& relative_filepath) const

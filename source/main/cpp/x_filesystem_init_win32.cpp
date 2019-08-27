@@ -77,10 +77,13 @@ namespace xcore
                     }
 
                     // Convert driveLetter (Ascii) to utf-32
+					string32.reset();
                     utf16::crunes driveLetter16((utf16::pcrune)driveLetter);
                     utf::copy(driveLetter16, string32);
 
-                    if (devman->find_device(string32) == nullptr)
+					xpath devicename;
+					devicename.m_path = string32;
+                    if (devman->has_device(devicename))
                     {
                         if (sFileDevices[eDriveType] == NULL)
                         {
@@ -173,72 +176,75 @@ namespace xcore
                 m_allocator->deallocate(slice.m_str);
                 slice = utf32::runes();
             }
+
+			XCORE_CLASS_PLACEMENT_NEW_DELETE
         };
+	}
 
-        xfilesystem* xfilesystem::create(xfilesyscfg const& cfg)
+    xfilesystem* xfilesystem::create(xfilesyscfg const& cfg)
+    {
+        xheap heap(cfg.m_allocator);
+
+        xdevicemanager* devman = heap.construct<xdevicemanager>();
+        x_FileSystemRegisterSystemAliases(devman);
+
+        utf32::rune adir32[512] = {'\0'};
+
+        // Get the application directory (by removing the executable filename)
+        wchar_t dir[512] = {'\0'}; // Needs to end with a backslash!
+        DWORD   result   = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
+        if (result != 0)
         {
-            xheap heap(cfg.m_allocator);
-
-            xdevicemanager* devman = heap.construct<xdevicemanager>();
-            x_FileSystemRegisterSystemAliases(devman);
-
-            utf32::rune adir32[512] = {'\0'};
-
-            // Get the application directory (by removing the executable filename)
-            wchar_t dir[512] = {'\0'}; // Needs to end with a backslash!
-            DWORD   result   = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
-            if (result != 0)
-            {
-                utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
-                utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
-                utf32::runes appdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
-                devman->add_alias("appdir", appdir);
-            }
-
-            // Get the working directory
-            result = ::GetCurrentDirectoryW(sizeof(dir) - 1, dir);
-            if (result != 0)
-            {
-                utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
-                utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
-                utf32::runes curdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
-                devman->add_alias("curdir", curdir);
-            }
-
-            xfilesys* imp    = heap.construct<xfilesys>();
-            imp->m_slash     = cfg.m_default_slash;
-            imp->m_allocator = cfg.m_allocator;
-            imp->m_stralloc  = heap.construct<fs_utfalloc>(cfg.m_allocator);
-            imp->m_devman    = devman;
-
-            xfilesystem* fs = heap.construct<xfilesystem>();
-            fs->mImpl       = imp;
-            return fs;
+            utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
+            utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
+            utf32::runes appdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
+            devman->add_alias("appdir", appdir);
         }
 
-        //------------------------------------------------------------------------------
-        // Summary:
-        //     Terminate the filesystem.
-        // Arguments:
-        //     void
-        // Returns:
-        //     void
-        // Description:
-        //------------------------------------------------------------------------------
-        void xfilesystem::destroy(xfilesystem*& fs)
+        // Get the working directory
+        result = ::GetCurrentDirectoryW(sizeof(dir) - 1, dir);
+        if (result != 0)
         {
-            xfilesys* xfs = fs->mImpl;
-
-            xfs->m_devman->exit();
-
-            xheap heap(xfs->m_allocator);
-            heap.destruct(xfs->m_stralloc);
-            heap.destruct(xfs->m_devman);
-            heap.destruct(xfs);
-            heap.destruct(fs);
-            fs = nullptr;
+            utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
+            utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
+            utf32::runes curdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
+            devman->add_alias("curdir", curdir);
         }
-    } // namespace
+
+        xfilesys* imp    = heap.construct<xfilesys>();
+        imp->m_slash     = cfg.m_default_slash;
+        imp->m_allocator = cfg.m_allocator;
+        imp->m_stralloc  = heap.construct<fs_utfalloc>(cfg.m_allocator);
+        imp->m_devman    = devman;
+
+        xfilesystem* fs = heap.construct<xfilesystem>();
+        fs->mImpl       = imp;
+        return fs;
+    }
+
+    //------------------------------------------------------------------------------
+    // Summary:
+    //     Terminate the filesystem.
+    // Arguments:
+    //     void
+    // Returns:
+    //     void
+    // Description:
+    //------------------------------------------------------------------------------
+    void xfilesystem::destroy(xfilesystem*& fs)
+    {
+        xfilesys* xfs = fs->mImpl;
+
+        xfs->m_devman->exit();
+
+        xheap heap(xfs->m_allocator);
+        heap.destruct(xfs->m_stralloc);
+        heap.destruct(xfs->m_devman);
+        heap.destruct(xfs);
+        heap.destruct(fs);
+        fs = nullptr;
+    }
+
 };    // namespace xcore
 
 #endif // TARGET_PC

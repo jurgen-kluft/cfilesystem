@@ -18,7 +18,7 @@ namespace xcore
         mPath.m_alloc = path.m_alloc;
         mPath.m_path  = path.m_path;
         path.m_alloc  = nullptr;
-        path.m_path   = xpath::__runes();
+        path.m_path   = utf32::runes();
     }
 
     xdirpath::xdirpath()
@@ -72,7 +72,7 @@ namespace xcore
     void xdirpath::setRoot(const xdirpath& inRoot) {}
 
     xfilepath xdirpath::operator+=(const xfilepath& other) { return xfilepath(*this, other); }
-    xdirpath& xdirpath::operator+=(const xdirpath& other) { mPath = xpath(mPath, other.mPath); }
+    xdirpath& xdirpath::operator+=(const xdirpath& other) { mPath = xpath(mPath, other.mPath); return *this; }
 
     xdirpath& xdirpath::operator=(const xfilepath& fp)
     {

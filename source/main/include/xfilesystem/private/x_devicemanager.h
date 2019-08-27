@@ -5,7 +5,7 @@
 #pragma once
 #endif
 
-//==============================================================================
+#include "xbase/x_allocator.h"
 #include "xfilesystem/private/x_path.h"
 
 namespace xcore
@@ -38,6 +38,8 @@ namespace xcore
 
     public:
         xdevicemanager();
+		
+		XCORE_CLASS_PLACEMENT_NEW_DELETE
 
         void clear();
         void exit();
@@ -51,7 +53,8 @@ namespace xcore
         void resolve();
 
         // Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
-        xfiledevice* find_device(const xpath& path, utf32::runes& device_rootpath);
+		bool has_device(const xpath& path) const;
+        xfiledevice* find_device(const xpath& path, xpath& device_rootpath);
 
         struct alias_t
         {

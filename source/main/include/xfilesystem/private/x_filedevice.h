@@ -8,19 +8,20 @@
 //==============================================================================
 #include "xbase/x_runes.h"
 #include "xfilesystem/x_enumerator.h"
+#include "xfilesystem/private/x_enumerations.h"
 
 #define MAX_ENUM_SEARCH_FILES 32
 #define MAX_ENUM_SEARCH_DIRS 16
 
 namespace xcore
 {
-    class xdatetime;
-
     class xfiledevice;
+    class xfilepath;
+    class xdirpath;
     class xfileinfo;
     class xdirinfo;
-    struct xfileattrs;
-    struct xfiletimes;
+    class xfileattrs;
+    class xfiletimes;
     class xstream;
 
     // System file device
@@ -45,13 +46,7 @@ namespace xcore
 
         virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) = 0;
 
-        virtual bool openFile(xfilepath const& szFilename, bool boWrite, void*& outHandle)   = 0;
-        virtual bool openOrCreateFile(xfilepath const& szFilename, void*& outHandle)   = 0;
-        virtual bool createFile(xfilepath const& szFilename, void*& outHandle) = 0;
-        virtual bool createNewFile(xfilepath const& szFilename, void*& outHandle) = 0;
-        virtual bool truncateFile(xfilepath const& szFilename, void*& outHandle) = 0;
-        virtual bool appendFile(xfilepath const& szFilename, void*& outHandle) = 0;
-
+        virtual bool openFile(xfilepath const& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& outHandle)   = 0;
         virtual bool readFile(void* pHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead)      = 0;
         virtual bool writeFile(void* pHandle, u64 pos, void const* buffer, u64 count, u64& outNumBytesWritten)  = 0;
         virtual bool closeFile(void* pHandle)                                                             = 0;
@@ -69,8 +64,6 @@ namespace xcore
 
         virtual bool setFileTime(void* pHandle, xfiletimes const& times)    = 0;
         virtual bool getFileTime(void* pHandle, xfiletimes& outTimes) = 0;
-        virtual bool setFileAttr(void* pHandle, xfileattrs const& attr)     = 0;
-        virtual bool getFileAttr(void* pHandle, xfileattrs& attr)     = 0;
 
         virtual bool hasFile(xfilepath const& szFilename)                                                   = 0;
         virtual bool moveFile(xfilepath const& szFilename, xfilepath const& szToFilename, bool boOverwrite) = 0;

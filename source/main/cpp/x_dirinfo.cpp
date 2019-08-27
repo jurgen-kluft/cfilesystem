@@ -17,64 +17,55 @@ namespace xcore
 {
     xdirinfo::xdirinfo() {}
 
-    xdirinfo::xdirinfo(const xdirinfo& dirinfo) : mDirPath(dirinfo.mDirPath) {}
+    xdirinfo::xdirinfo(const xdirinfo& dirinfo)
+        : mPath(dirinfo.mPath)
+    {
+    }
 
-    xdirinfo::xdirinfo(const xdirpath& dir) : mDirPath(dir) {}
+    xdirinfo::xdirinfo(const xdirpath& dir)
+        : mPath(dir)
+    {
+    }
 
-    bool xdirinfo::isRoot() const { return mDirPath.isRoot(); }
-
-    bool xdirinfo::isRooted() const { return mDirPath.isRooted(); }
-
-    bool xdirinfo::exists() const { return sExists(mDirPath); }
-
-    bool xdirinfo::create() { return sCreate(mDirPath); }
-
-    bool xdirinfo::remove() { return sDelete(mDirPath); }
-
-    void xdirinfo::refresh() {}
-
-    void xdirinfo::copy(const xdirpath& toDirectory, xbool overwrite) { sCopy(mDirPath, toDirectory, overwrite); }
-
-    void xdirinfo::move(const xdirpath& toDirectory) { sMove(mDirPath, toDirectory); }
-
-    void xdirinfo::enumerate(enumerate_delegate& enumerator) { sEnumerate(mDirPath, enumerator); }
-
-    xdirpath const& xdirinfo::getDirpath() const { return mDirPath; }
-
-    bool xdirinfo::getRoot(xdirinfo& outRootDirPath) const { return (mDirPath.getRoot(outRootDirPath.mDirPath)); }
-
-    bool xdirinfo::getParent(xdirinfo& outParentDirPath) const { return (mDirPath.getParent(outParentDirPath.mDirPath)); }
-
-    bool xdirinfo::getTimes(xfiletimes& times) const { return sGetTime(mDirPath, times); }
-
-    bool xdirinfo::setTimes(xfiletimes times) { return sSetTime(mDirPath, times); }
-
-    bool xdirinfo::getAttrs(xfileattrs& fattrs) const { return sGetAttrs(mDirPath, fattrs); }
-
-    bool xdirinfo::setAttrs(xfileattrs fattrs) { return sSetAttrs(mDirPath, fattrs); }
+    bool            xdirinfo::isRoot() const { return mPath.isRoot(); }
+    bool            xdirinfo::isRooted() const { return mPath.isRooted(); }
+    bool            xdirinfo::exists() const { return sExists(mPath); }
+    bool            xdirinfo::create() { return sCreate(mPath); }
+    bool            xdirinfo::remove() { return sDelete(mPath); }
+    void            xdirinfo::refresh() {}
+    void            xdirinfo::copy(const xdirpath& toDirectory, xbool overwrite) { sCopy(mPath, toDirectory, overwrite); }
+    void            xdirinfo::move(const xdirpath& toDirectory) { sMove(mPath, toDirectory); }
+    void            xdirinfo::enumerate(enumerate_delegate& enumerator) { sEnumerate(mPath, enumerator); }
+    xdirpath const& xdirinfo::getDirpath() const { return mPath; }
+    bool            xdirinfo::getRoot(xdirinfo& outRootDirPath) const { return (mPath.getRoot(outRootDirPath.mPath)); }
+    bool            xdirinfo::getParent(xdirinfo& outParentDirPath) const { return (mPath.getParent(outParentDirPath.mPath)); }
+    bool            xdirinfo::getTimes(xfiletimes& times) const { return sGetTime(mPath, times); }
+    bool            xdirinfo::setTimes(xfiletimes times) { return sSetTime(mPath, times); }
+    bool            xdirinfo::getAttrs(xfileattrs& fattrs) const { return sGetAttrs(mPath, fattrs); }
+    bool            xdirinfo::setAttrs(xfileattrs fattrs) { return sSetAttrs(mPath, fattrs); }
 
     xdirinfo& xdirinfo::operator=(const xdirinfo& other)
     {
         if (this == &other)
             return *this;
 
-        mDirPath = other.mDirPath;
+        mPath = other.mPath;
         return *this;
     }
 
     xdirinfo& xdirinfo::operator=(const xdirpath& other)
     {
-        if (&mDirPath == &other)
+        if (&mPath == &other)
             return *this;
 
-        mDirPath = other;
+        mPath = other;
         return *this;
     }
 
-    bool xdirinfo::operator==(const xdirpath& other) const { return mDirPath == other; }
-    bool xdirinfo::operator!=(const xdirpath& other) const { return mDirPath != other; }
-    bool xdirinfo::operator==(const xdirinfo& other) const { return mDirPath == other.mDirPath; }
-    bool xdirinfo::operator!=(const xdirinfo& other) const { return mDirPath != other.mDirPath; }
+    bool xdirinfo::operator==(const xdirpath& other) const { return mPath == other; }
+    bool xdirinfo::operator!=(const xdirpath& other) const { return mPath != other; }
+    bool xdirinfo::operator==(const xdirinfo& other) const { return mPath == other.mPath; }
+    bool xdirinfo::operator!=(const xdirinfo& other) const { return mPath != other.mPath; }
 
     // Static functions
     bool xdirinfo::sCreate(const xdirpath& dirpath)

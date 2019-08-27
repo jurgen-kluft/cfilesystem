@@ -40,8 +40,9 @@ namespace xcore
     // FilenameWithoutExtension = Filename
     //==============================================================================
 
-    struct xpath
+    class xpath
     {
+	public:
         utf32::alloc* m_alloc;
         utf32::runes  m_path;
 
@@ -52,6 +53,7 @@ namespace xcore
         xpath(utf32::alloc* allocator, const utf32::crunes& path);
         xpath(const xpath& path);
         xpath(const xpath& lhspath, const xpath& rhspath);
+		~xpath();
 
         xpath resolve(xfilesys* fs, xfiledevice*& outdevice) const;
 
@@ -88,7 +90,10 @@ namespace xcore
         void getFilenameWithoutExtension(xpath& out_filename_no_ext) const;
         void getExtension(xpath& out_ext) const;
 
+		xpath& operator=(const utf32::runes&);
         xpath& operator=(const xpath&);
+
+		xpath& operator+=(const utf32::runes&);
 
         bool operator==(const xpath&) const;
         bool operator!=(const xpath&) const;

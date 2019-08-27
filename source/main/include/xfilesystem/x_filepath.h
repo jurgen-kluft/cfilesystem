@@ -50,6 +50,7 @@ namespace xcore
 
         void makeRelative();
         void makeRelativeTo(const xdirpath& dirpath);
+		void makeAbsolutoTo(const xdirpath& dirpath);
 
         bool getRoot(xdirpath&) const;
         bool getDirname(xdirpath&) const;

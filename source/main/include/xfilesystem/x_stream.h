@@ -39,9 +39,11 @@ namespace xcore
 
         u64  read(xbyte* buffer, u64 count);
         u64  write(const xbyte* buffer, u64 count);
+
         bool beginRead(xbyte* buffer, u64 count);
         s64  endRead(bool block = true);
-        bool beginWrite(const xbyte* buffer, u64 count);
+        
+		bool beginWrite(const xbyte* buffer, u64 count);
         s64  endWrite(bool block = true);
 
     protected:

@@ -5,19 +5,14 @@
 #pragma once
 #endif
 
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_debug.h"
 
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_attributes.h"
 #include "xfilesystem/x_enumerator.h"
 
-//==============================================================================
 namespace xcore
 {
-    // Forward declares
     class xfiletimes;
     class xfileinfo;
     class xdirpath;
@@ -76,6 +71,6 @@ namespace xcore
         static bool sCopy(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite = xTRUE);
         static bool sMove(const xdirpath& sourceDirectory, const xdirpath& destDirectory, xbool overwrite = xTRUE);
     };
-}; // namespace xcore
+};
 
 #endif

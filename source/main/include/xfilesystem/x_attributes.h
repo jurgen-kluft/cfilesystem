@@ -9,8 +9,9 @@
 
 namespace xcore
 {
-    struct xfileattrs
+    class xfileattrs
     {
+	public:
         xfileattrs();
         xfileattrs(const xfileattrs&);
         xfileattrs(bool boArchive, bool boReadonly, bool boHidden, bool boSystem);
@@ -34,8 +35,9 @@ namespace xcore
         xcore::u32 mFlags;
     };
 
-    struct xfiletimes
+    class xfiletimes
     {
+	public:
         xfiletimes();
         xfiletimes(const xfiletimes&);
         xfiletimes(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);

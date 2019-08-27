@@ -12,29 +12,29 @@ namespace xcore
     using namespace utf32;
 
     xfilepath::xfilepath()
-        : mFileSystem(nullptr)
+        : mParent(nullptr)
         , mPath()
     {
     }
     xfilepath::xfilepath(xfilesys* fsys, xpath& path)
-        : mFileSystem(fsys)
+        : mParent(fsys)
         , mPath()
     {
         mPath.m_alloc = path.m_alloc;
         mPath.m_path  = path.m_path;
         path.m_alloc  = nullptr;
-        path.m_path   = xpath::__runes();
+        path.m_path   = utf32::runes();
     }
 
     xfilepath::xfilepath(const xfilepath& filepath)
-        : mFileSystem(filepath.mFileSystem)
+        : mParent(filepath.mParent)
         , mPath()
     {
         mPath = filepath.mPath;
     }
 
     xfilepath::xfilepath(const xdirpath& dirpath, const xfilepath& filepath)
-        : mFileSystem(filepath.mFileSystem)
+        : mParent(filepath.mParent)
         , mPath()
     {
         mPath.combine(dirpath.mPath, filepath.mPath);
@@ -48,17 +48,11 @@ namespace xcore
     bool xfilepath::isRooted() const { return mPath.isRooted(); }
 
     void xfilepath::makeRelative() { mPath.makeRelative(); }
-
     void xfilepath::makeRelativeTo(const xdirpath& root) { mPath.makeRelativeTo(root.mPath); }
-
     bool xfilepath::getRoot(xdirpath& root) const { return mPath.getRootDir(root.mPath); }
-
     bool xfilepath::getDirname(xdirpath& outDirPath) const { return mPath.getDirname(outDirPath.mPath); }
-
     void xfilepath::getFilename(xfilepath& filename) const { mPath.getFilename(filename.mPath); }
-
     void xfilepath::getFilenameWithoutExtension(xfilepath& filename) const { mPath.getFilenameWithoutExtension(filename.mPath); }
-
     void xfilepath::getExtension(xfilepath& filename) const { mPath.getExtension(filename.mPath); }
 
     xfilepath& xfilepath::operator=(const xfilepath& path)

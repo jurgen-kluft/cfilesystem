@@ -114,7 +114,7 @@ namespace xcore
         rune  devname_[32];
         runes devname32(devname_, devname_, devname_ + 31);
         utf::copy(devname, devname32);
-        add_device(devname32, device);
+        return add_device(devname32, device);
     }
 
     bool xdevicemanager::add_alias(const char* alias, const utf32::crunes& devname)
@@ -122,7 +122,7 @@ namespace xcore
         rune  alias_[32];
         runes alias32(alias_, alias_, alias_ + 31);
         utf::copy(devname, alias32);
-        add_alias(alias32, devname);
+        return add_alias(alias32, devname);
     }
 
     void xdevicemanager::resolve()
@@ -263,8 +263,25 @@ namespace xcore
     }
 
     //------------------------------------------------------------------------------
+	bool xdevicemanager::has_device(const xpath& path) const
+	{
+		xfiledevice* fd = nullptr;
+        utf32::runes devname = utf32::findSelectUntil(path.m_path, ':');
+		if (!devname.is_empty())
+		{
+			for (s32 i = 0; i < mNumAliases; ++i)
+			{
+				if (compare(mAliasList[i].mAlias, devname) == 0)
+				{
+					fd = mDeviceList[mAliasList[i].mDeviceIndex].mDevice;
+					break;
+				}
+			}
+		}
+        return fd != nullptr;
+	}
 
-    xfiledevice* xdevicemanager::find_device(const xpath& path, utf32::runes& device_syspath)
+    xfiledevice* xdevicemanager::find_device(const xpath& path, xpath& device_syspath)
 	{
 		xfiledevice* fd = nullptr;
 
@@ -275,13 +292,13 @@ namespace xcore
 			{
 				if (compare(mAliasList[i].mAlias, devname) == 0)
 				{
-					utf32::copy(mAliasList[i].mResolved, device_syspath);
+					device_syspath = mAliasList[i].mResolved;
 
 					// Concatenate the path (filepath or dirpath) that the user provided to our resolved path
 					utf32::runes relpath = utf32::selectUntilEndExcludeSelection(path.m_path, devname);
 					utf32::trimLeft(relpath, ':');
 					utf32::trimLeft(relpath, '\\');
-					utf32::concatenate(device_syspath, relpath);
+					device_syspath += relpath;
 					if (mAliasList[i].mDeviceIndex >= 0)
 					{
 						fd = mDeviceList[mAliasList[i].mDeviceIndex].mDevice;

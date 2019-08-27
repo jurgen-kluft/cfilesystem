@@ -4,6 +4,7 @@
 #include "xfilesystem/x_fileinfo.h"
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_dirinfo.h"
+#include "xfilesystem/private/x_devicemanager.h"
 #include "xfilesystem/private/x_filesystem.h"
 
 namespace xcore
@@ -48,8 +49,10 @@ namespace xcore
 
     xfilepath xfilesys::resolve(xfilepath const& fp, xfiledevice*& device)
     {
+		xfilesys* fs = xfilesys::get_filesystem(fp);
         // search the filedevice using the device part of @fp and the device manager.
-        xfilepath device_filepath = m_devman->find_device(fp.mPath, device);
+		xfilepath sys_fp = fs->
+        device = fs->m_devman->find_device(fp.mPath,);
         return device_filepath;
     }
 
