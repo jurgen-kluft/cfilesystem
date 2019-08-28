@@ -36,6 +36,7 @@ namespace xcore
         , mPath(rootdir.mPath, subpath.mPath)
     {
     }
+
     xdirpath::~xdirpath() {}
 
     void xdirpath::clear() { mPath.clear(); }

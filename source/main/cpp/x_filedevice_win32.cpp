@@ -121,7 +121,7 @@ namespace xcore
         ULARGE_INTEGER totalbytes, freebytes;
 
         utf16::runes drivepath16;
-        mDrivePath.path().to_utf16(drivepath16);
+        mDrivePath.mPath.to_utf16(drivepath16);
 
         bool result = false;
         if (GetDiskFreeSpaceExW((LPCWSTR)drivepath16.m_str, NULL, &totalbytes, &freebytes) != 0)
@@ -130,7 +130,7 @@ namespace xcore
             totalSpace = totalbytes.QuadPart;
             result     = true;
         }
-        mDrivePath.path().to_utf32(drivepath16);
+        mDrivePath.mPath.to_utf32(drivepath16);
         return result;
     }
 
@@ -494,7 +494,7 @@ namespace xcore
         u32 disposition = OPEN_EXISTING;
         u32 attrFlags   = FILE_FLAG_BACKUP_SEMANTICS;
 
-        xpath const& path = szDirPath.path();
+        xpath const& path = szDirPath.mPath;
         utf16::runes path16;
         path.to_utf16(path16);
         HANDLE handle = ::CreateFileW((LPCWSTR)path16.m_str, fileMode, shareType, NULL, disposition, attrFlags, NULL);
@@ -516,9 +516,9 @@ namespace xcore
     bool xfiledevice_pc::createDir(const xdirpath& szDirPath)
     {
         utf16::runes filename16;
-        szDirPath.path().to_utf16(filename16);
+        szDirPath.mPath.to_utf16(filename16);
         BOOL result = ::CreateDirectoryW(LPCWSTR(filename16.m_str), NULL) != 0;
-        szDirPath.path().to_utf32(filename16);
+        szDirPath.mPath.to_utf32(filename16);
         return result;
     }
 
@@ -526,12 +526,12 @@ namespace xcore
     {
         u32          dwFlags = MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED;
         utf16::runes dirpath16;
-        szDirPath.path().to_utf16(dirpath16);
+        szDirPath.mPath.to_utf16(dirpath16);
         utf16::runes todirpath16;
-        szToDirPath.path().to_utf16(todirpath16);
+        szToDirPath.mPath.to_utf16(todirpath16);
         BOOL result = ::MoveFileExW((LPCWSTR)dirpath16.m_str, (LPCWSTR)todirpath16.m_str, dwFlags) != 0;
-        szDirPath.path().to_utf32(dirpath16);
-        szToDirPath.path().to_utf32(todirpath16);
+        szDirPath.mPath.to_utf32(dirpath16);
+        szToDirPath.mPath.to_utf32(todirpath16);
         return result;
     }
 
@@ -843,16 +843,16 @@ namespace xcore
             dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_SYSTEM;
 
         utf16::runes dirpath16;
-        szDirPath.path().to_utf16(dirpath16);
+        szDirPath.mPath.to_utf16(dirpath16);
         bool result = ::SetFileAttributesW((LPCWSTR)dirpath16.m_str, dwFileAttributes) == TRUE;
-        szDirPath.path().to_utf32(dirpath16);
+        szDirPath.mPath.to_utf32(dirpath16);
         return result;
     }
 
     bool xfiledevice_pc::getDirAttr(const xdirpath& szDirPath, xfileattrs& attr)
     {
         utf16::runes dirpath16;
-        szDirPath.path().to_utf16(dirpath16);
+        szDirPath.mPath.to_utf16(dirpath16);
 
         bool  result           = false;
         DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)dirpath16.m_str);
@@ -864,7 +864,7 @@ namespace xcore
             attr.setHidden(dwFileAttributes & FILE_ATTRIBUTE_HIDDEN);
             attr.setSystem(dwFileAttributes & FILE_ATTRIBUTE_SYSTEM);
         }
-        szDirPath.path().to_utf32(dirpath16);
+        szDirPath.mPath.to_utf32(dirpath16);
         return true;
     }
 

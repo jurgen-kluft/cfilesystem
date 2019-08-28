@@ -6,6 +6,7 @@
 #endif
 
 #include "xbase/x_debug.h"
+#include "xbase/x_runes.h"
 
 #include "xfilesystem/x_enumerator.h"
 #include "xfilesystem/private/x_path.h"
@@ -24,18 +25,19 @@ namespace xcore
     class xdirpath
     {
     protected:
+        friend class xpath;
         friend class xfilepath;
         friend class xfileinfo;
         friend class xdirinfo;
         friend class xdirpathz;
         friend class xdirpathc;
+        friend class xfilesys;
+		friend class xfiledevice_pc;
 
         xfilesys* mParent;
         xpath     mPath;
 
         xdirpath(xfilesys* fs, xpath& path);
-
-        xpath const path() const;
 
     public:
         xdirpath();

@@ -6,9 +6,20 @@
 #include "xfilesystem/x_dirinfo.h"
 #include "xfilesystem/private/x_devicemanager.h"
 #include "xfilesystem/private/x_filesystem.h"
+#include "xfilesystem/private/x_filedevice.h"
 
 namespace xcore
 {
+    class xfile
+    {
+	public:
+        xfilesys*   m_parent;
+        void*       m_handle;
+
+		XCORE_CLASS_PLACEMENT_NEW_DELETE
+    };
+
+	void*	INVALID_FILE_HANDLE	= (void*)-1;
 
     xfile*   xfilesystem::open(xfilepath const& filename, EFileMode mode) { return mImpl->open(filename, mode); }
     xstream* xfilesystem::open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op) { return mImpl->open_stream(filename, mode, access, op); }
@@ -49,28 +60,28 @@ namespace xcore
 
     xfilepath xfilesys::resolve(xfilepath const& fp, xfiledevice*& device)
     {
-		xfilesys* fs = xfilesys::get_filesystem(fp);
-        // search the filedevice using the device part of @fp and the device manager.
-		xfilepath sys_fp = fs->
-        device = fs->m_devman->find_device(fp.mPath,);
-        return device_filepath;
+		xfilesys* fs = get_filesystem(fp);
+		xpath fs_path;
+        device = fs->m_devman->find_device(fp.mPath, fs_path);
+        return xfilepath(fs, fs_path);
     }
 
     xdirpath xfilesys::resolve(xdirpath const& dp, xfiledevice*& device)
     {
-        // search the filedevice using the device part of @dp and the device manager.
-        xdirpath device_dirpath = m_devman->find_device(dp.mPath, device);
-        return device_dirpath;
+		xfilesys* fs = get_filesystem(dp);
+        xpath fs_path;
+		device = fs->m_devman->find_device(dp.mPath, fs_path);
+        return xdirpath(fs, fs_path);
     }
 
     xpath&       xfilesys::get_xpath(xdirinfo& dirinfo)
     {
-        return dirinfo.mDirPath.mPath;
+        return dirinfo.mPath.mPath;
     }
 
     xpath const& xfilesys::get_xpath(xdirinfo const& dirinfo)
     {
-        return dirinfo.mDirPath.mPath;
+        return dirinfo.mPath.mPath;
     }
 
     xpath&       xfilesys::get_xpath(xdirpath& dirpath)
@@ -105,76 +116,68 @@ namespace xcore
 
     xistream* xfilesys::create_filestream(const xfilepath& filepath, EFileMode fm, EFileAccess fa, EFileOp fo)
     {
-        // (xalloc*, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op);
-        xistream* stream = xistream::create_filestream(m_allocator, filepath, fm, fa, fo);
-        return stream;
+        return nullptr;
     }
 
     void      xfilesys::destroy(xistream* stream)
     {
-        xistream::destroy_filestream(m_allocator, stream);
+        
     }
 
-    xfile* xfilesys::open(xfilepath const& filename, EFileMode fm) 
+    xfile* xfilesys::open(xfilepath const& filename, EFileMode mode) 
     {
         xfiledevice* fd = nullptr;
-        xfilepath sys_filepath = resolve(filename, xfiledevice*& fd);
+        xfilepath sys_filepath = resolve(filename, fd);
         if (fd == nullptr)
             return nullptr;
-        xfile* file = xnew<xfile>(m_allocator);
-        file->m_parent = this;
-        file->m_handle = nullptr;
-        // bool openFile(xfilepath const& szFilename, bool boRead, bool boWrite, void*& outHandle)
-        if (fm == FileMode_
-        fd->openFile(sys_filepath, mode == FileMode_)
-    }
 
-    xstream* xfilesys::open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op) {}
+		void* fh = nullptr;
+        if (fd->openFile(sys_filepath, mode, FileAccess_ReadWrite, FileOp_Sync, fh))
+		{
+			//@TODO: This should be more of a pool allocator
+			xfile* file = xnew<xfile>(m_allocator);
+			file->m_parent = this;
+			file->m_handle = fh;
+			return file;
+		}
 
-    xwriter* xfilesys::writer(xfile*) {}
+		return nullptr;
+	}
 
-    xreader* xfilesys::reader(xfile*) {}
+    xstream* xfilesys::open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op) { return nullptr;}
+
+    xwriter* xfilesys::writer(xfile*) { return nullptr; }
+
+    xreader* xfilesys::reader(xfile*) {return nullptr; }
 
     void xfilesys::close(xfile*) {}
-
     void xfilesys::close(xfileinfo*) {}
-
     void xfilesys::close(xdirinfo*) {}
-
     void xfilesys::close(xreader*) {}
-
     void xfilesys::close(xwriter*) {}
-
     void xfilesys::close(xstream*) {}
 
-    xfileinfo* xfilesys::info(xfilepath const& path) {}
+    xfileinfo* xfilesys::info(xfilepath const& path) {return nullptr; }
+    xdirinfo* xfilesys::info(xdirpath const& path) {return nullptr; }
 
-    xdirinfo* xfilesys::info(xdirpath const& path) {}
+    bool xfilesys::exists(xfileinfo*) {return false;}
+    bool xfilesys::exists(xdirinfo*) {return false;}
 
-    bool xfilesys::exists(xfileinfo*) {}
+    s64 xfilesys::size(xfileinfo*) { return 0;}
 
-    bool xfilesys::exists(xdirinfo*) {}
-
-    s64 xfilesys::size(xfileinfo*) {}
-
-    xfile* xfilesys::open(xfileinfo*, EFileMode mode) {}
-
-    void xfilesys::rename(xfileinfo*, xfilepath const&) {}
-
+    xfile* xfilesys::open(xfileinfo*, EFileMode mode) {return nullptr; }
+    void xfilesys::rename(xfileinfo*, xfilepath const&) { }
     void xfilesys::move(xfileinfo* src, xfileinfo* dst) {}
-
     void xfilesys::copy(xfileinfo* src, xfileinfo* dst) {}
-
     void xfilesys::rm(xfileinfo*) {}
-
     void xfilesys::rm(xdirinfo*) {}
 
-    s32 xfilesys::read(xreader*, xbuffer&) {}
+    s32 xfilesys::read(xreader*, xbuffer&) {return 0;}
 
-    s32 xfilesys::write(xwriter*, xcbuffer const&) {}
+    s32 xfilesys::write(xwriter*, xcbuffer const&) {return 0;}
 
     void xfilesys::read_async(xreader*, xbuffer&) {}
 
-    s32 xfilesys::wait_async(xreader*) {}
+    s32 xfilesys::wait_async(xreader*) {return 0;}
 
 } // namespace xcore

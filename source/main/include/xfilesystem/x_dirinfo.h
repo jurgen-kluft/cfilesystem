@@ -28,6 +28,7 @@ namespace xcore
     public:
         xdirinfo();
         xdirinfo(const xdirinfo& dirinfo);
+
         explicit xdirinfo(const xdirpath& dir);
 
         bool isRoot() const;

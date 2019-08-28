@@ -31,7 +31,7 @@ namespace xcore
 		
 	};
 
-	void*	INVALID_FILE_HANDLE	= (void*)-1;
+	extern void* INVALID_FILE_HANDLE;
 
 	enum ESeekOrigin
 	{

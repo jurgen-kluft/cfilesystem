@@ -43,7 +43,10 @@ namespace xcore
         static xfilesystem* create(xfilesyscfg const&);
         static void         destroy(xfilesystem*&);
 
-        xfile*     open(xfilepath const& filename, EFileMode mode);
+        xfilepath filepath_from_ascii(const char* str);
+		xdirpath  from_ascii(const char* str);
+
+		xfile*     open(xfilepath const& filename, EFileMode mode);
         xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
         xwriter*   writer(xfile*);
         xreader*   reader(xfile*);

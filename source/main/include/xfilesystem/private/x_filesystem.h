@@ -30,13 +30,6 @@ namespace xcore
     class xstream;
     class xistream;
     
-    class xfile
-    {
-	public:
-        xfilesys*   m_parent;
-        void*       m_handle;
-    };
-
     class xfilesys
     {
     public:

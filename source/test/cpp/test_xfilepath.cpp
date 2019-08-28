@@ -1,14 +1,18 @@
-#include "xbase/x_types.h"
-#include "xbase/x_string_std.h"
+#include "xbase/x_target.h"
+#include "xbase/x_runes.h"
+#include "xtime/x_datetime.h"
 
 #include "xunittest/xunittest.h"
 
+#include "xfilesystem/private/x_filedevice.h"
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_dirinfo.h"
+#include "xfilesystem/x_fileinfo.h"
+#include "xfilesystem/x_stream.h"
 
 using namespace xcore;
-using namespace xfilesystem;
 
 UNITTEST_SUITE_BEGIN(filepath)
 {

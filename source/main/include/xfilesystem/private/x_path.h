@@ -5,13 +5,9 @@
 #pragma once
 #endif
 
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 
-//==============================================================================
 namespace xcore
 {
     class xfilesystem;
@@ -56,6 +52,11 @@ namespace xcore
 		~xpath();
 
         xpath resolve(xfilesys* fs, xfiledevice*& outdevice) const;
+
+		static xdirinfo as_dirinfo(ascii::pcrune path, utf32::alloc* allocator);
+		static xdirpath as_dirpath(ascii::pcrune path, utf32::alloc* allocator);
+		static xfileinfo as_fileinfo(ascii::pcrune path, utf32::alloc* allocator);
+		static xfilepath as_filepath(ascii::pcrune path, utf32::alloc* allocator);
 
         void set_filepath(utf32::runes& runes, utf32::alloc* allocator);
         void set_dirpath(utf32::runes& runes, utf32::alloc* allocator);
@@ -109,6 +110,6 @@ namespace xcore
         void to_utf32(utf16::runes& runes) const;
     };
 
-}; // namespace xcore
+};
 
 #endif // __X_FILESYSTEM_XPATH_H__

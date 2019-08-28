@@ -1,19 +1,45 @@
-#include "xbase/x_types.h"
-#include "xbase/x_string_std.h"
+#include "xbase/x_target.h"
+#include "xbase/x_runes.h"
 #include "xtime/x_datetime.h"
 
 #include "xunittest/xunittest.h"
 
-#include "xfilesystem/private/x_devicealias.h"
+#include "xfilesystem/private/x_filedevice.h"
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_dirinfo.h"
 #include "xfilesystem/x_fileinfo.h"
-#include "xfilesystem/x_filestream.h"
+#include "xfilesystem/x_path.h"
+#include "xfilesystem/x_stream.h"
 
 using namespace xcore;
-using namespace xfilesystem;
+
+extern xcore::xalloc* gTestAllocator;
+
+class utf32_alloc : public xcore::utf32::alloc
+{
+public:
+    virtual utf32::runes allocate(s32 len, s32 cap) 
+	{
+		utf32::prune prunes = (utf32::prune)gTestAllocator->allocate(sizeof(utf32::rune) * cap, sizeof(utf32::rune));
+		prunes[cap - 1] = utf32::TERMINATOR;
+		utf32::runes runes(prunes, prunes, prunes + cap - 1);
+		return runes;
+	}
+            
+	virtual void  deallocate(utf32::runes& slice)
+	{
+		if (slice.m_str != nullptr)
+		{
+			gTestAllocator->deallocate(slice.m_str);
+		}
+		slice.m_str = nullptr;
+		slice.m_end = nullptr;
+		slice.m_eos = nullptr;
+	}
+};
+static utf32_alloc sUtf32Alloc;
 
 UNITTEST_SUITE_BEGIN(dirinfo)
 {
@@ -26,21 +52,22 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 		static xdatetime sLastAccessTime(2011, 2, 12, 16, 00, 20);
 		static xdatetime sLastWriteTime(2011, 2, 11, 10, 46, 20);
 
+
 		UNITTEST_TEST(constructor0)
 		{
 			xdirinfo di;
-			CHECK_TRUE(di.getFullName().isEmpty());
+			CHECK_TRUE(di.getDirpath().isEmpty());
 		}
 
 		UNITTEST_TEST(constructor1)
 		{
 			const char* str = "TEST:\\textfiles\\docs";
-			xdirinfo di(str);
-			CHECK_EQUAL(0, x_strcmp(di.getFullName().c_str(), "TEST:\\textfiles\\docs\\"));
+			xdirinfo di = xpath::as_dirinfo(str, &sUtf32Alloc);
+			CHECK_EQUAL(0, x_strcmp(di.getDirpath().c_str(), "TEST:\\textfiles\\docs\\"));
 
 			const char* str2 = "textfiles\\docs";
 			xdirinfo di2(str2);
-			CHECK_EQUAL(0, x_strcmp(di2.getFullName().c_str(), "textfiles\\docs\\"));
+			CHECK_TRUE(di2.getFullName().c_str(), "textfiles\\docs\\"));
 		}
 
 		UNITTEST_TEST(constructor2)
