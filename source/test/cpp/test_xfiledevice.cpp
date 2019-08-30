@@ -13,24 +13,46 @@
 #include "xfilesystem/x_fileinfo.h"
 #include "xfilesystem/x_stream.h"
 
-
 using namespace xcore;
 
 namespace xcore
 {
+	extern xalloc* gTestAllocator;
+
+	class utf32_alloc : public utf32::alloc
+	{
+	public:
+		virtual utf32::runes allocate(s32 len, s32 cap) 
+		{
+			utf32::prune prunes = (utf32::prune)gTestAllocator->allocate(sizeof(utf32::rune) * cap, sizeof(utf32::rune));
+			prunes[cap - 1] = utf32::TERMINATOR;
+			utf32::runes runes(prunes, prunes, prunes + cap - 1);
+			return runes;
+		}
+            
+		virtual void  deallocate(utf32::runes& slice)
+		{
+			if (slice.m_str != nullptr)
+			{
+				gTestAllocator->deallocate(slice.m_str);
+			}
+			slice.m_str = nullptr;
+			slice.m_end = nullptr;
+			slice.m_eos = nullptr;
+		}
+	};
+	static utf32_alloc sa;
+
 	//------------------------------------------------------------------------------------------
 	//---------------------------------- IO Simulated Functions --------------------------------
 	//------------------------------------------------------------------------------------------
 	using namespace xfilesystem;
-	
-
-
 
 	struct TestFile;
 
 	struct TestDir
 	{
-		xdirpath					mName;
+		ascii::runez<64>				mName;
 		xdatetime					mCreationTime;
 		xdatetime					mLastAccessTime;
 		xdatetime					mLastWriteTime;
@@ -39,7 +61,7 @@ namespace xcore
 
 	struct TestFile
 	{
-		xfilepath					mName;
+		ascii::runez<64>				mName;
 		xfileattrs					mAttr;
 		xdatetime					mCreationTime;
 		xdatetime					mLastAccessTime;
@@ -197,34 +219,34 @@ namespace xcore
 
 	static TestFile					sFiles[] = 
 	{
-		{ xfilepath("textfiles\\readme1st.txt")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("textfiles\\authors.txt")			, xattributes(true ,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("textfiles\\docs\\tech.txt")		, xattributes(false,false,true ,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("textfiles\\tech\\install.txt")		, xattributes(false,false,false,true ), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("textfiles\\readme1st.txt")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("textfiles\\authors.txt")		, xfileattrs(true ,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("textfiles\\docs\\tech.txt")		, xfileattrs(false,false,true ,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("textfiles\\tech\\install.txt")	, xfileattrs(false,false,false,true ), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
 		 
-		{ xfilepath("binfiles\\texture1.bin")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("binfiles\\texture2.bin")			, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("binfiles\\objects\\object1.bin")	, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("binfiles\\objects\\object2.bin")	, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("binfiles\\tracks\\track1.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("binfiles\\tracks\\track2.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\texture1.bin")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\texture2.bin")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\objects\\object1.bin"), xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\objects\\object2.bin"), xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\tracks\\track1.bin")	, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\tracks\\track2.bin")	, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
 
-		{ xfilepath("readonly_files\\readme.txt")		, xattributes(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("readonly_files\\data.bin")			, xattributes(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("readonly_files\\readme.txt")	, xfileattrs(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("readonly_files\\data.bin")		, xfileattrs(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
 
-		{ xfilepath("writeable_files\\file.txt")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ xfilepath("writeable_files\\file.bin")		, xattributes(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("writeable_files\\file.txt")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("writeable_files\\file.bin")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
 
 		// Room for creating files
-		{ xfilepath("__EMPTY__") },
-		{ xfilepath("__EMPTY__") },
-		{ xfilepath("__EMPTY__") },
-		{ xfilepath("__EMPTY__") },
-		{ xfilepath("__EMPTY__") },
-		{ xfilepath("__EMPTY__") },
-		{ xfilepath("__EMPTY__") },
-		{ xfilepath("__EMPTY__") },
-		{ xfilepath("__NULL__") }
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__NULL__") }
 	};
 
 	static FileDataCopy				sFileData[] =
@@ -250,23 +272,23 @@ namespace xcore
 
 	static TestDir	sDirs[] = 
 	{
-		{ xdirpath("textfiles")					, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ xdirpath("textfiles\\docs")			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ xdirpath("textfiles\\help")			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ xdirpath("binfiles")					, xdatetime(2011, 3, 10, 15, 30, 10), xdatetime(2011, 3, 12, 16, 00, 20), xdatetime(2011, 3, 11, 10, 46, 20) },
-		{ xdirpath("binfiles\\objects")			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ xdirpath("binfiles\\tracks")			, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ xdirpath("readonly_files")			, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
-		{ xdirpath("writeable_files")			, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
-		{ xdirpath("__EMPTY__") },
-		{ xdirpath("__EMPTY__") },
-		{ xdirpath("__EMPTY__") },
-		{ xdirpath("__EMPTY__") },
-		{ xdirpath("__EMPTY__") },
-		{ xdirpath("__EMPTY__") },
-		{ xdirpath("__EMPTY__") },
-		{ xdirpath("__EMPTY__") },
-		{ xdirpath("__NULL__") }
+		{ ascii::runez<64>("textfiles")				, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("textfiles\\docs")		, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("textfiles\\help")		, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("binfiles")				, xdatetime(2011, 3, 10, 15, 30, 10), xdatetime(2011, 3, 12, 16, 00, 20), xdatetime(2011, 3, 11, 10, 46, 20) },
+		{ ascii::runez<64>("binfiles\\objects")		, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("binfiles\\tracks")		, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("readonly_files")		, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
+		{ ascii::runez<64>("writeable_files")		, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__EMPTY__") },
+		{ ascii::runez<64>("__NULL__") }
 	};
 
 	namespace xfilesystem
@@ -300,8 +322,8 @@ namespace xcore
 			virtual bool			getLengthOfFile(u32 nFileHandle, u64& outLength) const;
 			virtual bool			setFileTime(const char* szFilename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const;
 			virtual bool			getFileTime(const char* szFilename, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
-			virtual bool			setFileAttr(const char* szFilename, const xattributes& attr) const;
-			virtual bool			getFileAttr(const char* szFilename, xattributes& attr) const;
+			virtual bool			setFileAttr(const char* szFilename, const xfileattrs& attr) const;
+			virtual bool			getFileAttr(const char* szFilename, xfileattrs& attr) const;
 
 			virtual bool			hasDir(const char* szDirPath) const;
 			virtual bool			createDir(const char* szDirPath) const;
@@ -310,12 +332,12 @@ namespace xcore
 			virtual bool			deleteDir(const char* szDirPath) const;
 			virtual bool			setDirTime(const char* szDirPath, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const;
 			virtual bool			getDirTime(const char* szDirPath, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
-			virtual bool			setDirAttr(const char* szDirPath, const xattributes& attr) const;
-			virtual bool			getDirAttr(const char* szDirPath, xattributes& attr) const;
+			virtual bool			setDirAttr(const char* szDirPath, const xfileattrs& attr) const;
+			virtual bool			getDirAttr(const char* szDirPath, xfileattrs& attr) const;
 
-			virtual bool			enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate<xfileinfo>* file_enumerator, enumerate_delegate<xdirinfo>* dir_enumerator, s32 depth) const;
+			virtual bool			enumerate(const char* szDirPath, bool boSearchSubDirectories, enumerate_delegate _enumerator, s32 depth) const;
 
-			XFILESYSTEM_OBJECT_NEW_DELETE()
+			XCORE_CLASS_PLACEMENT_NEW_DELETE
 			
 				/*
 			void*	operator new(xcore::xsize_t num_bytes)				{ return heapAlloc(num_bytes, X_ALIGNMENT_DEFAULT); }	
@@ -642,7 +664,7 @@ namespace xcore
 			return testFile!=NULL;
 		}
 
-		bool			xfiledevice_TEST::setFileAttr(const char* szFilename, const xattributes& attr) const
+		bool			xfiledevice_TEST::setFileAttr(const char* szFilename, const xfileattrs& attr) const
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
 			if (testFile!=NULL)
@@ -653,7 +675,7 @@ namespace xcore
 			return false;
 		}
 
-		bool			xfiledevice_TEST::getFileAttr(const char* szFilename, xattributes& attr) const
+		bool			xfiledevice_TEST::getFileAttr(const char* szFilename, xfileattrs& attr) const
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
 			if (testFile!=NULL)
@@ -943,7 +965,7 @@ namespace xcore
 			return testDir!=NULL;
 		}
 
-		bool			xfiledevice_TEST::setDirAttr(const char* szDirPath, const xattributes& attr) const
+		bool			xfiledevice_TEST::setDirAttr(const char* szDirPath, const xfileattrs& attr) const
 		{
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir!=NULL)
@@ -954,7 +976,7 @@ namespace xcore
 			return false;
 		}
 
-		bool			xfiledevice_TEST::getDirAttr(const char* szDirPath, xattributes& attr) const
+		bool			xfiledevice_TEST::getDirAttr(const char* szDirPath, xfileattrs& attr) const
 		{
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir!=NULL)

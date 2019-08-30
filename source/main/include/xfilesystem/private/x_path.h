@@ -39,10 +39,10 @@ namespace xcore
     class xpath
     {
 	public:
+		static utf32::crunes s_device_separator;
+
         utf32::alloc* m_alloc;
         utf32::runes  m_path;
-
-		static utf32::crunes s_device_separator;
 
         xpath();
         xpath(utf32::alloc* allocator);
@@ -53,10 +53,13 @@ namespace xcore
 
         xpath resolve(xfilesys* fs, xfiledevice*& outdevice) const;
 
-		static xdirinfo as_dirinfo(ascii::pcrune path, utf32::alloc* allocator);
-		static xdirpath as_dirpath(ascii::pcrune path, utf32::alloc* allocator);
-		static xfileinfo as_fileinfo(ascii::pcrune path, utf32::alloc* allocator);
-		static xfilepath as_filepath(ascii::pcrune path, utf32::alloc* allocator);
+		static xdirinfo dirinfo(ascii::pcrune path, utf32::alloc* allocator);
+		static xdirpath dirpath(ascii::pcrune path, utf32::alloc* allocator);
+		static xfileinfo fileinfo(ascii::pcrune path, utf32::alloc* allocator);
+		static xfilepath filepath(ascii::pcrune path, utf32::alloc* allocator);
+
+		static s32 compare(xdirinfo const& d, ascii::pcrune path);
+		static s32 compare(xdirpath const& d, ascii::pcrune path);
 
         void set_filepath(utf32::runes& runes, utf32::alloc* allocator);
         void set_dirpath(utf32::runes& runes, utf32::alloc* allocator);

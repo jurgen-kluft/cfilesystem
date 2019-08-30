@@ -66,8 +66,8 @@ namespace xcore
     // sub=="sub\\folder\\";
     bool xdirpath::split(s32 cnt, xdirpath& parent, xdirpath& subDir) const { return mPath.split(cnt, parent.mPath, subDir.mPath); }
 
-    bool xdirpath::getName(xfilepath& outName) const { return false; }
-    bool xdirpath::hasName(const xfilepath& inName) const { return false; }
+    bool xdirpath::getName(xdirpath& outName) const { return false; }
+    bool xdirpath::hasName(const xdirpath& inName) const { return false; }
     bool xdirpath::getRoot(xdirpath& outRootDirPath) const { return false; }
     bool xdirpath::getParent(xdirpath& outParentDirPath) const { return true; }
     void xdirpath::setRoot(const xdirpath& inRoot) {}

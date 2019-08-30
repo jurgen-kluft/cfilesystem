@@ -18,15 +18,6 @@ namespace xcore
     // xfilepath:
     //		- Relative:		Folder\Filename.Extension
     //		- Absolute:		Device:\Folder\Folder\Filename.Extension
-    //
-    // What about making the following classes:
-    // - xfilext; for file extensions, ".JPG"
-    // - xfilename; for file names, "MyImage"
-    // - xroot; for device part, "Device:\"
-    //
-    // "C:\" + "Windows\" + "DBGHELP" + ".DLL"
-    // xroot + xdirpath + xfilename + xfilext
-    //
     //==============================================================================
     class xfilepath
     {

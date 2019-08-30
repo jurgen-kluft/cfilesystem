@@ -62,8 +62,8 @@ namespace xcore
         s32  getLevelOf(const xdirpath& name) const;
         bool split(s32 level, xdirpath& parent, xdirpath& subDir) const;
 
-        bool getName(xfilepath& outName) const;
-        bool hasName(const xfilepath& inName) const;
+        bool getName(xdirpath& outName) const;
+        bool hasName(const xdirpath& inName) const;
         bool getParent(xdirpath& outParentDirPath) const;
         void setRoot(const xdirpath& device);
         bool getRoot(xdirpath& outDevice) const;
