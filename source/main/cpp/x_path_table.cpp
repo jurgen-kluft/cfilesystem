@@ -21,6 +21,14 @@ namespace xcore
     class troot_t;
     class tpath_t;
 
+
+    class xpath_hash
+    {
+    public:
+		// Use the streaming version of xxHash ?
+
+    };
+
 	class xpath_parser_ascii
 	{
 	public:
@@ -35,6 +43,7 @@ namespace xcore
 		{
 			ascii::crunes slash("\\");
 			ascii::crunes devicesep(":\\");
+
 			m_device = ascii::findSelectUntilIncluded(fullpath, devicesep);
 			ascii::crunes filepath = ascii::selectUntilEndExcludeSelection(fullpath, m_device);
 			m_path = ascii::findLastSelectUntilIncluded(filepath, slash);
@@ -75,18 +84,20 @@ namespace xcore
 
 		void parse(const utf32::runes& fullpath)
 		{
-			utf32::rune devicesep_chars[] = {':', '\\', '\0' };
-			utf32::crunes devicesep(devicesep_chars);
-			m_device = utf32::findSelectUntilIncluded(fullpath, devicesep);
-			utf32::crunes filepath = utf32::selectUntilEndExcludeSelection(fullpath, m_device);
 			utf32::rune slash_chars[] = {'\\', '\0' };
 			utf32::crunes slash(slash_chars);
+			utf32::rune devicesep_chars[] = {':', '\\', '\0' };
+			utf32::crunes devicesep(devicesep_chars);
+
+			m_device = utf32::findSelectUntilIncluded(fullpath, devicesep);
+			utf32::crunes filepath = utf32::selectUntilEndExcludeSelection(fullpath, m_device);
 			m_path = utf32::findLastSelectUntilIncluded(filepath, slash);
 			m_filename = utf32::selectUntilEndExcludeSelection(fullpath, m_path);
-			utf32::trimLeft(m_filename, '\\');
-			utf32::trimRight(m_device, devicesep);
 			m_filename = utf32::findLastSelectUntil(m_filename, '.');
 			m_extension = utf32::selectUntilEndExcludeSelection(fullpath, m_filename);
+			m_first_folder = utf32::findSelectUntil(m_path, slash);
+
+			utf32::trimRight(m_device, devicesep);
 		}
 
 		bool has_device() const { return !m_device.is_empty(); }
@@ -97,7 +108,12 @@ namespace xcore
 		utf32::crunes	iterate_folder() const { return m_first_folder; }
 		bool			next_folder(utf32::crunes& folder) const 
 		{
-			return false;
+			utf32::rune slash_chars[] = {'\\', '\0' };
+			utf32::crunes slash(slash_chars);
+			// example: projects\binary_reader\bin\ 
+			folder = utf32::selectUntilEndExcludeSelection(m_path, folder);
+			utf32::trimLeft(folder, slash);
+			return !folder.is_empty();
 		}
 	};
 
@@ -149,12 +165,12 @@ namespace xcore
         bool operator!=(const tname_t& other) const { return compare(&other) != 0; }
 
         void        reference() { m_refs++; }
-        static bool release(xalloc* allocator, tname_t* name)
+        static bool release(tname_t* name)
         {
-            if (--name->m_refs == 0)
+            if (name->m_refs > 0)
             {
-                destruct(allocator, name);
-                return true;
+				name->m_refs -= 1;
+                return name->m_refs == 0;
             }
             return false;
         }
@@ -168,7 +184,8 @@ namespace xcore
             name->init(strlen); 
             return name;
         }
-        static void destruct(xalloc* allocator, tname_t*& name)
+		template<class T>
+        static void destruct(xalloc* allocator, T*& name)
         {
             allocator->deallocate(name);
             name = nullptr;
@@ -209,14 +226,11 @@ namespace xcore
 
         s32 compare(const tpath_t& other) const;
 
-        s32 compare(utf32::crunes const& path) const;
-        s32 compare(ascii::crunes const& path) const;
-
         bool operator==(const tpath_t& other) const;
         bool operator!=(const tpath_t& other) const;
 
         void reference();
-        static bool release(xalloc* allocator, tpath_t*& path);
+        static bool release(tpath_t*& path);
         static tpath_t* construct(xalloc* allocator, s32 folder_count);
         static void destruct(xalloc* allocator, tpath_t*& path);
     };
@@ -250,29 +264,30 @@ namespace xcore
         void         remove(u64 hash, hentry_t<T>* head, hentry_t<T>* item);
     };
 
+    // API prototype
     // xroot table
     class troot_t
     {
     public:
-        // API proto
         troot_t(xalloc* allocator, utf32::alloc* string_allocator) : m_allocator(allocator), m_stralloc(string_allocator) {}
+
+        xalloc*       m_allocator;
+        utf32::alloc* m_stralloc;
 
 		s32           m_num_devices;
 		s32           m_max_devices;
         tdevice_t*    m_tdevice[64];
-        xalloc*       m_allocator;
-        utf32::alloc* m_stralloc;
+
+        htable_t<tfolder_t>    m_folder_table;
+        htable_t<tpath_t>      m_path_table;
+        htable_t<tfilename_t>  m_filename_table;
+        htable_t<textension_t> m_extension_table;
 
         static tdevice_t*    sNilDevice;
         static tfolder_t*    sNilFolder;
         static tpath_t*      sNilPath;
         static tfilename_t*  sNilFilename;
         static textension_t* sNilExtension;
-
-        htable_t<tfolder_t>    m_folder_table;
-        htable_t<tpath_t>      m_path_table;
-        htable_t<tfilename_t>  m_filename_table;
-        htable_t<textension_t> m_extension_table;
 
 		static troot_t* s_instance;
 
@@ -408,16 +423,16 @@ namespace xcore
 
 				if (pentry == nullptr)	// Construct a new tpath_t
 				{
-					ppath           = tpath_t::construct(m_allocator, fcount);
+					ppath = construct_path(fcount);
 
 					s32 findex = 0;
 					folder = parser.iterate_folder();
-					while (!folder.is_empty())
+					do
 					{
-						tfolder_t* pfolder        = register_folder(folder);
+						tfolder_t* pfolder       = register_folder(folder);
 						ppath->m_folders[findex] = pfolder;
 						findex++;
-					}
+					} while (parser.next_folder(folder));
 					m_path_table.assign(phash, ppath);
 				}
 				else // We found an existing one
@@ -464,34 +479,82 @@ namespace xcore
 
         void release(tdevice_t*& device)
 		{
-			// Nothing to do
+			// Nothing to do, devices are not reference counted 
 		}
-		void release(tpath_t*& path)
+
+		void release(tpath_t*& item)
 		{
-			if (tpath_t::release(m_allocator, path))
+			if (tpath_t::release(item))
 			{
 				// Need to remove it from the table
+				hentry_t<tpath_t>* pprev = nullptr;
+				hentry_t<tpath_t>* pentry = m_path_table.find(item->m_hash, pprev);
+				while (pentry != nullptr)
+				{
+					if (pentry->m_data == item)
+					{
+						// Found it
+						m_path_table.remove(item->m_hash, pprev, pentry);
+						tpath_t::destruct(m_allocator, item);
+					}
+				}
 			}
 		}
-        void release(tfolder_t*& folder)
+
+        void release(tfolder_t*& item)
 		{
-			if (tfolder_t::release(m_allocator, folder))
+			if (tfolder_t::release(item))
 			{
 				// Need to remove it from the table
+				hentry_t<tfolder_t>* pprev = nullptr;
+				hentry_t<tfolder_t>* pentry = m_folder_table.find(item->m_hash, pprev);
+				while (pentry != nullptr)
+				{
+					if (pentry->m_data == item)
+					{
+						// Found it
+						m_folder_table.remove(item->m_hash, pprev, pentry);
+						tfolder_t::destruct(m_allocator, item);
+					}
+				}
 			}
 		}
-        void release(tfilename_t*& filename)
+
+        void release(tfilename_t*& item)
 		{
-			if (tfilename_t::release(m_allocator, filename))
+			if (tfilename_t::release(item))
 			{
 				// Need to remove it from the table
+				hentry_t<tfilename_t>* pprev = nullptr;
+				hentry_t<tfilename_t>* pentry = m_filename_table.find(item->m_hash, pprev);
+				while (pentry != nullptr)
+				{
+					if (pentry->m_data == item)
+					{
+						// Found it
+						m_filename_table.remove(item->m_hash, pprev, pentry);
+						tfilename_t::destruct(m_allocator, item);
+					}
+				}
 			}
 		}
-        void release(textension_t*& extension)
+
+        void release(textension_t*& item)
 		{
-			if (textension_t::release(m_allocator, extension))
+			if (textension_t::release(item))
 			{
 				// Need to remove it from the table
+				hentry_t<textension_t>* pprev = nullptr;
+				hentry_t<textension_t>* pentry = m_extension_table.find(item->m_hash, pprev);
+				while (pentry != nullptr)
+				{
+					if (pentry->m_data == item)
+					{
+						// Found it
+						m_extension_table.remove(item->m_hash, pprev, pentry);
+						textension_t::destruct(m_allocator, item);
+					}
+				}
 			}
 		}
 
@@ -590,18 +653,13 @@ namespace xcore
 
     void tpath_t::reference() { m_refs++; }
 
-    bool tpath_t::release(xalloc* allocator, tpath_t*& path)
+    bool tpath_t::release(tpath_t*& path)
     {
         for (s32 i = 0; i < path->m_count; ++i)
-            tfolder_t::release(allocator, path->m_folders[i]);
+            tfolder_t::release(path->m_folders[i]);
 
         path->m_refs -= 1;
-        if (path->m_refs == 0)
-        {
-            destruct(allocator, path);
-            return true;
-        }
-        return false;
+        return (path->m_refs == 0);
     }
     tpath_t* tpath_t::construct(xalloc* allocator, s32 folder_count)
     {
