@@ -22,7 +22,7 @@ namespace xcore
     {
     public:
         xfiledevice_null() {}
-        virtual ~xfiledevice_mull() {}
+        virtual ~xfiledevice_null() {}
 
         virtual bool canSeek() { return false; }
         virtual bool canWrite() { return false; }
@@ -136,26 +136,23 @@ namespace xcore
             newPos = pos;
             return false;
         }
-        bool seekCurrent(void* nFileHandle, u64 pos, u64& newPos);
+        bool seekCurrent(void* nFileHandle, u64 pos, u64& newPos)
         {
             newPos = pos;
             return false;
         }
-        bool seekEnd(void* nFileHandle, u64 pos, u64& newPos);
+        bool seekEnd(void* nFileHandle, u64 pos, u64& newPos)
         {
             newPos = pos;
             return false;
         }
-
-        static HANDLE sOpenDir(xdirpath const& szDirPath) { return nullptr; }
     };
 
     xfiledevice* x_NullFileDevice()
     {
-        static xfiledevice_null filedevice_null();
+	    static xfiledevice_null filedevice_null;
         return &filedevice_null;
     }
 
 }; // namespace xcore
 
-#endif

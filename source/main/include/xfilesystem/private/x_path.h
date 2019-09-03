@@ -53,14 +53,6 @@ namespace xcore
 
         xpath resolve(xfilesys* fs, xfiledevice*& outdevice) const;
 
-		static xdirinfo dirinfo(ascii::pcrune path, utf32::alloc* allocator);
-		static xdirpath dirpath(ascii::pcrune path, utf32::alloc* allocator);
-		static xfileinfo fileinfo(ascii::pcrune path, utf32::alloc* allocator);
-		static xfilepath filepath(ascii::pcrune path, utf32::alloc* allocator);
-
-		static s32 compare(xdirinfo const& d, ascii::pcrune path);
-		static s32 compare(xdirpath const& d, ascii::pcrune path);
-
         void set_filepath(utf32::runes& runes, utf32::alloc* allocator);
         void set_dirpath(utf32::runes& runes, utf32::alloc* allocator);
         void combine(const xpath& dirpath, const xpath& filepath);
