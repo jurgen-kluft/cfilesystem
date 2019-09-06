@@ -21,14 +21,6 @@ namespace xcore
     class troot_t;
     class tpath_t;
 
-
-    class xpath_hash
-    {
-    public:
-		// Use the streaming version of xxHash ?
-
-    };
-
 	class xpath_parser_ascii
 	{
 	public:
@@ -559,20 +551,46 @@ namespace xcore
 		}
 
     private:
-        u64 generate_hash(ascii::crunes str) const
+		#define FNV1_64_OFFSET_BASIS ((u64)14695981039346656037u)
+		#define FNV_64_PRIME ((u64)1099511628211u)
+
+        static u64 generate_hash(ascii::crunes const& str)
         {
-			// @TODO: Implement this!
-            return 0;
+			// Use FNV-1a for now
+			u64 hash            = FNV1_64_OFFSET_BASIS;
+			u64 const fnv_prime = FNV_64_PRIME;
+			for (s32 i = 0; i < str.size(); i++)
+			{
+				hash ^= str.m_str[i];
+				hash *= fnv_prime;
+			}
+			return hash;
         }
-        u64 generate_hash(utf32::crunes str) const
+
+        static u64 generate_hash(utf32::crunes str32)
         {
-			// @TODO: Implement this!
-            return 0;
+			// Use FNV-1a for now
+			u64 hash            = FNV1_64_OFFSET_BASIS;
+			u64 const fnv_prime = FNV_64_PRIME;
+			s32 const length    = str32.size() * 4;
+			const char* str = (const char*)str32.m_str;
+			for (s32 i = 0; i < length; i++)
+			{
+				hash ^= str[i];
+				hash *= fnv_prime;
+			}
+			return hash;
         }
-        u64 mix_hash(u64 hash, u64 mix) const
+        static u64 mix_hash(u64 hash, u64 mix) 
         {
-			// @TODO: Implement this!
-            return 0;
+			u64 const fnv_prime = FNV_64_PRIME;
+			xbyte const* data   = (xbyte const*)&mix;
+			for (s32 i = 0; i < 8; i++)
+			{
+				hash ^= data[i];
+				hash *= fnv_prime;
+			}
+			return hash;
         }
     };
 
@@ -877,17 +895,18 @@ namespace xcore
     void htable_t<T>::remove(u64 hash, hentry_t<T>* previous, hentry_t<T>* current)
     {
         s32 index = to_index(hash);
-        if (m_data[index] == nullptr)
-            return nullptr;
-		if (previous == nullptr)
+        if (m_data[index] != nullptr)
 		{
-			m_data[index] = current->m_next;
-			m_allocator->deallocate(current);
-		}
-		else
-		{
-			previous->m_next = current->m_next;
-			m_allocator->deallocate(current);
+			if (previous == nullptr)
+			{
+				m_data[index] = current->m_next;
+				m_allocator->deallocate(current);
+			}
+			else
+			{
+				previous->m_next = current->m_next;
+				m_allocator->deallocate(current);
+			}
 		}
     }
 
