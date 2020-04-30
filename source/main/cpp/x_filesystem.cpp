@@ -21,6 +21,8 @@ namespace xcore
 
 	void*	INVALID_FILE_HANDLE	= (void*)-1;
 
+	xfilesys* xfilesystem::mImpl = nullptr;
+
     xfile*   xfilesystem::open(xfilepath const& filename, EFileMode mode) { return mImpl->open(filename, mode); }
     xstream* xfilesystem::open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op) { return mImpl->open_stream(filename, mode, access, op); }
     xwriter* xfilesystem::writer(xfile* xf) { return mImpl->writer(xf); }
@@ -135,7 +137,7 @@ namespace xcore
         if (fd->openFile(sys_filepath, mode, FileAccess_ReadWrite, FileOp_Sync, fh))
 		{
 			//@TODO: This should be more of a pool allocator
-			xfile* file = xnew<xfile>(m_allocator);
+			xfile* file = xnew<xfile>();
 			file->m_parent = this;
 			file->m_handle = fh;
 			return file;

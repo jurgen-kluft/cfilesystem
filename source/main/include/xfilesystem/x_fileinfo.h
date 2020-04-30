@@ -69,6 +69,13 @@ namespace xcore
         void getFilenameWithoutExtension(xfilepath& filename) const;
         void getExtension(xfilepath& extension) const;
 
+		xdirpath getParent() const { xdirpath dp; getParent(dp); return dp; }
+        xdirpath getRoot() const{ xdirpath dp; getRoot(dp); return dp; }
+        xdirpath getDirpath() const{ xdirpath dp; getDirpath(dp); return dp; }
+        xfilepath getFilename() const{ xfilepath fp; getFilename(fp); return fp; }
+        xfilepath getFilenameWithoutExtension() const{ xfilepath fp; getFilenameWithoutExtension(fp); return fp; }
+        xfilepath getExtension() const{ xfilepath fp; getExtension(fp); return fp; }
+
         void             getFilepath(xfilepath&) const;
         xfilepath const& getFilepath() const;
 
@@ -83,9 +90,9 @@ namespace xcore
         bool       operator==(const xfileinfo&) const;
         bool       operator!=(const xfileinfo&) const;
 
-        static bool sExists(const xfilepath& filename);
-        static bool sCreate(const xfilepath& filename, xstream*& outFileStream);
-        static bool sDelete(const xfilepath& filename);
+        static bool sExists(const xfilepath& filepath);
+        static bool sCreate(const xfilepath& filepath, xstream*& outFileStream);
+        static bool sDelete(const xfilepath& filepath);
 
         static bool sGetFileAttributes(const xfilepath& filepath, xfileattrs& outAttr);
 
@@ -106,6 +113,8 @@ namespace xcore
 
         static bool sSetTime(const xfilepath& filename, const xfiletimes& ftimes);
         static bool sGetTime(const xfilepath& filename, xfiletimes& ftimes);
+        static bool sSetAttrs(const xfilepath& filename, const xfileattrs& fattrs);
+        static bool sGetAttrs(const xfilepath& filename, xfileattrs& fattrs);
 
         static bool sCopy(const xfilepath& sourceFilename, const xfilepath& destFilename, bool overwrite = true);
         static bool sMove(const xfilepath& sourceFilename, const xfilepath& destFilename, bool overwrite = true);

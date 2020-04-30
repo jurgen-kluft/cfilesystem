@@ -40,7 +40,12 @@ namespace xcore
 
     bool xfileinfo::isRooted() const { return mPath.isRooted(); }
 
-    bool xfileinfo::exists() const { return sExists(mPath); }
+	bool xfileinfo::create(xstream*& outFilestream) const
+	{
+		return (sCreate(mPath, outFilestream));
+	}
+    
+	bool xfileinfo::exists() const { return sExists(mPath); }
 
     bool xfileinfo::create()
     {
@@ -108,8 +113,9 @@ namespace xcore
 
     void xfileinfo::down(xdirpath const& dir) { mPath.down(dir); }
 
+    bool xfileinfo::getAttrs(xfileattrs& fattrs) const { return sGetAttrs(mPath, fattrs); }
     bool xfileinfo::getTimes(xfiletimes& ftimes) const { return sGetTime(mPath, ftimes); }
-
+    bool xfileinfo::setAttrs(xfileattrs fattrs) { return sSetAttrs(mPath, fattrs); }
     bool xfileinfo::setTimes(xfiletimes ftimes) { return sSetTime(mPath, ftimes); }
 
     xfileinfo& xfileinfo::operator=(const xfileinfo& other)
@@ -143,6 +149,15 @@ namespace xcore
             return device->hasFile(syspath);
         return false;
     }
+
+	bool xfileinfo::sCreate(const xfilepath& filepath, xstream*& outFileStream)
+	{
+        xfiledevice* device;
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
+        if (device != nullptr)
+            return device->createStream(syspath, true, true, outFileStream);
+        return false;
+	}
 
     bool xfileinfo::sGetFileAttributes(const xfilepath& filepath, xfileattrs& outAttr)
     {
@@ -316,6 +331,28 @@ namespace xcore
         if (device != nullptr)
         {
             return device->getFileTime(syspath, ftimes);
+        }
+        return false;
+    }
+
+    bool xfileinfo::sSetAttrs(const xfilepath& filepath, const xfileattrs& fattrs)
+    {
+        xfiledevice* device;
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
+        if (device != nullptr)
+        {
+            return device->setFileAttr(syspath, fattrs);
+        }
+        return false;
+    }
+
+    bool xfileinfo::sGetAttrs(const xfilepath& filepath, xfileattrs& fattrs)
+    {
+        xfiledevice* device;
+        xfilepath    syspath = xfilesys::resolve(filepath, device);
+        if (device != nullptr)
+        {
+            return device->getFileAttr(syspath, fattrs);
         }
         return false;
     }

@@ -307,19 +307,19 @@ namespace xcore
 			virtual bool			getDeviceInfo(u64& totalSpace, u64& freeSpace) const;
 
 			virtual bool			hasFile(const char* szFilename) const;
-			virtual bool			openFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const;
-			virtual bool			createFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const;
-			virtual u64				seekFile(u32 nFileHandle, u64 pos) const;
-			virtual bool			readFile(u32 nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const;
-			virtual bool			writeFile(u32 nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) const;
-			virtual bool			closeFile(u32 nFileHandle) const;
+			virtual bool			openFile(const char* szFilename, bool boRead, bool boWrite, void*& nFileHandle) const;
+			virtual bool			createFile(const char* szFilename, bool boRead, bool boWrite, void*& nFileHandle) const;
+			virtual u64				seekFile(void* nFileHandle, u64 pos) const;
+			virtual bool			readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) const;
+			virtual bool			writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) const;
+			virtual bool			closeFile(void* nFileHandle) const;
 			virtual bool			moveFile(const char* szFilename, const char* szToFilename) const;
 			virtual bool			copyFile(const char* szFilename, const char* szToFilename, bool boOverwrite) const;
 			virtual bool			deleteFile(const char* szFilename) const;
-			virtual bool			setFilePos(u32 nFileHandle, u64& ioFilePos) const;
-			virtual bool			getFilePos(u32 nFileHandle, u64& outFilePos) const;
-			virtual bool			setLengthOfFile(u32 nFileHandle, u64 inLength) const;
-			virtual bool			getLengthOfFile(u32 nFileHandle, u64& outLength) const;
+			virtual bool			setFilePos(void* nFileHandle, u64& ioFilePos) const;
+			virtual bool			getFilePos(void* nFileHandle, u64& outFilePos) const;
+			virtual bool			setLengthOfFile(void* nFileHandle, u64 inLength) const;
+			virtual bool			getLengthOfFile(void* nFileHandle, u64& outLength) const;
 			virtual bool			setFileTime(const char* szFilename, const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime) const;
 			virtual bool			getFileTime(const char* szFilename, xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
 			virtual bool			setFileAttr(const char* szFilename, const xfileattrs& attr) const;
@@ -453,11 +453,11 @@ namespace xcore
 			return sFindTestFile(szFilename)!=NULL;
 		}
 		
-		bool xfiledevice_TEST::openFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const
+		bool xfiledevice_TEST::openFile(const char* szFilename, bool boRead, bool boWrite, void*& nFileHandle) const
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
-			nFileHandle = (testFile!=NULL) ? (s32)testFile : INVALID_FILE_HANDLE;
-			return nFileHandle!=INVALID_FILE_HANDLE;
+			nFileHandle = (testFile!=NULL) ? testFile : INVALID_FILE_HANDLE;
+			return nFileHandle != INVALID_FILE_HANDLE;
 		}
 
 		bool xfiledevice_TEST::createFile(const char* szFilename, bool boRead, bool boWrite, u32& nFileHandle) const

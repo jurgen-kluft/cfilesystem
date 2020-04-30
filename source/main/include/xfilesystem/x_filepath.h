@@ -30,6 +30,7 @@ namespace xcore
 
     public:
         xfilepath();
+		xfilepath(ascii::pcrune path);
         xfilepath(const xfilepath& filepath);
         explicit xfilepath(const xdirpath& dir, const xfilepath& filename);
         ~xfilepath();

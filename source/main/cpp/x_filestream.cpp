@@ -332,8 +332,7 @@ namespace xcore
 
     xistream* xistream::create_filestream(xalloc* allocator, xfiledevice* device, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op)
     {
-        xheap         heap(allocator);
-        xifilestream* filestream = heap.construct<xifilestream>(allocator, device, filepath, mode, access, op);
+        xifilestream* filestream = allocator->construct<xifilestream>(allocator, device, filepath, mode, access, op);
         return filestream;
     }
 

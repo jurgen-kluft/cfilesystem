@@ -40,43 +40,41 @@ namespace xcore
     class xfilesystem
     {
     public:
-        static xfilesystem* create(xfilesyscfg const&);
-        static void         destroy(xfilesystem*&);
+        static void	create(xfilesyscfg const&);
+        static void destroy();
 
-        xfilepath filepath_from_ascii(const char* str);
-		xdirpath  from_ascii(const char* str);
+        static xfilepath filepath_from_ascii(const char* str);
+		static xdirpath  dirpath_from_ascii(const char* str);
 
-		xfile*     open(xfilepath const& filename, EFileMode mode);
-        xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
-        xwriter*   writer(xfile*);
-        xreader*   reader(xfile*);
-        void       close(xfile*);
-        void       close(xfileinfo*);
-        void       close(xdirinfo*);
-        void       close(xreader*);
-        void       close(xwriter*);
-        void       close(xstream*);
-        xfileinfo* info(xfilepath const& path);
-        xdirinfo*  info(xdirpath const& path);
-        bool       exists(xfileinfo*);
-        bool       exists(xdirinfo*);
-        s64        size(xfileinfo*);
-        xfile*     open(xfileinfo*, EFileMode mode);
-        void       rename(xfileinfo*, xfilepath const&);
-        void       move(xfileinfo* src, xfileinfo* dst);
-        void       copy(xfileinfo* src, xfileinfo* dst);
-        void       rm(xfileinfo*);
-        void       rm(xdirinfo*);
-        s32        read(xreader*, xbuffer&);
-        s32        write(xwriter*, xcbuffer const&);
-        void       read_async(xreader*, xbuffer&);
-        s32        wait_async(xreader*);
-
-		XCORE_CLASS_PLACEMENT_NEW_DELETE
+		static xfile*     open(xfilepath const& filename, EFileMode mode);
+        static xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
+        static xwriter*   writer(xfile*);
+        static xreader*   reader(xfile*);
+        static void       close(xfile*);
+        static void       close(xfileinfo*);
+        static void       close(xdirinfo*);
+        static void       close(xreader*);
+        static void       close(xwriter*);
+        static void       close(xstream*);
+        static xfileinfo* info(xfilepath const& path);
+        static xdirinfo*  info(xdirpath const& path);
+        static bool       exists(xfileinfo*);
+        static bool       exists(xdirinfo*);
+        static s64        size(xfileinfo*);
+        static xfile*     open(xfileinfo*, EFileMode mode);
+        static void       rename(xfileinfo*, xfilepath const&);
+        static void       move(xfileinfo* src, xfileinfo* dst);
+        static void       copy(xfileinfo* src, xfileinfo* dst);
+        static void       rm(xfileinfo*);
+        static void       rm(xdirinfo*);
+        static s32        read(xreader*, xbuffer&);
+        static s32        write(xwriter*, xcbuffer const&);
+        static void       read_async(xreader*, xbuffer&);
+        static s32        wait_async(xreader*);
 
     protected:
         friend class xfilesys;
-        xfilesys* mImpl;
+        static xfilesys* mImpl;
     };
 
     // doIO; user has to call this from either the main thread or an IO thread.

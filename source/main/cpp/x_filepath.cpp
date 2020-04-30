@@ -55,6 +55,9 @@ namespace xcore
     void xfilepath::getFilenameWithoutExtension(xfilepath& filename) const { mPath.getFilenameWithoutExtension(filename.mPath); }
     void xfilepath::getExtension(xfilepath& filename) const { mPath.getExtension(filename.mPath); }
 
+	void xfilepath::up() { mPath.up(); }
+	void xfilepath::down(xdirpath const& p) { mPath.down(p.mPath); } 
+
     xfilepath& xfilepath::operator=(const xfilepath& path)
     {
         if (this == &path)

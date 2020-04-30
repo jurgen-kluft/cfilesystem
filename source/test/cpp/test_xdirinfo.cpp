@@ -63,48 +63,14 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 		UNITTEST_TEST(constructor1)
 		{
 			const char* str = "TEST:\\textfiles\\docs";
-			xdirinfo di = xpath::as_dirinfo(str, &sUtf32Alloc);
-			CHECK_EQUAL(0, xpath::cmp(di, str));
+			xdirpath dp = xfilesystem::dirpath_from_ascii(str);
+			xdirinfo di ( dp );
+			CHECK_TRUE(di.getDirpath() == dp);
 
 			const char* str2 = "textfiles\\docs";
-			xdirinfo di2= xpath::as_dirinfo(str2, &sUtf32Alloc);
-			CHECK_EQUAL(0, xpath::cmp(di2, str2));
-		}
-
-		UNITTEST_TEST(constructor2)
-		{
-			const char* str = "TEST:\\textfiles\\docs\\";
-			xdirinfo di = xpath::as_dirinfo(str, &sUtf32Alloc);
-			xdirinfo di2(di);
-			CHECK_EQUAL(0, xpath::cmp(di2, str));
-		}
-
-		UNITTEST_TEST(constructor3)
-		{
-			const char* str2 = "TEST:\\textfiles\\docs\\the_folder\\";
-			xdirpath dp2 = xpath::as_dirpath(str2, &sUtf32Alloc);
-			CHECK_EQUAL(0, xpath::cmp(dp2, str2));
-
-			xdirinfo di1(dp2);
-			CHECK_EQUAL(0, xpath::cmp(di1, str2));
-		}
-
-		UNITTEST_TEST(getFullName)
-		{
-			const char* str = "TEST:\\textfiles\\docs\\the_folder\\";
-			xdirinfo di = xpath::as_dirinfo(str, &sUtf32Alloc);
-			CHECK_EQUAL(0, xpath::cmp(di.getDirpath(), str));
-		}
-
-		UNITTEST_TEST(getName)
-		{
-			const char* str = "TEST:\\textfiles\\docs\\the_folder\\";
-			xdirinfo di = xpath::as_dirinfo(str, &sUtf32Alloc);
-
-			xdirpath name;
-			di.getDirpath().getName(name);
-
-			CHECK_EQUAL(0, xpath::cmp(name, "the_folder\\"));
+			xdirpath dp2 = xfilesystem::dirpath_from_ascii(str2);
+			xdirinfo di2(dp2);
+			CHECK_TRUE(di2.getDirpath() == dp2);
 		}
 
 	}

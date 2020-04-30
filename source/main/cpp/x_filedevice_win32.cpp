@@ -104,16 +104,14 @@ namespace xcore
 
     xfiledevice* x_CreateFileDevicePC(xalloc* alloc, const xdirpath& pDrivePath, xbool boCanWrite)
     {
-		xheap heap(alloc);
-        xfiledevice_pc* file_device = heap.construct<xfiledevice_pc>(alloc, pDrivePath, boCanWrite);
+        xfiledevice_pc* file_device = alloc->construct<xfiledevice_pc>(alloc, pDrivePath, boCanWrite);
         return file_device;
     }
 
     void x_DestroyFileDevicePC(xfiledevice* device)
     {
         xfiledevice_pc* file_device = (xfiledevice_pc*)device;
-		xheap heap(file_device->mAllocator);
-		heap.destruct(file_device);
+		file_device->mAllocator->destruct(file_device);
     }
 
     bool xfiledevice_pc::getDeviceInfo(u64& totalSpace, u64& freeSpace)
@@ -566,7 +564,7 @@ namespace xcore
 			XCORE_CLASS_PLACEMENT_NEW_DELETE
         };
 
-        xheap  mNodeHeap;
+        xalloc*  mNodeHeap;
         xnode* mDirStack;
         s32    mLevel;
 
@@ -583,7 +581,7 @@ namespace xcore
             , mDirPath()
         {
             mDirPath  = xfilesys::get_xpath(dirpath);
-            mNodeHeap = xheap(xfilesys::get_filesystem(dirpath)->m_allocator);
+            mNodeHeap = xfilesys::get_filesystem(dirpath)->m_allocator;
 
             *mWildcard.m_end++ = '*';
             *mWildcard.m_end   = '\0';
@@ -591,7 +589,7 @@ namespace xcore
 
         bool enter_dir()
         {
-            xnode* nextnode = mNodeHeap.construct<xdirwalker::xnode>();
+            xnode* nextnode = mNodeHeap->construct<xdirwalker::xnode>();
 
             utf32::concatenate(mDirPath.m_path, mWildcard, mDirPath.m_alloc, 16);
             utf16::runes dirpath16;
@@ -610,7 +608,7 @@ namespace xcore
             }
             else
             {
-                mNodeHeap.destruct(nextnode);
+                mNodeHeap->destruct(nextnode);
                 return false;
             }
         }
@@ -686,7 +684,7 @@ namespace xcore
             mDirStack   = node->mPrev;
 
             ::FindClose(node->mFindHandle);
-            mNodeHeap.destruct(node);
+            mNodeHeap->destruct(node);
 
             return mDirStack != nullptr;
         }

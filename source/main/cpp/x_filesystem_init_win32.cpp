@@ -181,11 +181,9 @@ namespace xcore
         };
 	}
 
-    xfilesystem* xfilesystem::create(xfilesyscfg const& cfg)
+    void xfilesystem::create(xfilesyscfg const& cfg)
     {
-        xheap heap(cfg.m_allocator);
-
-        xdevicemanager* devman = heap.construct<xdevicemanager>();
+        xdevicemanager* devman = cfg.m_allocator->construct<xdevicemanager>();
         x_FileSystemRegisterSystemAliases(devman);
 
         utf32::rune adir32[512] = {'\0'};
@@ -211,15 +209,13 @@ namespace xcore
             devman->add_alias("curdir", curdir);
         }
 
-        xfilesys* imp    = heap.construct<xfilesys>();
+        xfilesys* imp    = cfg.m_allocator->construct<xfilesys>();
         imp->m_slash     = cfg.m_default_slash;
         imp->m_allocator = cfg.m_allocator;
-        imp->m_stralloc  = heap.construct<fs_utfalloc>(cfg.m_allocator);
+        imp->m_stralloc  = cfg.m_allocator->construct<fs_utfalloc>(cfg.m_allocator);
         imp->m_devman    = devman;
 
-        xfilesystem* fs = heap.construct<xfilesystem>();
-        fs->mImpl       = imp;
-        return fs;
+		xfilesystem::mImpl = imp;
     }
 
     //------------------------------------------------------------------------------
@@ -231,18 +227,14 @@ namespace xcore
     //     void
     // Description:
     //------------------------------------------------------------------------------
-    void xfilesystem::destroy(xfilesystem*& fs)
+    void xfilesystem::destroy()
     {
-        xfilesys* xfs = fs->mImpl;
+        mImpl->m_devman->exit();
 
-        xfs->m_devman->exit();
-
-        xheap heap(xfs->m_allocator);
-        heap.destruct(xfs->m_stralloc);
-        heap.destruct(xfs->m_devman);
-        heap.destruct(xfs);
-        heap.destruct(fs);
-        fs = nullptr;
+        mImpl->m_allocator->destruct(mImpl->m_stralloc);
+        mImpl->m_allocator->destruct(mImpl->m_devman);
+        mImpl->m_allocator->destruct(mImpl);
+        mImpl = nullptr;
     }
 
 };    // namespace xcore

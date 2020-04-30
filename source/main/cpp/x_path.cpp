@@ -42,6 +42,12 @@ namespace xcore
         fix_slashes(m_path);
     }
 
+	xpath::xpath(utf32::alloc* allocator, const utf32::crunes& path)
+		: m_alloc(allocator)
+	{
+		copy(path, m_path, m_alloc, 16);
+	}
+
     xpath::xpath(const xpath& path)
         : m_alloc(path.m_alloc)
         , m_path()

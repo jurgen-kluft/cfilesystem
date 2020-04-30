@@ -51,7 +51,7 @@ namespace xcore
 	public:
 						UnitTestAllocator(xcore::xalloc* allocator)	{ mAllocator = allocator; }
 		virtual void*	Allocate(xsize_t size)								{ return mAllocator->allocate((u32)size, sizeof(void*)); }
-		virtual void	Deallocate(void* ptr)								{ mAllocator->deallocate(ptr); }
+		virtual xsize_t	Deallocate(void* ptr)								{ return mAllocator->deallocate(ptr); }
 	};
 
 	class TestAllocator : public xalloc
@@ -62,19 +62,19 @@ namespace xcore
 
 		virtual const char*	name() const										{ return "xbase unittest test heap allocator"; }
 
-		virtual void*		allocate(xsize_t size, u32 alignment)
+		virtual void*		v_allocate(xsize_t size, u32 alignment)
 		{
 			UnitTest::IncNumAllocations();
 			return mAllocator->allocate(size, alignment);
 		}
 
-		virtual void		deallocate(void* mem)
+		virtual u32			v_deallocate(void* mem)
 		{
 			UnitTest::DecNumAllocations();
-			mAllocator->deallocate(mem);
+			return mAllocator->deallocate(mem);
 		}
 
-		virtual void		release()
+		virtual void		v_release()
 		{
 			mAllocator->release();
 			mAllocator = NULL;
