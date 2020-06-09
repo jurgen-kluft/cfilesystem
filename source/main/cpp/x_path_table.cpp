@@ -246,7 +246,7 @@ namespace xcore
     {
     public:
         xalloc*       m_allocator;
-        s64           m_size;
+        u32           m_size;
         hentry_t<T>** m_data;
 
         inline s32   to_index(u64 hash) const;
@@ -856,7 +856,7 @@ namespace xcore
     {
         m_allocator = allocator;
         m_size      = size_as_bits;
-        m_data      = static_cast<hentry_t<T>**>(allocator->allocate(sizeof(hentry_t<T>*) * m_size, sizeof(void*)));
+        m_data      = static_cast<hentry_t<T>**>(allocator->allocate((u32)sizeof(hentry_t<T>*) * m_size, sizeof(void*)));
     }
 
 	template <class T>

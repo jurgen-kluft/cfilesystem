@@ -93,24 +93,66 @@ namespace xcore
         return false;
     }
 
-    void xfileinfo::getFilepath(xfilepath& filepath) const { filepath = mPath; }
-
-    xfilepath const& xfileinfo::getFilepath() const { return mPath; }
-
     void xfileinfo::getDirpath(xdirpath& dirpath) const { mPath.getDirname(dirpath); }
-
     void xfileinfo::getFilename(xfilepath& filename) const { mPath.getFilename(filename); }
-
     void xfileinfo::getFilenameWithoutExtension(xfilepath& extension) const { mPath.getFilenameWithoutExtension(extension); }
-
     void xfileinfo::getExtension(xfilepath& extension) const { mPath.getExtension(extension); }
 
     bool xfileinfo::copy_to(const xfilepath& toFilename, bool overwrite) { return sCopy(mPath, toFilename, overwrite); }
-
     bool xfileinfo::move_to(const xfilepath& toFilename, bool overwrite) { return sMove(mPath, toFilename); }
 
-    void xfileinfo::up() { mPath.up(); }
+	xdirpath  xfileinfo::getParent() const
+	{
+		xdirpath dp;
+		if (getParent(dp))
+		{
+			return dp;
+		}
+		return xdirpath(mParent, xpath());
+	}
 
+	xdirpath  xfileinfo::getRoot() const
+	{
+		xdirpath dp;
+		if (getRoot(dp))
+		{
+			return dp;
+		}
+		return xdirpath(mParent, xpath());
+	}
+
+    xdirpath  xfileinfo::getDirpath() const
+	{
+		xdirpath dp;
+		getDirpath(dp);
+		return dp;
+	}
+
+	xfilepath xfileinfo::getFilename() const
+	{
+		xfilepath fp;
+		getFilename(fp);
+		return fp;
+	}
+
+	xfilepath xfileinfo::getFilenameWithoutExtension() const
+	{
+		xfilepath fp;
+		getFilenameWithoutExtension(fp);
+		return fp;
+	}
+
+	xfilepath xfileinfo::getExtension() const
+	{
+		xfilepath fp;
+		getExtension(fp);
+		return fp;
+	}
+
+    void xfileinfo::getFilepath(xfilepath& filepath) const { filepath = mPath; }
+    xfilepath const& xfileinfo::getFilepath() const { return mPath; }
+
+    void xfileinfo::up() { mPath.up(); }
     void xfileinfo::down(xdirpath const& dir) { mPath.down(dir); }
 
     bool xfileinfo::getAttrs(xfileattrs& fattrs) const { return sGetAttrs(mPath, fattrs); }

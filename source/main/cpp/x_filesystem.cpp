@@ -23,6 +23,13 @@ namespace xcore
 
 	xfilesys* xfilesystem::mImpl = nullptr;
 
+    xfilepath xfilesystem::filepath(const char* str) { return mImpl->filepath(str); }
+	xdirpath  xfilesystem::dirpath(const char* str) { return mImpl->dirpath(str); }
+    xfilepath xfilesystem::filepath(const utf32::crunes& str) { return mImpl->filepath(str); }
+	xdirpath  xfilesystem::dirpath(const utf32::crunes& str) { return mImpl->dirpath(str); }
+    void      xfilesystem::to_ascii(xfilepath const& fp, ascii::runes& str) { mImpl->to_ascii(fp, str); }
+	void      xfilesystem::to_ascii(xdirpath const& dp, ascii::runes& str) { mImpl->to_ascii(dp, str); }
+
     xfile*   xfilesystem::open(xfilepath const& filename, EFileMode mode) { return mImpl->open(filename, mode); }
     xstream* xfilesystem::open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op) { return mImpl->open_stream(filename, mode, access, op); }
     xwriter* xfilesystem::writer(xfile* xf) { return mImpl->writer(xf); }
@@ -125,6 +132,46 @@ namespace xcore
     {
         
     }
+
+    xfilepath  xfilesys::filepath(const char* str)
+	{
+		xfilepath filepath;
+		filepath.mParent = this;
+		filepath.mPath = xpath(m_stralloc, str);
+		return filepath;
+	}
+	
+	xdirpath   xfilesys::dirpath(const char* str)
+	{
+		xdirpath dirpath;
+		dirpath.mParent = this;
+		dirpath.mPath = xpath(m_stralloc, str);
+		return dirpath;
+	}
+
+    xfilepath  xfilesys::filepath(const utf32::crunes& str)
+	{
+		xfilepath filepath;
+		filepath.mParent = this;
+		filepath.mPath = xpath(m_stralloc, str);
+		return filepath;
+	}
+	
+	xdirpath   xfilesys::dirpath(const utf32::crunes& str)
+	{
+		xdirpath dirpath;
+		dirpath.mParent = this;
+		dirpath.mPath = xpath(m_stralloc, str);
+		return dirpath;
+	}
+
+	void       xfilesys::to_ascii(xfilepath const& fp, ascii::runes& str)
+	{
+	}
+	
+	void       xfilesys::to_ascii(xdirpath const& dp, ascii::runes& str)
+	{
+	}
 
     xfile* xfilesys::open(xfilepath const& filename, EFileMode mode) 
     {

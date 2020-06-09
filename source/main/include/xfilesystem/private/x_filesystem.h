@@ -40,9 +40,10 @@ namespace xcore
 
 		XCORE_CLASS_PLACEMENT_NEW_DELETE
 
-        static xfilepath resolve(xfilepath const&, xfiledevice*& device);
-        static xdirpath  resolve(xdirpath const&, xfiledevice*& device);
-
+        static xistream*	create_filestream(const xfilepath& filepath, EFileMode, EFileAccess, EFileOp);
+        static void			destroy(xistream* stream);
+        static xfilepath    resolve(xfilepath const&, xfiledevice*& device);
+        static xdirpath     resolve(xdirpath const&, xfiledevice*& device);
         static xpath&       get_xpath(xdirinfo& dirinfo);
         static xpath const& get_xpath(xdirinfo const& dirinfo);
         static xpath&       get_xpath(xdirpath& dirpath);
@@ -52,15 +53,17 @@ namespace xcore
         static xfilesys*    get_filesystem(xdirpath const& dirpath);
         static xfilesys*    get_filesystem(xfilepath const& filepath);
 
-        static xistream* create_filestream(const xfilepath& filepath, EFileMode, EFileAccess, EFileOp);
-        static void      destroy(xistream* stream);
-
         // -----------------------------------------------------------
+        xfilepath  filepath(const char* str);
+		xdirpath   dirpath(const char* str);
+        xfilepath  filepath(const utf32::crunes& str);
+		xdirpath   dirpath(const utf32::crunes& str);
+        void       to_ascii(xfilepath const& fp, ascii::runes& str);
+		void       to_ascii(xdirpath const& dp, ascii::runes& str);
+
         xfile*     open(xfilepath const& filename, EFileMode mode);
         xfile*     open(xfileinfo*, EFileMode mode);
-
 		xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
-        
 		xwriter*   writer(xfile*);
         xreader*   reader(xfile*);
         void       close(xfile*);

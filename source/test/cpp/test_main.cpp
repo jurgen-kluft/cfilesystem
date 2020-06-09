@@ -21,7 +21,7 @@ UNITTEST_SUITE_DECLARE(xFileUnitTest, filepath);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, dirinfo);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, fileinfo);
 UNITTEST_SUITE_DECLARE(xFileUnitTest, filestream);
-UNITTEST_SUITE_DECLARE(xFileUnitTest, filesystem_common);
+//UNITTEST_SUITE_DECLARE(xFileUnitTest, filesystem_common);
 
 namespace xcore
 {
@@ -60,9 +60,7 @@ namespace xcore
 	public:
 							TestAllocator(xalloc* allocator) : mAllocator(allocator) { }
 
-		virtual const char*	name() const										{ return "xbase unittest test heap allocator"; }
-
-		virtual void*		v_allocate(xsize_t size, u32 alignment)
+		virtual void*		v_allocate(u32 size, u32 alignment)
 		{
 			UnitTest::IncNumAllocations();
 			return mAllocator->allocate(size, alignment);

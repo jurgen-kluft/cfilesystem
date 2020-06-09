@@ -41,7 +41,7 @@ namespace xcore
         static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
                                                       L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
 
-        static void x_FileSystemRegisterSystemAliases(xdevicemanager* devman)
+        static void x_FileSystemRegisterSystemAliases(xalloc* allocator, xdevicemanager* devman)
         {
             utf32::runez<255> string32;
 
@@ -90,7 +90,7 @@ namespace xcore
                             utf32::runes  devicePath32(string32);
                             utf16::crunes devicePath16((utf16::pcrune)devicePath);
                             utf::copy(devicePath16, devicePath32);
-                            sFileDevices[eDriveType] = x_CreateFileDevice(utf32::crunes(devicePath32), boCanWrite);
+                            sFileDevices[eDriveType] = x_CreateFileDevice(allocator, utf32::crunes(devicePath32), boCanWrite);
                         }
                         xfiledevice* device = sFileDevices[eDriveType];
 
@@ -184,7 +184,7 @@ namespace xcore
     void xfilesystem::create(xfilesyscfg const& cfg)
     {
         xdevicemanager* devman = cfg.m_allocator->construct<xdevicemanager>();
-        x_FileSystemRegisterSystemAliases(devman);
+        x_FileSystemRegisterSystemAliases(cfg.m_allocator, devman);
 
         utf32::rune adir32[512] = {'\0'};
 

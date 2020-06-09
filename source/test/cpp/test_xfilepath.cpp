@@ -31,7 +31,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 		UNITTEST_TEST(constructor2)
 		{
 			const char* str = "TEST:\\textfiles\\docs";
-			xfilepath p(str);
+			xfilepath p = xfilesystem::filepath(str);
 
 			CHECK_FALSE(p.isEmpty());
 		}
