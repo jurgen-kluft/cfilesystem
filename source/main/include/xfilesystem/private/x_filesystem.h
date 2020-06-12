@@ -61,6 +61,8 @@ namespace xcore
         void       to_ascii(xfilepath const& fp, ascii::runes& str);
 		void       to_ascii(xdirpath const& dp, ascii::runes& str);
 
+		bool       register_device(const utf32::crunes& device_name, xfiledevice* device);
+
         xfile*     open(xfilepath const& filename, EFileMode mode);
         xfile*     open(xfileinfo*, EFileMode mode);
 		xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);

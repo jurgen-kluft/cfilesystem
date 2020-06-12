@@ -38,12 +38,15 @@ namespace xcore
     class xfileinfo;
     class xdirpath;
     class xdirinfo;
+	class xfiledevice;
 
     class xfilesystem
     {
     public:
         static void	      create(xfilesyscfg const&);
         static void       destroy();
+
+		static bool       register_device(const utf32::crunes& device_name, xfiledevice*);
 
 		static xfilepath  filepath(const char* str);
 		static xdirpath   dirpath(const char* str);

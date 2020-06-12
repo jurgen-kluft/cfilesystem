@@ -76,17 +76,18 @@ namespace xcore
                         eDriveType = DRIVE_TYPE_FIXED;
                     }
 
-                    // Convert driveLetter (Ascii) to utf-32
+                    // Convert drivePath (Ascii) to utf-32
 					string32.reset();
-                    utf16::crunes driveLetter16((utf16::pcrune)driveLetter);
-                    utf::copy(driveLetter16, string32);
+                    utf16::crunes devicePath16((utf16::pcrune)devicePath);
+                    utf::copy(devicePath16, string32);
 
 					xpath devicename;
 					devicename.m_path = string32;
-                    if (devman->has_device(devicename))
+                    if (!devman->has_device(devicename))
                     {
                         if (sFileDevices[eDriveType] == NULL)
                         {
+							string32.reset();
                             utf32::runes  devicePath32(string32);
                             utf16::crunes devicePath16((utf16::pcrune)devicePath);
                             utf::copy(devicePath16, devicePath32);
@@ -98,11 +99,12 @@ namespace xcore
                         local_alias[0] = '\0';
                         DWORD ret_val  = ::QueryDosDeviceW(driveLetter, local_alias, sizeof(local_alias));
 
-                        utf32::runes  local_alias32(string32);
+						string32.reset();
+						utf32::runes  local_alias32(string32);
                         utf16::crunes local_alias16((utf16::pcrune)local_alias);
                         utf::copy(local_alias16, local_alias32);
 
-                        utf32::runez<3> wincrap("\\??\\");
+                        utf32::runez<8> wincrap("\\??\\");
                         utf32::runes    wincrapsel = utf32::find(local_alias32, wincrap);
 
                         utf32::runez<255> string32b;
@@ -183,8 +185,14 @@ namespace xcore
 
     void xfilesystem::create(xfilesyscfg const& cfg)
     {
-        xdevicemanager* devman = cfg.m_allocator->construct<xdevicemanager>();
-        x_FileSystemRegisterSystemAliases(cfg.m_allocator, devman);
+        xfilesys* imp    = cfg.m_allocator->construct<xfilesys>();
+        imp->m_slash     = cfg.m_default_slash;
+        imp->m_allocator = cfg.m_allocator;
+        imp->m_stralloc  = cfg.m_allocator->construct<fs_utfalloc>(cfg.m_allocator);
+		xfilesystem::mImpl = imp;
+
+		imp->m_devman    = cfg.m_allocator->construct<xdevicemanager>(imp->m_stralloc);
+        x_FileSystemRegisterSystemAliases(cfg.m_allocator, imp->m_devman);
 
         utf32::rune adir32[512] = {'\0'};
 
@@ -196,7 +204,7 @@ namespace xcore
             utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
             utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
             utf32::runes appdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
-            devman->add_alias("appdir", appdir);
+            imp->m_devman->add_alias("appdir:\\", appdir);
         }
 
         // Get the working directory
@@ -206,16 +214,9 @@ namespace xcore
             utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
             utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
             utf32::runes curdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
-            devman->add_alias("curdir", curdir);
+            imp->m_devman->add_alias("curdir:\\", curdir);
         }
 
-        xfilesys* imp    = cfg.m_allocator->construct<xfilesys>();
-        imp->m_slash     = cfg.m_default_slash;
-        imp->m_allocator = cfg.m_allocator;
-        imp->m_stralloc  = cfg.m_allocator->construct<fs_utfalloc>(cfg.m_allocator);
-        imp->m_devman    = devman;
-
-		xfilesystem::mImpl = imp;
     }
 
     //------------------------------------------------------------------------------

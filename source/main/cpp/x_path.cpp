@@ -16,8 +16,6 @@ namespace xcore
     static rune   sSemiColumnSlashStr[3] = {':', '\\', 0};
     static crunes sSemiColumnSlash(sSemiColumnSlashStr, sSemiColumnSlashStr + 2);
 
-	utf32::crunes s_device_separator(sSemiColumnSlashStr, sSemiColumnSlashStr + 2);
-
     static void fix_slashes(runes& str)
     {
         // Replace incorrect slashes with the correct one
@@ -45,14 +43,14 @@ namespace xcore
 	xpath::xpath(utf32::alloc* allocator, const utf32::crunes& path)
 		: m_alloc(allocator)
 	{
-		copy(path, m_path, m_alloc, 16);
+		utf32::copy(path, m_path, m_alloc, 16);
 		fix_slashes(m_path);
 	}
 
 	xpath::xpath(utf32::alloc* allocator, const ascii::crunes& path)
 		: m_alloc(allocator)
 	{
-		utf::copy(path, m_path, m_alloc);
+		utf32::copy(path, m_path, m_alloc, 16);
 		fix_slashes(m_path);
 	}
 
@@ -60,12 +58,16 @@ namespace xcore
         : m_alloc(path.m_alloc)
         , m_path()
     {
-        copy(path.m_path, m_path, m_alloc, 16);
+        utf32::copy(path.m_path, m_path, m_alloc, 16);
+		fix_slashes(m_path);
     }
 
     xpath::xpath(const xpath& lhspath, const xpath& rhspath) 
+		: m_alloc(lhspath.m_alloc)
+		, m_path()
 	{
 		// Combine both paths into a new path
+        utf32::concatenate(m_path, lhspath.m_path, rhspath.m_path, m_alloc, 16);
 	}
 
 	xpath::~xpath()
@@ -95,9 +97,14 @@ namespace xcore
         return xpath();
     }
 
-    void xpath::clear() { m_path.clear(); }
+    void xpath::clear()
+	{
+		m_path.clear(); 
+	}
+
     void xpath::erase()
     {
+		clear();
         if (m_alloc != nullptr)
             m_alloc->deallocate(m_path);
     }

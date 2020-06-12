@@ -1080,15 +1080,27 @@ UNITTEST_SUITE_BEGIN(xfiledevice_register)
 {
 	UNITTEST_FIXTURE(main)
 	{
-		UNITTEST_FIXTURE_SETUP() {}
-		UNITTEST_FIXTURE_TEARDOWN() {}
+		UNITTEST_FIXTURE_SETUP()
+		{
+			xfilesyscfg cfg;
+			cfg.m_allocator = gTestAllocator;
+			cfg.m_max_open_stream = 8;
+			xfilesystem::create(cfg);
+		}
+		
+		UNITTEST_FIXTURE_TEARDOWN()
+		{
+			xfilesystem::destroy();
+		}
 
 		static xfiledevice_TEST	sTestFileDevice;
 
 		// main 
 		UNITTEST_TEST(register_test_filedevice)
 		{
-			//xdevicealias::sRegister(xdevicealias("TEST", &sTestFileDevice, "TEST:\\"));
+			utf32::runez<32> deviceName;
+			deviceName = "TEST:\\";
+			CHECK_TRUE(xfilesystem::register_device(deviceName, &sTestFileDevice));
 		}
 
 		UNITTEST_TEST(hasFile)

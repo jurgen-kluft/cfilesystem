@@ -23,7 +23,7 @@ namespace xcore
     {
         mPath.m_alloc = path.m_alloc;
         mPath.m_path  = path.m_path;
-        path.m_alloc  = nullptr;
+        path.m_alloc  = fsys->m_stralloc;
         path.m_path   = utf32::runes();
     }
 
