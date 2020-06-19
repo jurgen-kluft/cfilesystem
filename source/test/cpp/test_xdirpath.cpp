@@ -37,7 +37,7 @@ UNITTEST_SUITE_BEGIN(dirpath)
 
 		UNITTEST_TEST(constructor2)
 		{
-			xdirpath dirpath = xfilesystem::dirpath("T:\\the\\name\\is\\johhnywalker");
+			xdirpath dirpath = xfilesystem::dirpath("C:\\the\\name\\is\\johhnywalker");
 			CHECK_EQUAL(false, dirpath.isEmpty());
 		}
 	}
