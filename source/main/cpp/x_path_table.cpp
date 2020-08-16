@@ -16,98 +16,95 @@ namespace xcore
         - Easy manipulation of dirpath, can easily go to parent or child directory, likely without doing any allocations
         - You can prime the table which then results in no allocations when you are using existing filepaths and dirpaths
         - Combining dirpath with filepath becomes very easy
-        -
+        - Size of filepath and dirpath are fixed
     */
     class troot_t;
     class tpath_t;
 
-	class xpath_parser_ascii
-	{
-	public:
-		ascii::crunes	m_device;
-		ascii::crunes	m_path;
-		ascii::crunes	m_filename;
-		ascii::crunes	m_extension;
+    class xpath_parser_ascii
+    {
+    public:
+        ascii::crunes m_device;
+        ascii::crunes m_path;
+        ascii::crunes m_filename;
+        ascii::crunes m_extension;
+        ascii::crunes m_first_folder;
 
-		ascii::crunes	m_first_folder;
+        void parse(ascii::crunes const& fullpath)
+        {
+            ascii::crunes slash("\\");
+            ascii::crunes devicesep(":\\");
 
-		void parse(ascii::crunes const& fullpath)
-		{
-			ascii::crunes slash("\\");
-			ascii::crunes devicesep(":\\");
+            m_device               = ascii::findSelectUntilIncluded(fullpath, devicesep);
+            ascii::crunes filepath = ascii::selectUntilEndExcludeSelection(fullpath, m_device);
+            m_path                 = ascii::findLastSelectUntilIncluded(filepath, slash);
+            m_filename             = ascii::selectUntilEndExcludeSelection(fullpath, m_path);
+            m_filename             = ascii::findLastSelectUntil(m_filename, '.');
+            m_extension            = ascii::selectUntilEndExcludeSelection(fullpath, m_filename);
+            m_first_folder         = ascii::findSelectUntil(m_path, slash);
 
-			m_device = ascii::findSelectUntilIncluded(fullpath, devicesep);
-			ascii::crunes filepath = ascii::selectUntilEndExcludeSelection(fullpath, m_device);
-			m_path = ascii::findLastSelectUntilIncluded(filepath, slash);
-			m_filename = ascii::selectUntilEndExcludeSelection(fullpath, m_path);
-			m_filename = ascii::findLastSelectUntil(m_filename, '.');
-			m_extension = ascii::selectUntilEndExcludeSelection(fullpath, m_filename);
-			m_first_folder = ascii::findSelectUntil(m_path, slash);
+            ascii::trimRight(m_device, devicesep);
+        }
 
-			ascii::trimRight(m_device, devicesep);
-		}
+        bool has_device() const { return !m_device.is_empty(); }
+        bool has_path() const { return !m_path.is_empty(); }
+        bool has_filename() const { return !m_filename.is_empty(); }
+        bool has_extension() const { return !m_extension.is_empty(); }
 
-		bool has_device() const { return !m_device.is_empty(); }
-		bool has_path() const { return !m_path.is_empty(); }
-		bool has_filename() const { return !m_filename.is_empty(); }
-		bool has_extension() const { return !m_extension.is_empty(); }
-		
-		ascii::crunes	iterate_folder() const { return m_first_folder; }
-		bool			next_folder(ascii::crunes& folder) const 
-		{
-			// example: projects\binary_reader\bin\ 
+        ascii::crunes iterate_folder() const { return m_first_folder; }
+        bool          next_folder(ascii::crunes& folder) const
+        {
+            // example: projects\binary_reader\bin\ 
 			folder = ascii::selectUntilEndExcludeSelection(m_path, folder);
-			ascii::crunes slash("\\");
-			ascii::trimLeft(folder, slash);
-			return !folder.is_empty();
-		}
-	};
+            ascii::crunes slash("\\");
+            ascii::trimLeft(folder, slash);
+            return !folder.is_empty();
+        }
+    };
 
-	class xpath_parser_utf32
-	{
-	public:
-		utf32::crunes	m_device;
-		utf32::crunes	m_path;
-		utf32::crunes	m_filename;
-		utf32::crunes	m_extension;
+    class xpath_parser_utf32
+    {
+    public:
+        utf32::crunes m_device;
+        utf32::crunes m_path;
+        utf32::crunes m_filename;
+        utf32::crunes m_extension;
+        utf32::crunes m_first_folder;
 
-		utf32::crunes	m_first_folder;
-		utf32::crunes	m_last_folder;
+        void parse(const utf32::runes& fullpath)
+        {
+            utf32::rune   slash_chars[] = {'\\', '\0'};
+            utf32::crunes slash(slash_chars);
+            utf32::rune   devicesep_chars[] = {':', '\\', '\0'};
+            utf32::crunes devicesep(devicesep_chars);
 
-		void parse(const utf32::runes& fullpath)
-		{
-			utf32::rune slash_chars[] = {'\\', '\0' };
-			utf32::crunes slash(slash_chars);
-			utf32::rune devicesep_chars[] = {':', '\\', '\0' };
-			utf32::crunes devicesep(devicesep_chars);
+            m_device               = utf32::findSelectUntilIncluded(fullpath, devicesep);
+            utf32::crunes filepath = utf32::selectUntilEndExcludeSelection(fullpath, m_device);
+            m_path                 = utf32::findLastSelectUntilIncluded(filepath, slash);
+            m_filename             = utf32::selectUntilEndExcludeSelection(fullpath, m_path);
+            m_filename             = utf32::findLastSelectUntil(m_filename, '.');
+            m_extension            = utf32::selectUntilEndExcludeSelection(fullpath, m_filename);
+            m_first_folder         = utf32::findSelectUntil(m_path, slash);
 
-			m_device = utf32::findSelectUntilIncluded(fullpath, devicesep);
-			utf32::crunes filepath = utf32::selectUntilEndExcludeSelection(fullpath, m_device);
-			m_path = utf32::findLastSelectUntilIncluded(filepath, slash);
-			m_filename = utf32::selectUntilEndExcludeSelection(fullpath, m_path);
-			m_filename = utf32::findLastSelectUntil(m_filename, '.');
-			m_extension = utf32::selectUntilEndExcludeSelection(fullpath, m_filename);
-			m_first_folder = utf32::findSelectUntil(m_path, slash);
+            utf32::trimRight(m_device, devicesep);
+        }
 
-			utf32::trimRight(m_device, devicesep);
-		}
+        bool has_device() const { return !m_device.is_empty(); }
+        bool has_path() const { return !m_path.is_empty(); }
+        bool has_filename() const { return !m_filename.is_empty(); }
+        bool has_extension() const { return !m_extension.is_empty(); }
 
-		bool has_device() const { return !m_device.is_empty(); }
-		bool has_path() const { return !m_path.is_empty(); }
-		bool has_filename() const { return !m_filename.is_empty(); }
-		bool has_extension() const { return !m_extension.is_empty(); }
-		
-		utf32::crunes	iterate_folder() const { return m_first_folder; }
-		bool			next_folder(utf32::crunes& folder) const 
-		{
-			utf32::rune slash_chars[] = {'\\', '\0' };
-			utf32::crunes slash(slash_chars);
-			// example: projects\binary_reader\bin\ 
+        utf32::crunes iterate_folder() const { return m_first_folder; }
+        bool          next_folder(utf32::crunes& folder) const
+        {
+            utf32::rune   slash_chars[] = {'\\', '\0'};
+            utf32::crunes slash(slash_chars);
+            // example: projects\binary_reader\bin\ 
 			folder = utf32::selectUntilEndExcludeSelection(m_path, folder);
-			utf32::trimLeft(folder, slash);
-			return !folder.is_empty();
-		}
-	};
+            utf32::trimLeft(folder, slash);
+            return !folder.is_empty();
+        }
+    };
 
     struct tdevice_t
     {
@@ -125,18 +122,19 @@ namespace xcore
 
     class tname_t
     {
-	public:
-        s32          m_refs;
-        s32          m_len;
-        u64          m_hash;
+    public:
+        s32         m_refs;
+        s32         m_len;
+        u64         m_hash;
         utf32::rune m_name[1];
 
         void init(s32 strlen)
         {
-            m_refs = 0;
-            m_len  = strlen;
-            m_hash = 0;
-            m_name[0] = utf32::TERMINATOR;
+            m_refs         = 0;
+            m_len          = strlen;
+            m_hash         = 0;
+            m_name[0]      = utf32::TERMINATOR;
+            m_name[strlen] = utf32::TERMINATOR;
         }
 
         bool isEmpty() const { return m_hash == 0; }
@@ -150,7 +148,7 @@ namespace xcore
             return 1;
         }
 
-		s32 compare(ascii::crunes const& name) const { return utf::compare(m_name, name.m_str); }
+        s32 compare(ascii::crunes const& name) const { return utf::compare(m_name, name.m_str); }
         s32 compare(utf32::crunes const& name) const { return utf::compare(m_name, name.m_str); }
 
         bool operator==(const tname_t& other) const { return compare(&other) == 0; }
@@ -161,23 +159,21 @@ namespace xcore
         {
             if (name->m_refs > 0)
             {
-				name->m_refs -= 1;
+                name->m_refs -= 1;
                 return name->m_refs == 0;
             }
             return false;
         }
 
-		template<class T>
-        static T* construct(xalloc* allocator, s32 strlen)
+        template <class T> static T* construct(xalloc* allocator, s32 strlen)
         {
             // Allocate a tname_t
-            void* name_mem = allocator->allocate(sizeof(T) + (sizeof(utf32::rune) * strlen), sizeof(void*)); 
-            T* name = static_cast<T*>(name_mem); 
-            name->init(strlen); 
+            void* name_mem = allocator->allocate(sizeof(T) + (sizeof(utf32::rune) * strlen), sizeof(void*));
+            T*    name     = static_cast<T*>(name_mem);
+            name->init(strlen);
             return name;
         }
-		template<class T>
-        static void destruct(xalloc* allocator, T*& name)
+        template <class T> static void destruct(xalloc* allocator, T*& name)
         {
             allocator->deallocate(name);
             name = nullptr;
@@ -185,33 +181,45 @@ namespace xcore
     };
 
     class tfolder_t : public tname_t
-	{
-	public:
-	};
+    {
+    public:
+        tfolder_t* m_next;
+
+        void init(tfolder_t* next) { m_next = next; }
+    };
 
     class tfilename_t : public tname_t
-	{
-	public:
-	};
-    
+    {
+    public:
+        tfilename_t* m_next;
+
+        void init(tfilename_t* next) { m_next = next; }
+    };
+
     class textension_t : public tname_t
-	{
-	public:
-	};
+    {
+    public:
+        textension_t* m_next;
+
+        void init(textension_t* next) { m_next = next; }
+    };
 
     class tpath_t
     {
-	public:
+    public:
         s32        m_refs;
         s32        m_count;
         u64        m_hash;
         tfolder_t* m_folders[1];
+        tpath_t*   m_next;
+
+        void init(tpath_t* next) { m_next = next; }
 
         void init();
         void init(s32 folder_count);
         bool isEmpty() const;
 
-		tpath_t* get_range(s32 start, s32 count);
+        tpath_t* get_range(s32 start, s32 count);
 
         tfolder_t*  operator[](s32 index) const;
         tfolder_t*& operator[](s32 index);
@@ -221,39 +229,24 @@ namespace xcore
         bool operator==(const tpath_t& other) const;
         bool operator!=(const tpath_t& other) const;
 
-        void reference();
-        static bool release(tpath_t*& path);
+        void            reference();
+        static bool     release(tpath_t*& path);
         static tpath_t* construct(xalloc* allocator, s32 folder_count);
-        static void destruct(xalloc* allocator, tpath_t*& path);
-    };
-
-	// @NOTE: This class could be merged with the objects (T) themselves so as to remove
-	// an additional allocation.
-    template <class T> class hentry_t
-    {
-    public:
-        T*           m_data;
-        hentry_t<T>* m_next;
-
-        void         init(T* data, hentry_t<T>* next)
-        {
-            m_data = data;
-            m_next = next;
-        }
+        static void     destruct(xalloc* allocator, tpath_t*& path);
     };
 
     template <class T> class htable_t
     {
     public:
-        xalloc*       m_allocator;
-        s64           m_size;
-        hentry_t<T>** m_data;
+        xalloc* m_allocator;
+        s64     m_size;
+        T**     m_data;
 
-        inline s32   to_index(u64 hash) const;
-        void         init(xalloc* allocator, s32 size_as_bits = 8);
-        void         assign(u64 hash, T* data);
-        hentry_t<T>* find(u64 hash, hentry_t<T>*& prev) const;
-        void         remove(u64 hash, hentry_t<T>* head, hentry_t<T>* item);
+        inline s32 to_index(u64 hash) const;
+        void       init(xalloc* allocator, s32 size_as_bits = 8);
+        void       assign(u64 hash, T* data);
+        T*         find(u64 hash, T*& prev) const;
+        void       remove(u64 hash, T* head, T* item);
     };
 
     // API prototype
@@ -266,9 +259,9 @@ namespace xcore
         xalloc*       m_allocator;
         utf32::alloc* m_stralloc;
 
-		s32           m_num_devices;
-		s32           m_max_devices;
-        tdevice_t*    m_tdevice[64];
+        s32        m_num_devices;
+        s32        m_max_devices;
+        tdevice_t* m_tdevice[64];
 
         htable_t<tfolder_t>    m_folder_table;
         htable_t<tpath_t>      m_path_table;
@@ -281,7 +274,7 @@ namespace xcore
         static tfilename_t*  sNilFilename;
         static textension_t* sNilExtension;
 
-		static troot_t* s_instance;
+        static troot_t* s_instance;
 
         void initialize(xalloc* allocator)
         {
@@ -291,306 +284,315 @@ namespace xcore
             m_extension_table.init(allocator, 6);
         }
 
-		tdevice_t*	find_device(ascii::crunes const& folder_name)
-		{
-			for (s32 i=0; i<m_num_devices; ++i)
-			{
-				if (utf::compare(folder_name.m_str, m_tdevice[i]->m_name) == 0)
-				{
-					return m_tdevice[i];
-				}
-			}
-			return sNilDevice;
-		}
+        tdevice_t* find_device(ascii::crunes const& folder_name)
+        {
+            for (s32 i = 0; i < m_num_devices; ++i)
+            {
+                if (utf::compare(folder_name.m_str, m_tdevice[i]->m_name) == 0)
+                {
+                    return m_tdevice[i];
+                }
+            }
+            return sNilDevice;
+        }
 
-		tdevice_t*	find_device(utf32::crunes const& folder_name)
-		{
-			for (s32 i=0; i<m_num_devices; ++i)
-			{
-				if (utf::compare(folder_name.m_str, m_tdevice[i]->m_name) == 0)
-				{
-					return m_tdevice[i];
-				}
-			}
-			return sNilDevice;
-		}
+        tdevice_t* find_device(utf32::crunes const& folder_name)
+        {
+            for (s32 i = 0; i < m_num_devices; ++i)
+            {
+                if (utf::compare(folder_name.m_str, m_tdevice[i]->m_name) == 0)
+                {
+                    return m_tdevice[i];
+                }
+            }
+            return sNilDevice;
+        }
 
         tfolder_t* register_folder(ascii::crunes const& folder_name)
         {
-            u64 const  hfolder = generate_hash(folder_name);
+            u64 const hfolder = generate_hash(folder_name);
 
-			hentry_t<tfolder_t>* pprev = nullptr;
-            hentry_t<tfolder_t>* pentry = m_folder_table.find(hfolder, pprev);
-			// Iterate over all entries and check them against our hash and folder name
-			while (pentry!=nullptr)
-			{
-				if (pentry->m_data->m_hash == hfolder)
-				{
-					s32 const c = utf::compare(pentry->m_data->m_name, folder_name.m_str);
-					if (c == 0)
-						break;
-				}
-				pprev = pentry;
-				pentry = pentry->m_next;
-			}
+            tfolder_t* pprev  = nullptr;
+            tfolder_t* pentry = m_folder_table.find(hfolder, pprev);
+            // Iterate over all entries and check them against our hash and folder name
+            while (pentry != nullptr)
+            {
+                if (pentry->m_hash == hfolder)
+                {
+                    s32 const c = utf::compare(pentry->m_name, folder_name.m_str);
+                    if (c == 0)
+                        break;
+                }
+                pprev  = pentry;
+                pentry = pentry->m_next;
+            }
 
-			tfolder_t* pfolder = nullptr;
+            tfolder_t* pfolder = nullptr;
             if (pentry == nullptr)
             {
-                u32 const    strlen = sizeof(utf32::rune) * folder_name.size();
-                u32 const    strcap = strlen + 1;
-                pfolder = tfolder_t::construct<tfolder_t>(m_allocator, strcap);
-                pfolder->m_len  = strlen;
-                pfolder->m_hash = hfolder;
-                pfolder->m_refs = 0;
-				utf32::runes dststr(pfolder->m_name, pfolder->m_name, pfolder->m_name + strlen);
+                u32 const strlen = sizeof(utf32::rune) * folder_name.size();
+                u32 const strcap = strlen + 1;
+                pfolder          = tfolder_t::construct<tfolder_t>(m_allocator, strcap);
+                pfolder->m_len   = strlen;
+                pfolder->m_hash  = hfolder;
+                pfolder->m_refs  = 0;
+                utf32::runes dststr(pfolder->m_name, pfolder->m_name, pfolder->m_name + strlen);
                 utf::copy(folder_name, dststr);
             }
-			else
-			{
-				pfolder = pentry->m_data;
-			}
+            else
+            {
+                pfolder = pentry;
+            }
             return pfolder;
         }
-        
-		tfilename_t*  register_filename(ascii::crunes const& file_name)
-		{
-			// @TODO: Implement this!
-			return nullptr;
-		}
+
+        tfilename_t* register_filename(ascii::crunes const& file_name)
+        {
+            // @TODO: Implement this!
+            return nullptr;
+        }
 
         textension_t* register_extension(ascii::crunes const& extension)
-		{
-			// @TODO: Implement this!
-			return nullptr;
-		}
+        {
+            // @TODO: Implement this!
+            return nullptr;
+        }
 
         // ascii
         tpath_t* register_path(ascii::crunes const& fullpath, tdevice_t*& out_device)
         {
-			xpath_parser_ascii parser;
-			parser.parse(fullpath);
+            xpath_parser_ascii parser;
+            parser.parse(fullpath);
 
             out_device = find_device(parser.m_device);
 
-			tpath_t*  ppath = nullptr;
-			if (parser.has_path())
-			{
-				u64 phash = 0;
-				s32 fcount = 0;
-				ascii::crunes folder = parser.iterate_folder();
-				// We need to iterate over the folder names to generate the hash!
-				while (!folder.is_empty())
-				{
-					fcount += 1;
-					tfolder_t* pfolder = register_folder(folder);
-					phash = mix_hash(phash, pfolder->m_hash);
-				}
+            tpath_t* ppath = nullptr;
+            if (parser.has_path())
+            {
+                u64           phash  = 0;
+                s32           fcount = 0;
+                ascii::crunes folder = parser.iterate_folder();
+                // We need to iterate over the folder names to generate the hash!
+                while (!folder.is_empty())
+                {
+                    fcount += 1;
+                    tfolder_t* pfolder = register_folder(folder);
+                    phash              = mix_hash(phash, pfolder->m_hash);
+                }
 
-				// Now we can see if a path object with that hash exists
-				hentry_t<tpath_t>* pprev = nullptr;
-				hentry_t<tpath_t>* pentry = m_path_table.find(phash, pprev);
-				while (pentry != nullptr)
-				{
-					if (pentry->m_data->m_hash == phash && pentry->m_data->m_count == fcount)
-					{
-						folder = parser.iterate_folder();
-						s32 findex = 0;
-						do
-						{
-							u64 const fhash = generate_hash(folder);
-							if (fhash != pentry->m_data->m_folders[findex]->m_hash)
-							{
-								findex = -1;
-								break;
-							}
-							findex += 1;
-						} while (parser.next_folder(folder));
+                // Now we can see if a path object with that hash exists
+                tpath_t* pprev  = nullptr;
+                tpath_t* pentry = m_path_table.find(phash, pprev);
+                while (pentry != nullptr)
+                {
+                    if (pentry->m_hash == phash && pentry->m_count == fcount)
+                    {
+                        folder     = parser.iterate_folder();
+                        s32 findex = 0;
+                        do
+                        {
+                            u64 const fhash = generate_hash(folder);
+                            if (fhash != pentry->m_folders[findex]->m_hash)
+                            {
+                                findex = -1;
+                                break;
+                            }
+                            if (pentry->m_folders[findex]->compare(folder) == 0)
+                            {
+                                findex = -1;
+                                break;
+                            }
+                            findex += 1;
+                        } while (parser.next_folder(folder));
 
-						if (findex >= 0)
-							break;
-					}
-					pentry = pentry->m_next;
-				}
+                        if (findex >= 0)
+                            break;
+                    }
+                    pentry = pentry->m_next;
+                }
 
-				if (pentry == nullptr)	// Construct a new tpath_t
-				{
-					ppath = construct_path(fcount);
+                if (pentry == nullptr) // Construct a new tpath_t
+                {
+                    ppath = construct_path(fcount);
 
-					s32 findex = 0;
-					folder = parser.iterate_folder();
-					do
-					{
-						tfolder_t* pfolder       = register_folder(folder);
-						ppath->m_folders[findex] = pfolder;
-						findex++;
-					} while (parser.next_folder(folder));
-					m_path_table.assign(phash, ppath);
-				}
-				else // We found an existing one
-				{
-					ppath = pentry->m_data;
-				}
-			}
+                    s32 findex = 0;
+                    folder     = parser.iterate_folder();
+                    do
+                    {
+                        tfolder_t* pfolder       = register_folder(folder);
+                        ppath->m_folders[findex] = pfolder;
+                        findex++;
+                    } while (parser.next_folder(folder));
+                    m_path_table.assign(phash, ppath);
+                }
+                else // We found an existing one
+                {
+                    ppath = pentry;
+                }
+            }
             return ppath;
         }
 
-
-
-		tpath_t*	construct_path(s32 num_folders)
-		{
-			tpath_t* ppath = tpath_t::construct(m_allocator, num_folders);
-			return ppath;
-		}
-
+        tpath_t* construct_path(s32 num_folders)
+        {
+            tpath_t* ppath = tpath_t::construct(m_allocator, num_folders);
+            return ppath;
+        }
 
         // utf32
-        tpath_t*	register_path(utf32::crunes const& fullpath, tdevice_t*& device)
-		{
-			// @TODO: Implement this!
-		}
+        tpath_t* register_path(utf32::crunes const& fullpath, tdevice_t*& device)
+        {
+            // @TODO: Implement this!
+        }
 
-        tfolder_t*    register_folder(utf32::crunes const& folder_name)
-		{
-			// @TODO: Implement this!
-			return nullptr;
-		}
+        tfolder_t* register_folder(utf32::crunes const& folder_name)
+        {
+            // @TODO: Implement this!
+            return nullptr;
+        }
 
-        tfilename_t*  register_filename(utf32::crunes const& file_name)
-		{
-			// @TODO: Implement this!
-			return nullptr;
-		}
+        tfilename_t* register_filename(utf32::crunes const& file_name)
+        {
+            // @TODO: Implement this!
+            return nullptr;
+        }
 
         textension_t* register_extension(utf32::crunes const& extension)
-		{
-			// @TODO: Implement this!
-			return nullptr;
-		}
-
+        {
+            // @TODO: Implement this!
+            return nullptr;
+        }
 
         void release(tdevice_t*& device)
-		{
-			// Nothing to do, devices are not reference counted 
-		}
+        {
+            // Nothing to do, devices are not reference counted
+        }
 
-		void release(tpath_t*& item)
-		{
-			if (tpath_t::release(item))
-			{
-				// Need to remove it from the table
-				hentry_t<tpath_t>* pprev = nullptr;
-				hentry_t<tpath_t>* pentry = m_path_table.find(item->m_hash, pprev);
-				while (pentry != nullptr)
-				{
-					if (pentry->m_data == item)
-					{
-						// Found it
-						m_path_table.remove(item->m_hash, pprev, pentry);
-						tpath_t::destruct(m_allocator, item);
-					}
-				}
-			}
-		}
+        void release(tpath_t*& item)
+        {
+            if (tpath_t::release(item))
+            {
+                // Need to remove it from the table
+                tpath_t* pprev  = nullptr;
+                tpath_t* pentry = m_path_table.find(item->m_hash, pprev);
+                while (pentry != nullptr)
+                {
+                    if (pentry == item)
+                    {
+                        // Found it
+                        m_path_table.remove(item->m_hash, pprev, pentry);
+                        tpath_t::destruct(m_allocator, item);
+                        return;
+                    }
+                    pentry = pentry->m_next;
+                }
+            }
+        }
 
         void release(tfolder_t*& item)
-		{
-			if (tfolder_t::release(item))
-			{
-				// Need to remove it from the table
-				hentry_t<tfolder_t>* pprev = nullptr;
-				hentry_t<tfolder_t>* pentry = m_folder_table.find(item->m_hash, pprev);
-				while (pentry != nullptr)
-				{
-					if (pentry->m_data == item)
-					{
-						// Found it
-						m_folder_table.remove(item->m_hash, pprev, pentry);
-						tfolder_t::destruct(m_allocator, item);
-					}
-				}
-			}
-		}
+        {
+            if (tfolder_t::release(item))
+            {
+                // Need to remove it from the table
+                tfolder_t* pprev  = nullptr;
+                tfolder_t* pentry = m_folder_table.find(item->m_hash, pprev);
+                while (pentry != nullptr)
+                {
+                    if (pentry == item)
+                    {
+                        // Found it
+                        m_folder_table.remove(item->m_hash, pprev, pentry);
+                        tfolder_t::destruct(m_allocator, item);
+                        return;
+                    }
+                    pentry = pentry->m_next;
+                }
+            }
+        }
 
         void release(tfilename_t*& item)
-		{
-			if (tfilename_t::release(item))
-			{
-				// Need to remove it from the table
-				hentry_t<tfilename_t>* pprev = nullptr;
-				hentry_t<tfilename_t>* pentry = m_filename_table.find(item->m_hash, pprev);
-				while (pentry != nullptr)
-				{
-					if (pentry->m_data == item)
-					{
-						// Found it
-						m_filename_table.remove(item->m_hash, pprev, pentry);
-						tfilename_t::destruct(m_allocator, item);
-					}
-				}
-			}
-		}
+        {
+            if (tfilename_t::release(item))
+            {
+                // Need to remove it from the table
+                tfilename_t* pprev  = nullptr;
+                tfilename_t* pentry = m_filename_table.find(item->m_hash, pprev);
+                while (pentry != nullptr)
+                {
+                    if (pentry == item)
+                    {
+                        // Found it
+                        m_filename_table.remove(item->m_hash, pprev, pentry);
+                        tfilename_t::destruct(m_allocator, item);
+                        return;
+                    }
+                    pentry = pentry->m_next;
+                }
+            }
+        }
 
         void release(textension_t*& item)
-		{
-			if (textension_t::release(item))
-			{
-				// Need to remove it from the table
-				hentry_t<textension_t>* pprev = nullptr;
-				hentry_t<textension_t>* pentry = m_extension_table.find(item->m_hash, pprev);
-				while (pentry != nullptr)
-				{
-					if (pentry->m_data == item)
-					{
-						// Found it
-						m_extension_table.remove(item->m_hash, pprev, pentry);
-						textension_t::destruct(m_allocator, item);
-					}
-				}
-			}
-		}
+        {
+            if (textension_t::release(item))
+            {
+                // Need to remove it from the table
+                textension_t* pprev  = nullptr;
+                textension_t* pentry = m_extension_table.find(item->m_hash, pprev);
+                while (pentry != nullptr)
+                {
+                    if (pentry == item)
+                    {
+                        // Found it
+                        m_extension_table.remove(item->m_hash, pprev, pentry);
+                        textension_t::destruct(m_allocator, item);
+                        return;
+                    }
+                    pentry = pentry->m_next;
+                }
+            }
+        }
 
     private:
-		#define FNV1_64_OFFSET_BASIS ((u64)14695981039346656037u)
-		#define FNV_64_PRIME ((u64)1099511628211u)
+#define FNV1_64_OFFSET_BASIS ((u64)14695981039346656037u)
+#define FNV_64_PRIME ((u64)1099511628211u)
 
         static u64 generate_hash(ascii::crunes const& str)
         {
-			// Use FNV-1a for now
-			u64 hash            = FNV1_64_OFFSET_BASIS;
-			u64 const fnv_prime = FNV_64_PRIME;
-			for (s32 i = 0; i < str.size(); i++)
-			{
-				hash ^= str.m_str[i];
-				hash *= fnv_prime;
-			}
-			return hash;
+            // Use FNV-1a for now
+            u64       hash      = FNV1_64_OFFSET_BASIS;
+            u64 const fnv_prime = FNV_64_PRIME;
+            for (s32 i = 0; i < str.size(); i++)
+            {
+                hash ^= str.m_str[i];
+                hash *= fnv_prime;
+            }
+            return hash;
         }
 
         static u64 generate_hash(utf32::crunes str32)
         {
-			// Use FNV-1a for now
-			u64 hash            = FNV1_64_OFFSET_BASIS;
-			u64 const fnv_prime = FNV_64_PRIME;
-			s32 const length    = str32.size() * 4;
-			const char* str = (const char*)str32.m_str;
-			for (s32 i = 0; i < length; i++)
-			{
-				hash ^= str[i];
-				hash *= fnv_prime;
-			}
-			return hash;
+            // Use FNV-1a for now
+            u64         hash      = FNV1_64_OFFSET_BASIS;
+            u64 const   fnv_prime = FNV_64_PRIME;
+            s32 const   length    = str32.size() * 4;
+            const char* str       = (const char*)str32.m_str;
+            for (s32 i = 0; i < length; i++)
+            {
+                hash ^= str[i];
+                hash *= fnv_prime;
+            }
+            return hash;
         }
-        static u64 mix_hash(u64 hash, u64 mix) 
+        static u64 mix_hash(u64 hash, u64 mix)
         {
-			u64 const fnv_prime = FNV_64_PRIME;
-			xbyte const* data   = (xbyte const*)&mix;
-			for (s32 i = 0; i < 8; i++)
-			{
-				hash ^= data[i];
-				hash *= fnv_prime;
-			}
-			return hash;
+            u64 const    fnv_prime = FNV_64_PRIME;
+            xbyte const* data      = (xbyte const*)&mix;
+            for (s32 i = 0; i < 8; i++)
+            {
+                hash ^= data[i];
+                hash *= fnv_prime;
+            }
+            return hash;
         }
     };
 
@@ -609,8 +611,9 @@ namespace xcore
     tdevice_t* tdevice_t::construct(xalloc* allocator)
     {
         // Allocate a tdevice_t
-        void* device_mem = allocator->allocate(sizeof(tdevice_t), sizeof(void*)); 
-        tdevice_t* device = static_cast<tdevice_t*>(device_mem); device->init(); 
+        void*      device_mem = allocator->allocate(sizeof(tdevice_t), sizeof(void*));
+        tdevice_t* device     = static_cast<tdevice_t*>(device_mem);
+        device->init();
         return device;
     }
     void tdevice_t::destruct(xalloc* allocator, tdevice_t*& device)
@@ -619,8 +622,7 @@ namespace xcore
         device = nullptr;
     }
 
-
-    void       tpath_t::init()
+    void tpath_t::init()
     {
         m_refs  = 0;
         m_count = 0;
@@ -634,20 +636,20 @@ namespace xcore
     }
     bool tpath_t::isEmpty() const { return m_folders == nullptr; }
 
-	tpath_t* tpath_t::get_range(s32 start, s32 count)
-	{
-		if (count == m_count)
-			return this;
-		tpath_t* path = troot_t::s_instance->construct_path(count);
-		for (s32 i=0; i<count; ++i)
-		{
-			path->m_folders[i] = m_folders[start + i];
-			path->m_folders[i]->reference();
-		}
-		return path;
-	}
+    tpath_t* tpath_t::get_range(s32 start, s32 count)
+    {
+        if (count == m_count)
+            return this;
+        tpath_t* path = troot_t::s_instance->construct_path(count);
+        for (s32 i = 0; i < count; ++i)
+        {
+            path->m_folders[i] = m_folders[start + i];
+            path->m_folders[i]->reference();
+        }
+        return path;
+    }
 
-    tfolder_t*  tpath_t::operator[](s32 index) const { return m_folders[index]; }
+    tfolder_t* tpath_t::operator[](s32 index) const { return m_folders[index]; }
     tfolder_t*& tpath_t::operator[](s32 index) { return m_folders[index]; }
 
     s32 tpath_t::compare(const tpath_t& other) const
@@ -692,20 +694,19 @@ namespace xcore
         path = nullptr;
     }
 
-
     // These 2 classes will be like this and as such will always be the same
     // size. If we also incorporate copy-on-write so we can easily copy and modify.
     class tdirpath_t
     {
-	protected:
+    protected:
         tdevice_t* m_device; // tdevice_t global("") if device == ""
         tpath_t*   m_path;   // tpath_t global("") if path == ""
-		friend class tfilepath_t;
+        friend class tfilepath_t;
 
     public:
-		tdirpath_t();
-		tdirpath_t(tdevice_t* device, tpath_t* path);
-		~tdirpath_t();
+        tdirpath_t();
+        tdirpath_t(tdevice_t* device, tpath_t* path);
+        ~tdirpath_t();
 
         bool isEmpty() const;
         bool isRooted() const;
@@ -728,9 +729,9 @@ namespace xcore
         textension_t* m_extension; // textension_t global("") if ext == ""
 
     public:
-		tfilepath_t();
-		tfilepath_t(tfilename_t* filename, textension_t* extension);
-		~tfilepath_t();
+        tfilepath_t();
+        tfilepath_t(tfilename_t* filename, textension_t* extension);
+        ~tfilepath_t();
 
         void clear();
         bool isEmpty() const;
@@ -756,56 +757,36 @@ namespace xcore
         void down(tdirpath_t const& dirpath);
     };
 
-
-	tdirpath_t::tdirpath_t()
-		: m_device(troot_t::sNilDevice)
-		, m_path(troot_t::sNilPath)
-	{
-	}
-	tdirpath_t::tdirpath_t(tdevice_t* device, tpath_t* path)
-		: m_device(device)
-		, m_path(path)
-	{
-	}
-	tdirpath_t::~tdirpath_t()
-	{
-		troot_t::s_instance->release(m_device);
-		troot_t::s_instance->release(m_path);
-	}
+    tdirpath_t::tdirpath_t() : m_device(troot_t::sNilDevice), m_path(troot_t::sNilPath) {}
+    tdirpath_t::tdirpath_t(tdevice_t* device, tpath_t* path) : m_device(device), m_path(path) {}
+    tdirpath_t::~tdirpath_t()
+    {
+        troot_t::s_instance->release(m_device);
+        troot_t::s_instance->release(m_path);
+    }
 
     bool tdirpath_t::isEmpty() const { return m_device->isEmpty() && m_path->isEmpty(); }
     bool tdirpath_t::isRooted() const { return !m_device->isEmpty(); }
 
     void tdirpath_t::makeRelative() { m_device = troot_t::sNilDevice; }
-    void tdirpath_t::makeRelativeTo(const tdirpath_t& dirpath) {  }
-    void tdirpath_t::makeAbsoluteTo(const tdirpath_t& dirpath) {  }
+    void tdirpath_t::makeRelativeTo(const tdirpath_t& dirpath) {}
+    void tdirpath_t::makeAbsoluteTo(const tdirpath_t& dirpath) {}
 
     tdirpath_t tdirpath_t::getRoot() const { return tdirpath_t(m_device, troot_t::sNilPath); }
-    tdirpath_t tdirpath_t::getDirname() const  { return tdirpath_t(m_device, m_path->get_range(0,1)); }
+    tdirpath_t tdirpath_t::getDirname() const { return tdirpath_t(m_device, m_path->get_range(0, 1)); }
 
     void tdirpath_t::up() {}
     void tdirpath_t::down(tdirpath_t const& dirpath) {}
 
+    tfilepath_t::tfilepath_t() : m_dirpath(), m_filename(troot_t::sNilFilename), m_extension(troot_t::sNilExtension) {}
 
-	tfilepath_t::tfilepath_t()
-		: m_dirpath()
-		, m_filename(troot_t::sNilFilename)
-		, m_extension(troot_t::sNilExtension)
-	{
-	}
+    tfilepath_t::tfilepath_t(tfilename_t* filename, textension_t* extension) : m_dirpath(), m_filename(filename), m_extension(extension) {}
 
-	tfilepath_t::tfilepath_t(tfilename_t* filename, textension_t* extension)
-		: m_dirpath()
-		, m_filename(filename)
-		, m_extension(extension)
-	{
-	}
-
-	tfilepath_t::~tfilepath_t()
-	{
-		troot_t::s_instance->release(m_filename);
-		troot_t::s_instance->release(m_extension);
-	}
+    tfilepath_t::~tfilepath_t()
+    {
+        troot_t::s_instance->release(m_filename);
+        troot_t::s_instance->release(m_extension);
+    }
 
     void tfilepath_t::clear()
     {
@@ -842,72 +823,66 @@ namespace xcore
     void tfilepath_t::up() { m_dirpath.up(); }
     void tfilepath_t::down(tdirpath_t const& dirpath) { m_dirpath.down(dirpath); }
 
-
-	template <class T>
-    inline s32 htable_t<T>::to_index(u64 hash) const
+    template <class T> inline s32 htable_t<T>::to_index(u64 hash) const
     {
         // Take N bits from the hash to come up with an index
         u64 const mask = (1 << m_size) - 1;
         return (s32)((hash & (mask << 8)) >> 8);
     }
 
-	template <class T>
-    void htable_t<T>::init(xalloc* allocator, s32 size_as_bits = 8)
+    template <class T> void htable_t<T>::init(xalloc* allocator, s32 size_as_bits = 8)
     {
         m_allocator = allocator;
         m_size      = size_as_bits;
-        m_data      = static_cast<hentry_t<T>**>(allocator->allocate(sizeof(hentry_t<T>*) * m_size, sizeof(void*)));
+        m_data      = static_cast<T**>(allocator->allocate(sizeof(T*) * m_size, sizeof(void*)));
     }
 
-	template <class T>
-    void htable_t<T>::assign(u64 hash, T* data)
+    template <class T> void htable_t<T>::assign(u64 hash, T* data)
     {
         // NOTE: Make sure this hash/data hasn't been added before!
-        s32          index = to_index(hash);
-        hentry_t<T>* ptr   = static_cast<hentry_t<T>*>(m_allocator->allocate(sizeof(hentry_t<T>*), sizeof(void*)));
+        s32 index = to_index(hash);
+        T*  ptr   = static_cast<T*>(m_allocator->allocate(sizeof(T*), sizeof(void*)));
         ptr->init(data, m_data[index]);
         m_data[index] = ptr;
     }
 
-	template<class T>
-    hentry_t<T>* htable_t<T>::find(u64 hash, hentry_t<T>*& prev) const
+    template <class T> T* htable_t<T>::find(u64 hash, T*& prev) const
     {
         s32 index = to_index(hash);
         if (m_data[index] == nullptr)
             return nullptr;
 
-        prev = nullptr;
-        hentry_t<T>* ptr = m_data[index];
+        prev   = nullptr;
+        T* ptr = m_data[index];
         while (ptr != nullptr)
         {
             if (ptr->m_data->m_hash == hash)
             {
                 return ptr;
             }
-			prev = ptr;
-            ptr = ptr->m_next;
+            prev = ptr;
+            ptr  = ptr->m_next;
         }
-		prev = nullptr;
+        prev = nullptr;
         return nullptr;
     }
 
-	template <class T>
-    void htable_t<T>::remove(u64 hash, hentry_t<T>* previous, hentry_t<T>* current)
+    template <class T> void htable_t<T>::remove(u64 hash, T* previous, T* current)
     {
         s32 index = to_index(hash);
         if (m_data[index] != nullptr)
-		{
-			if (previous == nullptr)
-			{
-				m_data[index] = current->m_next;
-				m_allocator->deallocate(current);
-			}
-			else
-			{
-				previous->m_next = current->m_next;
-				m_allocator->deallocate(current);
-			}
-		}
+        {
+            if (previous == nullptr)
+            {
+                m_data[index] = current->m_next;
+                m_allocator->deallocate(current);
+            }
+            else
+            {
+                previous->m_next = current->m_next;
+                m_allocator->deallocate(current);
+            }
+        }
     }
 
 }; // namespace xcore

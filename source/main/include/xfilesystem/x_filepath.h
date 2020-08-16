@@ -30,34 +30,28 @@ namespace xcore
 
     public:
         xfilepath();
-		xfilepath(ascii::pcrune path);
+        xfilepath(ascii::pcrune path);
         xfilepath(const xfilepath& filepath);
         explicit xfilepath(const xdirpath& dir, const xfilepath& filename);
         ~xfilepath();
 
-        void clear();
-
-        bool isEmpty() const;
-        bool isRooted() const;
-
-        void makeRelative();
-        void makeRelativeTo(const xdirpath& dirpath);
-		void makeAbsolutoTo(const xdirpath& dirpath);
-
-        bool getRoot(xdirpath&) const;
-        bool getDirname(xdirpath&) const;
-        void getFilename(xfilepath&) const;
-        void getFilenameWithoutExtension(xfilepath&) const;
-        void getExtension(xfilepath&) const;
-
-        void up();
-        void down(xdirpath const&);
-
+        void        clear();
+        bool        isEmpty() const;
+        bool        isRooted() const;
+        void        makeRelative();
+        void        makeRelativeTo(const xdirpath& dirpath);
+        void        makeAbsolutoTo(const xdirpath& dirpath);
+        bool        getRoot(xdirpath&) const;
+        bool        getDirname(xdirpath&) const;
+        void        getFilename(xfilepath&) const;
+        void        getFilenameWithoutExtension(xfilepath&) const;
+        void        getExtension(xfilepath&) const;
+        void        up();
+        void        down(xdirpath const&);
         xpath const path() const;
-
-        xfilepath& operator=(const xfilepath&);
-        bool       operator==(const xfilepath&) const;
-        bool       operator!=(const xfilepath&) const;
+        xfilepath&  operator=(const xfilepath&);
+        bool        operator==(const xfilepath&) const;
+        bool        operator!=(const xfilepath&) const;
     };
 
     inline xfilepath operator+(const xdirpath& dir, const xfilepath& filename) { return xfilepath(dir, filename); }
