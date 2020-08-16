@@ -63,12 +63,12 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 		UNITTEST_TEST(constructor1)
 		{
 			const char* str = "TEST:\\textfiles\\docs";
-			xdirpath dp = xfilesystem::dirpath_from_ascii(str);
+			xdirpath dp = xfilesystem::dirpath(str);
 			xdirinfo di ( dp );
 			CHECK_TRUE(di.getDirpath() == dp);
 
 			const char* str2 = "textfiles\\docs";
-			xdirpath dp2 = xfilesystem::dirpath_from_ascii(str2);
+			xdirpath dp2 = xfilesystem::dirpath(str2);
 			xdirinfo di2(dp2);
 			CHECK_TRUE(di2.getDirpath() == dp2);
 		}

@@ -4,6 +4,8 @@
 
 #include "xtime/x_datetime.h"
 
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirinfo.h"
 #include "xfilesystem/x_fileinfo.h"
 #include "xfilesystem/x_stream.h"
@@ -15,20 +17,31 @@
 //==============================================================================
 namespace xcore
 {
-    xfileinfo::xfileinfo() {}
+    xfileinfo::xfileinfo()
+        : mFileExists(false)
+		, mFileTimes()
+		, mFileAttributes()
+		, mParent(nullptr)
+		, mPath()
+	{
+	}
 
-    xfileinfo::xfileinfo(const xfileinfo& dirinfo)
-        : mPath(dirinfo.mPath)
+    xfileinfo::xfileinfo(const xfileinfo& fi)
+        : mFileExists(fi.mFileExists)
+		, mFileTimes(fi.mFileTimes)
+		, mFileAttributes(fi.mFileAttributes)
+		, mParent(fi.mParent)
+		, mPath(fi.mPath)
     {
     }
 
-    xfileinfo::xfileinfo(const xfilepath& path)
-        : mPath(path)
+    xfileinfo::xfileinfo(const xfilepath& fp)
+        : mParent(fp.mParent)
+		, mPath(fp)
     {
     }
 
     u64 xfileinfo::getLength() const { return sGetLength(mPath); }
-
     void xfileinfo::setLength(u64 length) { sSetLength(mPath, length); }
 
     bool xfileinfo::isValid() const
@@ -39,14 +52,13 @@ namespace xcore
     }
 
     bool xfileinfo::isRooted() const { return mPath.isRooted(); }
+	bool xfileinfo::exists() const { return sExists(mPath); }
 
 	bool xfileinfo::create(xstream*& outFilestream) const
 	{
 		return (sCreate(mPath, outFilestream));
 	}
     
-	bool xfileinfo::exists() const { return sExists(mPath); }
-
     bool xfileinfo::create()
     {
         xstream* fs;
@@ -59,17 +71,11 @@ namespace xcore
     }
 
     bool xfileinfo::remove() { return sDelete(mPath); }
-
     void xfileinfo::refresh() {}
-
     bool xfileinfo::open(xstream*& outFilestream) { return (sCreate(mPath, outFilestream)); }
-
     bool xfileinfo::openRead(xstream*& outFileStream) { return sOpenRead(mPath, outFileStream); }
-
     bool xfileinfo::openWrite(xstream*& outFileStream) { return sOpenWrite(mPath, outFileStream); }
-
     u64 xfileinfo::readAllBytes(xbyte* buffer, u64 count) { return sReadAllBytes(mPath, buffer, count); }
-
     u64 xfileinfo::writeAllBytes(const xbyte* buffer, u64 count) { return sWriteAllBytes(mPath, buffer, count); }
 
     bool xfileinfo::getParent(xdirpath& parent) const
@@ -93,24 +99,66 @@ namespace xcore
         return false;
     }
 
-    void xfileinfo::getFilepath(xfilepath& filepath) const { filepath = mPath; }
-
-    xfilepath const& xfileinfo::getFilepath() const { return mPath; }
-
     void xfileinfo::getDirpath(xdirpath& dirpath) const { mPath.getDirname(dirpath); }
-
     void xfileinfo::getFilename(xfilepath& filename) const { mPath.getFilename(filename); }
-
     void xfileinfo::getFilenameWithoutExtension(xfilepath& extension) const { mPath.getFilenameWithoutExtension(extension); }
-
     void xfileinfo::getExtension(xfilepath& extension) const { mPath.getExtension(extension); }
 
     bool xfileinfo::copy_to(const xfilepath& toFilename, bool overwrite) { return sCopy(mPath, toFilename, overwrite); }
-
     bool xfileinfo::move_to(const xfilepath& toFilename, bool overwrite) { return sMove(mPath, toFilename); }
 
-    void xfileinfo::up() { mPath.up(); }
+	xdirpath  xfileinfo::getParent() const
+	{
+		xdirpath dp;
+		if (getParent(dp))
+		{
+			return dp;
+		}
+		return xdirpath(mParent, xpath());
+	}
 
+	xdirpath  xfileinfo::getRoot() const
+	{
+		xdirpath dp;
+		if (getRoot(dp))
+		{
+			return dp;
+		}
+		return xdirpath(mParent, xpath());
+	}
+
+    xdirpath  xfileinfo::getDirpath() const
+	{
+		xdirpath dp;
+		getDirpath(dp);
+		return dp;
+	}
+
+	xfilepath xfileinfo::getFilename() const
+	{
+		xfilepath fp;
+		getFilename(fp);
+		return fp;
+	}
+
+	xfilepath xfileinfo::getFilenameWithoutExtension() const
+	{
+		xfilepath fp;
+		getFilenameWithoutExtension(fp);
+		return fp;
+	}
+
+	xfilepath xfileinfo::getExtension() const
+	{
+		xfilepath fp;
+		getExtension(fp);
+		return fp;
+	}
+
+    void xfileinfo::getFilepath(xfilepath& filepath) const { filepath = mPath; }
+    xfilepath const& xfileinfo::getFilepath() const { return mPath; }
+
+    void xfileinfo::up() { mPath.up(); }
     void xfileinfo::down(xdirpath const& dir) { mPath.down(dir); }
 
     bool xfileinfo::getAttrs(xfileattrs& fattrs) const { return sGetAttrs(mPath, fattrs); }

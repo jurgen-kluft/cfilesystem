@@ -23,6 +23,15 @@ namespace xcore
 
 	xfilesys* xfilesystem::mImpl = nullptr;
 
+	bool      xfilesystem::register_device(const utf32::crunes& device_name, xfiledevice* device) { return mImpl->register_device(device_name, device); }
+
+    xfilepath xfilesystem::filepath(const char* str) { return mImpl->filepath(str); }
+	xdirpath  xfilesystem::dirpath(const char* str) { return mImpl->dirpath(str); }
+    xfilepath xfilesystem::filepath(const utf32::crunes& str) { return mImpl->filepath(str); }
+	xdirpath  xfilesystem::dirpath(const utf32::crunes& str) { return mImpl->dirpath(str); }
+    void      xfilesystem::to_ascii(xfilepath const& fp, ascii::runes& str) { mImpl->to_ascii(fp, str); }
+	void      xfilesystem::to_ascii(xdirpath const& dp, ascii::runes& str) { mImpl->to_ascii(dp, str); }
+
     xfile*   xfilesystem::open(xfilepath const& filename, EFileMode mode) { return mImpl->open(filename, mode); }
     xstream* xfilesystem::open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op) { return mImpl->open_stream(filename, mode, access, op); }
     xwriter* xfilesystem::writer(xfile* xf) { return mImpl->writer(xf); }
@@ -126,6 +135,51 @@ namespace xcore
         
     }
 
+    xfilepath  xfilesys::filepath(const char* str)
+	{
+		xfilepath filepath;
+		filepath.mParent = this;
+		filepath.mPath = xpath(m_stralloc, str);
+		return filepath;
+	}
+	
+	xdirpath   xfilesys::dirpath(const char* str)
+	{
+		xdirpath dirpath;
+		dirpath.mParent = this;
+		dirpath.mPath = xpath(m_stralloc, str);
+		return dirpath;
+	}
+
+    xfilepath  xfilesys::filepath(const utf32::crunes& str)
+	{
+		xfilepath filepath;
+		filepath.mParent = this;
+		filepath.mPath = xpath(m_stralloc, str);
+		return filepath;
+	}
+	
+	xdirpath   xfilesys::dirpath(const utf32::crunes& str)
+	{
+		xdirpath dirpath;
+		dirpath.mParent = this;
+		dirpath.mPath = xpath(m_stralloc, str);
+		return dirpath;
+	}
+
+	void       xfilesys::to_ascii(xfilepath const& fp, ascii::runes& str)
+	{
+	}
+	
+	void       xfilesys::to_ascii(xdirpath const& dp, ascii::runes& str)
+	{
+	}
+
+	bool   xfilesys::register_device(const utf32::crunes& device_name, xfiledevice* device)
+	{
+		return m_devman->add_device(device_name, device);
+	}
+
     xfile* xfilesys::open(xfilepath const& filename, EFileMode mode) 
     {
         xfiledevice* fd = nullptr;
@@ -149,7 +203,6 @@ namespace xcore
     xstream* xfilesys::open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op) { return nullptr;}
 
     xwriter* xfilesys::writer(xfile*) { return nullptr; }
-
     xreader* xfilesys::reader(xfile*) {return nullptr; }
 
     void xfilesys::close(xfile*) {}
@@ -159,27 +212,25 @@ namespace xcore
     void xfilesys::close(xwriter*) {}
     void xfilesys::close(xstream*) {}
 
-    xfileinfo* xfilesys::info(xfilepath const& path) {return nullptr; }
-    xdirinfo* xfilesys::info(xdirpath const& path) {return nullptr; }
+    xfileinfo* xfilesys::info(xfilepath const& path) { return nullptr; }
+    xdirinfo* xfilesys::info(xdirpath const& path) { return nullptr; }
 
-    bool xfilesys::exists(xfileinfo*) {return false;}
-    bool xfilesys::exists(xdirinfo*) {return false;}
+    bool xfilesys::exists(xfileinfo*) { return false; }
+    bool xfilesys::exists(xdirinfo*) { return false; }
 
-    s64 xfilesys::size(xfileinfo*) { return 0;}
+    s64 xfilesys::size(xfileinfo*) { return 0; }
 
-    xfile* xfilesys::open(xfileinfo*, EFileMode mode) {return nullptr; }
-    void xfilesys::rename(xfileinfo*, xfilepath const&) { }
+    xfile* xfilesys::open(xfileinfo*, EFileMode mode) { return nullptr; }
+    void xfilesys::rename(xfileinfo*, xfilepath const&) {}
     void xfilesys::move(xfileinfo* src, xfileinfo* dst) {}
     void xfilesys::copy(xfileinfo* src, xfileinfo* dst) {}
     void xfilesys::rm(xfileinfo*) {}
     void xfilesys::rm(xdirinfo*) {}
 
-    s32 xfilesys::read(xreader*, xbuffer&) {return 0;}
-
-    s32 xfilesys::write(xwriter*, xcbuffer const&) {return 0;}
+    s32 xfilesys::read(xreader*, xbuffer&) { return 0; }
+    s32 xfilesys::write(xwriter*, xcbuffer const&) { return 0; }
 
     void xfilesys::read_async(xreader*, xbuffer&) {}
-
-    s32 xfilesys::wait_async(xreader*) {return 0;}
+    s32 xfilesys::wait_async(xreader*) { return 0; }
 
 } // namespace xcore

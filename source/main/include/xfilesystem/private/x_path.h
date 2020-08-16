@@ -47,18 +47,20 @@ namespace xcore
         xpath();
         xpath(utf32::alloc* allocator);
         xpath(utf32::alloc* allocator, const utf32::crunes& path);
+		xpath(utf32::alloc* allocator, const ascii::crunes& path);
         xpath(const xpath& path);
         xpath(const xpath& lhspath, const xpath& rhspath);
 		~xpath();
 
         xpath resolve(xfilesys* fs, xfiledevice*& outdevice) const;
 
+        void set_filepath(ascii::runes& runes, utf32::alloc* allocator);
+        void set_dirpath(ascii::runes& runes, utf32::alloc* allocator);
         void set_filepath(utf32::runes& runes, utf32::alloc* allocator);
         void set_dirpath(utf32::runes& runes, utf32::alloc* allocator);
+
         void combine(const xpath& dirpath, const xpath& filepath);
-
         void copy_dirpath(utf32::runes& runes);
-
         void clear();
         void erase();
 
@@ -80,7 +82,7 @@ namespace xcore
         bool getDirname(xpath& out_dirpath) const;
 
         bool up();
-        bool down(utf32::runes const& runes);
+        bool down(xpath const& runes);
 
         void getFilename(xpath& out_filename) const;
         void getFilenameWithoutExtension(xpath& out_filename_no_ext) const;
@@ -88,7 +90,6 @@ namespace xcore
 
 		xpath& operator=(const utf32::runes&);
         xpath& operator=(const xpath&);
-
 		xpath& operator+=(const utf32::runes&);
 
         bool operator==(const xpath&) const;
@@ -101,8 +102,8 @@ namespace xcore
         // utf16::rune characters. You should also use these 2 functions
         // as a begin/end pair. Do not leave this structure hanging in
         // utf16 format.
-        void to_utf16(utf16::runes& runes) const;
-        void to_utf32(utf16::runes& runes) const;
+        void view_utf16(utf16::crunes& runes) const;
+        void release_utf16(utf16::crunes& runes) const;
     };
 
 };

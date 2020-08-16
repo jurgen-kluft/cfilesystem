@@ -24,10 +24,10 @@ namespace xcore
         xfiledevice_null() {}
         virtual ~xfiledevice_null() {}
 
-        virtual bool canSeek() { return false; }
-        virtual bool canWrite() { return false; }
+        virtual bool canSeek() const { return false; }
+        virtual bool canWrite() const { return false; }
 
-        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace)
+        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const
         {
             totalSpace = 0;
             freeSpace  = 0;

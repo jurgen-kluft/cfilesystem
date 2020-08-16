@@ -16,13 +16,14 @@ namespace xcore
         , mPath()
     {
     }
+
     xfilepath::xfilepath(xfilesys* fsys, xpath& path)
         : mParent(fsys)
         , mPath()
     {
         mPath.m_alloc = path.m_alloc;
         mPath.m_path  = path.m_path;
-        path.m_alloc  = nullptr;
+        path.m_alloc  = fsys->m_stralloc;
         path.m_path   = utf32::runes();
     }
 
@@ -49,6 +50,7 @@ namespace xcore
 
     void xfilepath::makeRelative() { mPath.makeRelative(); }
     void xfilepath::makeRelativeTo(const xdirpath& root) { mPath.makeRelativeTo(root.mPath); }
+	void xfilepath::makeAbsoluteTo(const xdirpath& root) { mPath.setRootDir(root.mPath); }
     bool xfilepath::getRoot(xdirpath& root) const { return mPath.getRootDir(root.mPath); }
     bool xfilepath::getDirname(xdirpath& outDirPath) const { return mPath.getDirname(outDirPath.mPath); }
     void xfilepath::getFilename(xfilepath& filename) const { mPath.getFilename(filename.mPath); }
@@ -68,5 +70,19 @@ namespace xcore
 
     bool xfilepath::operator==(const xfilepath& rhs) const { return mPath == rhs.mPath; }
     bool xfilepath::operator!=(const xfilepath& rhs) const { return mPath != rhs.mPath; }
+
+	void xfilepath::to_utf16(utf16::runes& str) const
+	{
+		
+	}
+
+	void xfilepath::view_utf16(utf16::crunes& str) const
+	{
+		mPath.view_utf16(str);
+	}
+	void xfilepath::release_utf16(utf16::crunes& str) const
+	{
+		mPath.release_utf16(str);
+	}
 
 } // namespace xcore

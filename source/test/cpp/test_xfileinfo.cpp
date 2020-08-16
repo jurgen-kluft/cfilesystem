@@ -39,16 +39,16 @@ UNITTEST_SUITE_BEGIN(fileinfo)
 		UNITTEST_TEST(constructor1)
 		{
 			const char* filename = "TEST:\\readme.txt";
-			xfilepath filepath(filename);
+			xfilepath filepath = xfilesystem::filepath(filename);
 			xfileinfo fi1(filepath);
-			bool c = fi1.getFilepath() == xfilepath(filename);
+			bool c = fi1.getFilepath() == xfilesystem::filepath(filename);
 			CHECK_TRUE(c);
 		}
 
 		UNITTEST_TEST(constructor2)
 		{
 			const char* filename = "TEST:\\readme.txt";
-			xfilepath fp1(filename);
+			xfilepath fp1 = xfilesystem::filepath(filename);
 			xfileinfo fi1(fp1);
 			xfileinfo fi2(fi1);
 			CHECK_TRUE(fi1.getFilepath() == fp1);
@@ -59,9 +59,9 @@ UNITTEST_SUITE_BEGIN(fileinfo)
 		UNITTEST_TEST(sCopy)
 		{
 			const char* filename1 = "TEST:\\textfiles\\authors.txt";
-			xfilepath fp1(filename1);
+			xfilepath fp1 = xfilesystem::filepath(filename1);
 			const char* filename2 = "Test:\\sCopy\\test.txt";
-			xfilepath fp2(filename2);
+			xfilepath fp2 = xfilesystem::filepath(filename2);
 			CHECK_TRUE(xfileinfo::sCopy(fp1,fp2,true));
 			xfileinfo fi1(fp1);
 			xfileinfo fi2(fp2);
@@ -74,9 +74,9 @@ UNITTEST_SUITE_BEGIN(fileinfo)
 		UNITTEST_TEST(sMove)
 		{
 			const char* filename1 = "Test:\\readonly_files\\readme.txt";
-			xfilepath fp1(filename1);
+			xfilepath fp1 = xfilesystem::filepath(filename1);
 			const char* filename2 = "Test:\\sMove\\test.txt";
-			xfilepath fp2(filename2);
+			xfilepath fp2 = xfilesystem::filepath(filename2);
 			CHECK_TRUE(xfileinfo::sMove(fp1,fp2));
 			CHECK_FALSE(xfileinfo::sExists(fp1));
 		}

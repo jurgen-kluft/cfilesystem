@@ -69,12 +69,12 @@ namespace xcore
         void getFilenameWithoutExtension(xfilepath& filename) const;
         void getExtension(xfilepath& extension) const;
 
-		xdirpath getParent() const { xdirpath dp; getParent(dp); return dp; }
-        xdirpath getRoot() const{ xdirpath dp; getRoot(dp); return dp; }
-        xdirpath getDirpath() const{ xdirpath dp; getDirpath(dp); return dp; }
-        xfilepath getFilename() const{ xfilepath fp; getFilename(fp); return fp; }
-        xfilepath getFilenameWithoutExtension() const{ xfilepath fp; getFilenameWithoutExtension(fp); return fp; }
-        xfilepath getExtension() const{ xfilepath fp; getExtension(fp); return fp; }
+		xdirpath getParent() const;
+        xdirpath getRoot() const;
+        xdirpath getDirpath() const;
+        xfilepath getFilename() const;
+        xfilepath getFilenameWithoutExtension() const;
+        xfilepath getExtension() const;
 
         void             getFilepath(xfilepath&) const;
         xfilepath const& getFilepath() const;

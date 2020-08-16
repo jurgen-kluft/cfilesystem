@@ -25,6 +25,10 @@ namespace xcore
 
     xbool isPathUNIXStyle(void) { return false; }
 
+	void doIO(xio_thread* io_thread)
+	{
+
+	}
 
 }; // namespace xcore
 

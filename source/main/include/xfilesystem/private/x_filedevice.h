@@ -15,6 +15,7 @@
 
 namespace xcore
 {
+	class xalloc;
     class xfiledevice;
     class xfilepath;
     class xdirpath;
@@ -25,7 +26,7 @@ namespace xcore
     class xstream;
 
     // System file device
-    extern xfiledevice* x_CreateFileDevice(utf32::crunes& pDrivePath, xbool boCanWrite);
+    extern xfiledevice* x_CreateFileDevice(xalloc* allocator, utf32::crunes& pDrivePath, xbool boCanWrite);
     extern void         x_DestroyFileDevice(xfiledevice*);
 
     extern xfiledevice* x_NullFileDevice();
@@ -43,13 +44,12 @@ namespace xcore
         virtual ~xfiledevice() {}
 
     public:
-        virtual bool canWrite() = 0;
-        virtual bool canSeek()  = 0;
+        virtual bool canWrite() const = 0;
+        virtual bool canSeek() const = 0;
 
-        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) = 0;
+        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const = 0;
 
-        virtual bool openFile(xfilepath const& szFilename, EFileMode mode, EFileAccess access, EFileOp op,
-                              void*& outHandle)                                                                = 0;
+        virtual bool openFile(xfilepath const& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& outHandle) = 0;
         virtual bool readFile(void* pHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead)           = 0;
         virtual bool writeFile(void* pHandle, u64 pos, void const* buffer, u64 count, u64& outNumBytesWritten) = 0;
         virtual bool closeFile(void* pHandle)                                                                  = 0;

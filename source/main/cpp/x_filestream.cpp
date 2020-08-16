@@ -23,8 +23,7 @@ namespace xcore
     class xifilestream : public xistream
     {
         xalloc*      mAllocator;
-        xfiledevice* mFs;
-
+        xfiledevice* mFileDevice;
         s32   mRefCount;
         void* mFileHandle;
         s64   mOffset;
@@ -48,7 +47,7 @@ namespace xcore
     public:
         xifilestream()
             : mAllocator(nullptr)
-			, mFs(nullptr)
+			, mFileDevice(nullptr)
 			, mRefCount(2)
             , mFileHandle(INVALID_FILE_HANDLE)
             , mCaps(0)
@@ -63,7 +62,13 @@ namespace xcore
             --mRefCount;
             return mRefCount;
         }
-        virtual void destroy() {}
+        virtual void destroy()
+		{
+			if (release() == 0)
+			{
+				mAllocator->deallocate(this);
+			}
+		}
 
         virtual bool canRead() const;
         virtual bool canSeek() const;
@@ -85,9 +90,6 @@ namespace xcore
         virtual bool beginWrite(const xbyte* buffer, u64 count);
         virtual s64  endWrite(bool block);
 
-        virtual void copyTo(xistream* dst);
-        virtual void copyTo(xistream* dst, u64 count);
-
 		XCORE_CLASS_PLACEMENT_NEW_DELETE
     };
 
@@ -95,13 +97,13 @@ namespace xcore
 
     xifilestream::xifilestream(xalloc* allocator, xfiledevice* fd, const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
         : mAllocator(allocator)
-        , mFs(fd)
+        , mFileDevice(fd)
         , mRefCount(1)
         , mFileHandle(INVALID_FILE_HANDLE)
         , mCaps(NONE)
     {
         bool can_read, can_write, can_seek, can_async;
-        // mFs->caps(filename, can_read, can_write, can_seek, can_async);
+        // mFileDevice->caps(filename, can_read, can_write, can_seek, can_async);
         can_read  = true;
         can_write = true;
         can_seek  = true;
@@ -122,10 +124,10 @@ namespace xcore
             {
                 if (mCaps.is_set(CAN_WRITE))
                 {
-                    if (mFs->hasFile(filename) == xFALSE)
+                    if (mFileDevice->hasFile(filename) == xFALSE)
                     {
-                        mFs->openFile(filename, mode, access, op, mFileHandle);
-                        mFs->setLengthOfFile(mFileHandle, 0);
+                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
+                        mFileDevice->setLengthOfFile(mFileHandle, 0);
                     }
                 }
             }
@@ -134,24 +136,24 @@ namespace xcore
             {
                 if (mCaps.is_set(CAN_WRITE))
                 {
-                    if (mFs->hasFile(filename) == xTRUE)
+                    if (mFileDevice->hasFile(filename) == xTRUE)
                     {
-                        mFs->openFile(filename, mode, access, op, mFileHandle);
-                        mFs->setLengthOfFile(mFileHandle, 0);
+                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
+                        mFileDevice->setLengthOfFile(mFileHandle, 0);
                     }
                     else
                     {
-                        mFs->openFile(filename, mode, access, op, mFileHandle);
-                        mFs->setLengthOfFile(mFileHandle, 0);
+                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
+                        mFileDevice->setLengthOfFile(mFileHandle, 0);
                     }
                 }
             }
             break;
             case FileMode_Open:
             {
-                if (mFs->hasFile(filename) == xTRUE)
+                if (mFileDevice->hasFile(filename) == xTRUE)
                 {
-                    mFs->openFile(filename, mode, access, op, mFileHandle);
+                    mFileDevice->openFile(filename, mode, access, op, mFileHandle);
                 }
                 else
                 {
@@ -162,15 +164,15 @@ namespace xcore
             case FileMode_OpenOrCreate:
             {
                 {
-                    if (mFs->hasFile(filename) == xTRUE)
+                    if (mFileDevice->hasFile(filename) == xTRUE)
                     {
-                        mFs->openFile(filename, mode, access, op, mFileHandle);
-                        mFs->setLengthOfFile(mFileHandle, 0);
+                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
+                        mFileDevice->setLengthOfFile(mFileHandle, 0);
                     }
                     else
                     {
-                        mFs->openFile(filename, mode, access, op, mFileHandle);
-                        mFs->setLengthOfFile(mFileHandle, 0);
+                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
+                        mFileDevice->setLengthOfFile(mFileHandle, 0);
                     }
                 }
             }
@@ -179,12 +181,12 @@ namespace xcore
             {
                 if (mCaps.is_set(CAN_WRITE))
                 {
-                    if (mFs->hasFile(filename) == xTRUE)
+                    if (mFileDevice->hasFile(filename) == xTRUE)
                     {
-                        mFs->openFile(filename, mode, access, op, mFileHandle);
+                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
                         if (mFileHandle != INVALID_FILE_HANDLE)
                         {
-                            mFs->setLengthOfFile(mFileHandle, 0);
+                            mFileDevice->setLengthOfFile(mFileHandle, 0);
                         }
                     }
                 }
@@ -194,9 +196,9 @@ namespace xcore
             {
                 if (mCaps.is_set(CAN_WRITE))
                 {
-                    if (mFs->hasFile(filename) == xTRUE)
+                    if (mFileDevice->hasFile(filename) == xTRUE)
                     {
-                        mFs->openFile(filename, mode, access, op, mFileHandle);
+                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
                         if (mFileHandle != INVALID_FILE_HANDLE)
                         {
                             mCaps.set(USE_READ, false);
@@ -220,12 +222,12 @@ namespace xcore
     u64  xifilestream::getLength() const
     {
         u64 length;
-        if (mFs->getLengthOfFile(mFileHandle, length))
+        if (mFileDevice->getLengthOfFile(mFileHandle, length))
             return length;
         return 0;
     }
 
-    void xifilestream::setLength(u64 length) { mFs->setLengthOfFile(mFileHandle, length); }
+    void xifilestream::setLength(u64 length) { mFileDevice->setLengthOfFile(mFileHandle, length); }
 
     s64 xifilestream::setPos(s64 offset)
     {
@@ -243,7 +245,7 @@ namespace xcore
     {
         if (mFileHandle != INVALID_FILE_HANDLE)
         {
-            mFs->closeFile(mFileHandle);
+            mFileDevice->closeFile(mFileHandle);
         }
     }
 
@@ -254,7 +256,7 @@ namespace xcore
         if (mCaps.is_set(USE_READ))
         {
             u64 n;
-            if (mFs->readFile(mFileHandle, mOffset, buffer, count, n))
+            if (mFileDevice->readFile(mFileHandle, mOffset, buffer, count, n))
             {
                 mOffset += n;
             }
@@ -268,7 +270,7 @@ namespace xcore
         if (mCaps.is_set(USE_WRITE))
         {
             u64 n;
-            if (mFs->writeFile(mFileHandle, mOffset, buffer, count, n))
+            if (mFileDevice->writeFile(mFileHandle, mOffset, buffer, count, n))
             {
                 mOffset += n;
             }
@@ -282,7 +284,7 @@ namespace xcore
         if (mCaps.is_set(USE_READ))
         {
             u64 n;
-            if (mFs->readFile(mFileHandle, mOffset, buffer, count, n))
+            if (mFileDevice->readFile(mFileHandle, mOffset, buffer, count, n))
             {
 
                 return true;
@@ -302,7 +304,7 @@ namespace xcore
         if (mCaps.is_set(USE_WRITE))
         {
             u64 n;
-            if (mFs->writeFile(mFileHandle, mOffset, buffer, count, n))
+            if (mFileDevice->writeFile(mFileHandle, mOffset, buffer, count, n))
             {
 
                 return true;
@@ -335,5 +337,11 @@ namespace xcore
         xifilestream* filestream = allocator->construct<xifilestream>(allocator, device, filepath, mode, access, op);
         return filestream;
     }
+
+	void		xistream::destroy_filestream(xalloc* allocator, xistream* strm)
+	{
+		strm->destroy();
+	}
+
 
 }; // namespace xcore
