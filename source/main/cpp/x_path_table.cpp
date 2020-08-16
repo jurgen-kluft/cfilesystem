@@ -10,26 +10,23 @@
 
 namespace xcore
 {
-    /*
-        What are the benefits of using a table like below to manage filepaths and dirpaths?
-        - Sharing of strings
-        - Easy manipulation of dirpath, can easily go to parent or child directory, likely without doing any allocations
-        - You can prime the table which then results in no allocations when you are using existing filepaths and dirpaths
-        - Combining dirpath with filepath becomes very easy
+    //  What are the benefits of using a table like below to manage filepaths and dirpaths?
+    //  - Sharing of strings
+    //  - Easy manipulation of dirpath, can easily go to parent or child directory, likely without doing any allocations
+    //  - You can prime the table which then results in no allocations when you are using existing filepaths and dirpaths
+    //  - Combining dirpath with filepath becomes very easy
+    //
+    //  Use cases:
+    //  - From troot_t* you can ask for the root directory of a device
+    //    - tdirpath_t* rootdir = root->dir("appdir");
+    //  - So now with an existing tdirpath_t* dir, you can do the following:
+    //    - tdirpath_t* subdir = dir->down("subfolder")
+    //    - tfilepath_t* exe = dir->file("cool.exe");
+    //    - tfilename_t* fname  = root->filename("cool.exe");
+    //    - tfilepath_t* exe = dir->file(fname);
 
-        Use cases:
-        - From troot_t* you can ask for the root directory of a device
-          - tdirpath_t* rootdir = root->dir("appdir");
-        - So now with an existing tdirpath_t* dir, you can do the following:
-          - tdirpath_t* subdir = dir->down("subfolder")
-          - tfilepath_t* exe = dir->file("cool.exe");
-          - tfilename_t* fname  = root->filename("cool.exe");
-          - tfilepath_t* exe = dir->file(fname);
-
-    */
     class troot_t;
     class tpath_t;
-
     class xpath_parser_ascii
     {
     public:
@@ -74,15 +71,16 @@ namespace xcore
     bool xpath_parser_ascii::next_folder(ascii::crunes& folder) const
     {
         // example: projects\binary_reader\bin\ 
-			folder = ascii::selectUntilEndExcludeSelection(m_path, folder);
+        folder = ascii::selectUntilEndExcludeSelection(m_path, folder);
         ascii::trimLeft(folder, '\\');
         folder = ascii::findSelectUntil(folder, '\\');
         return !folder.is_empty();
     }
+
     bool xpath_parser_ascii::prev_folder(ascii::crunes& folder) const
     {
         // example: projects\binary_reader\bin\ 
-			folder = ascii::selectBeforeExcludeSelection(m_path, folder);
+        folder = ascii::selectBeforeExcludeSelection(m_path, folder);
         if (folder.is_empty())
             return false;
         ascii::trimRight(folder, '\\');
@@ -139,7 +137,7 @@ namespace xcore
     bool xpath_parser_utf32::next_folder(utf32::crunes& folder) const
     {
         // example: projects\binary_reader\bin\ 
-			folder = utf32::selectUntilEndExcludeSelection(m_path, folder);
+folder = utf32::selectUntilEndExcludeSelection(m_path, folder);
         utf32::trimLeft(folder, '\\');
         folder = utf32::findSelectUntil(folder, '\\');
         return !folder.is_empty();
@@ -148,7 +146,7 @@ namespace xcore
     bool xpath_parser_utf32::prev_folder(utf32::crunes& folder) const
     {
         // example: projects\binary_reader\bin\ 
-			folder = utf32::selectBeforeExcludeSelection(m_path, folder);
+folder = utf32::selectBeforeExcludeSelection(m_path, folder);
         if (folder.is_empty())
             return false;
         utf32::trimRight(folder, '\\');
@@ -270,17 +268,12 @@ namespace xcore
     class tpath_t
     {
     public:
-        s32      m_refs;
-        s32      m_type; // Either 'folder' or 'device'
-        u64      m_hash;
-        tpath_t* m_parent;
-        union type_t
-        {
-            tfolder_t* m_folder;
-            tdevice_t* m_device;
-        };
-        type_t   m_pointer;
-        tpath_t* m_next;
+        s32        m_refs;
+        s32        m_type; // Either 'folder' or 'device'
+        u64        m_hash;
+        tpath_t*   m_parent;
+        tfolder_t* m_folder;
+        tpath_t*   m_next; // For hash-table
 
         void            init();
         bool            isEmpty() const;
@@ -495,11 +488,11 @@ namespace xcore
                     folder = parser.iterate_folder();
                     do
                     {
-                        tfolder_t* pfolder          = register_folder(folder);
-                        tpath_t*   newpath          = construct_path();
-                        newpath->m_parent           = ppath;
-                        newpath->m_pointer.m_folder = pfolder;
-                        ppath                       = newpath;
+                        tfolder_t* pfolder = register_folder(folder);
+                        tpath_t*   newpath = construct_path();
+                        newpath->m_parent  = ppath;
+                        newpath->m_folder  = pfolder;
+                        ppath              = newpath;
                     } while (parser.next_folder(folder));
                     m_path_table.assign(phash, ppath);
                 }
@@ -712,7 +705,7 @@ namespace xcore
         m_hash = 0;
     }
 
-    bool tpath_t::isEmpty() const { return m_pointer.m_folder == nullptr; }
+    bool tpath_t::isEmpty() const { return m_folder == nullptr; }
 
     tpath_t* tpath_t::get_range(tpath_t* proot, tpath_t* pend, s32 start, s32 count)
     {
@@ -748,7 +741,7 @@ namespace xcore
         {
             while (tp != nullptr && op != nullptr && c == 0)
             {
-                c  = tfolder_t::compare(tp->m_pointer.m_folder, op->m_pointer.m_folder);
+                c  = tfolder_t::compare(tp->m_folder, op->m_folder);
                 tp = tp->m_parent;
                 op = op->m_parent;
             }
