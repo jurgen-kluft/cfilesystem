@@ -48,10 +48,12 @@ namespace xcore
         void       getExtension(xfilepath&) const;
         void       up();
         void       down(xdirpath const&);
+
         xfilepath& operator=(const xfilepath&);
         bool       operator==(const xfilepath&) const;
         bool       operator!=(const xfilepath&) const;
 
+	private:
 		void	   to_utf16(utf16::runes& str) const;
 		void	   view_utf16(utf16::crunes& str) const;
 		void	   release_utf16(utf16::crunes& str) const;
