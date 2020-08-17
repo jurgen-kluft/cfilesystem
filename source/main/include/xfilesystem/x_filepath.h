@@ -23,7 +23,7 @@ namespace xcore
     {
     protected:
         friend class xfilesys;
-		friend class xfileinfo;
+        friend class xfileinfo;
 
         xfilepath(xfilesys* parent, xpath& path);
         xfilesys* mParent;
@@ -31,7 +31,8 @@ namespace xcore
 
     public:
         xfilepath();
-		xfilepath(const xfilepath& filepath);
+        xfilepath(ascii::pcrune path);
+        xfilepath(const xfilepath& filepath);
         explicit xfilepath(const xdirpath& dir, const xfilepath& filename);
         ~xfilepath();
 
