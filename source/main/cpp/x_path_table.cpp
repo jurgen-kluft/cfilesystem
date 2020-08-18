@@ -137,7 +137,7 @@ namespace xcore
     bool xpath_parser_utf32::next_folder(utf32::crunes& folder) const
     {
         // example: projects\binary_reader\bin\ 
-folder = utf32::selectUntilEndExcludeSelection(m_path, folder);
+		folder = utf32::selectUntilEndExcludeSelection(m_path, folder);
         utf32::trimLeft(folder, '\\');
         folder = utf32::findSelectUntil(folder, '\\');
         return !folder.is_empty();
@@ -146,7 +146,7 @@ folder = utf32::selectUntilEndExcludeSelection(m_path, folder);
     bool xpath_parser_utf32::prev_folder(utf32::crunes& folder) const
     {
         // example: projects\binary_reader\bin\ 
-folder = utf32::selectBeforeExcludeSelection(m_path, folder);
+		folder = utf32::selectBeforeExcludeSelection(m_path, folder);
         if (folder.is_empty())
             return false;
         utf32::trimRight(folder, '\\');
@@ -180,14 +180,15 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
         u64         m_hash;
         utf32::rune m_name[1];
 
-        void init(s32 strlen)
-        {
-            m_refs         = 0;
-            m_len          = strlen;
-            m_hash         = 0;
-            m_name[0]      = utf32::TERMINATOR;
-            m_name[strlen] = utf32::TERMINATOR;
-        }
+        tname_t(s32 strlen) 
+			: m_refs(0)
+            , m_len(strlen)
+            , m_hash(0)
+			{
+				m_name[0]      = utf32::TERMINATOR;
+				m_name[strlen] = utf32::TERMINATOR;
+			}
+
 
         bool isEmpty() const { return m_hash == 0; }
 
@@ -215,7 +216,7 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
         bool operator==(const tname_t& other) const { return compare(&other) == 0; }
         bool operator!=(const tname_t& other) const { return compare(&other) != 0; }
 
-        void        reference() { m_refs++; }
+        void        incref() { m_refs++; }
         static bool release(tname_t* name)
         {
             if (name->m_refs > 0)
@@ -226,14 +227,6 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
             return false;
         }
 
-        template <class T> static T* construct(xalloc* allocator, s32 strlen)
-        {
-            // Allocate a tname_t
-            void* name_mem = allocator->allocate(sizeof(T) + (sizeof(utf32::rune) * strlen), sizeof(void*));
-            T*    name     = static_cast<T*>(name_mem);
-            name->init(strlen);
-            return name;
-        }
         template <class T> static void destruct(xalloc* allocator, T*& name)
         {
             allocator->deallocate(name);
@@ -244,16 +237,25 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
     class tfolder_t : public tname_t
     {
     public:
-        tfolder_t* m_next;
+		tfolder_t(s32 strlen) : tname_t(strlen), m_next(nullptr) {}
 
-        void init(tfolder_t* next) { m_next = next; }
-    };
+        static tfolder_t* construct(xalloc* allocator, utf32::crunes const& folder_name)
+        {
+			s32 const strlen = folder_name.size();
+            void* folder_mem = allocator->allocate(sizeof(tfolder_t) + (sizeof(utf32::rune) * strlen), sizeof(void*));
+            tfolder_t* pfolder = new (folder_mem) tfolder_t(strlen);
+            return pfolder;
+        }
+
+		XCORE_CLASS_PLACEMENT_NEW_DELETE
+
+        tfolder_t* m_next;
+	};
 
     class tfilename_t : public tname_t
     {
     public:
         tfilename_t* m_next;
-
         void init(tfilename_t* next) { m_next = next; }
     };
 
@@ -261,7 +263,6 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
     {
     public:
         textension_t* m_next;
-
         void init(textension_t* next) { m_next = next; }
     };
 
@@ -269,23 +270,24 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
     {
     public:
         s32        m_refs;
-        s32        m_type; // Either 'folder' or 'device'
-        u64        m_hash;
+		u64        m_hash;
+        tpath_t*   m_next;
         tpath_t*   m_parent;
         tfolder_t* m_folder;
-        tpath_t*   m_next; // For hash-table
 
         void            init();
         bool            isEmpty() const;
         s32             compare(const tpath_t& other) const;
         bool            operator==(const tpath_t& other) const;
         bool            operator!=(const tpath_t& other) const;
-        void            reference();
+        
+		void            reference();
         static bool     release(tpath_t*& path);
-        static tpath_t* construct(xalloc* allocator);
+        
+		static tpath_t* construct(xalloc* allocator);
         static void     destruct(xalloc* allocator, tpath_t*& path);
+
         static tpath_t* get_range(tpath_t* proot, tpath_t* pend, s32 start, s32 count);
-        static u64      calc_hash(tpath_t* parent, tfolder_t* subfolder);
     };
 
     template <class T> class htable_t
@@ -297,17 +299,22 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
 
         inline s32 to_index(u64 hash) const;
         void       init(xalloc* allocator, s32 size_as_bits = 8);
-        void       assign(u64 hash, T* data);
+        void       assign(T* data);
+		T*         find(u64 hash) const;
         T*         find(u64 hash, T*& prev) const;
-        void       remove(u64 hash, T* head, T* item);
+		bool       remove(T* item);
     };
 
     // API prototype
-    // xroot table
+    // root table
     class troot_t
     {
     public:
-        troot_t(xalloc* allocator, utf32::alloc* string_allocator) : m_allocator(allocator), m_stralloc(string_allocator) {}
+        troot_t(xalloc* allocator, utf32::alloc* string_allocator)
+            : m_allocator(allocator)
+            , m_stralloc(string_allocator)
+        {
+        }
 
         xalloc*                m_allocator;
         utf32::alloc*          m_stralloc;
@@ -411,95 +418,117 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
             return nullptr;
         }
 
-        tpath_t* find_path(u64 phash, xpath_parser_ascii& parser)
-        {
-            // Now we can see if a path object with that hash exists
-            tpath_t* pprev  = nullptr;
-            tpath_t* pentry = m_path_table.find(phash, pprev);
-            while (pentry != nullptr)
-            {
-                if (pentry->m_hash == phash)
-                {
-                    tpath_t*      piter  = pentry;
-                    ascii::crunes folder = parser.last_folder();
-                    s32           findex = 0;
-                    do
-                    {
-                        u64 const fhash = generate_hash(folder);
-                        if (fhash != piter->m_hash)
-                        {
-                            findex = -1;
-                            break;
-                        }
-                        findex += 1;
-                        piter = piter->m_parent;
-                    } while (parser.prev_folder(folder));
 
-                    if (findex >= 0)
-                        break;
-                }
-                pentry = pentry->m_next;
-            }
-        }
-
-        // ascii
-        tpath_t* register_path(ascii::crunes const& fullpath, tdevice_t*& out_device)
+        tpath_t* register_path(ascii::crunes const& fullpath, tdevice_t*& out_device, tpath_t* out_root)
         {
             xpath_parser_ascii parser;
             parser.parse(fullpath);
 
             out_device = find_device(parser.m_device);
+			out_root = nullptr;
+
+			// Register all folders first
+            ascii::crunes folder = folder = parser.iterate_folder();
+            if (folder.is_empty())
+			   return nullptr;
+
+			// Also kee
+            do
+            {
+                register_folder(folder);
+            } while (parser.next_folder(folder));
+
 
             tpath_t* ppath = nullptr;
             if (parser.has_path())
             {
-                u64           phash  = 0;
-                s32           fcount = 0;
                 ascii::crunes folder = parser.iterate_folder();
 
                 tpath_t* pprev  = nullptr;
                 tpath_t* pentry = nullptr;
-                if (!folder.is_empty())
-                {
-                    fcount += 1;
-                    tfolder_t* pfolder = register_folder(folder);
-                    pentry             = m_path_table.find(pfolder->m_hash, pprev);
-                }
+                tpath_t* pparent = nullptr;
+
+                tfolder_t* pfolder = register_folder(folder);
+				u64 uhash = pfolder->m_hash;
+
+				// Does the top folder exist ?
+                pentry  = m_path_table.find(uhash, pprev);
+				while (pentry != nullptr)
+				{
+					if (pentry->m_hash == uhash && pentry->m_folder == pfolder && pentry->m_parent == pparent)
+					{
+						break;
+					}
+					pentry = pentry->m_next;
+				}
+				ppath = pentry;
 
                 if (pentry == nullptr)
                 {
-                    // There is not previous path registered with a top folder like this
+                    // There is no previous path registered with a top folder like this
+					// Create the root path with the current folder and skip walking an
+					// existing branch.
+	                pentry = construct_path();
+					pentry->m_hash = uhash;
+					pentry->m_next = nullptr;
+                    pentry->m_parent  = pparent;
+                    pentry->m_folder  = pfolder;
+					m_path_table.assign(pentry);
 
-                    // We need to iterate over the folder names to generate the hash!
-                    while (!folder.is_empty())
-                    {
-                        fcount += 1;
-                        tfolder_t* pfolder = register_folder(folder);
+					out_root = pentry;
+					pparent = pentry;
+					pentry = nullptr;
+				}
+				else
+				{
+					out_root = pentry;
 
-                        pprev  = nullptr;
-                        pentry = m_path_table.find(pfolder->m_hash, pprev);
+					// Walk part or whole of an existing branch that 'path' represents
+					folder = parser.iterate_folder();
+					do
+					{
+						pfolder = register_folder(folder);
+						uhash  = mix_hash(uhash, pfolder->m_hash);
 
-                        phash = mix_hash(phash, pfolder->m_hash);
-                    }
-                }
+						pparent = pentry;
+						pentry = m_path_table.find(uhash, pprev);
+						while (pentry != nullptr)
+						{
+							if (pentry->m_hash == uhash && pentry->m_folder == pfolder && pentry->m_parent == pparent)
+							{
+								break;
+							}
+							pentry = pentry->m_next;
+						}
 
-                if (pentry == nullptr) // Construct a new tpath_t
-                {
-                    folder = parser.iterate_folder();
-                    do
-                    {
-                        tfolder_t* pfolder = register_folder(folder);
-                        tpath_t*   newpath = construct_path();
-                        newpath->m_parent  = ppath;
-                        newpath->m_folder  = pfolder;
-                        ppath              = newpath;
-                    } while (parser.next_folder(folder));
-                    m_path_table.assign(phash, ppath);
-                }
-                else // We found an existing one
-                {
-                    ppath = pentry;
-                }
+						if (pentry == nullptr)
+						{
+							// Once we arrive here it means that this branch is new, so here we
+							// should generate the rest of the whole branch.
+							break;
+						}
+
+					} while (parser.next_folder(folder));
+				}
+				if (pentry == nullptr && !folder.is_empty())
+				{
+					// Generate the rest of the branch
+					do
+					{
+						pentry = construct_path();
+						pentry->m_hash = uhash;
+						pentry->m_next = nullptr;
+						pentry->m_parent  = pparent;
+						pentry->m_folder  = pfolder;
+						m_path_table.assign(pentry);
+						pfolder = register_folder(folder);
+						uhash = mix_hash(uhash, pfolder->m_hash);
+						pparent = pentry;
+					} while (parser.next_folder(folder));
+
+					ppath = pentry;
+				}
+
             }
             return ppath;
         }
@@ -518,7 +547,21 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
 
         tfolder_t* register_folder(utf32::crunes const& folder_name)
         {
-            // @TODO: Implement this!
+			u64 const uhash = generate_hash(folder_name);
+            tfolder_t* pfolder = m_folder_table.find(uhash);
+			while (pfolder != nullptr)
+			{
+				if (pfolder->compare(folder_name) == 0)
+				{
+					return pfolder;
+				}
+				pfolder = pfolder->m_next;
+			}
+			if (pfolder == nullptr)
+			{
+				s32 const strlen = folder_name.size();
+				pfolder = tfolder_t::construct<tfolder_t>(m_allocator, strlen);
+			}
             return nullptr;
         }
 
@@ -542,43 +585,27 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
 
         void release(tpath_t*& item)
         {
-            if (tpath_t::release(item))
-            {
-                // Need to remove it from the table
-                tpath_t* pprev  = nullptr;
-                tpath_t* pentry = m_path_table.find(item->m_hash, pprev);
-                while (pentry != nullptr)
-                {
-                    if (pentry == item)
-                    {
-                        // Found it
-                        m_path_table.remove(item->m_hash, pprev, pentry);
-                        release(item->m_parent);
-                        tpath_t::destruct(m_allocator, item);
-                        return;
-                    }
-                    pentry = pentry->m_next;
-                }
-            }
+			while (item != nullptr)
+			{
+				tpath_t* const parent = item->m_parent;
+				if (tpath_t::release(item))
+				{
+					if (m_path_table.remove(item))
+					{
+						tpath_t::destruct(m_allocator, item);
+					}
+				}
+				item = parent;
+			}
         }
 
         void release(tfolder_t*& item)
         {
             if (tfolder_t::release(item))
             {
-                // Need to remove it from the table
-                tfolder_t* pprev  = nullptr;
-                tfolder_t* pentry = m_folder_table.find(item->m_hash, pprev);
-                while (pentry != nullptr)
+                if (m_folder_table.remove(item))
                 {
-                    if (pentry == item)
-                    {
-                        // Found it
-                        m_folder_table.remove(item->m_hash, pprev, pentry);
-                        tfolder_t::destruct(m_allocator, item);
-                        return;
-                    }
-                    pentry = pentry->m_next;
+					tfolder_t::destruct(m_allocator, item);
                 }
             }
         }
@@ -587,19 +614,9 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
         {
             if (tfilename_t::release(item))
             {
-                // Need to remove it from the table
-                tfilename_t* pprev  = nullptr;
-                tfilename_t* pentry = m_filename_table.find(item->m_hash, pprev);
-                while (pentry != nullptr)
+                if (m_filename_table.remove(item))
                 {
-                    if (pentry == item)
-                    {
-                        // Found it
-                        m_filename_table.remove(item->m_hash, pprev, pentry);
-                        tfilename_t::destruct(m_allocator, item);
-                        return;
-                    }
-                    pentry = pentry->m_next;
+                    tfilename_t::destruct(m_allocator, item);
                 }
             }
         }
@@ -608,19 +625,9 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
         {
             if (textension_t::release(item))
             {
-                // Need to remove it from the table
-                textension_t* pprev  = nullptr;
-                textension_t* pentry = m_extension_table.find(item->m_hash, pprev);
-                while (pentry != nullptr)
+                if (m_extension_table.remove(item))
                 {
-                    if (pentry == item)
-                    {
-                        // Found it
-                        m_extension_table.remove(item->m_hash, pprev, pentry);
-                        textension_t::destruct(m_allocator, item);
-                        return;
-                    }
-                    pentry = pentry->m_next;
+                    textension_t::destruct(m_allocator, item);
                 }
             }
         }
@@ -720,15 +727,13 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
             c += 1;
         }
 
-        tpath_t* end = pend;
-        s32      s   = c - start;
-        s32      e   = c - (start + count);
-        while (end != proot)
-        {
-            end = end->m_parent;
-            s -= 1;
-        }
-
+        end   = pend;
+        s32 e = c - (start + count);
+		while (e > 0)
+		{
+			end = end->m_parent;
+			e -= 1;
+		}
         return end;
     }
 
@@ -835,17 +840,18 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
         tfilepath_t filename() const;
         tfilepath_t filenameWithoutExtension() const;
         tfilepath_t extension() const;
-        tdirpath_t  root() const;
         tfilepath_t up();
         tfilepath_t down(tdirpath_t const& dirpath);
     };
 
-    tdirpath_t::tdirpath_t() : m_device(troot_t::sNilDevice)
+    tdirpath_t::tdirpath_t()
+        : m_device(troot_t::sNilDevice)
     {
         m_path[0] = (troot_t::sNilPath);
         m_path[1] = (troot_t::sNilPath);
     }
-    tdirpath_t::tdirpath_t(tdevice_t* device, tpath_t* proot, tpath_t* pend) : m_device(device)
+    tdirpath_t::tdirpath_t(tdevice_t* device, tpath_t* proot, tpath_t* pend)
+        : m_device(device)
     {
         m_path[0] = proot;
         m_path[1] = pend;
@@ -882,9 +888,19 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
 
     tdirpath_t tdirpath_t::down(tdirpath_t const& dirpath) {}
 
-    tfilepath_t::tfilepath_t() : m_dirpath(), m_filename(troot_t::sNilFilename), m_extension(troot_t::sNilExtension) {}
+    tfilepath_t::tfilepath_t()
+        : m_dirpath()
+        , m_filename(troot_t::sNilFilename)
+        , m_extension(troot_t::sNilExtension)
+    {
+    }
 
-    tfilepath_t::tfilepath_t(tfilename_t* filename, textension_t* extension) : m_dirpath(), m_filename(filename), m_extension(extension) {}
+    tfilepath_t::tfilepath_t(tfilename_t* filename, textension_t* extension)
+        : m_dirpath()
+        , m_filename(filename)
+        , m_extension(extension)
+    {
+    }
 
     tfilepath_t::~tfilepath_t()
     {
@@ -942,13 +958,29 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
         m_data      = static_cast<T**>(allocator->allocate(sizeof(T*) * m_size, sizeof(void*)));
     }
 
-    template <class T> void htable_t<T>::assign(u64 hash, T* data)
+    template <class T> void htable_t<T>::assign(T* item)
     {
-        // NOTE: Make sure this hash/data hasn't been added before!
+        s32 index = to_index(item->m_hash);
+		item->m_next = m_data[index];
+		m_data[index] = item;
+    }
+
+    template <class T> T* htable_t<T>::find(u64 hash) const
+    {
         s32 index = to_index(hash);
-        T*  ptr   = static_cast<T*>(m_allocator->allocate(sizeof(T*), sizeof(void*)));
-        ptr->init(data, m_data[index]);
-        m_data[index] = ptr;
+        if (m_data[index] == nullptr)
+            return nullptr;
+
+        T* ptr = m_data[index];
+        while (ptr != nullptr)
+        {
+            if (ptr->m_data->m_hash == hash)
+            {
+                return ptr;
+            }
+            ptr  = ptr->m_next;
+        }
+        return nullptr;
     }
 
     template <class T> T* htable_t<T>::find(u64 hash, T*& prev) const
@@ -972,22 +1004,33 @@ folder = utf32::selectBeforeExcludeSelection(m_path, folder);
         return nullptr;
     }
 
-    template <class T> void htable_t<T>::remove(u64 hash, T* previous, T* current)
+	template <class T> bool htable_t<T>::remove(T* item)
     {
-        s32 index = to_index(hash);
+        s32 index = to_index(item->m_hash);
         if (m_data[index] != nullptr)
         {
-            if (previous == nullptr)
+			T* prev = nullptr;
+			T* iter = m_data[index];
+            while (iter != item)
             {
-                m_data[index] = current->m_next;
-                m_allocator->deallocate(current);
+				prev = iter;
+				iter = iter->m_next;
             }
-            else
-            {
-                previous->m_next = current->m_next;
-                m_allocator->deallocate(current);
-            }
+			if (iter == item)
+			{
+				if (prev == nullptr)
+				{
+					m_data[index] = item->m_next;
+				}
+				else
+				{
+					prev->m_next = iter->m_next;
+				}
+				return true;
+			}
         }
+		return false;
     }
+
 
 }; // namespace xcore
