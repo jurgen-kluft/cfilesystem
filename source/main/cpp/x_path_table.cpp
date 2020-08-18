@@ -25,6 +25,52 @@ namespace xcore
     //    - tfilename_t* fname  = root->filename("cool.exe");
     //    - tfilepath_t* exe = dir->file(fname);
 
+#define FNV1_64_OFFSET_BASIS ((u64)14695981039346656037u)
+#define FNV_64_PRIME ((u64)1099511628211u)
+
+    static u64 generate_hash(ascii::crunes const& asciistr)
+    {
+        // Use FNV-1a for now
+        u64          hash      = FNV1_64_OFFSET_BASIS;
+        u64 const    fnv_prime = FNV_64_PRIME;
+        const uchar* str       = (const uchar*)asciistr.m_str;
+        for (s32 i = 0; i < asciistr.size(); i++)
+        {
+            uchar32 c = str[i];
+            hash ^= c;
+            hash *= fnv_prime;
+        }
+        return hash;
+    }
+
+    static u64 generate_hash(utf32::crunes str32)
+    {
+        // Use FNV-1a for now
+        u64            hash      = FNV1_64_OFFSET_BASIS;
+        u64 const      fnv_prime = FNV_64_PRIME;
+        s32 const      length    = str32.size();
+        const uchar32* str       = str32.m_str;
+        for (s32 i = 0; i < length; i++)
+        {
+            uchar32 c = str[i];
+            hash ^= str[i];
+            hash *= fnv_prime;
+        }
+        return hash;
+    }
+
+    static u64 mix_hash(u64 hash, u64 mix)
+    {
+        u64 const    fnv_prime = FNV_64_PRIME;
+        xbyte const* data      = (xbyte const*)&mix;
+        for (s32 i = 0; i < 8; i++)
+        {
+            hash ^= data[i];
+            hash *= fnv_prime;
+        }
+        return hash;
+    }
+
     class troot_t;
     class tpath_t;
     class xpath_parser_ascii
@@ -180,15 +226,11 @@ namespace xcore
         u64         m_hash;
         utf32::rune m_name[1];
 
-        tname_t(s32 strlen) 
-			: m_refs(0)
-            , m_len(strlen)
-            , m_hash(0)
-			{
-				m_name[0]      = utf32::TERMINATOR;
-				m_name[strlen] = utf32::TERMINATOR;
-			}
-
+        tname_t(s32 strlen) : m_refs(0), m_len(strlen), m_hash(0)
+        {
+            m_name[0]      = utf32::TERMINATOR;
+            m_name[strlen] = utf32::TERMINATOR;
+        }
 
         bool isEmpty() const { return m_hash == 0; }
 
@@ -237,54 +279,80 @@ namespace xcore
     class tfolder_t : public tname_t
     {
     public:
-		tfolder_t(s32 strlen) : tname_t(strlen), m_next(nullptr) {}
+        tfolder_t(s32 strlen) : tname_t(strlen), m_next(nullptr) {}
 
         static tfolder_t* construct(xalloc* allocator, utf32::crunes const& folder_name)
         {
-			s32 const strlen = folder_name.size();
-            void* folder_mem = allocator->allocate(sizeof(tfolder_t) + (sizeof(utf32::rune) * strlen), sizeof(void*));
-            tfolder_t* pfolder = new (folder_mem) tfolder_t(strlen);
+            u32 const strlen = sizeof(utf32::rune) * folder_name.size();
+            u32 const strcap = strlen + 1;
+
+            void*      folder_mem = allocator->allocate(sizeof(tfolder_t) + (sizeof(utf32::rune) * strcap), sizeof(void*));
+            tfolder_t* pfolder    = new (folder_mem) tfolder_t(strcap);
+
+            u64 const hfolder = generate_hash(folder_name);
+            pfolder->m_hash   = hfolder;
+            pfolder->m_refs   = 0;
+            utf32::runes dststr(pfolder->m_name, pfolder->m_name, pfolder->m_name + strlen);
+            utf::copy(folder_name, dststr);
+
             return pfolder;
         }
 
-		XCORE_CLASS_PLACEMENT_NEW_DELETE
+        static tfolder_t* construct(xalloc* allocator, ascii::crunes const& folder_name)
+        {
+            u32 const strlen = sizeof(ascii::rune) * folder_name.size();
+            u32 const strcap = strlen + 1;
+
+            void*      folder_mem = allocator->allocate(sizeof(tfolder_t) + (sizeof(ascii::rune) * strcap), sizeof(void*));
+            tfolder_t* pfolder    = new (folder_mem) tfolder_t(strcap);
+
+            u64 const hfolder = generate_hash(folder_name);
+            pfolder->m_hash   = hfolder;
+            pfolder->m_refs   = 0;
+            utf32::runes dststr(pfolder->m_name, pfolder->m_name, pfolder->m_name + strlen);
+            utf::copy(folder_name, dststr);
+
+            return pfolder;
+        }
+
+        XCORE_CLASS_PLACEMENT_NEW_DELETE
 
         tfolder_t* m_next;
-	};
+    };
 
     class tfilename_t : public tname_t
     {
     public:
         tfilename_t* m_next;
-        void init(tfilename_t* next) { m_next = next; }
+        void         init(tfilename_t* next) { m_next = next; }
     };
 
     class textension_t : public tname_t
     {
     public:
         textension_t* m_next;
-        void init(textension_t* next) { m_next = next; }
+        void          init(textension_t* next) { m_next = next; }
     };
 
     class tpath_t
     {
     public:
         s32        m_refs;
-		u64        m_hash;
+        u64        m_hash;
         tpath_t*   m_next;
         tpath_t*   m_parent;
         tfolder_t* m_folder;
 
-        void            init();
-        bool            isEmpty() const;
-        s32             compare(const tpath_t& other) const;
-        bool            operator==(const tpath_t& other) const;
-        bool            operator!=(const tpath_t& other) const;
-        
-		void            reference();
-        static bool     release(tpath_t*& path);
-        
-		static tpath_t* construct(xalloc* allocator);
+        void init();
+        bool isEmpty() const;
+        s32  compare(const tpath_t& other) const;
+        bool operator==(const tpath_t& other) const;
+        bool operator!=(const tpath_t& other) const;
+
+        void        reference();
+        static bool release(tpath_t*& path);
+
+        static tpath_t* construct(xalloc* allocator);
         static void     destruct(xalloc* allocator, tpath_t*& path);
 
         static tpath_t* get_range(tpath_t* proot, tpath_t* pend, s32 start, s32 count);
@@ -300,9 +368,9 @@ namespace xcore
         inline s32 to_index(u64 hash) const;
         void       init(xalloc* allocator, s32 size_as_bits = 8);
         void       assign(T* data);
-		T*         find(u64 hash) const;
+        T*         find(u64 hash) const;
         T*         find(u64 hash, T*& prev) const;
-		bool       remove(T* item);
+        bool       remove(T* item);
     };
 
     // API prototype
@@ -310,11 +378,7 @@ namespace xcore
     class troot_t
     {
     public:
-        troot_t(xalloc* allocator, utf32::alloc* string_allocator)
-            : m_allocator(allocator)
-            , m_stralloc(string_allocator)
-        {
-        }
+        troot_t(xalloc* allocator, utf32::alloc* string_allocator) : m_allocator(allocator), m_stralloc(string_allocator) {}
 
         xalloc*                m_allocator;
         utf32::alloc*          m_stralloc;
@@ -390,14 +454,7 @@ namespace xcore
             tfolder_t* pfolder = nullptr;
             if (pentry == nullptr)
             {
-                u32 const strlen = sizeof(utf32::rune) * folder_name.size();
-                u32 const strcap = strlen + 1;
-                pfolder          = tfolder_t::construct<tfolder_t>(m_allocator, strcap);
-                pfolder->m_len   = strlen;
-                pfolder->m_hash  = hfolder;
-                pfolder->m_refs  = 0;
-                utf32::runes dststr(pfolder->m_name, pfolder->m_name, pfolder->m_name + strlen);
-                utf::copy(folder_name, dststr);
+                pfolder = tfolder_t::construct(m_allocator, folder_name);
             }
             else
             {
@@ -418,117 +475,114 @@ namespace xcore
             return nullptr;
         }
 
-
         tpath_t* register_path(ascii::crunes const& fullpath, tdevice_t*& out_device, tpath_t* out_root)
         {
             xpath_parser_ascii parser;
             parser.parse(fullpath);
 
             out_device = find_device(parser.m_device);
-			out_root = nullptr;
+            out_root   = nullptr;
 
-			// Register all folders first
+            // Register all folders first
             ascii::crunes folder = folder = parser.iterate_folder();
             if (folder.is_empty())
-			   return nullptr;
+                return nullptr;
 
-			// Also kee
+            // Also kee
             do
             {
                 register_folder(folder);
             } while (parser.next_folder(folder));
-
 
             tpath_t* ppath = nullptr;
             if (parser.has_path())
             {
                 ascii::crunes folder = parser.iterate_folder();
 
-                tpath_t* pprev  = nullptr;
-                tpath_t* pentry = nullptr;
+                tpath_t* pprev   = nullptr;
+                tpath_t* pentry  = nullptr;
                 tpath_t* pparent = nullptr;
 
                 tfolder_t* pfolder = register_folder(folder);
-				u64 uhash = pfolder->m_hash;
+                u64        uhash   = pfolder->m_hash;
 
-				// Does the top folder exist ?
-                pentry  = m_path_table.find(uhash, pprev);
-				while (pentry != nullptr)
-				{
-					if (pentry->m_hash == uhash && pentry->m_folder == pfolder && pentry->m_parent == pparent)
-					{
-						break;
-					}
-					pentry = pentry->m_next;
-				}
-				ppath = pentry;
+                // Does the top folder exist ?
+                pentry = m_path_table.find(uhash, pprev);
+                while (pentry != nullptr)
+                {
+                    if (pentry->m_hash == uhash && pentry->m_folder == pfolder && pentry->m_parent == pparent)
+                    {
+                        break;
+                    }
+                    pentry = pentry->m_next;
+                }
+                ppath = pentry;
 
                 if (pentry == nullptr)
                 {
                     // There is no previous path registered with a top folder like this
-					// Create the root path with the current folder and skip walking an
-					// existing branch.
-	                pentry = construct_path();
-					pentry->m_hash = uhash;
-					pentry->m_next = nullptr;
-                    pentry->m_parent  = pparent;
-                    pentry->m_folder  = pfolder;
-					m_path_table.assign(pentry);
+                    // Create the root path with the current folder and skip walking an
+                    // existing branch.
+                    pentry           = construct_path();
+                    pentry->m_hash   = uhash;
+                    pentry->m_next   = nullptr;
+                    pentry->m_parent = pparent;
+                    pentry->m_folder = pfolder;
+                    m_path_table.assign(pentry);
 
-					out_root = pentry;
-					pparent = pentry;
-					pentry = nullptr;
-				}
-				else
-				{
-					out_root = pentry;
+                    out_root = pentry;
+                    pparent  = pentry;
+                    pentry   = nullptr;
+                }
+                else
+                {
+                    out_root = pentry;
 
-					// Walk part or whole of an existing branch that 'path' represents
-					folder = parser.iterate_folder();
-					do
-					{
-						pfolder = register_folder(folder);
-						uhash  = mix_hash(uhash, pfolder->m_hash);
+                    // Walk part or whole of an existing branch that 'path' represents
+                    folder = parser.iterate_folder();
+                    do
+                    {
+                        pfolder = register_folder(folder);
+                        uhash   = mix_hash(uhash, pfolder->m_hash);
 
-						pparent = pentry;
-						pentry = m_path_table.find(uhash, pprev);
-						while (pentry != nullptr)
-						{
-							if (pentry->m_hash == uhash && pentry->m_folder == pfolder && pentry->m_parent == pparent)
-							{
-								break;
-							}
-							pentry = pentry->m_next;
-						}
+                        pparent = pentry;
+                        pentry  = m_path_table.find(uhash, pprev);
+                        while (pentry != nullptr)
+                        {
+                            if (pentry->m_hash == uhash && pentry->m_folder == pfolder && pentry->m_parent == pparent)
+                            {
+                                break;
+                            }
+                            pentry = pentry->m_next;
+                        }
 
-						if (pentry == nullptr)
-						{
-							// Once we arrive here it means that this branch is new, so here we
-							// should generate the rest of the whole branch.
-							break;
-						}
+                        if (pentry == nullptr)
+                        {
+                            // Once we arrive here it means that this branch is new, so here we
+                            // should generate the rest of the whole branch.
+                            break;
+                        }
 
-					} while (parser.next_folder(folder));
-				}
-				if (pentry == nullptr && !folder.is_empty())
-				{
-					// Generate the rest of the branch
-					do
-					{
-						pentry = construct_path();
-						pentry->m_hash = uhash;
-						pentry->m_next = nullptr;
-						pentry->m_parent  = pparent;
-						pentry->m_folder  = pfolder;
-						m_path_table.assign(pentry);
-						pfolder = register_folder(folder);
-						uhash = mix_hash(uhash, pfolder->m_hash);
-						pparent = pentry;
-					} while (parser.next_folder(folder));
+                    } while (parser.next_folder(folder));
+                }
+                if (pentry == nullptr && !folder.is_empty())
+                {
+                    // Generate the rest of the branch
+                    do
+                    {
+                        pentry           = construct_path();
+                        pentry->m_hash   = uhash;
+                        pentry->m_next   = nullptr;
+                        pentry->m_parent = pparent;
+                        pentry->m_folder = pfolder;
+                        m_path_table.assign(pentry);
+                        pfolder = register_folder(folder);
+                        uhash   = mix_hash(uhash, pfolder->m_hash);
+                        pparent = pentry;
+                    } while (parser.next_folder(folder));
 
-					ppath = pentry;
-				}
-
+                    ppath = pentry;
+                }
             }
             return ppath;
         }
@@ -547,21 +601,20 @@ namespace xcore
 
         tfolder_t* register_folder(utf32::crunes const& folder_name)
         {
-			u64 const uhash = generate_hash(folder_name);
+            u64 const  uhash   = generate_hash(folder_name);
             tfolder_t* pfolder = m_folder_table.find(uhash);
-			while (pfolder != nullptr)
-			{
-				if (pfolder->compare(folder_name) == 0)
-				{
-					return pfolder;
-				}
-				pfolder = pfolder->m_next;
-			}
-			if (pfolder == nullptr)
-			{
-				s32 const strlen = folder_name.size();
-				pfolder = tfolder_t::construct<tfolder_t>(m_allocator, strlen);
-			}
+            while (pfolder != nullptr)
+            {
+                if (pfolder->compare(folder_name) == 0)
+                {
+                    return pfolder;
+                }
+                pfolder = pfolder->m_next;
+            }
+            if (pfolder == nullptr)
+            {
+                pfolder = tfolder_t::construct(m_allocator, folder_name);
+            }
             return nullptr;
         }
 
@@ -585,18 +638,18 @@ namespace xcore
 
         void release(tpath_t*& item)
         {
-			while (item != nullptr)
-			{
-				tpath_t* const parent = item->m_parent;
-				if (tpath_t::release(item))
-				{
-					if (m_path_table.remove(item))
-					{
-						tpath_t::destruct(m_allocator, item);
-					}
-				}
-				item = parent;
-			}
+            while (item != nullptr)
+            {
+                tpath_t* const parent = item->m_parent;
+                if (tpath_t::release(item))
+                {
+                    if (m_path_table.remove(item))
+                    {
+                        tpath_t::destruct(m_allocator, item);
+                    }
+                }
+                item = parent;
+            }
         }
 
         void release(tfolder_t*& item)
@@ -605,7 +658,7 @@ namespace xcore
             {
                 if (m_folder_table.remove(item))
                 {
-					tfolder_t::destruct(m_allocator, item);
+                    tfolder_t::destruct(m_allocator, item);
                 }
             }
         }
@@ -630,53 +683,6 @@ namespace xcore
                     textension_t::destruct(m_allocator, item);
                 }
             }
-        }
-
-    private:
-#define FNV1_64_OFFSET_BASIS ((u64)14695981039346656037u)
-#define FNV_64_PRIME ((u64)1099511628211u)
-
-        static u64 generate_hash(ascii::crunes const& asciistr)
-        {
-            // Use FNV-1a for now
-            u64          hash      = FNV1_64_OFFSET_BASIS;
-            u64 const    fnv_prime = FNV_64_PRIME;
-            const uchar* str       = (const uchar*)asciistr.m_str;
-            for (s32 i = 0; i < asciistr.size(); i++)
-            {
-                uchar32 c = str[i];
-                hash ^= c;
-                hash *= fnv_prime;
-            }
-            return hash;
-        }
-
-        static u64 generate_hash(utf32::crunes str32)
-        {
-            // Use FNV-1a for now
-            u64            hash      = FNV1_64_OFFSET_BASIS;
-            u64 const      fnv_prime = FNV_64_PRIME;
-            s32 const      length    = str32.size();
-            const uchar32* str       = str32.m_str;
-            for (s32 i = 0; i < length; i++)
-            {
-                uchar32 c = str[i];
-                hash ^= str[i];
-                hash *= fnv_prime;
-            }
-            return hash;
-        }
-
-        static u64 mix_hash(u64 hash, u64 mix)
-        {
-            u64 const    fnv_prime = FNV_64_PRIME;
-            xbyte const* data      = (xbyte const*)&mix;
-            for (s32 i = 0; i < 8; i++)
-            {
-                hash ^= data[i];
-                hash *= fnv_prime;
-            }
-            return hash;
         }
     };
 
@@ -729,11 +735,11 @@ namespace xcore
 
         end   = pend;
         s32 e = c - (start + count);
-		while (e > 0)
-		{
-			end = end->m_parent;
-			e -= 1;
-		}
+        while (e > 0)
+        {
+            end = end->m_parent;
+            e -= 1;
+        }
         return end;
     }
 
@@ -844,14 +850,12 @@ namespace xcore
         tfilepath_t down(tdirpath_t const& dirpath);
     };
 
-    tdirpath_t::tdirpath_t()
-        : m_device(troot_t::sNilDevice)
+    tdirpath_t::tdirpath_t() : m_device(troot_t::sNilDevice)
     {
         m_path[0] = (troot_t::sNilPath);
         m_path[1] = (troot_t::sNilPath);
     }
-    tdirpath_t::tdirpath_t(tdevice_t* device, tpath_t* proot, tpath_t* pend)
-        : m_device(device)
+    tdirpath_t::tdirpath_t(tdevice_t* device, tpath_t* proot, tpath_t* pend) : m_device(device)
     {
         m_path[0] = proot;
         m_path[1] = pend;
@@ -888,19 +892,9 @@ namespace xcore
 
     tdirpath_t tdirpath_t::down(tdirpath_t const& dirpath) {}
 
-    tfilepath_t::tfilepath_t()
-        : m_dirpath()
-        , m_filename(troot_t::sNilFilename)
-        , m_extension(troot_t::sNilExtension)
-    {
-    }
+    tfilepath_t::tfilepath_t() : m_dirpath(), m_filename(troot_t::sNilFilename), m_extension(troot_t::sNilExtension) {}
 
-    tfilepath_t::tfilepath_t(tfilename_t* filename, textension_t* extension)
-        : m_dirpath()
-        , m_filename(filename)
-        , m_extension(extension)
-    {
-    }
+    tfilepath_t::tfilepath_t(tfilename_t* filename, textension_t* extension) : m_dirpath(), m_filename(filename), m_extension(extension) {}
 
     tfilepath_t::~tfilepath_t()
     {
@@ -960,9 +954,9 @@ namespace xcore
 
     template <class T> void htable_t<T>::assign(T* item)
     {
-        s32 index = to_index(item->m_hash);
-		item->m_next = m_data[index];
-		m_data[index] = item;
+        s32 index     = to_index(item->m_hash);
+        item->m_next  = m_data[index];
+        m_data[index] = item;
     }
 
     template <class T> T* htable_t<T>::find(u64 hash) const
@@ -978,7 +972,7 @@ namespace xcore
             {
                 return ptr;
             }
-            ptr  = ptr->m_next;
+            ptr = ptr->m_next;
         }
         return nullptr;
     }
@@ -1004,33 +998,32 @@ namespace xcore
         return nullptr;
     }
 
-	template <class T> bool htable_t<T>::remove(T* item)
+    template <class T> bool htable_t<T>::remove(T* item)
     {
         s32 index = to_index(item->m_hash);
         if (m_data[index] != nullptr)
         {
-			T* prev = nullptr;
-			T* iter = m_data[index];
+            T* prev = nullptr;
+            T* iter = m_data[index];
             while (iter != item)
             {
-				prev = iter;
-				iter = iter->m_next;
+                prev = iter;
+                iter = iter->m_next;
             }
-			if (iter == item)
-			{
-				if (prev == nullptr)
-				{
-					m_data[index] = item->m_next;
-				}
-				else
-				{
-					prev->m_next = iter->m_next;
-				}
-				return true;
-			}
+            if (iter == item)
+            {
+                if (prev == nullptr)
+                {
+                    m_data[index] = item->m_next;
+                }
+                else
+                {
+                    prev->m_next = iter->m_next;
+                }
+                return true;
+            }
         }
-		return false;
+        return false;
     }
-
 
 }; // namespace xcore
