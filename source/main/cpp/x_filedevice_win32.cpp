@@ -128,6 +128,10 @@ namespace xcore
 		x_DestroyFileDevicePC(fd);
 	}
 
+	void	   to_utf16(xfilepath const& fp, utf16::runes& str);
+	void	   view_utf16(xfilepath const& fp, utf16::crunes& str);
+	void	   release_utf16(xfilepath const& fp, utf16::crunes& str);
+
 
     bool xfiledevice_pc::getDeviceInfo(u64& totalSpace, u64& freeSpace) const 
     {
@@ -155,7 +159,7 @@ namespace xcore
         u32 attrFlags   = FILE_ATTRIBUTE_NORMAL;
 
         utf16::crunes filename16;
-        szFilename.view_utf16(filename16);
+        view_utf16(szFilename, filename16);
 
         bool   result      = false;
         HANDLE nFileHandle = ::CreateFileW(LPCWSTR(filename16.m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
@@ -165,7 +169,7 @@ namespace xcore
             result = true;
         }
 
-        szFilename.release_utf16(filename16);
+        release_utf16(szFilename, filename16);
         return result;
     }
 
@@ -176,13 +180,13 @@ namespace xcore
         u32 disposition = OPEN_EXISTING;
         u32 attrFlags   = FILE_ATTRIBUTE_NORMAL;
 
-        utf16::runes filename16;
-        szFilename.to_utf16(filename16);
+        utf16::crunes filename16;
+        view_utf16(szFilename, filename16);
 
         HANDLE handle = ::CreateFileW(LPCWSTR(filename16.m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
         nFileHandle   = handle;
 
-        szFilename.to_utf16(filename16);
+        release_utf16(szFilename, filename16);
 
         return nFileHandle != INVALID_HANDLE_VALUE;
     }
@@ -194,13 +198,13 @@ namespace xcore
         u32 disposition = CREATE_ALWAYS;
         u32 attrFlags   = FILE_ATTRIBUTE_NORMAL;
 
-        utf16::runes filename16;
-        szFilename.to_utf16(filename16);
+        utf16::crunes filename16;
+        view_utf16(szFilename, filename16);
 
         HANDLE handle = ::CreateFileW((LPCWSTR)filename16.m_str, fileMode, shareType, NULL, disposition, attrFlags, NULL);
         nFileHandle   = handle;
 
-        szFilename.to_utf16(filename16);
+        release_utf16(szFilename, filename16);
 
         return nFileHandle != INVALID_HANDLE_VALUE;
     }
@@ -274,14 +278,14 @@ namespace xcore
             return false;
 
         utf16::crunes filename16;
-        szFilename.view_utf16(filename16);
+        view_utf16(szFilename, filename16);
         utf16::crunes tofilename16;
-        szToFilename.view_utf16(tofilename16);
+        view_utf16(szToFilename, tofilename16);
 
         BOOL result = ::MoveFileW((LPCWSTR)filename16.m_str, (LPCWSTR)tofilename16.m_str) != 0;
 
-        szFilename.release_utf16(filename16);
-        szToFilename.release_utf16(tofilename16);
+        release_utf16(szFilename, filename16);
+        release_utf16(szToFilename, tofilename16);
 
         return result;
     }
@@ -294,14 +298,14 @@ namespace xcore
         const bool failIfExists = boOverwrite == false;
 
         utf16::crunes filename16;
-        szFilename.view_utf16(filename16);
+        view_utf16(szFilename, filename16);
         utf16::crunes tofilename16;
-        szToFilename.view_utf16(tofilename16);
+        view_utf16(szToFilename, tofilename16);
 
         BOOL result = ::CopyFileW((LPCWSTR)filename16.m_str, (LPCWSTR)tofilename16.m_str, failIfExists) != 0;
 
-        szFilename.release_utf16(filename16);
-        szToFilename.release_utf16(tofilename16);
+        release_utf16(szFilename, filename16);
+        release_utf16(szToFilename, tofilename16);
 
 		return result == TRUE;
     }
@@ -326,7 +330,7 @@ namespace xcore
     bool xfiledevice_pc::deleteFile(const xfilepath& szFilename)
     {
         utf16::crunes filename16;
-        szFilename.view_utf16(filename16);
+        view_utf16(szFilename, filename16);
 
         bool result = false;
         if (::DeleteFileW(LPCWSTR(filename16.m_str)))
@@ -334,7 +338,7 @@ namespace xcore
             result = true;
         }
 
-        szFilename.release_utf16(filename16);
+        release_utf16(szFilename, filename16);
         return result;
     }
 
@@ -426,11 +430,11 @@ namespace xcore
             dwFileAttributes = dwFileAttributes | FILE_ATTRIBUTE_SYSTEM;
 
         utf16::crunes filename16;
-        szFilename.view_utf16(filename16);
+        view_utf16(szFilename, filename16);
 
         bool result = ::SetFileAttributesW(LPCWSTR(filename16.m_str), dwFileAttributes) == TRUE;
 
-        szFilename.release_utf16(filename16);
+        release_utf16(szFilename, filename16);
 
         return result;
     }
@@ -440,7 +444,7 @@ namespace xcore
         DWORD dwFileAttributes = 0;
 
         utf16::crunes filename16;
-        szFilename.view_utf16(filename16);
+        view_utf16(szFilename, filename16);
 
         bool result      = false;
         dwFileAttributes = ::GetFileAttributesW(LPCWSTR(filename16.m_str));
@@ -452,7 +456,9 @@ namespace xcore
             attr.setHidden(dwFileAttributes & FILE_ATTRIBUTE_HIDDEN);
             attr.setSystem(dwFileAttributes & FILE_ATTRIBUTE_SYSTEM);
         }
-        szFilename.release_utf16(filename16);
+
+        release_utf16(szFilename, filename16);
+
         return result;
     }
 
@@ -761,15 +767,15 @@ namespace xcore
             if (finf != nullptr)
             {
                 const xfilepath& fp = finf->getFilepath();
-                utf16::crunes runes16;
-				fp.view_utf16(runes16);
-
+				utf16::crunes runes16;
+				view_utf16(fp, runes16);
+;
                 DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)runes16.m_str);
                 if (dwFileAttributes & FILE_ATTRIBUTE_READONLY) // change read-only file mode
                     ::SetFileAttributesW((LPCWSTR)runes16.m_str, dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
                 ::DeleteFileW((LPCWSTR)runes16.m_str);
 
-				fp.release_utf16(runes16);
+				 release_utf16(fp, runes16);
             }
             return true;
         }

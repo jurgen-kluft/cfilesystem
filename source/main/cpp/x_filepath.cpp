@@ -71,18 +71,4 @@ namespace xcore
     bool xfilepath::operator==(const xfilepath& rhs) const { return mPath == rhs.mPath; }
     bool xfilepath::operator!=(const xfilepath& rhs) const { return mPath != rhs.mPath; }
 
-	void xfilepath::to_utf16(utf16::runes& str) const
-	{
-		
-	}
-
-	void xfilepath::view_utf16(utf16::crunes& str) const
-	{
-		mPath.view_utf16(str);
-	}
-	void xfilepath::release_utf16(utf16::crunes& str) const
-	{
-		mPath.release_utf16(str);
-	}
-
 } // namespace xcore
