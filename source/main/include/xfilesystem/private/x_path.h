@@ -35,6 +35,8 @@ namespace xcore
     // Filename                 = Filename.ext
     // FilenameWithoutExtension = Filename
     //==============================================================================
+	class xfilepath;
+	class xdirpath;
 
     class xpath
     {
@@ -95,15 +97,22 @@ namespace xcore
         bool operator==(const xpath&) const;
         bool operator!=(const xpath&) const;
 
-        void append_utf16(utf16::crunes const&);
-
         // These should be used carefully, since they are modifying the
         // utf32::runes array from holding utf32::rune characters to
         // utf16::rune characters. You should also use these 2 functions
         // as a begin/end pair. Do not leave this structure hanging in
         // utf16 format.
-        void view_utf16(utf16::crunes& runes) const;
-        void release_utf16(utf16::crunes& runes) const;
+        static void append_utf16(xpath const& p, utf16::crunes const&);
+        static void view_utf16(xpath const& fp, utf16::crunes& runes);
+		static void release_utf16(xpath const& fp, utf16::crunes& runes);
+
+		static void append_utf16(xfilepath const& fp, utf16::crunes const&);
+        static void view_utf16(xfilepath const& fp, utf16::crunes& runes);
+        static void release_utf16(xfilepath const& fp, utf16::crunes& runes);
+
+        static void append_utf16(xdirpath const& fp, utf16::crunes const&);
+        static void view_utf16(xdirpath const& fp, utf16::crunes& runes);
+        static void release_utf16(xdirpath const& fp, utf16::crunes& runes);
     };
 
 };

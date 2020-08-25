@@ -57,11 +57,12 @@ namespace xcore
         struct alias_t
         {
             inline alias_t()
-                : mAlias(mAliasRunes, mAliasRunes, mAliasRunes + sizeof(mAliasRunes) - 1)
+                : mAlias(mAliasRunes, mAliasRunes, mAliasRunes + (sizeof(mAliasRunes)/sizeof(mAliasRunes[0])) - 1)
                 , mTarget()
                 , mResolved()
+                , mDeviceIndex(-1)
             {
-                mAliasRunes[sizeof(mAliasRunes) - 1] = '\0';
+                mAliasRunes[(sizeof(mAliasRunes) / sizeof(mAliasRunes[0])) - 1] = '\0';
             }
             rune  mAliasRunes[16]; // 
             runes mAlias;          // "data"
@@ -79,10 +80,10 @@ namespace xcore
 		struct device_t
         {
             inline device_t()
-                : mDevName(mDevNameRunes, mDevNameRunes, mDevNameRunes + sizeof(mDevNameRunes) - 1)
+                : mDevName(mDevNameRunes, mDevNameRunes, mDevNameRunes + (sizeof(mDevNameRunes) / sizeof(mDevNameRunes[0])) - 1)
                 , mDevice(nullptr)
             {
-                mDevNameRunes[sizeof(mDevNameRunes) - 1] = '\0';
+                mDevNameRunes[(sizeof(mDevNameRunes) / sizeof(mDevNameRunes[0])) - 1] = '\0';
             }
             rune         mDevNameRunes[16];
             runes        mDevName;

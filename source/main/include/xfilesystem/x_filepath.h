@@ -24,6 +24,7 @@ namespace xcore
     protected:
         friend class xfilesys;
         friend class xfileinfo;
+		friend class xpath;
 
         xfilepath(xfilesys* parent, xpath& path);
         xfilesys* mParent;

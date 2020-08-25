@@ -58,20 +58,20 @@ namespace xcore
                     xbool       boCanWrite      = true;
                     EDriveTypes eDriveType      = DRIVE_TYPE_UNKNOWN;
                     const u32   uDriveTypeWin32 = 1 << (GetDriveTypeW(devicePath));
-                    if (uDriveTypeWin32 & (1 << DRIVE_TYPE_REMOVABLE))
+                    if (uDriveTypeWin32 & (1 << (s32)DRIVE_TYPE_REMOVABLE))
                     {
                         eDriveType = DRIVE_TYPE_REMOVABLE;
                     }
-                    else if (uDriveTypeWin32 & (1 << DRIVE_TYPE_CDROM))
+                    else if (uDriveTypeWin32 & (1 << (s32)DRIVE_TYPE_CDROM))
                     {
                         eDriveType = DRIVE_TYPE_CDROM;
                         boCanWrite = false;
                     }
-                    else if (uDriveTypeWin32 & (1 << DRIVE_TYPE_REMOTE))
+                    else if (uDriveTypeWin32 & (1 << (s32)DRIVE_TYPE_REMOTE))
                     {
                         eDriveType = DRIVE_TYPE_REMOTE;
                     }
-                    else if (uDriveTypeWin32 & (1 << DRIVE_TYPE_FIXED))
+                    else if (uDriveTypeWin32 & (1 << (s32)DRIVE_TYPE_FIXED))
                     {
                         eDriveType = DRIVE_TYPE_FIXED;
                     }
@@ -201,7 +201,7 @@ namespace xcore
         DWORD   result   = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
         if (result != 0)
         {
-            utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
+            utf32::runes dir32(adir32, adir32, adir32 + (sizeof(adir32)/sizeof(adir32[0])) - 1);
             utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
             utf32::runes appdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
             imp->m_devman->add_alias("appdir:\\", appdir);
@@ -211,9 +211,8 @@ namespace xcore
         result = ::GetCurrentDirectoryW(sizeof(dir) - 1, dir);
         if (result != 0)
         {
-            utf32::runes dir32(adir32, adir32, adir32 + sizeof(adir32) - 1);
-            utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
-            utf32::runes curdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
+            utf32::runes curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
+            utf::copy(utf16::crunes((utf16::pcrune)dir), curdir);
             imp->m_devman->add_alias("curdir:\\", curdir);
         }
 

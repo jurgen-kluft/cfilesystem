@@ -36,11 +36,8 @@ namespace xcore
     }
 
     bool xfileattrs::isArchive() const { return (mFlags & FILE_ATTRIBUTE_ARCHIVE) != 0; }
-
     bool xfileattrs::isReadOnly() const { return (mFlags & FILE_ATTRIBUTE_READONLY) != 0; }
-
     bool xfileattrs::isHidden() const { return (mFlags & FILE_ATTRIBUTE_HIDDEN) != 0; }
-
     bool xfileattrs::isSystem() const { return (mFlags & FILE_ATTRIBUTE_SYSTEM) != 0; }
 
     void xfileattrs::setArchive(bool enable)
@@ -82,7 +79,6 @@ namespace xcore
     }
 
     bool xfileattrs::operator==(const xfileattrs& other) const { return mFlags == other.mFlags; }
-
     bool xfileattrs::operator!=(const xfileattrs& other) const { return mFlags != other.mFlags; }
 
     xfiletimes::xfiletimes() {}
@@ -108,9 +104,7 @@ namespace xcore
     }
 
     void xfiletimes::getCreationTime(xdatetime& dt) const { dt = m_creationtime; }
-
     void xfiletimes::getLastAccessTime(xdatetime& dt) const { dt = m_lastaccesstime; }
-
     void xfiletimes::getLastWriteTime(xdatetime& dt) const { dt = m_lastwritetime; }
 
     void xfiletimes::setTime(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime)
@@ -121,9 +115,7 @@ namespace xcore
     }
 
     void xfiletimes::setCreationTime(const xdatetime& dt) { m_creationtime = dt; }
-
     void xfiletimes::setLastAccessTime(const xdatetime& dt) { m_lastaccesstime = dt; }
-
     void xfiletimes::setLastWriteTime(const xdatetime& dt) { m_lastwritetime = dt; }
 
     xfiletimes& xfiletimes::operator=(const xfiletimes& other)

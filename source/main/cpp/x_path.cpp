@@ -511,42 +511,73 @@ namespace xcore
     bool xpath::operator==(const xpath& rhs) const { return compare(m_path, rhs.m_path) == 0; }
     bool xpath::operator!=(const xpath& rhs) const { return compare(m_path, rhs.m_path) != 0; }
 
-	void xpath::append_utf16(utf16::crunes const& r)
+	void xpath::append_utf16(xpath const& fp, utf16::crunes const& r)
 	{
         utf16::pcrune src = (utf16::pcrune)r.m_str;
-        utf32::prune  dst = (utf32::prune)m_path.m_str;
+        utf32::prune  dst = (utf32::prune)fp.m_path.m_str;
         while (src < r.m_end)
         {
             uchar32 c = utf::read(src, r.m_end);
-            utf::write(c, dst, m_path.m_end);
+            utf::write(c, dst, fp.m_path.m_end);
         }
 	}
 
-    void xpath::view_utf16(utf16::crunes& runes) const
+    void xpath::view_utf16(xpath const& fp, utf16::crunes& runes) 
     {
-        utf16::prune str  = (utf16::prune)m_path.m_str;
-        utf16::prune end  = (utf16::prune)m_path.m_end;
-        utf16::prune eos  = (utf16::prune)m_path.m_eos;
-        utf32::pcrune src = (utf32::pcrune)m_path.m_str;
-        while (src <= m_path.m_end)
+        utf16::prune str  = (utf16::prune)fp.m_path.m_str;
+        utf16::prune end  = (utf16::prune)fp.m_path.m_end;
+        utf16::prune eos  = (utf16::prune)fp.m_path.m_eos;
+        utf32::pcrune src = (utf32::pcrune)fp.m_path.m_str;
+        while (src <= fp.m_path.m_end)
         {
             uchar32 c = *src++;
             utf::write(c, end, eos);
         }
-		runes.m_str = (utf16::prune)m_path.m_str;
+		runes.m_str = (utf16::prune)fp.m_path.m_str;
 		runes.m_end = (utf16::prune)end;
 		runes.m_cur = runes.m_str;
     }
 
-    void xpath::release_utf16(utf16::crunes& runes) const
+    void xpath::release_utf16(xpath const& fp, utf16::crunes& runes) 
     {
         utf16::pcrune src = (utf16::pcrune)runes.m_str;
-        utf32::prune  dst = (utf32::prune)m_path.m_str;
+        utf32::prune  dst = (utf32::prune)fp.m_path.m_str;
         while (src < runes.m_end)
         {
             uchar32 c = utf::read(src, runes.m_end);
-            utf::write(c, dst, m_path.m_end);
+            utf::write(c, dst, fp.m_path.m_end);
         }
+    }
+
+	void xpath::append_utf16(xfilepath const& fp, utf16::crunes const& r)
+	{
+		append_utf16(fp.mPath, r);
+	}
+
+    void xpath::view_utf16(xfilepath const& fp, utf16::crunes& runes) 
+    {
+		view_utf16(fp.mPath, runes);
+    }
+
+    void xpath::release_utf16(xfilepath const& fp, utf16::crunes& runes) 
+    {
+		release_utf16(fp.mPath, runes);
+    }
+
+
+	void xpath::append_utf16(xdirpath const& fp, utf16::crunes const& r)
+	{
+		append_utf16(fp.mPath, r);
+	}
+
+    void xpath::view_utf16(xdirpath const& fp, utf16::crunes& runes) 
+    {
+		view_utf16(fp.mPath, runes);
+    }
+
+    void xpath::release_utf16(xdirpath const& fp, utf16::crunes& runes) 
+    {
+		release_utf16(fp.mPath, runes);
     }
 
 } // namespace xcore
