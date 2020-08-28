@@ -380,14 +380,6 @@ namespace xcore
 			virtual bool			enumerate(xdirpath const& szDirPath, enumerate_delegate& _enumerator);
 
 			XCORE_CLASS_PLACEMENT_NEW_DELETE
-			
-				/*
-			void*	operator new(xcore::xsize_t num_bytes)				{ return heapAlloc(num_bytes, X_ALIGNMENT_DEFAULT); }	
-			void*	operator new(xcore::xsize_t num_bytes, void* mem)	{ return mem; }											
-			void	operator delete(void* mem)							{ heapFree(mem); }										
-			void	operator delete(void* mem, void* )					{ }						
-			*/
-		
 		};
 
 		static TestDir*		sFindTestDir(const xdirpath& szDir)
