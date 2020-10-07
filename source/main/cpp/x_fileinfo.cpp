@@ -17,31 +17,13 @@
 //==============================================================================
 namespace xcore
 {
-    xfileinfo::xfileinfo()
-        : mFileExists(false)
-		, mFileTimes()
-		, mFileAttributes()
-		, mParent(nullptr)
-		, mPath()
-	{
-	}
+    xfileinfo::xfileinfo() : mFileExists(false), mFileTimes(), mFileAttributes(), mParent(nullptr), mPath() {}
 
-    xfileinfo::xfileinfo(const xfileinfo& fi)
-        : mFileExists(fi.mFileExists)
-		, mFileTimes(fi.mFileTimes)
-		, mFileAttributes(fi.mFileAttributes)
-		, mParent(fi.mParent)
-		, mPath(fi.mPath)
-    {
-    }
+    xfileinfo::xfileinfo(const xfileinfo& fi) : mFileExists(fi.mFileExists), mFileTimes(fi.mFileTimes), mFileAttributes(fi.mFileAttributes), mParent(fi.mParent), mPath(fi.mPath) {}
 
-    xfileinfo::xfileinfo(const xfilepath& fp)
-        : mParent(fp.mParent)
-		, mPath(fp)
-    {
-    }
+    xfileinfo::xfileinfo(const xfilepath& fp) : mParent(fp.mParent), mPath(fp) {}
 
-    u64 xfileinfo::getLength() const { return sGetLength(mPath); }
+    u64  xfileinfo::getLength() const { return sGetLength(mPath); }
     void xfileinfo::setLength(u64 length) { sSetLength(mPath, length); }
 
     bool xfileinfo::isValid() const
@@ -52,13 +34,10 @@ namespace xcore
     }
 
     bool xfileinfo::isRooted() const { return mPath.isRooted(); }
-	bool xfileinfo::exists() const { return sExists(mPath); }
+    bool xfileinfo::exists() const { return sExists(mPath); }
 
-	bool xfileinfo::create(xstream*& outFilestream) const
-	{
-		return (sCreate(mPath, outFilestream));
-	}
-    
+    bool xfileinfo::create(xstream*& outFilestream) const { return (sCreate(mPath, outFilestream)); }
+
     bool xfileinfo::create()
     {
         xstream* fs;
@@ -75,8 +54,8 @@ namespace xcore
     bool xfileinfo::open(xstream*& outFilestream) { return (sCreate(mPath, outFilestream)); }
     bool xfileinfo::openRead(xstream*& outFileStream) { return sOpenRead(mPath, outFileStream); }
     bool xfileinfo::openWrite(xstream*& outFileStream) { return sOpenWrite(mPath, outFileStream); }
-    u64 xfileinfo::readAllBytes(xbyte* buffer, u64 count) { return sReadAllBytes(mPath, buffer, count); }
-    u64 xfileinfo::writeAllBytes(const xbyte* buffer, u64 count) { return sWriteAllBytes(mPath, buffer, count); }
+    u64  xfileinfo::readAllBytes(xbyte* buffer, u64 count) { return sReadAllBytes(mPath, buffer, count); }
+    u64  xfileinfo::writeAllBytes(const xbyte* buffer, u64 count) { return sWriteAllBytes(mPath, buffer, count); }
 
     bool xfileinfo::getParent(xdirpath& parent) const
     {
@@ -107,55 +86,57 @@ namespace xcore
     bool xfileinfo::copy_to(const xfilepath& toFilename, bool overwrite) { return sCopy(mPath, toFilename, overwrite); }
     bool xfileinfo::move_to(const xfilepath& toFilename, bool overwrite) { return sMove(mPath, toFilename); }
 
-	xdirpath  xfileinfo::getParent() const
-	{
-		xdirpath dp;
-		if (getParent(dp))
-		{
-			return dp;
-		}
-		return xdirpath(mParent, xpath());
-	}
+    xdirpath xfileinfo::getParent() const
+    {
+        xdirpath dp;
+        if (getParent(dp))
+        {
+            return dp;
+        }
+        xpath nullpath(mParent->m_stralloc);
+        return xdirpath(mParent, nullpath);
+    }
 
-	xdirpath  xfileinfo::getRoot() const
-	{
-		xdirpath dp;
-		if (getRoot(dp))
-		{
-			return dp;
-		}
-		return xdirpath(mParent, xpath());
-	}
+    xdirpath xfileinfo::getRoot() const
+    {
+        xdirpath dp;
+        if (getRoot(dp))
+        {
+            return dp;
+        }
+        xpath nullpath(mParent->m_stralloc);
+        return xdirpath(mParent, nullpath);
+    }
 
-    xdirpath  xfileinfo::getDirpath() const
-	{
-		xdirpath dp;
-		getDirpath(dp);
-		return dp;
-	}
+    xdirpath xfileinfo::getDirpath() const
+    {
+        xdirpath dp;
+        getDirpath(dp);
+        return dp;
+    }
 
-	xfilepath xfileinfo::getFilename() const
-	{
-		xfilepath fp;
-		getFilename(fp);
-		return fp;
-	}
+    xfilepath xfileinfo::getFilename() const
+    {
+        xfilepath fp;
+        getFilename(fp);
+        return fp;
+    }
 
-	xfilepath xfileinfo::getFilenameWithoutExtension() const
-	{
-		xfilepath fp;
-		getFilenameWithoutExtension(fp);
-		return fp;
-	}
+    xfilepath xfileinfo::getFilenameWithoutExtension() const
+    {
+        xfilepath fp;
+        getFilenameWithoutExtension(fp);
+        return fp;
+    }
 
-	xfilepath xfileinfo::getExtension() const
-	{
-		xfilepath fp;
-		getExtension(fp);
-		return fp;
-	}
+    xfilepath xfileinfo::getExtension() const
+    {
+        xfilepath fp;
+        getExtension(fp);
+        return fp;
+    }
 
-    void xfileinfo::getFilepath(xfilepath& filepath) const { filepath = mPath; }
+    void             xfileinfo::getFilepath(xfilepath& filepath) const { filepath = mPath; }
     xfilepath const& xfileinfo::getFilepath() const { return mPath; }
 
     void xfileinfo::up() { mPath.up(); }
@@ -198,14 +179,14 @@ namespace xcore
         return false;
     }
 
-	bool xfileinfo::sCreate(const xfilepath& filepath, xstream*& outFileStream)
-	{
+    bool xfileinfo::sCreate(const xfilepath& filepath, xstream*& outFileStream)
+    {
         xfiledevice* device;
         xfilepath    syspath = xfilesys::resolve(filepath, device);
         if (device != nullptr)
             return device->createStream(syspath, true, true, outFileStream);
         return false;
-	}
+    }
 
     bool xfileinfo::sGetFileAttributes(const xfilepath& filepath, xfileattrs& outAttr)
     {

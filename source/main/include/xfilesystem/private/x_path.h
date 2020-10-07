@@ -12,36 +12,36 @@ namespace xcore
 {
     class xfilesystem;
     class xfiledevice;
-	class xfilesys;
+    class xfilesys;
 
     //==============================================================================
     // xdirpath:
-    //		- Relative:		FolderA\FolderB\ 
-	//		- Absolute:		Device:\FolderA\FolderB\ 
+    //		- Relative:		"FolderA\FolderB\"
+    //		- Absolute:		"Device:\FolderA\FolderB\"
     //
-    // Root                     = Device:\ 
-    // Parent                   = Device:\FolderA\ 
-    // Dir                      = \FolderA\FolderB\
+    // Root                     = "Device:\"
+    // Parent                   = "Device:\FolderA\"
+    // Dir                      = "\FolderA\FolderB\"
     //==============================================================================
 
     //==============================================================================
     // xfilepath:
-    //		- Relative:		FolderA\FolderB\Filename.ext
-    //		- Absolute:		Device:\FolderA\FolderB\Filename.ext
+    //		- Relative:		"FolderA\FolderB\Filename.ext"
+    //		- Absolute:		"Device:\FolderA\FolderB\Filename.ext"
     //
-    // Root                     = Device:\ 
-    // Parent                   = Device:\FolderA\ 
-    // Dir                      = \FolderA\FolderB\Filename.ext
-    // Filename                 = Filename.ext
-    // FilenameWithoutExtension = Filename
+    // Root                     = "Device:\"
+    // Parent                   = "Device:\FolderA\"
+    // Dir                      = "\FolderA\FolderB\Filename.ext"
+    // Filename                 = "Filename.ext"
+    // FilenameWithoutExtension = "Filename"
     //==============================================================================
-	class xfilepath;
-	class xdirpath;
+    class xfilepath;
+    class xdirpath;
 
     class xpath
     {
-	public:
-		static utf32::crunes s_device_separator;
+    public:
+        static utf32::crunes s_device_separator;
 
         utf32::alloc* m_alloc;
         utf32::runes  m_path;
@@ -49,10 +49,10 @@ namespace xcore
         xpath();
         xpath(utf32::alloc* allocator);
         xpath(utf32::alloc* allocator, const utf32::crunes& path);
-		xpath(utf32::alloc* allocator, const ascii::crunes& path);
+        xpath(utf32::alloc* allocator, const ascii::crunes& path);
         xpath(const xpath& path);
         xpath(const xpath& lhspath, const xpath& rhspath);
-		~xpath();
+        ~xpath();
 
         xpath resolve(xfilesys* fs, xfiledevice*& outdevice) const;
 
@@ -90,9 +90,9 @@ namespace xcore
         void getFilenameWithoutExtension(xpath& out_filename_no_ext) const;
         void getExtension(xpath& out_ext) const;
 
-		xpath& operator=(const utf32::runes&);
+        xpath& operator=(const utf32::runes&);
         xpath& operator=(const xpath&);
-		xpath& operator+=(const utf32::runes&);
+        xpath& operator+=(const utf32::runes&);
 
         bool operator==(const xpath&) const;
         bool operator!=(const xpath&) const;
@@ -104,9 +104,9 @@ namespace xcore
         // utf16 format.
         static void append_utf16(xpath const& p, utf16::crunes const&);
         static void view_utf16(xpath const& fp, utf16::crunes& runes);
-		static void release_utf16(xpath const& fp, utf16::crunes& runes);
+        static void release_utf16(xpath const& fp, utf16::crunes& runes);
 
-		static void append_utf16(xfilepath const& fp, utf16::crunes const&);
+        static void append_utf16(xfilepath const& fp, utf16::crunes const&);
         static void view_utf16(xfilepath const& fp, utf16::crunes& runes);
         static void release_utf16(xfilepath const& fp, utf16::crunes& runes);
 
@@ -115,6 +115,6 @@ namespace xcore
         static void release_utf16(xdirpath const& fp, utf16::crunes& runes);
     };
 
-};
+}; // namespace xcore
 
 #endif // __X_FILESYSTEM_XPATH_H__

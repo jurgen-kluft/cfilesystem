@@ -19,12 +19,7 @@ namespace xcore
 
     struct xfilesyscfg
     {
-        inline xfilesyscfg()
-            : m_max_open_stream(32)
-            , m_default_slash('/')
-            , m_allocator(nullptr)
-        {
-        }
+        inline xfilesyscfg() : m_max_open_stream(32), m_default_slash('/'), m_allocator(nullptr) {}
         u32     m_max_open_stream;
         char    m_default_slash;
         xalloc* m_allocator;
@@ -38,24 +33,25 @@ namespace xcore
     class xfileinfo;
     class xdirpath;
     class xdirinfo;
-	class xfiledevice;
+    class xfilesys;
+    class xfiledevice;
 
     class xfilesystem
     {
     public:
-        static void	      create(xfilesyscfg const&);
-        static void       destroy();
+        static void create(xfilesyscfg const&);
+        static void destroy();
 
-		static bool       register_device(const utf32::crunes& device_name, xfiledevice*);
+        static bool register_device(const utf32::crunes& device_name, xfiledevice*);
 
-		static xfilepath  filepath(const char* str);
-		static xdirpath   dirpath(const char* str);
-        static xfilepath  filepath(const utf32::crunes& str);
-		static xdirpath   dirpath(const utf32::crunes& str);
-        static void       to_ascii(xfilepath const& fp, ascii::runes& str);
-		static void       to_ascii(xdirpath const& dp, ascii::runes& str);
+        static xfilepath filepath(const char* str);
+        static xdirpath  dirpath(const char* str);
+        static xfilepath filepath(const utf32::crunes& str);
+        static xdirpath  dirpath(const utf32::crunes& str);
+        static void      to_ascii(xfilepath const& fp, ascii::runes& str);
+        static void      to_ascii(xdirpath const& dp, ascii::runes& str);
 
-		static xfile*     open(xfilepath const& filename, EFileMode mode);
+        static xfile*     open(xfilepath const& filename, EFileMode mode);
         static xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
         static xwriter*   writer(xfile*);
         static xreader*   reader(xfile*);

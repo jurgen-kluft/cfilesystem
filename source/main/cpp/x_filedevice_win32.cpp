@@ -38,20 +38,15 @@ namespace xcore
         xdirpath mDrivePath;
         xbool    mCanWrite;
 
-		XCORE_CLASS_PLACEMENT_NEW_DELETE
+        XCORE_CLASS_PLACEMENT_NEW_DELETE
 
-        xfiledevice_pc(xalloc* alloc, const xdirpath& pDrivePath, xbool boCanWrite)
-            : mAllocator(alloc)
-			, mDrivePath(pDrivePath)
-            , mCanWrite(boCanWrite)
-        {
-        }
+        xfiledevice_pc(xalloc* alloc, const xdirpath& pDrivePath, xbool boCanWrite) : mAllocator(alloc), mDrivePath(pDrivePath), mCanWrite(boCanWrite) {}
         virtual ~xfiledevice_pc() {}
 
         virtual bool canSeek() const { return true; }
         virtual bool canWrite() const { return mCanWrite; }
 
-        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const ;
+        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const;
 
         virtual bool openFile(const xfilepath& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle);
         virtual bool createFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle);
@@ -114,21 +109,18 @@ namespace xcore
     void x_DestroyFileDevicePC(xfiledevice* device)
     {
         xfiledevice_pc* file_device = (xfiledevice_pc*)device;
-		file_device->mAllocator->destruct(file_device);
+        file_device->mAllocator->destruct(file_device);
     }
 
     xfiledevice* x_CreateFileDevice(xalloc* allocator, utf32::crunes& pDrivePath, xbool boCanWrite)
-	{
-		xdirpath drivePath = xfilesystem::dirpath(pDrivePath);
-		return x_CreateFileDevicePC(allocator, drivePath, boCanWrite);
-	}
-    
-	void         x_DestroyFileDevice(xfiledevice* fd)
-	{
-		x_DestroyFileDevicePC(fd);
-	}
+    {
+        xdirpath drivePath = xfilesystem::dirpath(pDrivePath);
+        return x_CreateFileDevicePC(allocator, drivePath, boCanWrite);
+    }
 
-    bool xfiledevice_pc::getDeviceInfo(u64& totalSpace, u64& freeSpace) const 
+    void x_DestroyFileDevice(xfiledevice* fd) { x_DestroyFileDevicePC(fd); }
+
+    bool xfiledevice_pc::getDeviceInfo(u64& totalSpace, u64& freeSpace) const
     {
         ULARGE_INTEGER totalbytes, freebytes;
 
@@ -302,7 +294,7 @@ namespace xcore
         xpath::release_utf16(szFilename, filename16);
         xpath::release_utf16(szToFilename, tofilename16);
 
-		return result == TRUE;
+        return result == TRUE;
     }
 
     bool xfiledevice_pc::closeFile(void* nFileHandle)
@@ -312,15 +304,9 @@ namespace xcore
         return true;
     }
 
-    bool xfiledevice_pc::createStream(xfilepath const& szFilename, bool boRead, bool boWrite, xstream*& strm)
-	{
-		return false;
-	}
+    bool xfiledevice_pc::createStream(xfilepath const& szFilename, bool boRead, bool boWrite, xstream*& strm) { return false; }
 
-    bool xfiledevice_pc::closeStream(xstream* strm)
-	{
-		return false;
-	}
+    bool xfiledevice_pc::closeStream(xstream* strm) { return false; }
 
     bool xfiledevice_pc::deleteFile(const xfilepath& szFilename)
     {
@@ -457,7 +443,6 @@ namespace xcore
         return result;
     }
 
-
     bool xfiledevice_pc::setFileTime(void* nFileHandle, const xfiletimes& ftimes)
     {
         xdatetime creationTime;
@@ -537,7 +522,7 @@ namespace xcore
 
     bool xfiledevice_pc::moveDir(const xdirpath& szDirPath, const xdirpath& szToDirPath, bool boOverwrite)
     {
-        u32          dwFlags = MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED;
+        u32           dwFlags = MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED;
         utf16::crunes dirpath16;
         xpath::view_utf16(szDirPath, dirpath16);
         utf16::crunes todirpath16;
@@ -571,17 +556,17 @@ namespace xcore
     {
         class xnode
         {
-		public:
+        public:
             HANDLE           mFindHandle;
             WIN32_FIND_DATAW mFindData;
             xnode*           mPrev;
 
-			XCORE_CLASS_PLACEMENT_NEW_DELETE
+            XCORE_CLASS_PLACEMENT_NEW_DELETE
         };
 
-        xalloc*  mNodeHeap;
-        xnode* mDirStack;
-        s32    mLevel;
+        xalloc* mNodeHeap;
+        xnode*  mDirStack;
+        s32     mLevel;
 
         xpath mDirPath;
         xpath mFilePath;
@@ -591,9 +576,7 @@ namespace xcore
 
         utf32::runez<4> mWildcard;
 
-        xdirwalker(xdirpath const& dirpath)
-            : mNodeHeap(nullptr)
-            , mDirPath()
+        xdirwalker(xdirpath const& dirpath) : mNodeHeap(nullptr), mDirPath()
         {
             mDirPath  = xfilesys::get_xpath(dirpath);
             mNodeHeap = xfilesys::get_filesystem(dirpath)->m_allocator;
@@ -709,38 +692,32 @@ namespace xcore
     {
         xdirpath const& mSrcDir;
         xdirpath const& mDstDir;
-		xfiledevice*	mDstDevice;
+        xfiledevice*    mDstDevice;
         bool            mOverwrite;
 
-        enumerate_delegate_copy(xdirpath const& srcdir, xdirpath const& dstdir, xfiledevice* dstdevice, bool overwrite)
-            : mSrcDir(srcdir)
-			, mDstDir(dstdir)
-			, mDstDevice(dstdevice)
-            , mOverwrite(overwrite)
-        {
-        }
+        enumerate_delegate_copy(xdirpath const& srcdir, xdirpath const& dstdir, xfiledevice* dstdevice, bool overwrite) : mSrcDir(srcdir), mDstDir(dstdir), mDstDevice(dstdevice), mOverwrite(overwrite) {}
 
         virtual bool operator()(s32 depth, const xfileinfo* finf, const xdirinfo* dinf)
         {
             if (mDstDevice != nullptr)
             {
-				if (dinf != nullptr)
-				{
-					xdirpath subpath;
-					dinf->getDirpath().makeRelativeTo(mSrcDir, subpath);
-					xdirpath dstdirpath = mDstDir + subpath;
-					mDstDevice->createDir(dstdirpath);
-					return true;
-				}
-				else if (finf != nullptr)
-				{
-					xfilepath dstfilepath = finf->getFilepath();
-					dstfilepath.makeRelativeTo(mSrcDir);
-					dstfilepath.makeAbsoluteTo(mDstDir);
-					mDstDevice->copyFile(finf->getFilepath(), dstfilepath, true);
-					return true;
-				}
-			}
+                if (dinf != nullptr)
+                {
+                    xdirpath subpath;
+                    dinf->getDirpath().makeRelativeTo(mSrcDir, subpath);
+                    xdirpath dstdirpath = mDstDir + subpath;
+                    mDstDevice->createDir(dstdirpath);
+                    return true;
+                }
+                else if (finf != nullptr)
+                {
+                    xfilepath dstfilepath = finf->getFilepath();
+                    dstfilepath.makeRelativeTo(mSrcDir);
+                    dstfilepath.makeAbsoluteTo(mDstDir);
+                    mDstDevice->copyFile(finf->getFilepath(), dstfilepath, true);
+                    return true;
+                }
+            }
             return false;
         }
     };
@@ -761,15 +738,15 @@ namespace xcore
             if (finf != nullptr)
             {
                 const xfilepath& fp = finf->getFilepath();
-				utf16::crunes runes16;
-				xpath::view_utf16(fp, runes16);
-;
+                utf16::crunes    runes16;
+                xpath::view_utf16(fp, runes16);
+                ;
                 DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)runes16.m_str);
                 if (dwFileAttributes & FILE_ATTRIBUTE_READONLY) // change read-only file mode
                     ::SetFileAttributesW((LPCWSTR)runes16.m_str, dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
                 ::DeleteFileW((LPCWSTR)runes16.m_str);
 
-				 xpath::release_utf16(fp, runes16);
+                xpath::release_utf16(fp, runes16);
             }
             return true;
         }
@@ -949,7 +926,6 @@ namespace xcore
     bool xfiledevice_pc::seekOrigin(void* nFileHandle, u64 pos, u64& newPos) { return seek(nFileHandle, __SEEK_ORIGIN, pos, newPos); }
     bool xfiledevice_pc::seekCurrent(void* nFileHandle, u64 pos, u64& newPos) { return seek(nFileHandle, __SEEK_CURRENT, pos, newPos); }
     bool xfiledevice_pc::seekEnd(void* nFileHandle, u64 pos, u64& newPos) { return seek(nFileHandle, __SEEK_END, pos, newPos); }
-
 
 }; // namespace xcore
 

@@ -19,9 +19,9 @@ namespace xcore
 
     //==============================================================================
     // xdirpath:
-    //		- Relative:		FolderA\FolderB\ 
-	//		- Absolute:		Device:\FolderA\FolderB\ 
-	//==============================================================================
+    //		- Relative:		"FolderA\FolderB\"
+    //		- Absolute:		"Device:\FolderA\FolderB\"
+    //==============================================================================
     class xdirpath
     {
     protected:
@@ -32,7 +32,7 @@ namespace xcore
         friend class xdirpathz;
         friend class xdirpathc;
         friend class xfilesys;
-		friend class xfiledevice_pc;
+        friend class xfiledevice_pc;
 
         xfilesys* mParent;
         xpath     mPath;
