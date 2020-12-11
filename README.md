@@ -5,18 +5,18 @@
 * xfilesystem
   * filepath
   * dirpath
-  * info
+  * file info
+  * dir info
   * file
+  * stream
 
 ## __TODO__
 
 * Implement file device for Win32 and Mac
-* Copy xstring functions to xpath and adjust
 * Have xfilepath and xdirpath use xpath
-* Remove dependency on xstring
 * Debug filesystem init for Win32 and Mac (use wchar API)
 * Implement file stream and memory stream
-* Finish device manager (use xpath, not xstring)
+* Finish device manager (use xpath)
 
 ## __API__
 
@@ -152,6 +152,7 @@ myfs->search(dir, [](xfileinfo const* fileinfo, xdirinfo const* dirinfo, s32 dir
 
 xfile* f = xfs->open("d:\\test.bin", xfilesystem::READ);
 xreader* reader = xfs->reader(f);
+//NOTE: xtextreader in the xtext package ?
 xtextreader* textreader = xnew<xtextreader>(reader);
 //xtextreader* textreader = xfs->xnew<xtextreader>(reader); // When you want to use xfilesystem memory
 
@@ -162,8 +163,7 @@ while (textreader.readLine(line))
 }
 
 xtextreader->close();
-xdelete<>(xtextreader);
-//xfs->xdelete<xtextreader>(textreader);    // When xfilesystem owns the memory
+xdelete<>(textreader);
 
 xfs->close(reader);
 xfs->close(f);
