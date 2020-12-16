@@ -10,13 +10,11 @@
 
 namespace xcore
 {
-    using namespace utf32;
+    static utf32::rune   sSlash                 = '\\';
+    static utf32::rune   sSemiColumnSlashStr[3] = {':', '\\', 0};
+    static crunes_t sSemiColumnSlash(sSemiColumnSlashStr, sSemiColumnSlashStr + 2);
 
-    static rune   sSlash                 = '\\';
-    static rune   sSemiColumnSlashStr[3] = {':', '\\', 0};
-    static crunes sSemiColumnSlash(sSemiColumnSlashStr, sSemiColumnSlashStr + 2);
-
-    static void fix_slashes(runes& str)
+    static void fix_slashes(runes_t& str)
     {
         // Replace incorrect slashes with the correct one
         findReplace(str, (uchar32)'/', sSlash);
@@ -29,30 +27,30 @@ namespace xcore
 
     xpath::xpath() : m_alloc(nullptr), m_path() {}
 
-    xpath::xpath(utf32::alloc* allocator) : m_alloc(allocator), m_path() { fix_slashes(m_path); }
+    xpath::xpath(runes_alloc_t* allocator) : m_alloc(allocator), m_path() { fix_slashes(m_path); }
 
-    xpath::xpath(utf32::alloc* allocator, const utf32::crunes& path) : m_alloc(allocator)
+    xpath::xpath(runes_alloc_t* allocator, const crunes_t& path) : m_alloc(allocator)
     {
-        utf32::copy(path, m_path, m_alloc, 16);
+        copy(path, m_path, m_alloc, 16);
         fix_slashes(m_path);
     }
 
-    xpath::xpath(utf32::alloc* allocator, const ascii::crunes& path) : m_alloc(allocator)
+    xpath::xpath(runes_alloc_t* allocator, const crunes_t& path) : m_alloc(allocator)
     {
-        utf32::copy(path, m_path, m_alloc, 16);
+        copy(path, m_path, m_alloc, 16);
         fix_slashes(m_path);
     }
 
     xpath::xpath(const xpath& path) : m_alloc(path.m_alloc), m_path()
     {
-        utf32::copy(path.m_path, m_path, m_alloc, 16);
+        copy(path.m_path, m_path, m_alloc, 16);
         fix_slashes(m_path);
     }
 
     xpath::xpath(const xpath& lhspath, const xpath& rhspath) : m_alloc(lhspath.m_alloc), m_path()
     {
         // Combine both paths into a new path
-        utf32::concatenate(m_path, lhspath.m_path, rhspath.m_path, m_alloc, 16);
+        concatenate(m_path, lhspath.m_path, rhspath.m_path, m_alloc, 16);
     }
 
     xpath::~xpath()
@@ -65,7 +63,7 @@ namespace xcore
 
     xpath xpath::resolve(xfilesys* fs, xfiledevice*& outdevice) const
     {
-        runes rootpart = find(m_path, sSemiColumnSlash);
+        runes_t rootpart = find(m_path, sSemiColumnSlash);
         if (rootpart.is_empty())
         {
             outdevice = nullptr;
@@ -94,18 +92,18 @@ namespace xcore
     bool xpath::isEmpty() const { return m_path.is_empty(); }
     bool xpath::isRoot() const
     {
-        runes rootpart = find(m_path, sSemiColumnSlash);
+        runes_t rootpart = find(m_path, sSemiColumnSlash);
         if (rootpart.is_empty())
             return false;
         // Now determine if we are an actual root, which means that we
         // do not have any folders after our device statement.
-        runes pathpart = selectUntilEndExcludeSelection(m_path, rootpart);
+        runes_t pathpart = selectAfterExclude(m_path, rootpart);
         return pathpart.is_empty();
     }
 
     bool xpath::isRooted() const
     {
-        runes pos = find(m_path, sSemiColumnSlash);
+        runes_t pos = find(m_path, sSemiColumnSlash);
         return !pos.is_empty();
     }
 
@@ -123,17 +121,17 @@ namespace xcore
 
         if (parent.isRooted())
         {
-            runes overlap = selectOverlap(parent.m_path, m_path);
+            runes_t overlap = selectOverlap(parent.m_path, m_path);
             return !overlap.is_empty();
         }
         return false;
     }
 
-    void xpath::set_filepath(utf32::runes& runes, utf32::alloc* allocator)
+    void xpath::set_filepath(runes_t& runes_t, runes_alloc_t* allocator)
     {
         erase();
         m_alloc = allocator;
-        m_path  = runes;
+        m_path  = runes_t;
 
         // Replace incorrect slashes with the correct one
         findReplace(m_path, (uchar32)'/', sSlash);
@@ -144,11 +142,11 @@ namespace xcore
         trim(m_path, sSlash);
     }
 
-    void xpath::set_dirpath(utf32::runes& runes, utf32::alloc* allocator)
+    void xpath::set_dirpath(runes_t& runes_t, runes_alloc_t* allocator)
     {
         erase();
         m_alloc = allocator;
-        m_path  = runes;
+        m_path  = runes_t;
 
         // Replace incorrect slashes with the correct one
         findReplace(m_path, (uchar32)'/', sSlash);
@@ -161,7 +159,7 @@ namespace xcore
         // Ensure slash at the end
         if (!ends_with(m_path, sSlash))
         {
-            crunes slashstr(sSemiColumnSlashStr + 1, sSemiColumnSlashStr + 2);
+            crunes_t slashstr(sSemiColumnSlashStr + 1, sSemiColumnSlashStr + 2);
             concatenate(m_path, slashstr, m_alloc, 16);
         }
     }
@@ -172,7 +170,7 @@ namespace xcore
         m_alloc = dirpath.m_alloc;
         if (otherpath.isRooted())
         {
-            runes relativefilepath = findSelectAfter(otherpath.m_path, sSemiColumnSlash);
+            runes_t relativefilepath = findSelectAfter(otherpath.m_path, sSemiColumnSlash);
             concatenate(m_path, dirpath.m_path, relativefilepath, m_alloc, 16);
         }
         else
@@ -181,21 +179,21 @@ namespace xcore
         }
     }
 
-    void xpath::copy_dirpath(utf32::runes& runes) { copy(runes, m_path, m_alloc, 16); }
+    void xpath::copy_dirpath(runes_t& runes_t) { copy(runes_t, m_path, m_alloc, 16); }
 
     class enumerate_runes
     {
     public:
-        virtual bool operator()(s32 level, const runes& folder) = 0;
+        virtual bool operator()(s32 level, const runes_t& folder) = 0;
     };
 
-    static void enumerate_fn(const runes& dirpath, enumerate_runes& enumerator, bool right_to_left)
+    static void enumerate_fn(const runes_t& dirpath, enumerate_runes& enumerator, bool right_to_left)
     {
         s32   level = 0;
-        runes path  = findSelectAfter(dirpath, sSemiColumnSlash);
+        runes_t path  = findSelectAfter(dirpath, sSemiColumnSlash);
         if (right_to_left == false)
         {
-            runes dir = selectBetween(path, sSlash, sSlash);
+            runes_t dir = selectBetween(path, sSlash, sSlash);
             while (dir.is_empty() == false)
             {
                 if (enumerator(level, dir) == false)
@@ -208,7 +206,7 @@ namespace xcore
         }
         else
         {
-            runes dir = selectBetweenLast(path, sSlash, sSlash);
+            runes_t dir = selectBetweenLast(path, sSlash, sSlash);
             while (dir.is_empty() == false)
             {
                 if (enumerator(level, dir) == false)
@@ -226,7 +224,7 @@ namespace xcore
     public:
         s32 mLevels;
         folder_counting_enumerator() : mLevels(0) {}
-        virtual bool operator()(s32 level, const runes& folder)
+        virtual bool operator()(s32 level, const runes_t& folder)
         {
             mLevels++;
             return true;
@@ -243,12 +241,12 @@ namespace xcore
     bool xpath::getLevel(s32 level, xpath& outpath) const
     {
         // Return the path at level @level
-        runez<4> device(":\\");
+        runez_t<ascii::rune, 4> device(":\\");
 
-        runes path = findSelectAfter(m_path, device);
+        runes_t path = findSelectAfter(m_path, device);
         if (path.is_empty())
             return false;
-        runes dir = selectBetween(m_path, sSlash, sSlash);
+        runes_t dir = selectBetween(m_path, sSlash, sSlash);
         while (level > 0 && !dir.is_empty())
         {
             dir = selectNextBetween(m_path, dir, sSlash, sSlash);
@@ -256,7 +254,7 @@ namespace xcore
         }
         if (!dir.is_empty())
         {
-            runes path = selectUntilEndIncludeSelection(m_path, dir);
+            runes_t path = selectAfterInclude(m_path, dir);
             copy(path, outpath.m_path, outpath.m_alloc, 16);
             return true;
         }
@@ -266,15 +264,15 @@ namespace xcore
     class folder_search_enumerator : public enumerate_delegate
     {
     public:
-        runes mFolderName;
+        runes_t mFolderName;
         bool  mFound;
         s32   mLevel;
 
-        folder_search_enumerator(const runes& folder) : mFolderName(folder), mFound(false), mLevel(-1) {}
+        folder_search_enumerator(const runes_t& folder) : mFolderName(folder), mFound(false), mLevel(-1) {}
 
-        virtual bool operator()(s32 level, const runes& folder)
+        virtual bool operator()(s32 level, const runes_t& folder)
         {
-            mFound = utf32::compare(mFolderName, folder) == 0;
+            mFound = compare(mFolderName, folder) == 0;
             mLevel = level;
             return mFound;
         }
@@ -295,11 +293,11 @@ namespace xcore
     bool xpath::split(s32 level, xpath& parent_dirpath, xpath& relative_filepath) const
     {
         // Split the path at level @level
-        runes path = findSelectAfter(m_path, sSemiColumnSlash);
+        runes_t path = findSelectAfter(m_path, sSemiColumnSlash);
         if (path.is_empty())
             return false;
 
-        runes dir = selectBetween(m_path, sSlash, sSlash);
+        runes_t dir = selectBetween(m_path, sSlash, sSlash);
         while (level > 0 && !dir.is_empty())
         {
             dir = selectNextBetween(m_path, dir, sSlash, sSlash);
@@ -308,9 +306,9 @@ namespace xcore
 
         if (!dir.is_empty())
         {
-            runes parent_path(m_path.m_str, dir.m_str, m_path.m_end);
+            runes_t parent_path(m_path.m_str, dir.m_str, m_path.m_end);
             copy(parent_path, parent_dirpath.m_path, parent_dirpath.m_alloc, 16);
-            runes relative_path = selectUntilEndIncludeSelection(m_path, dir);
+            runes_t relative_path = selectUntilEndIncludeSelection(m_path, dir);
             copy(relative_path, relative_filepath.m_path, relative_filepath.m_alloc, 16);
             return true;
         }
@@ -322,7 +320,7 @@ namespace xcore
     {
         if (isRooted())
         {
-            runes pos = findSelectUntilIncluded(m_path, sSemiColumnSlash);
+            runes_t pos = findSelectUntilIncluded(m_path, sSemiColumnSlash);
             removeSelection(m_path, pos);
         }
     }
@@ -335,16 +333,16 @@ namespace xcore
         // THIS:     "c\d\e\f\"
         // RESULT:   "e\f\"
 
-        runes parentpath = parent.m_path;
+        runes_t parentpath = parent.m_path;
         if (parent.isRooted())
         {
             parentpath = findSelectAfter(parentpath, sSemiColumnSlash);
         }
 
-        runes overlap = selectOverlap(parentpath, m_path);
+        runes_t overlap = selectOverlap(parentpath, m_path);
         if (overlap.is_empty() == false)
         {
-            runes remainder = selectUntilEndExcludeSelection(parentpath, overlap);
+            runes_t remainder = selectUntilEndExcludeSelection(parentpath, overlap);
             keepOnlySelection(m_path, remainder);
         }
     }
@@ -353,7 +351,7 @@ namespace xcore
     {
         if (!isRooted())
         {
-            runes rootpart = findSelectUntilIncluded(m_path, sSemiColumnSlash);
+            runes_t rootpart = findSelectUntilIncluded(m_path, sSemiColumnSlash);
             if (rootpart.is_empty() == false)
             {
                 insert(m_path, in_root_dirpath.m_path, m_alloc, 16);
@@ -369,7 +367,7 @@ namespace xcore
     {
         if (isRooted())
         {
-            runes rootpart = findSelectUntilIncluded(m_path, sSemiColumnSlash);
+            runes_t rootpart = findSelectUntilIncluded(m_path, sSemiColumnSlash);
             if (rootpart.is_empty() == false)
             {
                 root.erase();
@@ -389,7 +387,7 @@ namespace xcore
         outDirPath.m_alloc = m_alloc;
 
         // Select a string until and included the last '\'
-        runes dirpart = findLastSelectUntilIncluded(m_path, sSlash);
+        runes_t dirpart = findLastSelectUntilIncluded(m_path, sSlash);
         if (dirpart.is_empty() == false)
         {
             copy(dirpart, outDirPath.m_path, outDirPath.m_alloc, 16);
@@ -400,11 +398,11 @@ namespace xcore
 
     bool xpath::up() { return false; }
 
-    bool xpath::down(xpath const& runes) { return false; }
+    bool xpath::down(xpath const& runes_t) { return false; }
 
     void xpath::getFilename(xpath& filename) const
     {
-        runes filenamepart = findLastSelectAfter(m_path, sSlash);
+        runes_t filenamepart = findLastSelectAfter(m_path, sSlash);
         if (!filenamepart.is_empty())
         {
             filename.clear();
@@ -415,7 +413,7 @@ namespace xcore
     void xpath::getFilenameWithoutExtension(xpath& filename) const
     {
         filename.clear();
-        runes filenamepart = findLastSelectAfter(m_path, sSlash);
+        runes_t filenamepart = findLastSelectAfter(m_path, sSlash);
         if (!filenamepart.is_empty())
         {
             filenamepart = findLastSelectUntil(filenamepart, '.');
@@ -426,13 +424,13 @@ namespace xcore
     void xpath::getExtension(xpath& filename) const
     {
         filename.clear();
-        runes filenamepart = findLastSelectAfter(m_path, sSlash);
-        runes filenameonly = findLastSelectUntil(filenamepart, '.');
-        runes fileext      = selectUntilEndExcludeSelection(filenamepart, filenameonly);
+        runes_t filenamepart = findLastSelectAfter(m_path, sSlash);
+        runes_t filenameonly = findLastSelectUntil(filenamepart, '.');
+        runes_t fileext      = selectUntilEndExcludeSelection(filenamepart, filenameonly);
         concatenate(filename.m_path, fileext, filename.m_alloc, 16);
     }
 
-    xpath& xpath::operator=(const utf32::runes& path)
+    xpath& xpath::operator=(const runes_t& path)
     {
         if (m_alloc != nullptr)
         {
@@ -468,7 +466,7 @@ namespace xcore
         return *this;
     }
 
-    xpath& xpath::operator+=(const utf32::runes& r)
+    xpath& xpath::operator+=(const runes_t& r)
     {
         concatenate(m_path, r, m_alloc, 16);
         return *this;
@@ -477,7 +475,7 @@ namespace xcore
     bool xpath::operator==(const xpath& rhs) const { return compare(m_path, rhs.m_path) == 0; }
     bool xpath::operator!=(const xpath& rhs) const { return compare(m_path, rhs.m_path) != 0; }
 
-    void xpath::append_utf16(xpath const& fp, utf16::crunes const& r)
+    void xpath::append_utf16(xpath const& fp, utf16::crunes_t const& r)
     {
         utf16::pcrune src = (utf16::pcrune)r.m_str;
         utf32::prune  dst = (utf32::prune)fp.m_path.m_str;
@@ -488,7 +486,7 @@ namespace xcore
         }
     }
 
-    void xpath::view_utf16(xpath const& fp, utf16::crunes& runes)
+    void xpath::view_utf16(xpath const& fp, utf16::crunes_t& runes_t)
     {
         utf16::prune  str = (utf16::prune)fp.m_path.m_str;
         utf16::prune  end = (utf16::prune)fp.m_path.m_end;
@@ -499,32 +497,32 @@ namespace xcore
             uchar32 c = *src++;
             utf::write(c, end, eos);
         }
-        runes.m_str = (utf16::prune)fp.m_path.m_str;
-        runes.m_end = (utf16::prune)end;
-        runes.m_cur = runes.m_str;
+        runes_t.m_str = (utf16::prune)fp.m_path.m_str;
+        runes_t.m_end = (utf16::prune)end;
+        runes_t.m_cur = runes_t.m_str;
     }
 
-    void xpath::release_utf16(xpath const& fp, utf16::crunes& runes)
+    void xpath::release_utf16(xpath const& fp, utf16::crunes_t& runes_t)
     {
-        utf16::pcrune src = (utf16::pcrune)runes.m_str;
+        utf16::pcrune src = (utf16::pcrune)runes_t.m_str;
         utf32::prune  dst = (utf32::prune)fp.m_path.m_str;
-        while (src < runes.m_end)
+        while (src < runes_t.m_end)
         {
-            uchar32 c = utf::read(src, runes.m_end);
+            uchar32 c = utf::read(src, runes_t.m_end);
             utf::write(c, dst, fp.m_path.m_end);
         }
     }
 
-    void xpath::append_utf16(xfilepath const& fp, utf16::crunes const& r) { append_utf16(fp.mPath, r); }
+    void xpath::append_utf16(xfilepath const& fp, utf16::crunes_t const& r) { append_utf16(fp.mPath, r); }
 
-    void xpath::view_utf16(xfilepath const& fp, utf16::crunes& runes) { view_utf16(fp.mPath, runes); }
+    void xpath::view_utf16(xfilepath const& fp, utf16::crunes_t& runes_t) { view_utf16(fp.mPath, runes_t); }
 
-    void xpath::release_utf16(xfilepath const& fp, utf16::crunes& runes) { release_utf16(fp.mPath, runes); }
+    void xpath::release_utf16(xfilepath const& fp, utf16::crunes_t& runes_t) { release_utf16(fp.mPath, runes_t); }
 
-    void xpath::append_utf16(xdirpath const& fp, utf16::crunes const& r) { append_utf16(fp.mPath, r); }
+    void xpath::append_utf16(xdirpath const& fp, utf16::crunes_t const& r) { append_utf16(fp.mPath, r); }
 
-    void xpath::view_utf16(xdirpath const& fp, utf16::crunes& runes) { view_utf16(fp.mPath, runes); }
+    void xpath::view_utf16(xdirpath const& fp, utf16::crunes_t& runes_t) { view_utf16(fp.mPath, runes_t); }
 
-    void xpath::release_utf16(xdirpath const& fp, utf16::crunes& runes) { release_utf16(fp.mPath, runes); }
+    void xpath::release_utf16(xdirpath const& fp, utf16::crunes_t& runes_t) { release_utf16(fp.mPath, runes_t); }
 
 } // namespace xcore

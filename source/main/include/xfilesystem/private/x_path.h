@@ -41,28 +41,28 @@ namespace xcore
     class xpath
     {
     public:
-        static utf32::crunes s_device_separator;
+        static crunes_t s_device_separator;
 
-        utf32::alloc* m_alloc;
-        utf32::runes  m_path;
+        runes_alloc_t* m_alloc;
+        runes_t  m_path;
 
         xpath();
-        xpath(utf32::alloc* allocator);
-        xpath(utf32::alloc* allocator, const utf32::crunes& path);
-        xpath(utf32::alloc* allocator, const ascii::crunes& path);
+        xpath(runes_alloc_t* allocator);
+        xpath(runes_alloc_t* allocator, const crunes_t& path);
+        xpath(runes_alloc_t* allocator, const crunes_t& path);
         xpath(const xpath& path);
         xpath(const xpath& lhspath, const xpath& rhspath);
         ~xpath();
 
         xpath resolve(xfilesys* fs, xfiledevice*& outdevice) const;
 
-        void set_filepath(ascii::runes& runes, utf32::alloc* allocator);
-        void set_dirpath(ascii::runes& runes, utf32::alloc* allocator);
-        void set_filepath(utf32::runes& runes, utf32::alloc* allocator);
-        void set_dirpath(utf32::runes& runes, utf32::alloc* allocator);
+        void set_filepath(runes_t& runes, runes_alloc_t* allocator);
+        void set_dirpath(runes_t& runes, runes_alloc_t* allocator);
+        void set_filepath(runes_t& runes, runes_alloc_t* allocator);
+        void set_dirpath(runes_t& runes, runes_alloc_t* allocator);
 
         void combine(const xpath& dirpath, const xpath& filepath);
-        void copy_dirpath(utf32::runes& runes);
+        void copy_dirpath(runes_t& runes);
         void clear();
         void erase();
 
@@ -90,29 +90,29 @@ namespace xcore
         void getFilenameWithoutExtension(xpath& out_filename_no_ext) const;
         void getExtension(xpath& out_ext) const;
 
-        xpath& operator=(const utf32::runes&);
+        xpath& operator=(const runes_t&);
         xpath& operator=(const xpath&);
-        xpath& operator+=(const utf32::runes&);
+        xpath& operator+=(const runes_t&);
 
         bool operator==(const xpath&) const;
         bool operator!=(const xpath&) const;
 
         // These should be used carefully, since they are modifying the
-        // utf32::runes array from holding utf32::rune characters to
+        // runes_t array from holding utf32::rune characters to
         // utf16::rune characters. You should also use these 2 functions
         // as a begin/end pair. Do not leave this structure hanging in
         // utf16 format.
-        static void append_utf16(xpath const& p, utf16::crunes const&);
-        static void view_utf16(xpath const& fp, utf16::crunes& runes);
-        static void release_utf16(xpath const& fp, utf16::crunes& runes);
+        static void append_utf16(xpath const& p, crunes_t const&);
+        static void view_utf16(xpath const& fp, crunes_t& runes);
+        static void release_utf16(xpath const& fp, crunes_t& runes);
 
-        static void append_utf16(xfilepath const& fp, utf16::crunes const&);
-        static void view_utf16(xfilepath const& fp, utf16::crunes& runes);
-        static void release_utf16(xfilepath const& fp, utf16::crunes& runes);
+        static void append_utf16(xfilepath const& fp, crunes_t const&);
+        static void view_utf16(xfilepath const& fp, crunes_t& runes);
+        static void release_utf16(xfilepath const& fp, crunes_t& runes);
 
-        static void append_utf16(xdirpath const& fp, utf16::crunes const&);
-        static void view_utf16(xdirpath const& fp, utf16::crunes& runes);
-        static void release_utf16(xdirpath const& fp, utf16::crunes& runes);
+        static void append_utf16(xdirpath const& fp, crunes_t const&);
+        static void view_utf16(xdirpath const& fp, crunes_t& runes);
+        static void release_utf16(xdirpath const& fp, crunes_t& runes);
     };
 
 }; // namespace xcore
