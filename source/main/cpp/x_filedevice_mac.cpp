@@ -6,34 +6,34 @@
 #include "xbase/x_limits.h"
 #include "xbase/x_memory.h"
 #include "xbase/x_runes.h"
-#include "xbase/x_va_list.h"
+#include "xbase/va_list_t.h"
 #include "xbase/x_integer.h"
 
 #include "xtime/x_datetime.h"
 
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/private/x_filesystem.h"
-#include "xfilesystem/x_attributes.h"
-#include "xfilesystem/x_fileinfo.h"
-#include "xfilesystem/x_dirinfo.h"
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_filesystem.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/private/x_filesystem.h"
+#include "filesystem_t/x_attributes.h"
+#include "filesystem_t/x_fileinfo.h"
+#include "filesystem_t/x_dirinfo.h"
+#include "filesystem_t/x_filepath.h"
+#include "filesystem_t/x_dirpath.h"
+#include "filesystem_t/x_filesystem.h"
 
-//@TODO: When xfiledevice_pc is working OK we can copy and implement the Mac/OSX version
+//@TODO: When filedevice_pc_t is working OK we can copy and implement the Mac/OSX version
 
 namespace xcore
 {
-    class xfiledevice_mac : public xfiledevice
+    class xfiledevice_mac : public filedevice_t
     {
     public:
-        xalloc*  mAllocator;
-        xdirpath mDrivePath;
-        xbool    mCanWrite;
+        alloc_t*  mAllocator;
+        dirpath_t mDrivePath;
+        bool    mCanWrite;
 
         XCORE_CLASS_PLACEMENT_NEW_DELETE
 
-        xfiledevice_mac(xalloc* alloc, const xdirpath& pDrivePath, xbool boCanWrite) : mAllocator(alloc), mDrivePath(pDrivePath), mCanWrite(boCanWrite) {}
+        xfiledevice_mac(alloc_t* alloc, const dirpath_t& pDrivePath, bool boCanWrite) : mAllocator(alloc), mDrivePath(pDrivePath), mCanWrite(boCanWrite) {}
         virtual ~xfiledevice_mac() {}
 
         virtual bool canSeek() const { return true; }
@@ -41,43 +41,43 @@ namespace xcore
 
         virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const { return false; }
 
-        virtual bool openFile(const xfilepath& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle) { return false; }
-        virtual bool createFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle) { return false; }
+        virtual bool openFile(const filepath_t& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle) { return false; }
+        virtual bool createFile(const filepath_t& szFilename, bool boRead, bool boWrite, void*& nFileHandle) { return false; }
         virtual bool readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) { return false; }
         virtual bool writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) { return false; }
         virtual bool closeFile(void* nFileHandle) { return false; }
 
-        virtual bool createStream(xfilepath const& szFilename, bool boRead, bool boWrite, xstream*& strm) { return false; }
-        virtual bool closeStream(xstream* strm) { return false; }
+        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm) { return false; }
+        virtual bool closeStream(stream_t* strm) { return false; }
 
         virtual bool setLengthOfFile(void* nFileHandle, u64 inLength) { return false; }
         virtual bool getLengthOfFile(void* nFileHandle, u64& outLength) { return false; }
 
-        virtual bool setFileTime(const xfilepath& szFilename, const xfiletimes& ftimes) { return false; }
-        virtual bool getFileTime(const xfilepath& szFilename, xfiletimes& ftimes) { return false; }
-        virtual bool setFileAttr(const xfilepath& szFilename, const xfileattrs& attr) { return false; }
-        virtual bool getFileAttr(const xfilepath& szFilename, xfileattrs& attr) { return false; }
+        virtual bool setFileTime(const filepath_t& szFilename, const filetimes_t& ftimes) { return false; }
+        virtual bool getFileTime(const filepath_t& szFilename, filetimes_t& ftimes) { return false; }
+        virtual bool setFileAttr(const filepath_t& szFilename, const fileattrs_t& attr) { return false; }
+        virtual bool getFileAttr(const filepath_t& szFilename, fileattrs_t& attr) { return false; }
 
-        virtual bool setFileTime(void* pHandle, xfiletimes const& times) { return false; }
-        virtual bool getFileTime(void* pHandle, xfiletimes& outTimes) { return false; }
+        virtual bool setFileTime(void* pHandle, filetimes_t const& times) { return false; }
+        virtual bool getFileTime(void* pHandle, filetimes_t& outTimes) { return false; }
 
-        virtual bool hasFile(const xfilepath& szFilename) { return false; }
-        virtual bool moveFile(const xfilepath& szFilename, const xfilepath& szToFilename, bool boOverwrite) { return false; }
-        virtual bool copyFile(const xfilepath& szFilename, const xfilepath& szToFilename, bool boOverwrite) { return false; }
-        virtual bool deleteFile(const xfilepath& szFilename) { return false; }
+        virtual bool hasFile(const filepath_t& szFilename) { return false; }
+        virtual bool moveFile(const filepath_t& szFilename, const filepath_t& szToFilename, bool boOverwrite) { return false; }
+        virtual bool copyFile(const filepath_t& szFilename, const filepath_t& szToFilename, bool boOverwrite) { return false; }
+        virtual bool deleteFile(const filepath_t& szFilename) { return false; }
 
-        virtual bool hasDir(const xdirpath& szDirPath) { return false; }
-        virtual bool createDir(const xdirpath& szDirPath) { return false; }
-        virtual bool moveDir(const xdirpath& szDirPath, const xdirpath& szToDirPath, bool boOverwrite) { return false; }
-        virtual bool copyDir(const xdirpath& szDirPath, const xdirpath& szToDirPath, bool boOverwrite) { return false; }
-        virtual bool deleteDir(const xdirpath& szDirPath) { return false; }
+        virtual bool hasDir(const dirpath_t& szDirPath) { return false; }
+        virtual bool createDir(const dirpath_t& szDirPath) { return false; }
+        virtual bool moveDir(const dirpath_t& szDirPath, const dirpath_t& szToDirPath, bool boOverwrite) { return false; }
+        virtual bool copyDir(const dirpath_t& szDirPath, const dirpath_t& szToDirPath, bool boOverwrite) { return false; }
+        virtual bool deleteDir(const dirpath_t& szDirPath) { return false; }
 
-        virtual bool setDirTime(const xdirpath& szDirPath, const xfiletimes& ftimes) { return false; }
-        virtual bool getDirTime(const xdirpath& szDirPath, xfiletimes& ftimes) { return false; }
-        virtual bool setDirAttr(const xdirpath& szDirPath, const xfileattrs& attr) { return false; }
-        virtual bool getDirAttr(const xdirpath& szDirPath, xfileattrs& attr) { return false; }
+        virtual bool setDirTime(const dirpath_t& szDirPath, const filetimes_t& ftimes) { return false; }
+        virtual bool getDirTime(const dirpath_t& szDirPath, filetimes_t& ftimes) { return false; }
+        virtual bool setDirAttr(const dirpath_t& szDirPath, const fileattrs_t& attr) { return false; }
+        virtual bool getDirAttr(const dirpath_t& szDirPath, fileattrs_t& attr) { return false; }
 
-        virtual bool enumerate(const xdirpath& szDirPath, enumerate_delegate& enumerator) { return false; }
+        virtual bool enumerate(const dirpath_t& szDirPath, enumerate_delegate_t& enumerator) { return false; }
 
         enum ESeekMode
         {
@@ -90,27 +90,27 @@ namespace xcore
         bool seekCurrent(void* nFileHandle, u64 pos, u64& newPos);
         bool seekEnd(void* nFileHandle, u64 pos, u64& newPos);
 
-        static void* sOpenDir(xdirpath const& szDirPath);
+        static void* sOpenDir(dirpath_t const& szDirPath);
     };
 
-    xfiledevice* x_CreateFileDeviceMac(xalloc* alloc, const xdirpath& pDrivePath, xbool boCanWrite)
+    filedevice_t* x_CreateFileDeviceMac(alloc_t* alloc, const dirpath_t& pDrivePath, bool boCanWrite)
     {
         xfiledevice_mac* file_device = alloc->construct<xfiledevice_mac>(alloc, pDrivePath, boCanWrite);
         return file_device;
     }
 
-    void x_DestroyFileDeviceMac(xfiledevice* device)
+    void x_DestroyFileDeviceMac(filedevice_t* device)
     {
         xfiledevice_mac* file_device = (xfiledevice_mac*)device;
         file_device->mAllocator->destruct(file_device);
     }
 
-    xfiledevice* x_CreateFileDevice(xalloc* allocator, utf32::crunes& pDrivePath, xbool boCanWrite)
+    filedevice_t* x_CreateFileDevice(alloc_t* allocator, utf32::crunes& pDrivePath, bool boCanWrite)
     {
-        xdirpath drivePath = xfilesystem::dirpath(pDrivePath);
+        dirpath_t drivePath = filesystem_t::dirpath(pDrivePath);
         return x_CreateFileDeviceMac(allocator, drivePath, boCanWrite);
     }
 
-    void x_DestroyFileDevice(xfiledevice* fd) { x_DestroyFileDeviceMac(fd); }
+    void x_DestroyFileDevice(filedevice_t* fd) { x_DestroyFileDeviceMac(fd); }
 } // namespace xcore
 #endif // TARGET_MAC

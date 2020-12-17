@@ -10,10 +10,10 @@
 
 namespace xcore
 {
-    class xio_thread
+    class io_thread_t
     {
     public:
-        virtual ~xio_thread() {}
+        virtual ~io_thread_t() {}
 
         virtual void sleep(u32 ms) = 0;
         virtual bool quit() const  = 0;

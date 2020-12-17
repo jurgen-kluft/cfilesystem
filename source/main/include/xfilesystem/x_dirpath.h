@@ -8,75 +8,75 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 
-#include "xfilesystem/x_enumerator.h"
-#include "xfilesystem/private/x_path.h"
-#include "xfilesystem/private/x_filesystem.h"
+#include "filesystem_t/x_enumerator.h"
+#include "filesystem_t/private/x_path.h"
+#include "filesystem_t/private/x_filesystem.h"
 
 namespace xcore
 {
-    class xfilepath;
-    class xfilesys;
+    class filepath_t;
+    class filesys_t;
 
     //==============================================================================
-    // xdirpath:
+    // dirpath_t:
     //		- Relative:		"FolderA\FolderB\"
     //		- Absolute:		"Device:\FolderA\FolderB\"
     //==============================================================================
-    class xdirpath
+    class dirpath_t
     {
     protected:
-        friend class xpath;
-        friend class xfilepath;
-        friend class xfileinfo;
-        friend class xdirinfo;
+        friend class path_t;
+        friend class filepath_t;
+        friend class fileinfo_t;
+        friend class dirinfo_t;
         friend class xdirpathz;
         friend class xdirpathc;
-        friend class xfilesys;
-        friend class xfiledevice_pc;
+        friend class filesys_t;
+        friend class filedevice_pc_t;
 
-        xfilesys* mParent;
-        xpath     mPath;
+        filesys_t* mParent;
+        path_t     mPath;
 
-        xdirpath(xfilesys* fs, xpath& path);
+        dirpath_t(filesys_t* fs, path_t& path);
 
     public:
-        xdirpath();
-        xdirpath(const xdirpath& dir);
-        xdirpath(const xdirpath& rootdir, const xdirpath& subdir);
-        ~xdirpath();
+        dirpath_t();
+        dirpath_t(const dirpath_t& dir);
+        dirpath_t(const dirpath_t& rootdir, const dirpath_t& subdir);
+        ~dirpath_t();
 
         void clear();
 
         bool isEmpty() const;
         bool isRoot() const;
         bool isRooted() const;
-        bool isSubDirOf(const xdirpath&) const;
+        bool isSubDirOf(const dirpath_t&) const;
 
-        void relative(xdirpath& outRelative) const;
+        void relative(dirpath_t& outRelative) const;
         void makeRelative();
-        void makeRelativeTo(const xdirpath& parent);
-        void makeRelativeTo(const xdirpath& parent, xdirpath& sub) const;
+        void makeRelativeTo(const dirpath_t& parent);
+        void makeRelativeTo(const dirpath_t& parent, dirpath_t& sub) const;
 
         s32  getLevels() const;
-        bool getLevel(s32 level, xdirpath& name) const;
-        s32  getLevelOf(const xdirpath& name) const;
-        bool split(s32 level, xdirpath& parent, xdirpath& subDir) const;
+        bool getLevel(s32 level, dirpath_t& name) const;
+        s32  getLevelOf(const dirpath_t& name) const;
+        bool split(s32 level, dirpath_t& parent, dirpath_t& subDir) const;
 
-        bool getName(xdirpath& outName) const;
-        bool hasName(const xdirpath& inName) const;
-        bool getParent(xdirpath& outParentDirPath) const;
-        void setRoot(const xdirpath& device);
-        bool getRoot(xdirpath& outDevice) const;
+        bool getName(dirpath_t& outName) const;
+        bool hasName(const dirpath_t& inName) const;
+        bool getParent(dirpath_t& outParentDirPath) const;
+        void setRoot(const dirpath_t& device);
+        bool getRoot(dirpath_t& outDevice) const;
 
-        xdirpath& operator=(const xdirpath&);
-        xdirpath& operator=(const xfilepath&);
-        xdirpath& operator+=(const xdirpath&);
-        xfilepath operator+=(const xfilepath&);
-        bool      operator==(const xdirpath& rhs) const;
-        bool      operator!=(const xdirpath& rhs) const;
+        dirpath_t& operator=(const dirpath_t&);
+        dirpath_t& operator=(const filepath_t&);
+        dirpath_t& operator+=(const dirpath_t&);
+        filepath_t operator+=(const filepath_t&);
+        bool      operator==(const dirpath_t& rhs) const;
+        bool      operator!=(const dirpath_t& rhs) const;
     };
 
-    xdirpath operator+(const xdirpath&, const xdirpath&);
+    dirpath_t operator+(const dirpath_t&, const dirpath_t&);
 
 }; // namespace xcore
 

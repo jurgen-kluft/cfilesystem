@@ -6,15 +6,15 @@
 #endif
 
 #include "xbase/x_debug.h"
-#include "xfilesystem/private/x_enumerations.h"
+#include "filesystem_t/private/x_enumerations.h"
 
 namespace xcore
 {
-    class xalloc;
-	class xfilepath;
-	class xfiledevice;
+    class alloc_t;
+	class filepath_t;
+	class filedevice_t;
 
-    class xistream
+    class istream_t
     {
     public:
         virtual bool canRead() const       = 0;
@@ -39,17 +39,17 @@ namespace xcore
         virtual s64  endWrite(bool block)                       = 0;
 	
 	protected:
-        xistream() {}
-		virtual ~xistream(void) {}
+        istream_t() {}
+		virtual ~istream_t(void) {}
 
         virtual void hold()    = 0;
         virtual s32  release() = 0;
         virtual void destroy() = 0;
 
-		friend class xstream;
+		friend class stream_t;
 
-		static xistream*	create_filestream(xalloc*, xfiledevice*, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op);
-		static void			destroy_filestream(xalloc*, xistream*);
+		static istream_t*	create_filestream(alloc_t*, filedevice_t*, const filepath_t& filepath, EFileMode mode, EFileAccess access, EFileOp op);
+		static void			destroy_filestream(alloc_t*, istream_t*);
     };
 
 };

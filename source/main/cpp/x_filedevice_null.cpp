@@ -5,20 +5,20 @@
 #include "xbase/x_limits.h"
 #include "xbase/x_memory.h"
 #include "xbase/x_runes.h"
-#include "xbase/x_va_list.h"
+#include "xbase/va_list_t.h"
 #include "xbase/x_integer.h"
 
 #include "xtime/x_datetime.h"
 
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/private/x_filesystem.h"
-#include "xfilesystem/x_attributes.h"
-#include "xfilesystem/x_fileinfo.h"
-#include "xfilesystem/x_dirinfo.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/private/x_filesystem.h"
+#include "filesystem_t/x_attributes.h"
+#include "filesystem_t/x_fileinfo.h"
+#include "filesystem_t/x_dirinfo.h"
 
 namespace xcore
 {
-    class xfiledevice_null : public xfiledevice
+    class xfiledevice_null : public filedevice_t
     {
     public:
         xfiledevice_null() {}
@@ -34,12 +34,12 @@ namespace xcore
             return true;
         }
 
-        virtual bool openFile(const xfilepath& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle)
+        virtual bool openFile(const filepath_t& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle)
         {
             nFileHandle = INVALID_FILE_HANDLE;
             return false;
         }
-        virtual bool createFile(const xfilepath& szFilename, bool boRead, bool boWrite, void*& nFileHandle)
+        virtual bool createFile(const filepath_t& szFilename, bool boRead, bool boWrite, void*& nFileHandle)
         {
             nFileHandle = INVALID_FILE_HANDLE;
             return false;
@@ -59,12 +59,12 @@ namespace xcore
 
         virtual bool closeFile(void* nFileHandle) { return false; }
 
-        virtual bool createStream(xfilepath const& szFilename, bool boRead, bool boWrite, xstream*& strm)
+        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm)
         {
             strm = nullptr;
             return false;
         }
-        virtual bool closeStream(xstream* strm) { return true; }
+        virtual bool closeStream(stream_t* strm) { return true; }
 
         virtual bool setLengthOfFile(void* nFileHandle, u64 inLength) { return false; }
         virtual bool getLengthOfFile(void* nFileHandle, u64& outLength)
@@ -73,51 +73,51 @@ namespace xcore
             return false;
         }
 
-        virtual bool setFileTime(const xfilepath& szFilename, const xfiletimes& ftimes) { return false; }
-        virtual bool getFileTime(const xfilepath& szFilename, xfiletimes& ftimes)
+        virtual bool setFileTime(const filepath_t& szFilename, const filetimes_t& ftimes) { return false; }
+        virtual bool getFileTime(const filepath_t& szFilename, filetimes_t& ftimes)
         {
-            ftimes = xfiletimes();
+            ftimes = filetimes_t();
             return false;
         }
-        virtual bool setFileAttr(const xfilepath& szFilename, const xfileattrs& attr) { return false; }
-        virtual bool getFileAttr(const xfilepath& szFilename, xfileattrs& attr)
+        virtual bool setFileAttr(const filepath_t& szFilename, const fileattrs_t& attr) { return false; }
+        virtual bool getFileAttr(const filepath_t& szFilename, fileattrs_t& attr)
         {
-            attr = xfileattrs();
-            return false;
-        }
-
-        virtual bool setFileTime(void* pHandle, xfiletimes const& times) { return false; }
-        virtual bool getFileTime(void* pHandle, xfiletimes& outTimes)
-        {
-            outTimes = xfiletimes();
+            attr = fileattrs_t();
             return false;
         }
 
-        virtual bool hasFile(const xfilepath& szFilename) { return false; }
-        virtual bool moveFile(const xfilepath& szFilename, const xfilepath& szToFilename, bool boOverwrite) { return false; }
-        virtual bool copyFile(const xfilepath& szFilename, const xfilepath& szToFilename, bool boOverwrite) { return false; }
-        virtual bool deleteFile(const xfilepath& szFilename) { return false; }
-
-        virtual bool hasDir(const xdirpath& szDirPath) { return false; }
-        virtual bool createDir(const xdirpath& szDirPath) { return false; }
-        virtual bool moveDir(const xdirpath& szDirPath, const xdirpath& szToDirPath, bool boOverwrite) { return false; }
-        virtual bool copyDir(const xdirpath& szDirPath, const xdirpath& szToDirPath, bool boOverwrite) { return false; }
-        virtual bool deleteDir(const xdirpath& szDirPath) { return false; }
-
-        virtual bool setDirTime(const xdirpath& szDirPath, const xfiletimes& ftimes) { return false; }
-        virtual bool getDirTime(const xdirpath& szDirPath, xfiletimes& ftimes)
+        virtual bool setFileTime(void* pHandle, filetimes_t const& times) { return false; }
+        virtual bool getFileTime(void* pHandle, filetimes_t& outTimes)
         {
-            ftimes = xfiletimes();
-            return false;
-        }
-        virtual bool setDirAttr(const xdirpath& szDirPath, const xfileattrs& attr) { return false; }
-        virtual bool getDirAttr(const xdirpath& szDirPath, xfileattrs& attr)
-        {
-            attr = xfileattrs();
+            outTimes = filetimes_t();
             return false;
         }
 
-        virtual bool enumerate(const xdirpath& szDirPath, enumerate_delegate& enumerator) { return false; }
+        virtual bool hasFile(const filepath_t& szFilename) { return false; }
+        virtual bool moveFile(const filepath_t& szFilename, const filepath_t& szToFilename, bool boOverwrite) { return false; }
+        virtual bool copyFile(const filepath_t& szFilename, const filepath_t& szToFilename, bool boOverwrite) { return false; }
+        virtual bool deleteFile(const filepath_t& szFilename) { return false; }
+
+        virtual bool hasDir(const dirpath_t& szDirPath) { return false; }
+        virtual bool createDir(const dirpath_t& szDirPath) { return false; }
+        virtual bool moveDir(const dirpath_t& szDirPath, const dirpath_t& szToDirPath, bool boOverwrite) { return false; }
+        virtual bool copyDir(const dirpath_t& szDirPath, const dirpath_t& szToDirPath, bool boOverwrite) { return false; }
+        virtual bool deleteDir(const dirpath_t& szDirPath) { return false; }
+
+        virtual bool setDirTime(const dirpath_t& szDirPath, const filetimes_t& ftimes) { return false; }
+        virtual bool getDirTime(const dirpath_t& szDirPath, filetimes_t& ftimes)
+        {
+            ftimes = filetimes_t();
+            return false;
+        }
+        virtual bool setDirAttr(const dirpath_t& szDirPath, const fileattrs_t& attr) { return false; }
+        virtual bool getDirAttr(const dirpath_t& szDirPath, fileattrs_t& attr)
+        {
+            attr = fileattrs_t();
+            return false;
+        }
+
+        virtual bool enumerate(const dirpath_t& szDirPath, enumerate_delegate_t& enumerator) { return false; }
 
         enum ESeekMode
         {
@@ -148,7 +148,7 @@ namespace xcore
         }
     };
 
-    xfiledevice* x_NullFileDevice()
+    filedevice_t* x_NullFileDevice()
     {
 	    static xfiledevice_null filedevice_null;
         return &filedevice_null;

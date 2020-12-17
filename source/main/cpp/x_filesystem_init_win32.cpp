@@ -8,14 +8,14 @@
 #include <stdio.h>
 
 #include "xbase/x_debug.h"
-#include "xbase/x_va_list.h"
+#include "xbase/va_list_t.h"
 
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/private/x_filesystem.h"
-#include "xfilesystem/private/x_devicemanager.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/private/x_filesystem.h"
+#include "filesystem_t/private/x_devicemanager.h"
 
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_filepath.h"
+#include "filesystem_t/x_filesystem.h"
+#include "filesystem_t/x_filepath.h"
 
 namespace xcore
 {
@@ -34,13 +34,13 @@ namespace xcore
             DRIVE_TYPE_NUM         = 7,
         };
 
-        static xfiledevice* sFileDevices[DRIVE_TYPE_NUM] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+        static filedevice_t* sFileDevices[DRIVE_TYPE_NUM] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
         static const wchar_t* sSystemDeviceLetters[] = {L"a", L"b", L"c", L"d", L"e", L"f", L"g", L"h", L"i", L"j", L"k", L"l", L"m", L"n", L"o", L"p", L"q", L"r", L"s", L"t", L"u", L"v", L"w", L"x", L"y", L"z"};
         static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
                                                       L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
 
-        static void x_FileSystemRegisterSystemAliases(xalloc* allocator, xdevicemanager* devman)
+        static void x_FileSystemRegisterSystemAliases(alloc_t* allocator, devicemanager_t* devman)
         {
             utf32::runez<255> string32;
 
@@ -54,7 +54,7 @@ namespace xcore
                     const wchar_t* driveLetter = sSystemDeviceLetters[driveIdx];
                     const wchar_t* devicePath  = sSystemDevicePaths[driveIdx];
 
-                    xbool       boCanWrite      = true;
+                    bool       boCanWrite      = true;
                     EDriveTypes eDriveType      = DRIVE_TYPE_UNKNOWN;
                     const u32   uDriveTypeWin32 = 1 << (GetDriveTypeW(devicePath));
                     if (uDriveTypeWin32 & (1 << (s32)DRIVE_TYPE_REMOVABLE))
@@ -80,7 +80,7 @@ namespace xcore
                     utf16::crunes devicePath16((utf16::pcrune)devicePath);
                     utf::copy(devicePath16, string32);
 
-                    xpath devicename;
+                    path_t devicename;
                     devicename.m_path = string32;
                     if (!devman->has_device(devicename))
                     {
@@ -92,7 +92,7 @@ namespace xcore
                             utf::copy(devicePath16, devicePath32);
                             sFileDevices[eDriveType] = x_CreateFileDevice(allocator, utf32::crunes(devicePath32), boCanWrite);
                         }
-                        xfiledevice* device = sFileDevices[eDriveType];
+                        filedevice_t* device = sFileDevices[eDriveType];
 
                         wchar_t local_alias[255];
                         local_alias[0] = '\0';
@@ -139,12 +139,12 @@ namespace xcore
 
         //------------------------------------------------------------------------------
         // The string allocator
-        class fs_utfalloc : public utf32::alloc
+        class fs_utfalloc : public runes_alloc_t
         {
-            xalloc* m_allocator;
+            alloc_t* m_allocator;
 
         public:
-            fs_utfalloc(xalloc* _allocator) : m_allocator(_allocator) {}
+            fs_utfalloc(alloc_t* _allocator) : m_allocator(_allocator) {}
 
             virtual utf32::runes allocate(s32 len, s32 cap)
             {
@@ -159,10 +159,10 @@ namespace xcore
                 return str;
             }
 
-            virtual void deallocate(utf32::runes& slice)
+            virtual void deallocate(utf32::runes& slice_t)
             {
-                m_allocator->deallocate(slice.m_str);
-                slice = utf32::runes();
+                m_allocator->deallocate(slice_t.m_str);
+                slice_t = utf32::runes();
             }
 
             XCORE_CLASS_PLACEMENT_NEW_DELETE
@@ -170,15 +170,15 @@ namespace xcore
     } // namespace
 
     //------------------------------------------------------------------------------
-    void xfilesystem::create(xfilesyscfg const& cfg)
+    void filesystem_t::create(filesyscfg_t const& cfg)
     {
-        xfilesys* imp      = cfg.m_allocator->construct<xfilesys>();
+        filesys_t* imp      = cfg.m_allocator->construct<filesys_t>();
         imp->m_slash       = cfg.m_default_slash;
         imp->m_allocator   = cfg.m_allocator;
         imp->m_stralloc    = cfg.m_allocator->construct<fs_utfalloc>(cfg.m_allocator);
-        xfilesystem::mImpl = imp;
+        filesystem_t::mImpl = imp;
 
-        imp->m_devman = cfg.m_allocator->construct<xdevicemanager>(imp->m_stralloc);
+        imp->m_devman = cfg.m_allocator->construct<devicemanager_t>(imp->m_stralloc);
         x_FileSystemRegisterSystemAliases(cfg.m_allocator, imp->m_devman);
 
         utf32::rune adir32[512] = {'\0'};
@@ -213,7 +213,7 @@ namespace xcore
     //     void
     // Description:
     //------------------------------------------------------------------------------
-    void xfilesystem::destroy()
+    void filesystem_t::destroy()
     {
         mImpl->m_devman->exit();
 

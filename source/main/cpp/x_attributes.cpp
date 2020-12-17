@@ -4,7 +4,7 @@
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
 
-#include "xfilesystem/x_attributes.h"
+#include "filesystem_t/x_attributes.h"
 
 namespace xcore
 {
@@ -16,17 +16,17 @@ namespace xcore
         FILE_ATTRIBUTE_SYSTEM   = 8,
     };
 
-    xfileattrs::xfileattrs()
+    fileattrs_t::fileattrs_t()
         : mFlags(0)
     {
     }
 
-    xfileattrs::xfileattrs(const xfileattrs& other)
+    fileattrs_t::fileattrs_t(const fileattrs_t& other)
         : mFlags(other.mFlags)
     {
     }
 
-    xfileattrs::xfileattrs(bool boArchive, bool boReadonly, bool boHidden, bool boSystem)
+    fileattrs_t::fileattrs_t(bool boArchive, bool boReadonly, bool boHidden, bool boSystem)
         : mFlags(0)
     {
         setArchive(boArchive);
@@ -35,12 +35,12 @@ namespace xcore
         setSystem(boSystem);
     }
 
-    bool xfileattrs::isArchive() const { return (mFlags & FILE_ATTRIBUTE_ARCHIVE) != 0; }
-    bool xfileattrs::isReadOnly() const { return (mFlags & FILE_ATTRIBUTE_READONLY) != 0; }
-    bool xfileattrs::isHidden() const { return (mFlags & FILE_ATTRIBUTE_HIDDEN) != 0; }
-    bool xfileattrs::isSystem() const { return (mFlags & FILE_ATTRIBUTE_SYSTEM) != 0; }
+    bool fileattrs_t::isArchive() const { return (mFlags & FILE_ATTRIBUTE_ARCHIVE) != 0; }
+    bool fileattrs_t::isReadOnly() const { return (mFlags & FILE_ATTRIBUTE_READONLY) != 0; }
+    bool fileattrs_t::isHidden() const { return (mFlags & FILE_ATTRIBUTE_HIDDEN) != 0; }
+    bool fileattrs_t::isSystem() const { return (mFlags & FILE_ATTRIBUTE_SYSTEM) != 0; }
 
-    void xfileattrs::setArchive(bool enable)
+    void fileattrs_t::setArchive(bool enable)
     {
         if (enable)
             mFlags = mFlags | FILE_ATTRIBUTE_ARCHIVE;
@@ -48,7 +48,7 @@ namespace xcore
             mFlags = mFlags & ~FILE_ATTRIBUTE_ARCHIVE;
     }
 
-    void xfileattrs::setReadOnly(bool enable)
+    void fileattrs_t::setReadOnly(bool enable)
     {
         if (enable)
             mFlags = mFlags | FILE_ATTRIBUTE_READONLY;
@@ -56,7 +56,7 @@ namespace xcore
             mFlags = mFlags & ~FILE_ATTRIBUTE_READONLY;
     }
 
-    void xfileattrs::setHidden(bool enable)
+    void fileattrs_t::setHidden(bool enable)
     {
         if (enable)
             mFlags = mFlags | FILE_ATTRIBUTE_HIDDEN;
@@ -64,7 +64,7 @@ namespace xcore
             mFlags = mFlags & ~FILE_ATTRIBUTE_HIDDEN;
     }
 
-    void xfileattrs::setSystem(bool enable)
+    void fileattrs_t::setSystem(bool enable)
     {
         if (enable)
             mFlags = mFlags | FILE_ATTRIBUTE_SYSTEM;
@@ -72,53 +72,53 @@ namespace xcore
             mFlags = mFlags & ~FILE_ATTRIBUTE_SYSTEM;
     }
 
-    xfileattrs& xfileattrs::operator=(const xfileattrs& other)
+    fileattrs_t& fileattrs_t::operator=(const fileattrs_t& other)
     {
         mFlags = other.mFlags;
         return *this;
     }
 
-    bool xfileattrs::operator==(const xfileattrs& other) const { return mFlags == other.mFlags; }
-    bool xfileattrs::operator!=(const xfileattrs& other) const { return mFlags != other.mFlags; }
+    bool fileattrs_t::operator==(const fileattrs_t& other) const { return mFlags == other.mFlags; }
+    bool fileattrs_t::operator!=(const fileattrs_t& other) const { return mFlags != other.mFlags; }
 
-    xfiletimes::xfiletimes() {}
-    xfiletimes::xfiletimes(const xfiletimes& ftimes)
+    filetimes_t::filetimes_t() {}
+    filetimes_t::filetimes_t(const filetimes_t& ftimes)
         : m_creationtime(ftimes.m_creationtime)
         , m_lastaccesstime(ftimes.m_lastaccesstime)
         , m_lastwritetime(ftimes.m_lastwritetime)
     {
     }
 
-    xfiletimes::xfiletimes(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime)
+    filetimes_t::filetimes_t(const datetime_t& creationTime, const datetime_t& lastAccessTime, const datetime_t& lastWriteTime)
         : m_creationtime(creationTime)
         , m_lastaccesstime(lastAccessTime)
         , m_lastwritetime(lastWriteTime)
     {
     }
 
-    void xfiletimes::getTime(xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const
+    void filetimes_t::getTime(datetime_t& outCreationTime, datetime_t& outLastAccessTime, datetime_t& outLastWriteTime) const
     {
         outCreationTime   = m_creationtime;
         outLastAccessTime = m_lastaccesstime;
         outLastWriteTime  = m_lastwritetime;
     }
 
-    void xfiletimes::getCreationTime(xdatetime& dt) const { dt = m_creationtime; }
-    void xfiletimes::getLastAccessTime(xdatetime& dt) const { dt = m_lastaccesstime; }
-    void xfiletimes::getLastWriteTime(xdatetime& dt) const { dt = m_lastwritetime; }
+    void filetimes_t::getCreationTime(datetime_t& dt) const { dt = m_creationtime; }
+    void filetimes_t::getLastAccessTime(datetime_t& dt) const { dt = m_lastaccesstime; }
+    void filetimes_t::getLastWriteTime(datetime_t& dt) const { dt = m_lastwritetime; }
 
-    void xfiletimes::setTime(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime)
+    void filetimes_t::setTime(const datetime_t& creationTime, const datetime_t& lastAccessTime, const datetime_t& lastWriteTime)
     {
         m_creationtime   = creationTime;
         m_lastaccesstime = lastAccessTime;
         m_lastwritetime  = lastWriteTime;
     }
 
-    void xfiletimes::setCreationTime(const xdatetime& dt) { m_creationtime = dt; }
-    void xfiletimes::setLastAccessTime(const xdatetime& dt) { m_lastaccesstime = dt; }
-    void xfiletimes::setLastWriteTime(const xdatetime& dt) { m_lastwritetime = dt; }
+    void filetimes_t::setCreationTime(const datetime_t& dt) { m_creationtime = dt; }
+    void filetimes_t::setLastAccessTime(const datetime_t& dt) { m_lastaccesstime = dt; }
+    void filetimes_t::setLastWriteTime(const datetime_t& dt) { m_lastwritetime = dt; }
 
-    xfiletimes& xfiletimes::operator=(const xfiletimes& other)
+    filetimes_t& filetimes_t::operator=(const filetimes_t& other)
     {
         m_creationtime   = other.m_creationtime;
         m_lastaccesstime = other.m_lastaccesstime;
@@ -126,12 +126,12 @@ namespace xcore
         return *this;
     }
 
-    bool xfiletimes::operator==(const xfiletimes& other) const
+    bool filetimes_t::operator==(const filetimes_t& other) const
     {
         return m_creationtime == other.m_creationtime && m_lastaccesstime == other.m_lastaccesstime && m_lastwritetime == other.m_lastwritetime;
     }
 
-    bool xfiletimes::operator!=(const xfiletimes& other) const
+    bool filetimes_t::operator!=(const filetimes_t& other) const
     {
         return m_creationtime != other.m_creationtime || m_lastaccesstime != other.m_lastaccesstime || m_lastwritetime != other.m_lastwritetime;
     }

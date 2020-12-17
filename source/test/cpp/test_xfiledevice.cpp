@@ -6,22 +6,22 @@
 
 #include "xunittest/xunittest.h"
 
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/x_enumerator.h"
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_dirinfo.h"
-#include "xfilesystem/x_fileinfo.h"
-#include "xfilesystem/x_stream.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/x_enumerator.h"
+#include "filesystem_t/x_filesystem.h"
+#include "filesystem_t/x_filepath.h"
+#include "filesystem_t/x_dirpath.h"
+#include "filesystem_t/x_dirinfo.h"
+#include "filesystem_t/x_fileinfo.h"
+#include "filesystem_t/x_stream.h"
 
 using namespace xcore;
 
-extern xalloc* gTestAllocator;
+extern alloc_t* gTestAllocator;
 
 namespace xcore
 {
-	class utf32_alloc : public utf32::alloc
+	class utf32_alloc : public runes_alloc_t
 	{
 	public:
 		virtual utf32::runes allocate(s32 len, s32 cap) 
@@ -32,15 +32,15 @@ namespace xcore
 			return runes;
 		}
             
-		virtual void  deallocate(utf32::runes& slice)
+		virtual void  deallocate(utf32::runes& slice_t)
 		{
-			if (slice.m_str != nullptr)
+			if (slice_t.m_str != nullptr)
 			{
-				gTestAllocator->deallocate(slice.m_str);
+				gTestAllocator->deallocate(slice_t.m_str);
 			}
-			slice.m_str = nullptr;
-			slice.m_end = nullptr;
-			slice.m_eos = nullptr;
+			slice_t.m_str = nullptr;
+			slice_t.m_end = nullptr;
+			slice_t.m_eos = nullptr;
 		}
 	};
 	static utf32_alloc sa;
@@ -89,19 +89,19 @@ namespace xcore
 	struct TestDir
 	{
 		ascii::runez<64>			mName;
-		xdatetime					mCreationTime;
-		xdatetime					mLastAccessTime;
-		xdatetime					mLastWriteTime;
-		xfileattrs					mAttr;
+		datetime_t					mCreationTime;
+		datetime_t					mLastAccessTime;
+		datetime_t					mLastWriteTime;
+		fileattrs_t					mAttr;
 	};
 
 	struct TestFile
 	{
 		ascii::runez<64>			mName;
-		xfileattrs					mAttr;
-		xdatetime					mCreationTime;
-		xdatetime					mLastAccessTime;
-		xdatetime					mLastWriteTime;
+		fileattrs_t					mAttr;
+		datetime_t					mCreationTime;
+		datetime_t					mLastAccessTime;
+		datetime_t					mLastWriteTime;
 		u64							mFileLength;
 		u64							mMaxFileLength;
 		xbyte						mFileData[4096];
@@ -255,23 +255,23 @@ namespace xcore
 
 	static TestFile					sFiles[] = 
 	{
-		{ ascii::runez<64>("textfiles\\readme1st.txt")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("textfiles\\authors.txt")		, xfileattrs(true ,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("textfiles\\docs\\tech.txt")		, xfileattrs(false,false,true ,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("textfiles\\tech\\install.txt")	, xfileattrs(false,false,false,true ), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("textfiles\\readme1st.txt")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("textfiles\\authors.txt")		, fileattrs_t(true ,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("textfiles\\docs\\tech.txt")		, fileattrs_t(false,false,true ,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("textfiles\\tech\\install.txt")	, fileattrs_t(false,false,false,true ), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
 		 
-		{ ascii::runez<64>("binfiles\\texture1.bin")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\texture2.bin")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\objects\\object1.bin"), xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\objects\\object2.bin"), xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\tracks\\track1.bin")	, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\tracks\\track2.bin")	, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\texture1.bin")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\texture2.bin")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\objects\\object1.bin"), fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\objects\\object2.bin"), fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\tracks\\track1.bin")	, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("binfiles\\tracks\\track2.bin")	, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
 
-		{ ascii::runez<64>("readonly_files\\readme.txt")	, xfileattrs(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("readonly_files\\data.bin")		, xfileattrs(false,true,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("readonly_files\\readme.txt")	, fileattrs_t(false,true,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("readonly_files\\data.bin")		, fileattrs_t(false,true,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
 
-		{ ascii::runez<64>("writeable_files\\file.txt")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("writeable_files\\file.bin")		, xfileattrs(false,false,false,false), xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("writeable_files\\file.txt")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ ascii::runez<64>("writeable_files\\file.bin")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
 
 		// Room for creating files
 		{ ascii::runez<64>("__EMPTY__") },
@@ -308,14 +308,14 @@ namespace xcore
 
 	static TestDir	sDirs[] = 
 	{
-		{ ascii::runez<64>("textfiles")				, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("textfiles\\docs")		, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("textfiles\\help")		, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("binfiles")				, xdatetime(2011, 3, 10, 15, 30, 10), xdatetime(2011, 3, 12, 16, 00, 20), xdatetime(2011, 3, 11, 10, 46, 20) },
-		{ ascii::runez<64>("binfiles\\objects")		, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("binfiles\\tracks")		, xdatetime(2011, 2, 10, 15, 30, 10), xdatetime(2011, 2, 12, 16, 00, 20), xdatetime(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("readonly_files")		, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
-		{ ascii::runez<64>("writeable_files")		, xdatetime(2011, 4, 10, 15, 30, 10), xdatetime(2011, 4, 12, 16, 00, 20), xdatetime(2011, 4, 11, 10, 46, 20) },
+		{ ascii::runez<64>("textfiles")				, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("textfiles\\docs")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("textfiles\\help")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("binfiles")				, datetime_t(2011, 3, 10, 15, 30, 10), datetime_t(2011, 3, 12, 16, 00, 20), datetime_t(2011, 3, 11, 10, 46, 20) },
+		{ ascii::runez<64>("binfiles\\objects")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("binfiles\\tracks")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ ascii::runez<64>("readonly_files")		, datetime_t(2011, 4, 10, 15, 30, 10), datetime_t(2011, 4, 12, 16, 00, 20), datetime_t(2011, 4, 11, 10, 46, 20) },
+		{ ascii::runez<64>("writeable_files")		, datetime_t(2011, 4, 10, 15, 30, 10), datetime_t(2011, 4, 12, 16, 00, 20), datetime_t(2011, 4, 11, 10, 46, 20) },
 		{ ascii::runez<64>("__EMPTY__") },
 		{ ascii::runez<64>("__EMPTY__") },
 		{ ascii::runez<64>("__EMPTY__") },
@@ -329,9 +329,9 @@ namespace xcore
 
 	namespace xfilesystem_test
 	{
-		class xfiledevice_TEST : public xfiledevice
+		class xfiledevice_TEST : public filedevice_t
 		{
-			xbool					mCanWrite;
+			bool					mCanWrite;
 		public:
 									xfiledevice_TEST()
 										: mCanWrite(true)								{ } 
@@ -342,49 +342,49 @@ namespace xcore
 
 			virtual bool			getDeviceInfo(u64& totalSpace, u64& freeSpace) const;
 
-			virtual bool			openFile(xfilepath const& filepath, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle);
+			virtual bool			openFile(filepath_t const& filepath, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle);
 			virtual bool			readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead);
 			virtual bool			writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten);
 			virtual bool			closeFile(void* nFileHandle);
 
-			virtual bool			createStream(xfilepath const& szFilename, bool boRead, bool boWrite, xstream*& strm);
-			virtual bool			closeStream(xstream* strm);
+			virtual bool			createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm);
+			virtual bool			closeStream(stream_t* strm);
 
 			virtual bool			setLengthOfFile(void* nFileHandle, u64 inLength);
 			virtual bool			getLengthOfFile(void* nFileHandle, u64& outLength);
 
-			virtual bool			setFileTime(xfilepath const& filepath, const xfiletimes& time);
-			virtual bool			getFileTime(xfilepath const& filepath, xfiletimes& time);
-			virtual bool			setFileAttr(xfilepath const& filepath, const xfileattrs& attr);
-			virtual bool			getFileAttr(xfilepath const& filepath, xfileattrs& attr);
+			virtual bool			setFileTime(filepath_t const& filepath, const filetimes_t& time);
+			virtual bool			getFileTime(filepath_t const& filepath, filetimes_t& time);
+			virtual bool			setFileAttr(filepath_t const& filepath, const fileattrs_t& attr);
+			virtual bool			getFileAttr(filepath_t const& filepath, fileattrs_t& attr);
 
-			virtual bool			setFileTime(void* pHandle, xfiletimes const& times);
-			virtual bool			getFileTime(void* pHandle, xfiletimes& outTimes);
+			virtual bool			setFileTime(void* pHandle, filetimes_t const& times);
+			virtual bool			getFileTime(void* pHandle, filetimes_t& outTimes);
 
-			virtual bool			hasFile(xfilepath const& filepath);
-			virtual bool			moveFile(xfilepath const& filepath, xfilepath const& szToFilename, bool boOverwrite);
-			virtual bool			copyFile(xfilepath const& filepath, xfilepath const& szToFilename, bool boOverwrite);
-			virtual bool			deleteFile(xfilepath const& filepath);
+			virtual bool			hasFile(filepath_t const& filepath);
+			virtual bool			moveFile(filepath_t const& filepath, filepath_t const& szToFilename, bool boOverwrite);
+			virtual bool			copyFile(filepath_t const& filepath, filepath_t const& szToFilename, bool boOverwrite);
+			virtual bool			deleteFile(filepath_t const& filepath);
 
-			virtual bool			hasDir(xdirpath const& dirpath);
-			virtual bool			moveDir(xdirpath const& dirpath, xdirpath const& szToDirPath, bool boOverwrite);
-			virtual bool			copyDir(xdirpath const& dirpath, xdirpath const& szToDirPath, bool boOverwrite);
-			virtual bool			createDir(xdirpath const& dirpath);
-			virtual bool			deleteDir(xdirpath const& dirpath);
+			virtual bool			hasDir(dirpath_t const& dirpath);
+			virtual bool			moveDir(dirpath_t const& dirpath, dirpath_t const& szToDirPath, bool boOverwrite);
+			virtual bool			copyDir(dirpath_t const& dirpath, dirpath_t const& szToDirPath, bool boOverwrite);
+			virtual bool			createDir(dirpath_t const& dirpath);
+			virtual bool			deleteDir(dirpath_t const& dirpath);
 
-			virtual bool			setDirTime(xdirpath const& dirpath, const xfiletimes& time);
-			virtual bool			getDirTime(xdirpath const& dirpath, xfiletimes& time);
-			virtual bool			setDirAttr(xdirpath const& dirpath, const xfileattrs& attr);
-			virtual bool			getDirAttr(xdirpath const& dirpath, xfileattrs& attr);
+			virtual bool			setDirTime(dirpath_t const& dirpath, const filetimes_t& time);
+			virtual bool			getDirTime(dirpath_t const& dirpath, filetimes_t& time);
+			virtual bool			setDirAttr(dirpath_t const& dirpath, const fileattrs_t& attr);
+			virtual bool			getDirAttr(dirpath_t const& dirpath, fileattrs_t& attr);
 
-			virtual bool			enumerate(xdirpath const& szDirPath, enumerate_delegate& _enumerator);
+			virtual bool			enumerate(dirpath_t const& szDirPath, enumerate_delegate_t& _enumerator);
 
 			XCORE_CLASS_PLACEMENT_NEW_DELETE
 		};
 
-		static TestDir*		sFindTestDir(const xdirpath& szDir)
+		static TestDir*		sFindTestDir(const dirpath_t& szDir)
 		{
-			xdirpath dp(szDir);
+			dirpath_t dp(szDir);
 
 			dp.makeRelative();
 
@@ -392,7 +392,7 @@ namespace xcore
 			while (true)
 			{
 				TestDir* testDir = &sDirs[i];
-				xdirpath dp2 = xfilesystem::dirpath(testDir->mName.m_str);
+				dirpath_t dp2 = filesystem_t::dirpath(testDir->mName.m_str);
 
 				if (dp == dp2)
 					return testDir;
@@ -418,15 +418,15 @@ namespace xcore
 			return NULL;
 		}
 
-		static TestFile*	sFindTestFile(xfilepath const& szFilename)
+		static TestFile*	sFindTestFile(filepath_t const& szFilename)
 		{
-			xfilepath fp(szFilename);			
+			filepath_t fp(szFilename);			
 			fp.makeRelative();
 
 			TestFile* testFile = sFiles;
 			while (true)
 			{
-				xfilepath fp2 = xfilesystem::filepath(testFile->mName.m_str);
+				filepath_t fp2 = filesystem_t::filepath(testFile->mName.m_str);
 				if (fp == fp2)
 					return testFile;
 				if (testFile->mName == "__NULL__")
@@ -436,7 +436,7 @@ namespace xcore
 			return NULL;
 		}
 
-		static TestFile*	sNewTestFile(const xfilepath& szFilename, void* data, u32 dataSize)
+		static TestFile*	sNewTestFile(const filepath_t& szFilename, void* data, u32 dataSize)
 		{
 			TestFile* t = sFiles;
 			while (true)
@@ -447,7 +447,7 @@ namespace xcore
 					// init creation time
 					// init last write time
 					// data copy
-					xfilesystem::to_ascii(szFilename, t->mName);
+					filesystem_t::to_ascii(szFilename, t->mName);
 
 					t->mFileLength = dataSize;
 					t->mMaxFileLength = sizeof(t->mFileData);
@@ -479,12 +479,12 @@ namespace xcore
 			return true;
 		}
 
-		bool xfiledevice_TEST::hasFile(xfilepath const& szFilename)
+		bool xfiledevice_TEST::hasFile(filepath_t const& szFilename)
 		{
 			return sFindTestFile(szFilename)!=NULL;
 		}
 		
-		bool xfiledevice_TEST::openFile(xfilepath const& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle)
+		bool xfiledevice_TEST::openFile(filepath_t const& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle)
 		{
 			if (mode == FileMode_Create || mode == FileMode_CreateNew)
 			{
@@ -554,20 +554,20 @@ namespace xcore
 			return false;
 		}
 
-		bool xfiledevice_TEST::moveFile(xfilepath const& szFilename, xfilepath const& szToFilename, bool boOverwrite)
+		bool xfiledevice_TEST::moveFile(filepath_t const& szFilename, filepath_t const& szToFilename, bool boOverwrite)
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
 			if (testFile!=NULL)
 			{
-				xfilepath filePath(szFilename);
+				filepath_t filePath(szFilename);
 //				filePath.removeFirstSlashAndBefore();
-				xfilesystem::to_ascii(szFilename, testFile->mName);
+				filesystem_t::to_ascii(szFilename, testFile->mName);
 				return true;
 			}
 			return false;
 		}
 
-		bool xfiledevice_TEST::copyFile(xfilepath const& szFilename, xfilepath const& szToFilename, bool boOverwrite)
+		bool xfiledevice_TEST::copyFile(filepath_t const& szFilename, filepath_t const& szToFilename, bool boOverwrite)
 		{
 			TestFile* srcTestFile = sFindTestFile(szFilename);
 			if (srcTestFile!=NULL)
@@ -591,7 +591,7 @@ namespace xcore
 			return true;
 		}
 
-		bool xfiledevice_TEST::deleteFile(xfilepath const& szFilename)
+		bool xfiledevice_TEST::deleteFile(filepath_t const& szFilename)
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
 			if (testFile!=NULL)
@@ -602,13 +602,13 @@ namespace xcore
 			return false;
 		}
 
-		bool xfiledevice_TEST::createStream(xfilepath const& szFilename, bool boRead, bool boWrite, xstream*& strm)
+		bool xfiledevice_TEST::createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm)
 		{
 			strm = nullptr;
 			return false;
 		}
 		
-		bool xfiledevice_TEST::closeStream(xstream* strm)
+		bool xfiledevice_TEST::closeStream(stream_t* strm)
 		{
 			return false;
 		}
@@ -632,7 +632,7 @@ namespace xcore
 			return true;
 		}
 
-		bool xfiledevice_TEST::setFileTime(xfilepath const& szFilename, const xfiletimes& time)
+		bool xfiledevice_TEST::setFileTime(filepath_t const& szFilename, const filetimes_t& time)
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
 			if (testFile!=NULL)
@@ -642,7 +642,7 @@ namespace xcore
 			return testFile!=NULL;
 		}
 
-		bool xfiledevice_TEST::getFileTime(xfilepath const& szFilename, xfiletimes& outTimes)
+		bool xfiledevice_TEST::getFileTime(filepath_t const& szFilename, filetimes_t& outTimes)
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
 			if (testFile!=NULL)
@@ -652,7 +652,7 @@ namespace xcore
 			return testFile!=NULL;
 		}
 
-		bool			xfiledevice_TEST::setFileAttr(xfilepath const& szFilename, const xfileattrs& attr)
+		bool			xfiledevice_TEST::setFileAttr(filepath_t const& szFilename, const fileattrs_t& attr)
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
 			if (testFile!=NULL)
@@ -663,7 +663,7 @@ namespace xcore
 			return false;
 		}
 
-		bool			xfiledevice_TEST::getFileAttr(xfilepath const& szFilename, xfileattrs& attr)
+		bool			xfiledevice_TEST::getFileAttr(filepath_t const& szFilename, fileattrs_t& attr)
 		{
 			TestFile* testFile = sFindTestFile(szFilename);
 			if (testFile!=NULL)
@@ -674,7 +674,7 @@ namespace xcore
 			return false;
 		}
 
-		bool xfiledevice_TEST::setFileTime(void* fd, const xfiletimes& time)
+		bool xfiledevice_TEST::setFileTime(void* fd, const filetimes_t& time)
 		{
 			TestFile* testFile = (TestFile*)fd;
 			if (testFile!=NULL)
@@ -684,7 +684,7 @@ namespace xcore
 			return testFile!=NULL;
 		}
 
-		bool xfiledevice_TEST::getFileTime(void* fd, xfiletimes& outTimes)
+		bool xfiledevice_TEST::getFileTime(void* fd, filetimes_t& outTimes)
 		{
 			TestFile* testFile = (TestFile*)fd;
 			if (testFile!=NULL)
@@ -694,55 +694,55 @@ namespace xcore
 			return testFile!=NULL;
 		}
 
-		bool xfiledevice_TEST::hasDir(xdirpath const& szDirPath)
+		bool xfiledevice_TEST::hasDir(dirpath_t const& szDirPath)
 		{
 			return sFindTestDir(szDirPath)!=NULL;
 		}
 
-		bool xfiledevice_TEST::createDir(xdirpath const& szDirPath) 
+		bool xfiledevice_TEST::createDir(dirpath_t const& szDirPath) 
 		{
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir!=NULL)
 			{
-				ascii::printf(ascii::crunes("test file device -- dir %s already exists!!!\n"), x_va(testDir->mName.m_str));
+				ascii::printf(ascii::crunes("test file device -- dir %s already exists!!!\n"), va_t(testDir->mName.m_str));
 				return false;
 			}
 
-			xdirpath dp(szDirPath);
+			dirpath_t dp(szDirPath);
 			dp.makeRelative();
 
 			TestDir* newDir = sFindEmptyTestDir();
 			if (newDir!=NULL)
 			{
-				xfilesystem::to_ascii(dp, newDir->mName);
-				newDir->mCreationTime = xdatetime::sNow();
+				filesystem_t::to_ascii(dp, newDir->mName);
+				newDir->mCreationTime = datetime_t::sNow();
 				newDir->mLastAccessTime = newDir->mCreationTime;
 				newDir->mLastWriteTime = newDir->mCreationTime;
 			}
 			else
 			{
 				ascii::runez<64> dirname;
-				xfilesystem::to_ascii(szDirPath, dirname);
-				ascii::printf(ascii::crunes("Failed to create test filesystem dir %s!!! \n"), x_va(dirname.m_str));
+				filesystem_t::to_ascii(szDirPath, dirname);
+				ascii::printf(ascii::crunes("Failed to create test filesystem dir %s!!! \n"), va_t(dirname.m_str));
 			}
 			return newDir!=NULL;
 		}
 
-		static bool enumerateCopyTestDir(xdirpath const& szDirPath, bool boSearchSubDirectories, enumerate_delegate* enumerator, s32 depth)
+		static bool enumerateCopyTestDir(dirpath_t const& szDirPath, bool boSearchSubDirectories, enumerate_delegate_t* enumerator, s32 depth)
 		{
-			xdirpath dp(szDirPath);
+			dirpath_t dp(szDirPath);
 			dp.makeRelative();
 
 			TestDir* testDir = sDirs;
 			bool terminate = false;
 			while (!terminate)
 			{
-				xdirpath tdp = xfilesystem::dirpath(testDir->mName.m_str);
+				dirpath_t tdp = filesystem_t::dirpath(testDir->mName.m_str);
 				if (tdp == dp)
 				{
 					if (enumerator)
 					{
-						xdirinfo* di = new xdirinfo(tdp);
+						dirinfo_t* di = new dirinfo_t(tdp);
 						terminate = (*enumerator)(0, nullptr, di);
 					}
 				}
@@ -753,7 +753,7 @@ namespace xcore
 					{
 						if (enumerator)
 						{
-							xdirinfo* di = new xdirinfo(tdp);
+							dirinfo_t* di = new dirinfo_t(tdp);
 							terminate = (*enumerator)(level, nullptr, di);
 						}
 					}
@@ -768,14 +768,14 @@ namespace xcore
 			TestFile* testFile = sFiles;
 			while(!terminateFile)
 			{
-				xfilepath fpTemp = xfilesystem::filepath(testFile->mName.m_str);
-				xdirpath dpTemp;
+				filepath_t fpTemp = filesystem_t::filepath(testFile->mName.m_str);
+				dirpath_t dpTemp;
 				fpTemp.getDirname(dpTemp);
 				if (dpTemp == dp)
 				{
 					if (enumerator)
 					{
-						xfileinfo* fiReuslt = new xfileinfo(fpTemp);
+						fileinfo_t* fiReuslt = new fileinfo_t(fpTemp);
 						terminateFile = (*enumerator)(0,fiReuslt,nullptr);
 					}
 				}
@@ -786,7 +786,7 @@ namespace xcore
 					{
 						if (enumerator)
 						{
-							xfileinfo* fiResult = new xfileinfo(fpTemp);
+							fileinfo_t* fiResult = new fileinfo_t(fpTemp);
 							terminateFile = (*enumerator)(levelFile,fiResult,nullptr);
 						}
 					}
@@ -800,39 +800,39 @@ namespace xcore
 			return true;
 		}
 
-		static void changeDirPath(xdirpath const& szDirPath,const xdirpath& szToDirPath,const xdirinfo* szDirinfo,xdirpath& outDirPath)
+		static void changeDirPath(dirpath_t const& szDirPath,const dirpath_t& szToDirPath,const dirinfo_t* szDirinfo,dirpath_t& outDirPath)
 		{
-			xdirpath nDirpath_from(szDirPath);
-			xdirpath nDirpath_to(szToDirPath);
+			dirpath_t nDirpath_from(szDirPath);
+			dirpath_t nDirpath_to(szToDirPath);
 			s32 depth1 = nDirpath_from.getLevels();
 
-			xdirpath parent,child;
+			dirpath_t parent,child;
 			szDirinfo->getDirpath().split(depth1,parent,child);
 			outDirPath = nDirpath_to + child;
 		}
 
-		static void changeFilePath(xdirpath const& szDirPath, const xdirpath& szToDirPath, const xfileinfo* szFileinfo, xfilepath& outFilePath)
+		static void changeFilePath(dirpath_t const& szDirPath, const dirpath_t& szToDirPath, const fileinfo_t* szFileinfo, filepath_t& outFilePath)
 		{
-			xdirpath nDir;
+			dirpath_t nDir;
 			szFileinfo->getFilepath().getDirname(nDir);
 
-			xdirpath nDirpath_from(szDirPath);
-			xdirpath nDirpath_to(szToDirPath);
+			dirpath_t nDirpath_from(szDirPath);
+			dirpath_t nDirpath_to(szToDirPath);
 
-			xfilepath fileName;
+			filepath_t fileName;
 			szFileinfo->getFilepath().getFilename(fileName);
 			s32 depth = nDirpath_from.getLevels();
 
-			xdirpath parent,child,copyDirPath_To;
+			dirpath_t parent,child,copyDirPath_To;
 			nDir.split(depth,parent,child);
 			copyDirPath_To = nDirpath_to + child;
-			outFilePath = xfilepath(copyDirPath_To,fileName);
+			outFilePath = filepath_t(copyDirPath_To,fileName);
 		}
 
-		struct enumerate_delegate_dirs_copy_testDir : public enumerate_delegate
+		struct enumerate_delegate_dirs_copy_testDir : public enumerate_delegate_t
 		{
-			cstack<const xdirinfo* > dirStack;
-			cstack<const xfileinfo* > fileStack;
+			cstack<const dirinfo_t* > dirStack;
+			cstack<const fileinfo_t* > fileStack;
 			enumerate_delegate_dirs_copy_testDir() 
 			{
 				dirStack.init(MAX_ENUM_SEARCH_DIRS);
@@ -840,7 +840,7 @@ namespace xcore
 			}
 
 			virtual ~enumerate_delegate_dirs_copy_testDir() { dirStack.clear(); }
-			virtual bool operator () (s32 depth, xfileinfo const* fi, xdirinfo const* di)
+			virtual bool operator () (s32 depth, fileinfo_t const* fi, dirinfo_t const* di)
 			{
 				bool terminate = false;
 				if (di != nullptr)
@@ -855,9 +855,9 @@ namespace xcore
 			}
 		};
 
-		struct enumerate_delegate_files_copy_testDir : public enumerate_delegate
+		struct enumerate_delegate_files_copy_testDir : public enumerate_delegate_t
 		{
-			virtual bool operator () (s32 depth, xfileinfo const* fi, xdirinfo const* di)
+			virtual bool operator () (s32 depth, fileinfo_t const* fi, dirinfo_t const* di)
 			{
 				bool terminate = false;
 				return terminate;
@@ -865,22 +865,22 @@ namespace xcore
 		};
 
 
-		bool xfiledevice_TEST::moveDir(xdirpath const& szDirPath, xdirpath const& szToDirPath, bool boOverwrite) 
+		bool xfiledevice_TEST::moveDir(dirpath_t const& szDirPath, dirpath_t const& szToDirPath, bool boOverwrite) 
 		{
 			copyDir(szDirPath, szToDirPath, boOverwrite);
 			deleteDir(szDirPath);
 			return true;
 		}
 
-		bool xfiledevice_TEST::copyDir(xdirpath const& szDirPath, const xdirpath& szToDirPath, bool boOverwrite) 
+		bool xfiledevice_TEST::copyDir(dirpath_t const& szDirPath, const dirpath_t& szToDirPath, bool boOverwrite) 
 		{
 			enumerate_delegate_dirs_copy_testDir copy_enum;
 			enumerateCopyTestDir(szDirPath, true, &copy_enum, 0);
 			
-			const xdirinfo* dirInfo = NULL;
+			const dirinfo_t* dirInfo = NULL;
 			while(copy_enum.dirStack.pop(dirInfo))
 			{
-				xdirpath copyDirPath_To;
+				dirpath_t copyDirPath_To;
 				changeDirPath(szDirPath,szToDirPath,dirInfo,copyDirPath_To);
 			
 				// nDirinfo_From --------------------->   copyDirPath_To       ( copy dir)
@@ -889,10 +889,10 @@ namespace xcore
 					return false;
 			}
 
-			const xfileinfo* fileInfo = NULL;
+			const fileinfo_t* fileInfo = NULL;
 			while (copy_enum.fileStack.pop(fileInfo))
 			{
-				xfilepath copyFilePath_To;
+				filepath_t copyFilePath_To;
 
 				changeFilePath(szDirPath,szToDirPath,fileInfo,copyFilePath_To);
 				//nFileinfo_From --------------------->  copyFilePath_To       (copy file)
@@ -908,7 +908,7 @@ namespace xcore
 
 			return true;
 		}
-		bool static deleteDirOnly(xdirpath const& szDirPath)
+		bool static deleteDirOnly(dirpath_t const& szDirPath)
 		{
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir==NULL)
@@ -919,12 +919,12 @@ namespace xcore
 			return true;
 		}
 
-		bool xfiledevice_TEST::deleteDir(xdirpath const& szDirPath) 
+		bool xfiledevice_TEST::deleteDir(dirpath_t const& szDirPath) 
 		{
 			enumerate_delegate_dirs_copy_testDir dirs_copy_enum;
 			enumerateCopyTestDir(szDirPath, true, &dirs_copy_enum, 0);
 
-			const xfileinfo* fileInfo = NULL;
+			const fileinfo_t* fileInfo = NULL;
 			while (dirs_copy_enum.fileStack.pop(fileInfo))
 			{
 				bool result_file = deleteFile(fileInfo->getFilepath());
@@ -938,7 +938,7 @@ namespace xcore
 				fileInfo = NULL;
 			}
 
-			const xdirinfo* dirInfo = NULL;
+			const dirinfo_t* dirInfo = NULL;
 			while(dirs_copy_enum.dirStack.pop(dirInfo))
 			{
 				bool result_dir = deleteDirOnly(dirInfo->getDirpath());
@@ -954,7 +954,7 @@ namespace xcore
 			return true;
 		}
 
-		bool xfiledevice_TEST::setDirTime(xdirpath const& szDirPath, const xfiletimes& times)
+		bool xfiledevice_TEST::setDirTime(dirpath_t const& szDirPath, const filetimes_t& times)
 		{
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir!=NULL)
@@ -964,7 +964,7 @@ namespace xcore
 			return testDir!=NULL;
 		}
 
-		bool xfiledevice_TEST::getDirTime(xdirpath const& szDirPath, xfiletimes& outTimes) 
+		bool xfiledevice_TEST::getDirTime(dirpath_t const& szDirPath, filetimes_t& outTimes) 
 		{
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir!=NULL)
@@ -974,7 +974,7 @@ namespace xcore
 			return testDir!=NULL;
 		}
 
-		bool			xfiledevice_TEST::setDirAttr(xdirpath const& szDirPath, const xfileattrs& attr) 
+		bool			xfiledevice_TEST::setDirAttr(dirpath_t const& szDirPath, const fileattrs_t& attr) 
 		{
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir!=NULL)
@@ -985,7 +985,7 @@ namespace xcore
 			return false;
 		}
 
-		bool			xfiledevice_TEST::getDirAttr(xdirpath const& szDirPath, xfileattrs& attr) 
+		bool			xfiledevice_TEST::getDirAttr(dirpath_t const& szDirPath, fileattrs_t& attr) 
 		{
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir!=NULL)
@@ -996,19 +996,19 @@ namespace xcore
 			return false;
 		}
 
-		bool xfiledevice_TEST::enumerate(xdirpath const& szDirPath, enumerate_delegate& enumerator) 
+		bool xfiledevice_TEST::enumerate(dirpath_t const& szDirPath, enumerate_delegate_t& enumerator) 
 		{
-			xdirpath dp(szDirPath);
+			dirpath_t dp(szDirPath);
 			dp.makeRelative();
 
 			TestDir* testDir = sDirs;
 			bool terminate = false;
 			while (!terminate)
 			{
-				xdirpath tdp = xfilesystem::dirpath(testDir->mName.m_str);
+				dirpath_t tdp = filesystem_t::dirpath(testDir->mName.m_str);
 				if (tdp == dp)
 				{
-					xdirinfo di(tdp);
+					dirinfo_t di(tdp);
 					terminate = (enumerator)(0, nullptr, &di);
 				}
 				else
@@ -1016,7 +1016,7 @@ namespace xcore
 					s32 level = tdp.getLevelOf(dp);
 					if (level > 0)
 					{
-						xdirinfo di(tdp);
+						dirinfo_t di(tdp);
 						terminate = (enumerator)(level, nullptr, &di);
 					}
 				}
@@ -1032,13 +1032,13 @@ namespace xcore
 			
 			while(!terminateFile)
 			{
-				xfilepath tfp = xfilesystem::filepath(testFile->mName.m_str);
-				xdirpath dpTemp;
+				filepath_t tfp = filesystem_t::filepath(testFile->mName.m_str);
+				dirpath_t dpTemp;
 				tfp.getDirname(dpTemp);
 
 				if (dpTemp == dp)
 				{
-					xfileinfo fiResult(tfp);
+					fileinfo_t fiResult(tfp);
 					terminateFile = (enumerator)(0, &fiResult, nullptr);
 				}
 				else 
@@ -1046,7 +1046,7 @@ namespace xcore
 					s32 levelFile = dpTemp.getLevelOf(dp);
 					if (levelFile > 0)
 					{
-						xfileinfo fiResult(tfp);
+						fileinfo_t fiResult(tfp);
 						terminateFile = (enumerator)(levelFile, &fiResult, nullptr);
 					}
 				}
@@ -1061,7 +1061,7 @@ namespace xcore
 
 
 		//==============================================================================
-		// END xfilesystem namespace
+		// END filesystem_t namespace
 		//==============================================================================
 	};
 };
@@ -1074,15 +1074,15 @@ UNITTEST_SUITE_BEGIN(xfiledevice_register)
 	{
 		UNITTEST_FIXTURE_SETUP()
 		{
-			xfilesyscfg cfg;
+			filesyscfg_t cfg;
 			cfg.m_allocator = gTestAllocator;
 			cfg.m_max_open_stream = 8;
-			xfilesystem::create(cfg);
+			filesystem_t::create(cfg);
 		}
 		
 		UNITTEST_FIXTURE_TEARDOWN()
 		{
-			xfilesystem::destroy();
+			filesystem_t::destroy();
 		}
 
 		static xfiledevice_TEST	sTestFileDevice;
@@ -1092,13 +1092,13 @@ UNITTEST_SUITE_BEGIN(xfiledevice_register)
 		{
 			utf32::runez<32> deviceName;
 			deviceName = "TEST:\\";
-			CHECK_TRUE(xfilesystem::register_device(deviceName, &sTestFileDevice));
+			CHECK_TRUE(filesystem_t::register_device(deviceName, &sTestFileDevice));
 		}
 
 		UNITTEST_TEST(hasFile)
 		{
-			xfilepath fp = xfilesystem::filepath("TEST:\\textfiles\\docs\\tech.txt");
-			xfileinfo fi(fp);
+			filepath_t fp = filesystem_t::filepath("TEST:\\textfiles\\docs\\tech.txt");
+			fileinfo_t fi(fp);
 			CHECK_EQUAL(true, fi.exists());
 		}
 	}

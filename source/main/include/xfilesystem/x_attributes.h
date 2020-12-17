@@ -9,12 +9,12 @@
 
 namespace xcore
 {
-    class xfileattrs
+    class fileattrs_t
     {
 	public:
-        xfileattrs();
-        xfileattrs(const xfileattrs&);
-        xfileattrs(bool boArchive, bool boReadonly, bool boHidden, bool boSystem);
+        fileattrs_t();
+        fileattrs_t(const fileattrs_t&);
+        fileattrs_t(bool boArchive, bool boReadonly, bool boHidden, bool boSystem);
 
         bool isArchive() const;
         bool isReadOnly() const;
@@ -26,41 +26,41 @@ namespace xcore
         void setHidden(bool);
         void setSystem(bool);
 
-        xfileattrs& operator=(const xfileattrs&);
+        fileattrs_t& operator=(const fileattrs_t&);
 
-        bool operator==(const xfileattrs&) const;
-        bool operator!=(const xfileattrs&) const;
+        bool operator==(const fileattrs_t&) const;
+        bool operator!=(const fileattrs_t&) const;
 
     private:
         xcore::u32 mFlags;
     };
 
-    class xfiletimes
+    class filetimes_t
     {
 	public:
-        xfiletimes();
-        xfiletimes(const xfiletimes&);
-        xfiletimes(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
+        filetimes_t();
+        filetimes_t(const filetimes_t&);
+        filetimes_t(const datetime_t& creationTime, const datetime_t& lastAccessTime, const datetime_t& lastWriteTime);
 
-        void getTime(xdatetime& outCreationTime, xdatetime& outLastAccessTime, xdatetime& outLastWriteTime) const;
-        void getCreationTime(xdatetime&) const;
-        void getLastAccessTime(xdatetime&) const;
-        void getLastWriteTime(xdatetime&) const;
+        void getTime(datetime_t& outCreationTime, datetime_t& outLastAccessTime, datetime_t& outLastWriteTime) const;
+        void getCreationTime(datetime_t&) const;
+        void getLastAccessTime(datetime_t&) const;
+        void getLastWriteTime(datetime_t&) const;
 
-        void setTime(const xdatetime& creationTime, const xdatetime& lastAccessTime, const xdatetime& lastWriteTime);
-        void setCreationTime(const xdatetime&);
-        void setLastAccessTime(const xdatetime&);
-        void setLastWriteTime(const xdatetime&);
+        void setTime(const datetime_t& creationTime, const datetime_t& lastAccessTime, const datetime_t& lastWriteTime);
+        void setCreationTime(const datetime_t&);
+        void setLastAccessTime(const datetime_t&);
+        void setLastWriteTime(const datetime_t&);
 
-        xfiletimes& operator=(const xfiletimes&);
+        filetimes_t& operator=(const filetimes_t&);
 
-        bool operator==(const xfiletimes&) const;
-        bool operator!=(const xfiletimes&) const;
+        bool operator==(const filetimes_t&) const;
+        bool operator!=(const filetimes_t&) const;
 
     private:
-        xdatetime m_creationtime;
-        xdatetime m_lastaccesstime;
-        xdatetime m_lastwritetime;
+        datetime_t m_creationtime;
+        datetime_t m_lastaccesstime;
+        datetime_t m_lastwritetime;
     };
 }; // namespace xcore
 

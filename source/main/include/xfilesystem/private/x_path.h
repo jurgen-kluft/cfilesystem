@@ -10,12 +10,12 @@
 
 namespace xcore
 {
-    class xfilesystem;
-    class xfiledevice;
-    class xfilesys;
+    class filesystem_t;
+    class filedevice_t;
+    class filesys_t;
 
     //==============================================================================
-    // xdirpath:
+    // dirpath_t:
     //		- Relative:		"FolderA\FolderB\"
     //		- Absolute:		"Device:\FolderA\FolderB\"
     //
@@ -25,7 +25,7 @@ namespace xcore
     //==============================================================================
 
     //==============================================================================
-    // xfilepath:
+    // filepath_t:
     //		- Relative:		"FolderA\FolderB\Filename.ext"
     //		- Absolute:		"Device:\FolderA\FolderB\Filename.ext"
     //
@@ -35,10 +35,10 @@ namespace xcore
     // Filename                 = "Filename.ext"
     // FilenameWithoutExtension = "Filename"
     //==============================================================================
-    class xfilepath;
-    class xdirpath;
+    class filepath_t;
+    class dirpath_t;
 
-    class xpath
+    class path_t
     {
     public:
         static crunes_t s_device_separator;
@@ -46,22 +46,22 @@ namespace xcore
         runes_alloc_t* m_alloc;
         runes_t  m_path;
 
-        xpath();
-        xpath(runes_alloc_t* allocator);
-        xpath(runes_alloc_t* allocator, const crunes_t& path);
-        xpath(runes_alloc_t* allocator, const crunes_t& path);
-        xpath(const xpath& path);
-        xpath(const xpath& lhspath, const xpath& rhspath);
-        ~xpath();
+        path_t();
+        path_t(runes_alloc_t* allocator);
+        path_t(runes_alloc_t* allocator, const crunes_t& path);
+        path_t(runes_alloc_t* allocator, const crunes_t& path);
+        path_t(const path_t& path);
+        path_t(const path_t& lhspath, const path_t& rhspath);
+        ~path_t();
 
-        xpath resolve(xfilesys* fs, xfiledevice*& outdevice) const;
+        path_t resolve(filesys_t* fs, filedevice_t*& outdevice) const;
 
         void set_filepath(runes_t& runes, runes_alloc_t* allocator);
         void set_dirpath(runes_t& runes, runes_alloc_t* allocator);
         void set_filepath(runes_t& runes, runes_alloc_t* allocator);
         void set_dirpath(runes_t& runes, runes_alloc_t* allocator);
 
-        void combine(const xpath& dirpath, const xpath& filepath);
+        void combine(const path_t& dirpath, const path_t& filepath);
         void copy_dirpath(runes_t& runes);
         void clear();
         void erase();
@@ -69,39 +69,39 @@ namespace xcore
         bool isEmpty() const;
         bool isRoot() const;
         bool isRooted() const;
-        bool isSubDirOf(const xpath& dirpath) const;
+        bool isSubDirOf(const path_t& dirpath) const;
 
         s32  getLevels() const;
-        bool getLevel(s32 level, xpath& dirpath) const;
-        s32  getLevelOf(const xpath& dirname) const;
-        bool split(s32 level, xpath& parent_dirpath, xpath& relative_filepath) const;
+        bool getLevel(s32 level, path_t& dirpath) const;
+        s32  getLevelOf(const path_t& dirname) const;
+        bool split(s32 level, path_t& parent_dirpath, path_t& relative_filepath) const;
 
         void makeRelative();
-        void makeRelativeTo(const xpath& parent_dirpath);
+        void makeRelativeTo(const path_t& parent_dirpath);
 
-        void setRootDir(const xpath& in_root_dirpath);
-        bool getRootDir(xpath& out_root_dirpath) const;
-        bool getDirname(xpath& out_dirpath) const;
+        void setRootDir(const path_t& in_root_dirpath);
+        bool getRootDir(path_t& out_root_dirpath) const;
+        bool getDirname(path_t& out_dirpath) const;
 
         bool up();
-        bool down(xpath const& runes);
+        bool down(path_t const& runes);
 
-        void getFilename(xpath& out_filename) const;
-        void getFilenameWithoutExtension(xpath& out_filename_no_ext) const;
-        void getExtension(xpath& out_ext) const;
+        void getFilename(path_t& out_filename) const;
+        void getFilenameWithoutExtension(path_t& out_filename_no_ext) const;
+        void getExtension(path_t& out_ext) const;
 
-        xpath& operator=(const runes_t&);
-        xpath& operator=(const xpath&);
-        xpath& operator+=(const runes_t&);
+        path_t& operator=(const runes_t&);
+        path_t& operator=(const path_t&);
+        path_t& operator+=(const runes_t&);
 
-        bool operator==(const xpath&) const;
-        bool operator!=(const xpath&) const;
+        bool operator==(const path_t&) const;
+        bool operator!=(const path_t&) const;
 
-        static void as_utf16(xpath const& p,  xpath& dst);
-        static void as_utf16(xfilepath const& fp, xpath& dst);
-        static void as_utf16(xfilepath const& fp, xfilepath& dst);
-        static void as_utf16(xdirpath const& dp, xpath& dst);
-        static void as_utf16(xdirpath const& dp, xdirpath& dst);
+        static void as_utf16(path_t const& p,  path_t& dst);
+        static void as_utf16(filepath_t const& fp, path_t& dst);
+        static void as_utf16(filepath_t const& fp, filepath_t& dst);
+        static void as_utf16(dirpath_t const& dp, path_t& dst);
+        static void as_utf16(dirpath_t const& dp, dirpath_t& dst);
     };
 
 }; // namespace xcore

@@ -2,22 +2,22 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 
-#include "xfilesystem/private/x_enumerations.h"
-#include "xfilesystem/private/x_path.h"
-#include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_filepath.h"
+#include "filesystem_t/private/x_enumerations.h"
+#include "filesystem_t/private/x_path.h"
+#include "filesystem_t/x_dirpath.h"
+#include "filesystem_t/x_filepath.h"
 
 namespace xcore
 {
     using namespace utf32;
 
-    xfilepath::xfilepath()
+    filepath_t::filepath_t()
         : mParent(nullptr)
         , mPath()
     {
     }
 
-    xfilepath::xfilepath(xfilesys* fsys, xpath& path)
+    filepath_t::filepath_t(filesys_t* fsys, path_t& path)
         : mParent(fsys)
         , mPath()
     {
@@ -27,40 +27,40 @@ namespace xcore
         path.m_path   = utf32::runes();
     }
 
-    xfilepath::xfilepath(const xfilepath& filepath)
+    filepath_t::filepath_t(const filepath_t& filepath)
         : mParent(filepath.mParent)
         , mPath()
     {
         mPath = filepath.mPath;
     }
 
-    xfilepath::xfilepath(const xdirpath& dirpath, const xfilepath& filepath)
+    filepath_t::filepath_t(const dirpath_t& dirpath, const filepath_t& filepath)
         : mParent(filepath.mParent)
         , mPath()
     {
         mPath.combine(dirpath.mPath, filepath.mPath);
     }
 
-    xfilepath::~xfilepath() {}
+    filepath_t::~filepath_t() {}
 
-    void xfilepath::clear() { mPath.clear(); }
+    void filepath_t::clear() { mPath.clear(); }
 
-    bool xfilepath::isEmpty() const { return mPath.isEmpty(); }
-    bool xfilepath::isRooted() const { return mPath.isRooted(); }
+    bool filepath_t::isEmpty() const { return mPath.isEmpty(); }
+    bool filepath_t::isRooted() const { return mPath.isRooted(); }
 
-    void xfilepath::makeRelative() { mPath.makeRelative(); }
-    void xfilepath::makeRelativeTo(const xdirpath& root) { mPath.makeRelativeTo(root.mPath); }
-	void xfilepath::makeAbsoluteTo(const xdirpath& root) { mPath.setRootDir(root.mPath); }
-    bool xfilepath::getRoot(xdirpath& root) const { return mPath.getRootDir(root.mPath); }
-    bool xfilepath::getDirname(xdirpath& outDirPath) const { return mPath.getDirname(outDirPath.mPath); }
-    void xfilepath::getFilename(xfilepath& filename) const { mPath.getFilename(filename.mPath); }
-    void xfilepath::getFilenameWithoutExtension(xfilepath& filename) const { mPath.getFilenameWithoutExtension(filename.mPath); }
-    void xfilepath::getExtension(xfilepath& filename) const { mPath.getExtension(filename.mPath); }
+    void filepath_t::makeRelative() { mPath.makeRelative(); }
+    void filepath_t::makeRelativeTo(const dirpath_t& root) { mPath.makeRelativeTo(root.mPath); }
+	void filepath_t::makeAbsoluteTo(const dirpath_t& root) { mPath.setRootDir(root.mPath); }
+    bool filepath_t::getRoot(dirpath_t& root) const { return mPath.getRootDir(root.mPath); }
+    bool filepath_t::getDirname(dirpath_t& outDirPath) const { return mPath.getDirname(outDirPath.mPath); }
+    void filepath_t::getFilename(filepath_t& filename) const { mPath.getFilename(filename.mPath); }
+    void filepath_t::getFilenameWithoutExtension(filepath_t& filename) const { mPath.getFilenameWithoutExtension(filename.mPath); }
+    void filepath_t::getExtension(filepath_t& filename) const { mPath.getExtension(filename.mPath); }
 
-	void xfilepath::up() { mPath.up(); }
-	void xfilepath::down(xdirpath const& p) { mPath.down(p.mPath); } 
+	void filepath_t::up() { mPath.up(); }
+	void filepath_t::down(dirpath_t const& p) { mPath.down(p.mPath); } 
 
-    xfilepath& xfilepath::operator=(const xfilepath& path)
+    filepath_t& filepath_t::operator=(const filepath_t& path)
     {
         if (this == &path)
             return *this;
@@ -68,7 +68,7 @@ namespace xcore
         return *this;
     }
 
-    bool xfilepath::operator==(const xfilepath& rhs) const { return mPath == rhs.mPath; }
-    bool xfilepath::operator!=(const xfilepath& rhs) const { return mPath != rhs.mPath; }
+    bool filepath_t::operator==(const filepath_t& rhs) const { return mPath == rhs.mPath; }
+    bool filepath_t::operator!=(const filepath_t& rhs) const { return mPath != rhs.mPath; }
 
 } // namespace xcore

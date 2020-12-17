@@ -4,13 +4,13 @@
 
 #include "xunittest/xunittest.h"
 
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_dirinfo.h"
-#include "xfilesystem/x_fileinfo.h"
-#include "xfilesystem/x_stream.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/x_filesystem.h"
+#include "filesystem_t/x_filepath.h"
+#include "filesystem_t/x_dirpath.h"
+#include "filesystem_t/x_dirinfo.h"
+#include "filesystem_t/x_fileinfo.h"
+#include "filesystem_t/x_stream.h"
 
 using namespace xcore;
 
@@ -23,7 +23,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 		UNITTEST_TEST(constructor1)
 		{
-			xfilepath p1;
+			filepath_t p1;
 
 			CHECK_TRUE(p1.isEmpty());
 		}
@@ -31,7 +31,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 		UNITTEST_TEST(constructor2)
 		{
 			const char* str = "TEST:\\textfiles\\docs";
-			xfilepath p = xfilesystem::filepath(str);
+			filepath_t p = filesystem_t::filepath(str);
 
 			CHECK_FALSE(p.isEmpty());
 		}

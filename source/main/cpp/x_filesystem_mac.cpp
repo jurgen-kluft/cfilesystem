@@ -3,22 +3,22 @@
 
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
-#include "xbase/x_va_list.h"
+#include "xbase/va_list_t.h"
 
 #include "xtime/x_datetime.h"
 
-#include "xfilesystem/private/x_filesystem.h"
+#include "filesystem_t/private/x_filesystem.h"
 
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/private/x_filedevice.h"
+#include "filesystem_t/x_filesystem.h"
+#include "filesystem_t/private/x_filedevice.h"
 
 namespace xcore
 {
     //------------------------------------------------------------------------------------------
 
-    xbool isPathUNIXStyle(void) { return true; }
+    bool isPathUNIXStyle(void) { return true; }
 
-    void doIO(xio_thread* io_thread) {}
+    void doIO(io_thread_t* io_thread) {}
 
 }; // namespace xcore
 

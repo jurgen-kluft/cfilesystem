@@ -7,37 +7,37 @@
 
 #include "xbase/x_debug.h"
 
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_attributes.h"
+#include "filesystem_t/x_filepath.h"
+#include "filesystem_t/x_attributes.h"
 
 namespace xcore
 {
     // Forward declares
-    class xstream;
-    class xfilestream;
-    class xfiletimes;
-    class xdirinfo;
-    class xfilesys;
+    class stream_t;
+    class filestream_t;
+    class filetimes_t;
+    class dirinfo_t;
+    class filesys_t;
 
-    class xfileinfo
+    class fileinfo_t
     {
-        friend class xdirpath;
-        friend class xfilepath;
-        friend class xdirinfo;
-        friend class xfileinfo;
-        friend class xfilesys;
+        friend class dirpath_t;
+        friend class filepath_t;
+        friend class dirinfo_t;
+        friend class fileinfo_t;
+        friend class filesys_t;
 
-        bool       mFileExists;
-        xfiletimes mFileTimes;
-        xfileattrs mFileAttributes;
+        bool        mFileExists;
+        filetimes_t mFileTimes;
+        fileattrs_t mFileAttributes;
 
-        xfilesys* mParent;
-        xfilepath mPath;
+        filesys_t* mParent;
+        filepath_t mPath;
 
     public:
-        xfileinfo();
-        xfileinfo(const xfileinfo& fileinfo);
-        xfileinfo(const xfilepath& filename);
+        fileinfo_t();
+        fileinfo_t(const fileinfo_t& fileinfo);
+        fileinfo_t(const filepath_t& filename);
 
         u64  getLength() const;
         void setLength(u64 length);
@@ -45,79 +45,79 @@ namespace xcore
         bool isValid() const;
         bool isRooted() const;
 
-        bool getAttrs(xfileattrs& fattrs) const;
-        bool getTimes(xfiletimes& ftimes) const;
-        bool setAttrs(xfileattrs fattrs);
-        bool setTimes(xfiletimes ftimes);
+        bool getAttrs(fileattrs_t& fattrs) const;
+        bool getTimes(filetimes_t& ftimes) const;
+        bool setAttrs(fileattrs_t fattrs);
+        bool setTimes(filetimes_t ftimes);
 
-        bool create(xstream*&) const;
+        bool create(stream_t*&) const;
         bool exists() const;
         bool remove();
         void refresh();
         bool create();
 
-        bool open(xstream*& outFileStream);
-        bool openRead(xstream*& outFileStream);
-        bool openWrite(xstream*& outFileStream);
+        bool open(stream_t*& outFileStream);
+        bool openRead(stream_t*& outFileStream);
+        bool openWrite(stream_t*& outFileStream);
         u64  readAllBytes(xbyte* buffer, u64 count);
         u64  writeAllBytes(const xbyte* buffer, u64 count);
 
-        bool getParent(xdirpath& parentpath) const;
-        bool getRoot(xdirpath& rootpath) const;
-        void getDirpath(xdirpath& dirpath) const;
-        void getFilename(xfilepath& filename) const;
-        void getFilenameWithoutExtension(xfilepath& filename) const;
-        void getExtension(xfilepath& extension) const;
+        bool getParent(dirpath_t& parentpath) const;
+        bool getRoot(dirpath_t& rootpath) const;
+        void getDirpath(dirpath_t& dirpath) const;
+        void getFilename(filepath_t& filename) const;
+        void getFilenameWithoutExtension(filepath_t& filename) const;
+        void getExtension(filepath_t& extension) const;
 
-		xdirpath getParent() const;
-        xdirpath getRoot() const;
-        xdirpath getDirpath() const;
-        xfilepath getFilename() const;
-        xfilepath getFilenameWithoutExtension() const;
-        xfilepath getExtension() const;
+        dirpath_t  getParent() const;
+        dirpath_t  getRoot() const;
+        dirpath_t  getDirpath() const;
+        filepath_t getFilename() const;
+        filepath_t getFilenameWithoutExtension() const;
+        filepath_t getExtension() const;
 
-        void             getFilepath(xfilepath&) const;
-        xfilepath const& getFilepath() const;
+        void              getFilepath(filepath_t&) const;
+        filepath_t const& getFilepath() const;
 
         void up();
-        void down(xdirpath const& dir);
+        void down(dirpath_t const& dir);
 
-        bool copy_to(const xfilepath& toFilename, bool overwrite);
-        bool move_to(const xfilepath& toFilename, bool overwrite);
+        bool copy_to(const filepath_t& toFilename, bool overwrite);
+        bool move_to(const filepath_t& toFilename, bool overwrite);
 
-        xfileinfo& operator=(const xfileinfo&);
-        xfileinfo& operator=(const xfilepath&);
-        bool       operator==(const xfileinfo&) const;
-        bool       operator!=(const xfileinfo&) const;
+        fileinfo_t& operator=(const fileinfo_t&);
+        fileinfo_t& operator=(const filepath_t&);
+        bool        operator==(const fileinfo_t&) const;
+        bool        operator!=(const fileinfo_t&) const;
 
-        static bool sExists(const xfilepath& filepath);
-        static bool sCreate(const xfilepath& filepath, xstream*& outFileStream);
-        static bool sDelete(const xfilepath& filepath);
+        static bool sExists(const filepath_t& filepath);
+        static bool sCreate(const filepath_t& filepath, stream_t*& outFileStream);
+        static bool sDelete(const filepath_t& filepath);
 
-        static bool sGetFileAttributes(const xfilepath& filepath, xfileattrs& outAttr);
+        static bool sGetFileAttributes(const filepath_t& filepath, fileattrs_t& outAttr);
 
-        static u64  sGetLength(const xfilepath& filename);
-        static void sSetLength(const xfilepath& filename, u64 length);
+        static u64  sGetLength(const filepath_t& filename);
+        static void sSetLength(const filepath_t& filename, u64 length);
 
-        static bool sIsArchive(const xfilepath& filename);
-        static bool sIsReadOnly(const xfilepath& filename);
-        static bool sIsHidden(const xfilepath& filename);
-        static bool sIsSystem(const xfilepath& filename);
+        static bool sIsArchive(const filepath_t& filename);
+        static bool sIsReadOnly(const filepath_t& filename);
+        static bool sIsHidden(const filepath_t& filename);
+        static bool sIsSystem(const filepath_t& filename);
 
-        static bool sOpen(const xfilepath& filename, xstream*& outFileStream);
-        static bool sOpenRead(const xfilepath& filename, xstream*& outFileStream);
-        static bool sOpenWrite(const xfilepath& filename, xstream*& outFileStream);
+        static bool sOpen(const filepath_t& filename, stream_t*& outFileStream);
+        static bool sOpenRead(const filepath_t& filename, stream_t*& outFileStream);
+        static bool sOpenWrite(const filepath_t& filename, stream_t*& outFileStream);
 
-        static u64 sReadAllBytes(const xfilepath& filename, xbyte* buffer, u64 count);
-        static u64 sWriteAllBytes(const xfilepath& filename, const xbyte* buffer, u64 count);
+        static u64 sReadAllBytes(const filepath_t& filename, xbyte* buffer, u64 count);
+        static u64 sWriteAllBytes(const filepath_t& filename, const xbyte* buffer, u64 count);
 
-        static bool sSetTime(const xfilepath& filename, const xfiletimes& ftimes);
-        static bool sGetTime(const xfilepath& filename, xfiletimes& ftimes);
-        static bool sSetAttrs(const xfilepath& filename, const xfileattrs& fattrs);
-        static bool sGetAttrs(const xfilepath& filename, xfileattrs& fattrs);
+        static bool sSetTime(const filepath_t& filename, const filetimes_t& ftimes);
+        static bool sGetTime(const filepath_t& filename, filetimes_t& ftimes);
+        static bool sSetAttrs(const filepath_t& filename, const fileattrs_t& fattrs);
+        static bool sGetAttrs(const filepath_t& filename, fileattrs_t& fattrs);
 
-        static bool sCopy(const xfilepath& sourceFilename, const xfilepath& destFilename, bool overwrite = true);
-        static bool sMove(const xfilepath& sourceFilename, const xfilepath& destFilename, bool overwrite = true);
+        static bool sCopy(const filepath_t& sourceFilename, const filepath_t& destFilename, bool overwrite = true);
+        static bool sMove(const filepath_t& sourceFilename, const filepath_t& destFilename, bool overwrite = true);
     };
 }; // namespace xcore
 

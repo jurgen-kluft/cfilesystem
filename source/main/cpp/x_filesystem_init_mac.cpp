@@ -11,14 +11,14 @@
 #include <dlfcn.h>
 
 #include "xbase/x_debug.h"
-#include "xbase/x_va_list.h"
+#include "xbase/va_list_t.h"
 
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/private/x_filesystem.h"
-#include "xfilesystem/private/x_devicemanager.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/private/x_filesystem.h"
+#include "filesystem_t/private/x_devicemanager.h"
 
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_filepath.h"
+#include "filesystem_t/x_filesystem.h"
+#include "filesystem_t/x_filepath.h"
 
 namespace xcore
 {
@@ -75,12 +75,12 @@ namespace xcore
 
         //------------------------------------------------------------------------------
         // The string allocator
-        class fs_utfalloc : public utf32::alloc
+        class fs_utfalloc : public runes_alloc_t
         {
-            xalloc* m_allocator;
+            alloc_t* m_allocator;
 
         public:
-            fs_utfalloc(xalloc* _allocator) : m_allocator(_allocator) {}
+            fs_utfalloc(alloc_t* _allocator) : m_allocator(_allocator) {}
             ~fs_utfalloc() {}
 
             virtual utf32::runes allocate(s32 len, s32 cap)
@@ -96,10 +96,10 @@ namespace xcore
                 return str;
             }
 
-            virtual void deallocate(utf32::runes& slice)
+            virtual void deallocate(utf32::runes& slice_t)
             {
-                m_allocator->deallocate(slice.m_str);
-                slice = utf32::runes();
+                m_allocator->deallocate(slice_t.m_str);
+                slice_t = utf32::runes();
             }
 
             XCORE_CLASS_PLACEMENT_NEW_DELETE
@@ -107,15 +107,15 @@ namespace xcore
 
     } // namespace
 
-    void xfilesystem::create(xfilesyscfg const& cfg)
+    void filesystem_t::create(filesyscfg_t const& cfg)
     {
-        xfilesys* imp      = cfg.m_allocator->construct<xfilesys>();
+        filesys_t* imp      = cfg.m_allocator->construct<filesys_t>();
         imp->m_slash       = cfg.m_default_slash;
         imp->m_allocator   = cfg.m_allocator;
         imp->m_stralloc    = cfg.m_allocator->construct<fs_utfalloc>(cfg.m_allocator);
-        xfilesystem::mImpl = imp;
+        filesystem_t::mImpl = imp;
 
-        imp->m_devman = cfg.m_allocator->construct<xdevicemanager>(imp->m_stralloc);
+        imp->m_devman = cfg.m_allocator->construct<devicemanager_t>(imp->m_stralloc);
 
         // TODO: Register attach devices
 
@@ -155,7 +155,7 @@ namespace xcore
     //     void
     // Description:
     //------------------------------------------------------------------------------
-    void xfilesystem::destroy()
+    void filesystem_t::destroy()
     {
         mImpl->m_devman->exit();
 

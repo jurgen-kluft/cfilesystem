@@ -1,13 +1,13 @@
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
 
-#include "xfilesystem/x_stream.h"
-#include "xfilesystem/private/x_istream.h"
-#include "xfilesystem/private/x_enumerations.h"
+#include "filesystem_t/x_stream.h"
+#include "filesystem_t/private/x_istream.h"
+#include "filesystem_t/private/x_enumerations.h"
 
 namespace xcore
 {
-    class xstream_nil : public xistream
+    class xstream_nil : public istream_t
     {
     public:
         virtual ~xstream_nil() {}
@@ -42,24 +42,24 @@ namespace xcore
     static xstream_nil sNullStreamImp;
 
     //------------------------------------------------------------------------------------------
-    xstream::xstream()
+    stream_t::stream_t()
         : m_pimpl(&sNullStreamImp)
     {
     }
 
-    xstream::xstream(xistream* pimpl)
+    stream_t::stream_t(istream_t* pimpl)
         : m_pimpl(pimpl)
     {
         pimpl->hold();
     }
 
-    xstream::xstream(const xstream& other)
+    stream_t::stream_t(const stream_t& other)
         : m_pimpl(other.m_pimpl)
     {
         m_pimpl->hold();
     }
 
-    xstream::~xstream()
+    stream_t::~stream_t()
     {
         if (m_pimpl->release() == 0)
 		{
@@ -68,19 +68,19 @@ namespace xcore
         m_pimpl = 0;
     }
 
-    bool xstream::canRead() const { return m_pimpl->canRead(); }
-    bool xstream::canSeek() const { return m_pimpl->canSeek(); }
-    bool xstream::canWrite() const { return m_pimpl->canWrite(); }
-    bool xstream::isOpen() const { return m_pimpl->isOpen(); }
-    bool xstream::isAsync() const { return m_pimpl->isAsync(); }
+    bool stream_t::canRead() const { return m_pimpl->canRead(); }
+    bool stream_t::canSeek() const { return m_pimpl->canSeek(); }
+    bool stream_t::canWrite() const { return m_pimpl->canWrite(); }
+    bool stream_t::isOpen() const { return m_pimpl->isOpen(); }
+    bool stream_t::isAsync() const { return m_pimpl->isAsync(); }
 
-    u64 xstream::getLength() const { return m_pimpl->getLength(); }
-    void xstream::setLength(u64 length) { m_pimpl->setLength(length); }
+    u64 stream_t::getLength() const { return m_pimpl->getLength(); }
+    void stream_t::setLength(u64 length) { m_pimpl->setLength(length); }
 
-    s64 xstream::getPos() const { return m_pimpl->getPos(); }
-    s64 xstream::setPos(s64 pos) { return m_pimpl->setPos(pos); }
+    s64 stream_t::getPos() const { return m_pimpl->getPos(); }
+    s64 stream_t::setPos(s64 pos) { return m_pimpl->setPos(pos); }
 
-    void xstream::close()
+    void stream_t::close()
     {
         m_pimpl->close();
         if (m_pimpl->release() == 0)
@@ -91,14 +91,14 @@ namespace xcore
         m_pimpl = &sNullStreamImp;
     }
 
-    void xstream::flush() { m_pimpl->flush(); }
+    void stream_t::flush() { m_pimpl->flush(); }
 
-    u64 xstream::read(xbyte* buffer, u64 count) { return m_pimpl->read(buffer, count); }
-    u64 xstream::write(const xbyte* buffer, u64 count) { return m_pimpl->write(buffer, count); }
+    u64 stream_t::read(xbyte* buffer, u64 count) { return m_pimpl->read(buffer, count); }
+    u64 stream_t::write(const xbyte* buffer, u64 count) { return m_pimpl->write(buffer, count); }
 
-    bool xstream::beginRead(xbyte* buffer, u64 count) { return m_pimpl->beginRead(buffer, count); }
-    s64  xstream::endRead(bool block) { return m_pimpl->endRead(block); }
+    bool stream_t::beginRead(xbyte* buffer, u64 count) { return m_pimpl->beginRead(buffer, count); }
+    s64  stream_t::endRead(bool block) { return m_pimpl->endRead(block); }
 
-    bool xstream::beginWrite(const xbyte* buffer, u64 count) { return m_pimpl->beginWrite(buffer, count); }
-    s64  xstream::endWrite(bool block) { return m_pimpl->endWrite(block); }
+    bool stream_t::beginWrite(const xbyte* buffer, u64 count) { return m_pimpl->beginWrite(buffer, count); }
+    s64  stream_t::endWrite(bool block) { return m_pimpl->endWrite(block); }
 };

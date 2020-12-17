@@ -6,14 +6,14 @@
 #endif
 
 #include "xbase/x_allocator.h"
-#include "xfilesystem/private/x_path.h"
+#include "filesystem_t/private/x_path.h"
 
 namespace xcore
 {
-    class xpath;
-    class xdirpath;
-    class xfilepath;
-    class xfiledevice;
+    class path_t;
+    class dirpath_t;
+    class filepath_t;
+    class filedevice_t;
 
     //------------------------------------------------------------------------------
     // Description:
@@ -26,7 +26,7 @@ namespace xcore
 	//     dvd:\folder\filename.ext, where dvd = g:\
 	//
     //------------------------------------------------------------------------------
-    class xdevicemanager
+    class devicemanager_t
     {
         enum EConfig
         {
@@ -37,22 +37,22 @@ namespace xcore
         typedef utf32::rune  rune;
 
     public:
-        xdevicemanager(utf32::alloc* stralloc);
+        devicemanager_t(runes_alloc_t* stralloc);
 		
 		XCORE_CLASS_PLACEMENT_NEW_DELETE
 
         void clear();
         void exit();
 
-        bool add_device(const char* device_name, xfiledevice*);
+        bool add_device(const char* device_name, filedevice_t*);
         bool add_alias(const char* alias_name, const utf32::crunes& alias_target);
 
-        bool add_device(const utf32::crunes& device_name, xfiledevice*);
+        bool add_device(const utf32::crunes& device_name, filedevice_t*);
         bool add_alias(const utf32::crunes& alias_name, const utf32::crunes& device_name);
 
         // Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
-		bool has_device(const xpath& path);
-        xfiledevice* find_device(const xpath& path, xpath& device_rootpath);
+		bool has_device(const path_t& path);
+        filedevice_t* find_device(const path_t& path, path_t& device_rootpath);
 
         struct alias_t
         {
@@ -87,11 +87,11 @@ namespace xcore
             }
             rune         mDevNameRunes[16];
             runes        mDevName;
-            xfiledevice* mDevice;
+            filedevice_t* mDevice;
         };
 
 		bool          mNeedsResolve;
-		utf32::alloc* mStrAlloc;
+		runes_alloc_t* mStrAlloc;
         s32           mNumAliases;
         alias_t       mAliasList[MAX_FILE_ALIASES];
         s32           mNumDevices;

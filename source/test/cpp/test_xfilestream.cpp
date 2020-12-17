@@ -4,13 +4,13 @@
 
 #include "xunittest/xunittest.h"
 
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_dirinfo.h"
-#include "xfilesystem/x_fileinfo.h"
-#include "xfilesystem/x_stream.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/x_filesystem.h"
+#include "filesystem_t/x_filepath.h"
+#include "filesystem_t/x_dirpath.h"
+#include "filesystem_t/x_dirinfo.h"
+#include "filesystem_t/x_fileinfo.h"
+#include "filesystem_t/x_stream.h"
 
 using namespace xcore;
 
@@ -40,8 +40,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 
 		UNITTEST_TEST(open)
 		{
-			xfilepath fp = xfilesystem::filepath("TEST:\\textfiles\\readme1st.txt");
-			xstream* fs = xfilesystem::open_stream(fp, FileMode_Open, FileAccess_Read, FileOp_Sync);
+			filepath_t fp = filesystem_t::filepath("TEST:\\textfiles\\readme1st.txt");
+			stream_t* fs = filesystem_t::open_stream(fp, FileMode_Open, FileAccess_Read, FileOp_Sync);
 			CHECK_TRUE(fs->isOpen());
 			if (fs->isOpen())
 			{
@@ -53,34 +53,34 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(construct1)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_Read,FileOp_Sync);
-			xstream* xfs2 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_Read,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_Read,FileOp_Sync);
+			stream_t* xfs2 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_Read,FileOp_Sync);
 			CHECK_EQUAL(xfs1->canRead(),xfs2->canRead());
 			CHECK_EQUAL(xfs1->getLength(),xfs2->getLength());
-			xfilesystem::close(xfs1);
-			xfilesystem::close(xfs2);
+			filesystem_t::close(xfs1);
+			filesystem_t::close(xfs2);
 		}
 
 		UNITTEST_TEST(construct2)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_Read,FileOp_Sync);
-			xstream* xfs2(xfs1);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_Read,FileOp_Sync);
+			stream_t* xfs2(xfs1);
 			CHECK_EQUAL(xfs1->canRead(),xfs2->canRead());
 			CHECK_EQUAL(xfs1->getLength(),xfs2->getLength());
-			xfilesystem::close(xfs1);
-			xfilesystem::close(xfs2);
+			filesystem_t::close(xfs1);
+			filesystem_t::close(xfs2);
 		}
 
 		UNITTEST_TEST(construct3)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			u64 len1 = xfs1->getLength();
-			xstream* xfs2 = xfilesystem::open_stream(xfp1,FileMode_Create,FileAccess_ReadWrite,FileOp_Sync);
+			stream_t* xfs2 = filesystem_t::open_stream(xfp1,FileMode_Create,FileAccess_ReadWrite,FileOp_Sync);
 			u64 len2= xfs2->getLength();
 			CHECK_EQUAL(xfs2->getLength(),0);
 			xfs2->setLength(len1);
@@ -90,50 +90,50 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(canRead)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs1->canRead(),true);
 		}
 
 		UNITTEST_TEST(canSeek)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs1->canSeek(),true);
 		}
 
 		UNITTEST_TEST(canWrite)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs1->canWrite(),true);
-			xstream* xfs2 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_Read,FileOp_Sync);
+			stream_t* xfs2 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_Read,FileOp_Sync);
 			CHECK_EQUAL(xfs2->canWrite(),false);
 		}
 
 		UNITTEST_TEST(isOpen)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs1->isOpen(),true);
 
 			const char* str2 = "TEST:\\test\\test\\test.txt";
-			xfilepath xfp2 = xfilesystem::filepath(str2);
-			xstream* xfs2 = xfilesystem::open_stream(xfp2,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp2 = filesystem_t::filepath(str2);
+			stream_t* xfs2 = filesystem_t::open_stream(xfp2,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs2->isOpen(),false); 
 		}
 
 		UNITTEST_TEST(isAsync)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs1->isAsync(),false);
 
-			xstream* xfs2 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Async);
+			stream_t* xfs2 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Async);
 			CHECK_EQUAL(xfs2->isAsync(),true);
 
 		}
@@ -141,10 +141,10 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(getLength)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			u64 len1 = xfs1->getLength();
-			xstream* xfs2 = xfilesystem::open_stream(xfp1,FileMode_Create,FileAccess_ReadWrite,FileOp_Sync);
+			stream_t* xfs2 = filesystem_t::open_stream(xfp1,FileMode_Create,FileAccess_ReadWrite,FileOp_Sync);
 			u64 len2= xfs2->getLength();
 			CHECK_EQUAL(xfs2->getLength(),0);
 			xfs2->setLength(10);
@@ -155,10 +155,10 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(setLength)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			u64 len1 = xfs1->getLength();
-			xstream* xfs2 = xfilesystem::open_stream(xfp1,FileMode_Create,FileAccess_ReadWrite,FileOp_Sync);
+			stream_t* xfs2 = filesystem_t::open_stream(xfp1,FileMode_Create,FileAccess_ReadWrite,FileOp_Sync);
 			u64 len2= xfs2->getLength();
 			CHECK_EQUAL(xfs2->getLength(),0);
 			xfs2->setLength(20);
@@ -169,8 +169,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(getPos)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			u64 pos1 = xfs1->getPos();
 			CHECK_EQUAL(pos1,0);
 		}
@@ -178,8 +178,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(setPos)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			xfs1->setPos(10);
 			CHECK_EQUAL(xfs1->getPos(),10);
 			xfs1->setPos(0);
@@ -189,8 +189,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(close)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			xfs1->close();
 			CHECK_EQUAL(xfs1->isOpen(),false);
 		}
@@ -198,8 +198,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(read)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs1->getPos(),0);
 			xbyte buffer1[8124];
 			u64 fileLen1 = xfs1->read(buffer1, 10); 
@@ -209,8 +209,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(readByte)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			xbyte byte;
 			u64 len = xfs1->read(&byte, 1);
 			CHECK_EQUAL(byte,'T');
@@ -220,8 +220,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(write)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			CHECK_EQUAL(xfs1->getPos(),0);
 			xbyte buffer1[10];
 			u64 fileLen1 = xfs1->read(buffer1, 10);
@@ -242,8 +242,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(writeByte)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			u64 len1 = xfs1->write((xbyte const*)"M", 1);
 			xbyte byte;
 			u64 len2 = xfs1->read(&byte, 1);
@@ -255,19 +255,19 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(copyTo1)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			xbyte buffer1[10];
 			xfs1->read(buffer1, 10);
 			const char* str2 = "Test:\\copyTo1\\copy.txt";
-			xfilepath xfp2 = xfilesystem::filepath(str2);
-			xstream* fpTemp;
-			CHECK_FALSE(xfileinfo::sExists(xfp2));
-			CHECK_TRUE(xfileinfo::sCreate(xfp2,fpTemp));
-			CHECK_TRUE(xfileinfo::sExists(xfp2));
-			xstream* xfs2 = xfilesystem::open_stream(xfp2,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp2 = filesystem_t::filepath(str2);
+			stream_t* fpTemp;
+			CHECK_FALSE(fileinfo_t::sExists(xfp2));
+			CHECK_TRUE(fileinfo_t::sCreate(xfp2,fpTemp));
+			CHECK_TRUE(fileinfo_t::sExists(xfp2));
+			stream_t* xfs2 = filesystem_t::open_stream(xfp2,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			xbyte stream_buffer_data[1024];
-			xbuffer stream_buffer(1024, stream_buffer_data);
+			buffer_t stream_buffer(1024, stream_buffer_data);
 			xstream_copy(xfs1, xfs2, stream_buffer);
 			xbyte buffer2[10];
 			xfs2->read(buffer2, 10);
@@ -275,27 +275,27 @@ UNITTEST_SUITE_BEGIN(filestream)
 			{
 				CHECK_EQUAL(buffer1[n],buffer2[n]);
 			}
-			CHECK_TRUE(xfileinfo::sDelete(xfp2));
-			CHECK_FALSE(xfileinfo::sExists(xfp2));
+			CHECK_TRUE(fileinfo_t::sDelete(xfp2));
+			CHECK_FALSE(fileinfo_t::sExists(xfp2));
 		}
 
 		UNITTEST_TEST(copyTo2)
 		{
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
-			xfilepath xfp1 = xfilesystem::filepath(str1);
-			xstream* xfs1 = xfilesystem::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp1 = filesystem_t::filepath(str1);
+			stream_t* xfs1 = filesystem_t::open_stream(xfp1,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 			xbyte buffer1[10];
 			xfs1->read(buffer1, 10);
 			const char* str2 = "Test:\\copyTo1\\copy.txt";
-			xfilepath xfp2 = xfilesystem::filepath(str2);
-			xstream* fpTemp;
-			CHECK_FALSE(xfileinfo::sExists(xfp2));
-			CHECK_TRUE(xfileinfo::sCreate(xfp2,fpTemp));
-			CHECK_TRUE(xfileinfo::sExists(xfp2));
-			xstream* xfs2 = xfilesystem::open_stream(xfp2,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
+			filepath_t xfp2 = filesystem_t::filepath(str2);
+			stream_t* fpTemp;
+			CHECK_FALSE(fileinfo_t::sExists(xfp2));
+			CHECK_TRUE(fileinfo_t::sCreate(xfp2,fpTemp));
+			CHECK_TRUE(fileinfo_t::sExists(xfp2));
+			stream_t* xfs2 = filesystem_t::open_stream(xfp2,FileMode_Open,FileAccess_ReadWrite,FileOp_Sync);
 
 			xbyte stream_buffer_data[1024];
-			xbuffer stream_buffer(1024, stream_buffer_data);
+			buffer_t stream_buffer(1024, stream_buffer_data);
 			xstream_copy(xfs1, xfs2, stream_buffer);
 
 			xbyte buffer2[20];
@@ -305,8 +305,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 			{
 				CHECK_EQUAL(buffer1[n],buffer2[n]);
 			}
-			CHECK_TRUE(xfileinfo::sDelete(xfp2));
-			CHECK_FALSE(xfileinfo::sExists(xfp2));
+			CHECK_TRUE(fileinfo_t::sDelete(xfp2));
+			CHECK_FALSE(fileinfo_t::sExists(xfp2));
 		}
 	}
 }

@@ -10,84 +10,84 @@
 #include "xbase/x_buffer.h"
 #include "xbase/x_runes.h"
 
-#include "xfilesystem/private/x_enumerations.h"
+#include "filesystem_t/private/x_enumerations.h"
 
 namespace xcore
 {
-    class xdatetime;
+    class datetime_t;
 
-    class xfile;
-	class xfilesys;
-    class xfiledevice;
-    class xdevicemanager;
-    class xfileinfo;
-    class xdirinfo;
-    class xpath;
-    class xfilepath;
-    class xdirpath;
-    class xfileattrs;
-    class xfiletimes;
-    class xstream;
-    class xistream;
+    class file_t;
+	class filesys_t;
+    class filedevice_t;
+    class devicemanager_t;
+    class fileinfo_t;
+    class dirinfo_t;
+    class path_t;
+    class filepath_t;
+    class dirpath_t;
+    class fileattrs_t;
+    class filetimes_t;
+    class stream_t;
+    class istream_t;
     
-    class xfilesys
+    class filesys_t
     {
     public:
         char            m_slash;
-        xalloc*         m_allocator;
-        utf32::alloc*   m_stralloc;
-        xdevicemanager* m_devman;
+        alloc_t*         m_allocator;
+        runes_alloc_t*   m_stralloc;
+        devicemanager_t* m_devman;
 
 		XCORE_CLASS_PLACEMENT_NEW_DELETE
 
-        static xistream*	create_filestream(const xfilepath& filepath, EFileMode, EFileAccess, EFileOp);
-        static void			destroy(xistream* stream);
-        static xfilepath    resolve(xfilepath const&, xfiledevice*& device);
-        static xdirpath     resolve(xdirpath const&, xfiledevice*& device);
-        static xpath&       get_xpath(xdirinfo& dirinfo);
-        static xpath const& get_xpath(xdirinfo const& dirinfo);
-        static xpath&       get_xpath(xdirpath& dirpath);
-        static xpath const& get_xpath(xdirpath const& dirpath);
-        static xpath&       get_xpath(xfilepath& filepath);
-        static xpath const& get_xpath(xfilepath const& filepath);
-        static xfilesys*    get_filesystem(xdirpath const& dirpath);
-        static xfilesys*    get_filesystem(xfilepath const& filepath);
+        static istream_t*	create_filestream(const filepath_t& filepath, EFileMode, EFileAccess, EFileOp);
+        static void			destroy(istream_t* stream);
+        static filepath_t    resolve(filepath_t const&, filedevice_t*& device);
+        static dirpath_t     resolve(dirpath_t const&, filedevice_t*& device);
+        static path_t&       get_xpath(dirinfo_t& dirinfo);
+        static path_t const& get_xpath(dirinfo_t const& dirinfo);
+        static path_t&       get_xpath(dirpath_t& dirpath);
+        static path_t const& get_xpath(dirpath_t const& dirpath);
+        static path_t&       get_xpath(filepath_t& filepath);
+        static path_t const& get_xpath(filepath_t const& filepath);
+        static filesys_t*    get_filesystem(dirpath_t const& dirpath);
+        static filesys_t*    get_filesystem(filepath_t const& filepath);
 
         // -----------------------------------------------------------
-        xfilepath  filepath(const char* str);
-		xdirpath   dirpath(const char* str);
-        xfilepath  filepath(const utf32::crunes& str);
-		xdirpath   dirpath(const utf32::crunes& str);
-        void       to_ascii(xfilepath const& fp, ascii::runes& str);
-		void       to_ascii(xdirpath const& dp, ascii::runes& str);
+        filepath_t  filepath(const char* str);
+		dirpath_t   dirpath(const char* str);
+        filepath_t  filepath(const utf32::crunes& str);
+		dirpath_t   dirpath(const utf32::crunes& str);
+        void       to_ascii(filepath_t const& fp, ascii::runes& str);
+		void       to_ascii(dirpath_t const& dp, ascii::runes& str);
 
-		bool       register_device(const utf32::crunes& device_name, xfiledevice* device);
+		bool       register_device(const utf32::crunes& device_name, filedevice_t* device);
 
-        xfile*     open(xfilepath const& filename, EFileMode mode);
-        xfile*     open(xfileinfo*, EFileMode mode);
-		xstream*   open_stream(const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
-		xwriter*   writer(xfile*);
-        xreader*   reader(xfile*);
-        void       close(xfile*);
-        void       close(xfileinfo*);
-        void       close(xdirinfo*);
-        void       close(xreader*);
-        void       close(xwriter*);
-        void       close(xstream*);
-        xfileinfo* info(xfilepath const& path);
-        xdirinfo*  info(xdirpath const& path);
-        bool       exists(xfileinfo*);
-        bool       exists(xdirinfo*);
-        s64        size(xfileinfo*);
-        void       rename(xfileinfo*, xfilepath const&);
-        void       move(xfileinfo* src, xfileinfo* dst);
-        void       copy(xfileinfo* src, xfileinfo* dst);
-        void       rm(xfileinfo*);
-        void       rm(xdirinfo*);
-        s32        read(xreader*, xbuffer&);
-        s32        write(xwriter*, xcbuffer const&);
-        void       read_async(xreader*, xbuffer&);
-        s32        wait_async(xreader*);
+        file_t*     open(filepath_t const& filename, EFileMode mode);
+        file_t*     open(fileinfo_t*, EFileMode mode);
+		stream_t*   open_stream(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);
+		writer_t*   writer(file_t*);
+        reader_t*   reader(file_t*);
+        void       close(file_t*);
+        void       close(fileinfo_t*);
+        void       close(dirinfo_t*);
+        void       close(reader_t*);
+        void       close(writer_t*);
+        void       close(stream_t*);
+        fileinfo_t* info(filepath_t const& path);
+        dirinfo_t*  info(dirpath_t const& path);
+        bool       exists(fileinfo_t*);
+        bool       exists(dirinfo_t*);
+        s64        size(fileinfo_t*);
+        void       rename(fileinfo_t*, filepath_t const&);
+        void       move(fileinfo_t* src, fileinfo_t* dst);
+        void       copy(fileinfo_t* src, fileinfo_t* dst);
+        void       rm(fileinfo_t*);
+        void       rm(dirinfo_t*);
+        s32        read(reader_t*, buffer_t&);
+        s32        write(writer_t*, cbuffer_t const&);
+        void       read_async(reader_t*, buffer_t&);
+        s32        wait_async(reader_t*);
     };
 
 }; // namespace xcore

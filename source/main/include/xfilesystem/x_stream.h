@@ -8,19 +8,19 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_buffer.h"
 
-#include "xfilesystem/private/x_enumerations.h"
+#include "filesystem_t/private/x_enumerations.h"
 
 namespace xcore
 {
-    class xistream;
+    class istream_t;
 
-    ///< xstream object
+    ///< stream_t object
     ///< The main interface of a stream object, user deals with this object most of the time.
-    class xstream
+    class stream_t
     {
     public:
-        xstream();
-        ~xstream();
+        stream_t();
+        ~stream_t();
 
         bool canRead() const;
         bool canSeek() const;
@@ -47,18 +47,18 @@ namespace xcore
         s64  endWrite(bool block = true);
 
     protected:
-        xstream(xistream*);
-        xstream(const xstream&);
+        stream_t(istream_t*);
+        stream_t(const stream_t&);
 
-        xstream& operator=(const xstream&) { return *this; }
+        stream_t& operator=(const stream_t&) { return *this; }
 
-        xistream* m_pimpl;
+        istream_t* m_pimpl;
 
-        friend class xfilesystem;
-		friend class xfilesys;
+        friend class filesystem_t;
+		friend class filesys_t;
     };
 
-    void xstream_copy(xstream* src, xstream* dst, xbuffer& buffer);
+    void xstream_copy(stream_t* src, stream_t* dst, buffer_t& buffer);
 
 }; // namespace xcore
 

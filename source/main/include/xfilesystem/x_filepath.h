@@ -7,55 +7,55 @@
 
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
-#include "xfilesystem/private/x_path.h"
+#include "filesystem_t/private/x_path.h"
 
 namespace xcore
 {
-    class xdirpath;
-    class xfilesystem;
+    class dirpath_t;
+    class filesystem_t;
 
     //==============================================================================
-    // xfilepath:
+    // filepath_t:
     //		- Relative:		Folder\Filename.Extension
     //		- Absolute:		Device:\Folder\Folder\Filename.Extension
     //==============================================================================
-    class xfilepath
+    class filepath_t
     {
     protected:
-        friend class xfilesys;
-        friend class xfileinfo;
-		friend class xpath;
+        friend class filesys_t;
+        friend class fileinfo_t;
+		friend class path_t;
 
-        xfilepath(xfilesys* parent, xpath& path);
-        xfilesys* mParent;
-        xpath     mPath;
+        filepath_t(filesys_t* parent, path_t& path);
+        filesys_t* mParent;
+        path_t     mPath;
 
     public:
-        xfilepath();
-        xfilepath(const xfilepath& filepath);
-        explicit xfilepath(const xdirpath& dir, const xfilepath& filename);
-        ~xfilepath();
+        filepath_t();
+        filepath_t(const filepath_t& filepath);
+        explicit filepath_t(const dirpath_t& dir, const filepath_t& filename);
+        ~filepath_t();
 
         void       clear();
         bool       isEmpty() const;
         bool       isRooted() const;
         void       makeRelative();
-        void       makeRelativeTo(const xdirpath& dirpath);
-		void       makeAbsoluteTo(const xdirpath& dirpath);
-        bool       getRoot(xdirpath&) const;
-        bool       getDirname(xdirpath&) const;
-        void       getFilename(xfilepath&) const;
-        void       getFilenameWithoutExtension(xfilepath&) const;
-        void       getExtension(xfilepath&) const;
+        void       makeRelativeTo(const dirpath_t& dirpath);
+		void       makeAbsoluteTo(const dirpath_t& dirpath);
+        bool       getRoot(dirpath_t&) const;
+        bool       getDirname(dirpath_t&) const;
+        void       getFilename(filepath_t&) const;
+        void       getFilenameWithoutExtension(filepath_t&) const;
+        void       getExtension(filepath_t&) const;
         void       up();
-        void       down(xdirpath const&);
+        void       down(dirpath_t const&);
 
-        xfilepath& operator=(const xfilepath&);
-        bool       operator==(const xfilepath&) const;
-        bool       operator!=(const xfilepath&) const;
+        filepath_t& operator=(const filepath_t&);
+        bool       operator==(const filepath_t&) const;
+        bool       operator!=(const filepath_t&) const;
     };
 
-    inline xfilepath operator+(const xdirpath& dir, const xfilepath& filename) { return xfilepath(dir, filename); }
+    inline filepath_t operator+(const dirpath_t& dir, const filepath_t& filename) { return filepath_t(dir, filename); }
 
 }; // namespace xcore
 

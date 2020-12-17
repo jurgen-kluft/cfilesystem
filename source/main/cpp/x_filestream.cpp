@@ -5,25 +5,25 @@
 #include "xbase/x_bit_field.h"
 #include "xbase/x_debug.h"
 #include "xbase/x_limits.h"
-#include "xbase/x_va_list.h"
+#include "xbase/va_list_t.h"
 
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_stream.h"
+#include "filesystem_t/x_filesystem.h"
+#include "filesystem_t/x_filepath.h"
+#include "filesystem_t/x_stream.h"
 
-#include "xfilesystem/private/x_enumerations.h"
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/private/x_istream.h"
+#include "filesystem_t/private/x_enumerations.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/private/x_istream.h"
 
 //==============================================================================
 // xcore namespace
 //==============================================================================
 namespace xcore
 {
-    class xifilestream : public xistream
+    class xifilestream : public istream_t
     {
-        xalloc*      mAllocator;
-        xfiledevice* mFileDevice;
+        alloc_t*      mAllocator;
+        filedevice_t* mFileDevice;
         s32   mRefCount;
         void* mFileHandle;
         s64   mOffset;
@@ -40,7 +40,7 @@ namespace xcore
             USE_WRITE = 0x4000,
             USE_ASYNC = 0x8000,
         };
-        xbits<u32> mCaps;
+        bits_t<u32> mCaps;
 
         ~xifilestream(void);
 
@@ -54,7 +54,7 @@ namespace xcore
         {
         }
 
-        xifilestream(xalloc* allocator, xfiledevice* fd, const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op);
+        xifilestream(alloc_t* allocator, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);
 
         virtual void hold() { mRefCount++; }
         virtual s32  release()
@@ -95,7 +95,7 @@ namespace xcore
 
     // ---------------------------------------------------------------------------------------------
 
-    xifilestream::xifilestream(xalloc* allocator, xfiledevice* fd, const xfilepath& filename, EFileMode mode, EFileAccess access, EFileOp op)
+    xifilestream::xifilestream(alloc_t* allocator, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op)
         : mAllocator(allocator)
         , mFileDevice(fd)
         , mRefCount(1)
@@ -319,7 +319,7 @@ namespace xcore
         return 0;
     }
 
-    void xstream_copy(xstream* src, xstream* dst, xbuffer& buffer)
+    void xstream_copy(stream_t* src, stream_t* dst, buffer_t& buffer)
     {
         s64 streamLength = (s64)src->getLength();
         while (streamLength > 0)
@@ -330,15 +330,15 @@ namespace xcore
         }
     }
 
-    void xstream_copy(xstream* src, xstream* dst, u64 count) {}
+    void xstream_copy(stream_t* src, stream_t* dst, u64 count) {}
 
-    xistream* xistream::create_filestream(xalloc* allocator, xfiledevice* device, const xfilepath& filepath, EFileMode mode, EFileAccess access, EFileOp op)
+    istream_t* istream_t::create_filestream(alloc_t* allocator, filedevice_t* device, const filepath_t& filepath, EFileMode mode, EFileAccess access, EFileOp op)
     {
         xifilestream* filestream = allocator->construct<xifilestream>(allocator, device, filepath, mode, access, op);
         return filestream;
     }
 
-	void		xistream::destroy_filestream(xalloc* allocator, xistream* strm)
+	void		istream_t::destroy_filestream(alloc_t* allocator, istream_t* strm)
 	{
 		strm->destroy();
 	}

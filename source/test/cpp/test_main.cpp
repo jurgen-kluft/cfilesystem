@@ -4,8 +4,8 @@
 #include "xbase/x_console.h"
 
 #include "xtime/x_time.h"
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_threading.h"
+#include "filesystem_t/x_filesystem.h"
+#include "filesystem_t/x_threading.h"
 
 #include "xunittest/xunittest.h"
 #include "xunittest/private/ut_ReportAssert.h"
@@ -26,7 +26,7 @@ UNITTEST_SUITE_DECLARE(xFileUnitTest, filestream);
 namespace xcore
 {
 	// Our own assert handler
-	class UnitTestAssertHandler : public xcore::xasserthandler
+	class UnitTestAssertHandler : public xcore::asserthandler_t
 	{
 	public:
 		UnitTestAssertHandler()
@@ -34,7 +34,7 @@ namespace xcore
 			NumberOfAsserts = 0;
 		}
 
-		virtual xcore::xbool	handle_assert(u32& flags, const char* fileName, s32 lineNumber, const char* exprString, const char* messageString)
+		virtual xcore::bool	handle_assert(u32& flags, const char* fileName, s32 lineNumber, const char* exprString, const char* messageString)
 		{
 			UnitTest::reportAssert(exprString, fileName, lineNumber);
 			NumberOfAsserts++;
@@ -47,18 +47,18 @@ namespace xcore
 
 	class UnitTestAllocator : public UnitTest::Allocator
 	{
-		xcore::xalloc*	mAllocator;
+		xcore::alloc_t*	mAllocator;
 	public:
-						UnitTestAllocator(xcore::xalloc* allocator)	{ mAllocator = allocator; }
+						UnitTestAllocator(xcore::alloc_t* allocator)	{ mAllocator = allocator; }
 		virtual void*	Allocate(xsize_t size)								{ return mAllocator->allocate((u32)size, sizeof(void*)); }
 		virtual xsize_t	Deallocate(void* ptr)								{ return mAllocator->deallocate(ptr); }
 	};
 
-	class TestAllocator : public xalloc
+	class TestAllocator : public alloc_t
 	{
-		xalloc*		mAllocator;
+		alloc_t*		mAllocator;
 	public:
-							TestAllocator(xalloc* allocator) : mAllocator(allocator) { }
+							TestAllocator(alloc_t* allocator) : mAllocator(allocator) { }
 
 		virtual void*		v_allocate(u32 size, u32 alignment)
 		{
@@ -80,7 +80,7 @@ namespace xcore
 	};
 }
 
-class FileSystemIoThreadInterface : public xcore::xio_thread
+class FileSystemIoThreadInterface : public xcore::io_thread_t
 {
 public:
 	virtual void		sleep(u32 ms)
@@ -111,7 +111,7 @@ public:
 
 static FileSystemIoThreadInterface		sThreadObject;
 
-xcore::xalloc* gTestAllocator = NULL;
+xcore::alloc_t* gTestAllocator = NULL;
 xcore::UnitTestAssertHandler gAssertHandler;
 
 bool gRunUnitTest(UnitTest::TestReporter& reporter)
@@ -120,10 +120,10 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter)
 	xbase::x_Init();
 
 #ifdef TARGET_DEBUG
-	xcore::xasserthandler::sRegisterHandler(&gAssertHandler);
+	xcore::asserthandler_t::sRegisterHandler(&gAssertHandler);
 #endif
 
-	xcore::xalloc* systemAllocator = xcore::xalloc::get_system();
+	xcore::alloc_t* systemAllocator = xcore::alloc_t::get_system();
 	xcore::UnitTestAllocator unittestAllocator( systemAllocator );
 	UnitTest::SetAllocator(&unittestAllocator);
 

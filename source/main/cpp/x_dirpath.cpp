@@ -2,17 +2,17 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/private/x_filesystem.h"
+#include "filesystem_t/x_filepath.h"
+#include "filesystem_t/x_dirpath.h"
+#include "filesystem_t/private/x_filesystem.h"
 
 namespace xcore
 {
     //==============================================================================
-    // xdirpath: "Device:\\Folder\Folder\"
+    // dirpath_t: "Device:\\Folder\Folder\"
     //==============================================================================
 
-    xdirpath::xdirpath(xfilesys* fs, xpath& path) : mParent(fs)
+    dirpath_t::dirpath_t(filesys_t* fs, path_t& path) : mParent(fs)
     {
         mPath.m_alloc = path.m_alloc;
         mPath.m_path  = path.m_path;
@@ -20,75 +20,75 @@ namespace xcore
         path.m_path   = runes_t();
     }
 
-    xdirpath::xdirpath() : mParent(nullptr), mPath() {}
-    xdirpath::xdirpath(const xdirpath& dirpath) : mParent(dirpath.mParent), mPath(dirpath.mPath) {}
-    xdirpath::xdirpath(const xdirpath& rootdir, const xdirpath& subpath) : mParent(rootdir.mParent), mPath(rootdir.mPath, subpath.mPath) {}
+    dirpath_t::dirpath_t() : mParent(nullptr), mPath() {}
+    dirpath_t::dirpath_t(const dirpath_t& dirpath) : mParent(dirpath.mParent), mPath(dirpath.mPath) {}
+    dirpath_t::dirpath_t(const dirpath_t& rootdir, const dirpath_t& subpath) : mParent(rootdir.mParent), mPath(rootdir.mPath, subpath.mPath) {}
 
-    xdirpath::~xdirpath() {}
+    dirpath_t::~dirpath_t() {}
 
-    void xdirpath::clear() { mPath.clear(); }
-    bool xdirpath::isEmpty() const { return mPath.isEmpty(); }
-    bool xdirpath::isRoot() const { return mPath.isRoot(); }
-    bool xdirpath::isRooted() const { return mPath.isRooted(); }
-    bool xdirpath::isSubDirOf(const xdirpath& parent) const { return mPath.isSubDirOf(parent.mPath); }
-    void xdirpath::relative(xdirpath& outRelative) const
+    void dirpath_t::clear() { mPath.clear(); }
+    bool dirpath_t::isEmpty() const { return mPath.isEmpty(); }
+    bool dirpath_t::isRoot() const { return mPath.isRoot(); }
+    bool dirpath_t::isRooted() const { return mPath.isRooted(); }
+    bool dirpath_t::isSubDirOf(const dirpath_t& parent) const { return mPath.isSubDirOf(parent.mPath); }
+    void dirpath_t::relative(dirpath_t& outRelative) const
     {
         outRelative = *this;
         outRelative.makeRelative();
     }
 
-    void xdirpath::makeRelative() { mPath.makeRelative(); }
-    void xdirpath::makeRelativeTo(const xdirpath& parent) { mPath.makeRelativeTo(parent.mPath); }
-    void xdirpath::makeRelativeTo(const xdirpath& parent, xdirpath& sub) const
+    void dirpath_t::makeRelative() { mPath.makeRelative(); }
+    void dirpath_t::makeRelativeTo(const dirpath_t& parent) { mPath.makeRelativeTo(parent.mPath); }
+    void dirpath_t::makeRelativeTo(const dirpath_t& parent, dirpath_t& sub) const
     {
         sub = *this;
         sub.makeRelativeTo(parent);
     }
 
-    s32  xdirpath::getLevels() const { return mPath.getLevels(); }
-    bool xdirpath::getLevel(s32 level, xdirpath& name) const { return mPath.getLevel(level, name.mPath); }
-    s32  xdirpath::getLevelOf(const xdirpath& name) const { return mPath.getLevelOf(name.mPath); }
+    s32  dirpath_t::getLevels() const { return mPath.getLevels(); }
+    bool dirpath_t::getLevel(s32 level, dirpath_t& name) const { return mPath.getLevel(level, name.mPath); }
+    s32  dirpath_t::getLevelOf(const dirpath_t& name) const { return mPath.getLevelOf(name.mPath); }
 
-    // e.g. xdirpath d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\;
+    // e.g. dirpath_t d("K:\\parent\\folder\\sub\\folder\\"); d.split(2, parent, sub); parent=="K:\\parent\\folder\\;
     // sub=="sub\\folder\\";
-    bool xdirpath::split(s32 cnt, xdirpath& parent, xdirpath& subDir) const { return mPath.split(cnt, parent.mPath, subDir.mPath); }
+    bool dirpath_t::split(s32 cnt, dirpath_t& parent, dirpath_t& subDir) const { return mPath.split(cnt, parent.mPath, subDir.mPath); }
 
-    bool xdirpath::getName(xdirpath& outName) const { return false; }
-    bool xdirpath::hasName(const xdirpath& inName) const { return false; }
-    bool xdirpath::getRoot(xdirpath& outRootDirPath) const { return false; }
-    bool xdirpath::getParent(xdirpath& outParentDirPath) const { return true; }
-    void xdirpath::setRoot(const xdirpath& inRoot) {}
+    bool dirpath_t::getName(dirpath_t& outName) const { return false; }
+    bool dirpath_t::hasName(const dirpath_t& inName) const { return false; }
+    bool dirpath_t::getRoot(dirpath_t& outRootDirPath) const { return false; }
+    bool dirpath_t::getParent(dirpath_t& outParentDirPath) const { return true; }
+    void dirpath_t::setRoot(const dirpath_t& inRoot) {}
 
-    xfilepath xdirpath::operator+=(const xfilepath& other) { return xfilepath(*this, other); }
-    xdirpath& xdirpath::operator+=(const xdirpath& other)
+    filepath_t dirpath_t::operator+=(const filepath_t& other) { return filepath_t(*this, other); }
+    dirpath_t& dirpath_t::operator+=(const dirpath_t& other)
     {
-        mPath = xpath(mPath, other.mPath);
+        mPath = path_t(mPath, other.mPath);
         return *this;
     }
 
-    xdirpath& xdirpath::operator=(const xfilepath& fp)
+    dirpath_t& dirpath_t::operator=(const filepath_t& fp)
     {
         // Copy the runes
-        xpath const& path = xfilesys::get_xpath(fp);
+        path_t const& path = filesys_t::get_xpath(fp);
         copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
         return *this;
     }
 
-    xdirpath& xdirpath::operator=(const xdirpath& dp)
+    dirpath_t& dirpath_t::operator=(const dirpath_t& dp)
     {
         if (this == &dp)
             return *this;
 
         // Copy the runes
-        xpath const& path = xfilesys::get_xpath(dp);
+        path_t const& path = filesys_t::get_xpath(dp);
         copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
 
         return *this;
     }
 
-    bool xdirpath::operator==(const xdirpath& rhs) const { return rhs.mPath == mPath; }
-    bool xdirpath::operator!=(const xdirpath& rhs) const { return rhs.mPath != mPath; }
+    bool dirpath_t::operator==(const dirpath_t& rhs) const { return rhs.mPath == mPath; }
+    bool dirpath_t::operator!=(const dirpath_t& rhs) const { return rhs.mPath != mPath; }
 
-    xdirpath operator+(const xdirpath& lhs, const xdirpath& rhs) { return xdirpath(lhs, rhs); }
+    dirpath_t operator+(const dirpath_t& lhs, const dirpath_t& rhs) { return dirpath_t(lhs, rhs); }
 
 }; // namespace xcore

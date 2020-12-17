@@ -4,21 +4,21 @@
 
 #include "xunittest/xunittest.h"
 
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_dirinfo.h"
-#include "xfilesystem/x_fileinfo.h"
-#include "xfilesystem/x_stream.h"
+#include "filesystem_t/x_filesystem.h"
+#include "filesystem_t/x_filepath.h"
+#include "filesystem_t/x_dirpath.h"
+#include "filesystem_t/x_dirinfo.h"
+#include "filesystem_t/x_fileinfo.h"
+#include "filesystem_t/x_stream.h"
 
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/private/x_path.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/private/x_path.h"
 
 using namespace xcore;
 
-extern xcore::xalloc* gTestAllocator;
+extern xcore::alloc_t* gTestAllocator;
 
-class utf32_alloc : public xcore::utf32::alloc
+class utf32_alloc : public xcore::runes_alloc_t
 {
 public:
     virtual utf32::runes allocate(s32 len, s32 cap) 
@@ -29,15 +29,15 @@ public:
 		return runes;
 	}
             
-	virtual void  deallocate(utf32::runes& slice)
+	virtual void  deallocate(utf32::runes& slice_t)
 	{
-		if (slice.m_str != nullptr)
+		if (slice_t.m_str != nullptr)
 		{
-			gTestAllocator->deallocate(slice.m_str);
+			gTestAllocator->deallocate(slice_t.m_str);
 		}
-		slice.m_str = nullptr;
-		slice.m_end = nullptr;
-		slice.m_eos = nullptr;
+		slice_t.m_str = nullptr;
+		slice_t.m_end = nullptr;
+		slice_t.m_eos = nullptr;
 	}
 };
 static utf32_alloc sUtf32Alloc;
@@ -49,27 +49,27 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 		UNITTEST_FIXTURE_SETUP() {}
 		UNITTEST_FIXTURE_TEARDOWN() {}
 
-		static xdatetime sCreationTime(2011, 2, 10, 15, 30, 10);
-		static xdatetime sLastAccessTime(2011, 2, 12, 16, 00, 20);
-		static xdatetime sLastWriteTime(2011, 2, 11, 10, 46, 20);
+		static datetime_t sCreationTime(2011, 2, 10, 15, 30, 10);
+		static datetime_t sLastAccessTime(2011, 2, 12, 16, 00, 20);
+		static datetime_t sLastWriteTime(2011, 2, 11, 10, 46, 20);
 
 
 		UNITTEST_TEST(constructor0)
 		{
-			xdirinfo di;
+			dirinfo_t di;
 			CHECK_TRUE(di.getDirpath().isEmpty());
 		}
 
 		UNITTEST_TEST(constructor1)
 		{
 			const char* str = "TEST:\\textfiles\\docs";
-			xdirpath dp = xfilesystem::dirpath(str);
-			xdirinfo di ( dp );
+			dirpath_t dp = filesystem_t::dirpath(str);
+			dirinfo_t di ( dp );
 			CHECK_TRUE(di.getDirpath() == dp);
 
 			const char* str2 = "textfiles\\docs";
-			xdirpath dp2 = xfilesystem::dirpath(str2);
-			xdirinfo di2(dp2);
+			dirpath_t dp2 = filesystem_t::dirpath(str2);
+			dirinfo_t di2(dp2);
 			CHECK_TRUE(di2.getDirpath() == dp2);
 		}
 

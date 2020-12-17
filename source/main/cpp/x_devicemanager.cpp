@@ -2,18 +2,18 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_console.h"
 #include "xbase/x_runes.h"
-#include "xbase/x_va_list.h"
+#include "xbase/va_list_t.h"
 
-#include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_filepath.h"
-#include "xfilesystem/private/x_devicemanager.h"
-#include "xfilesystem/private/x_filedevice.h"
-#include "xfilesystem/private/x_path.h"
+#include "filesystem_t/x_dirpath.h"
+#include "filesystem_t/x_filepath.h"
+#include "filesystem_t/private/x_devicemanager.h"
+#include "filesystem_t/private/x_filedevice.h"
+#include "filesystem_t/private/x_path.h"
 
 namespace xcore
 {
     //------------------------------------------------------------------------------
-    void xdevicemanager::clear()
+    void devicemanager_t::clear()
     {
         for (s32 i = 0; i < mNumAliases; ++i)
 		{
@@ -29,11 +29,11 @@ namespace xcore
             mDeviceList[i] = device_t();
     }
 
-    void xdevicemanager::exit()
+    void devicemanager_t::exit()
     {
         for (s32 i = 0; i < mNumDevices; ++i)
         {
-            xfiledevice* device = mDeviceList[i].mDevice;
+            filedevice_t* device = mDeviceList[i].mDevice;
             if (device != nullptr)
             {
                 x_DestroyFileDevice(device);
@@ -49,7 +49,7 @@ namespace xcore
     //==============================================================================
     // Functions
     //==============================================================================
-    xdevicemanager::xdevicemanager(utf32::alloc* stralloc)
+    devicemanager_t::devicemanager_t(runes_alloc_t* stralloc)
         : mStrAlloc(stralloc)
 		, mNumAliases(0)
         , mNumDevices(0)
@@ -58,14 +58,14 @@ namespace xcore
 
     //------------------------------------------------------------------------------
 
-    bool xdevicemanager::add_device(const utf32::crunes& devicename, xfiledevice* device)
+    bool devicemanager_t::add_device(const utf32::crunes& devicename, filedevice_t* device)
     {
         for (s32 i = 0; i < mNumDevices; ++i)
         {
             if (compare(mDeviceList[i].mDevName, devicename) == 0)
             {
                 mDeviceList[i].mDevice = device;
-                console->writeLine("INFO replaced file device for '%s'", x_va_list(x_va(devicename)));
+                console->writeLine("INFO replaced file device for '%s'", va_list_t(va_t(devicename)));
 				mNeedsResolve = true;
                 return true;
             }
@@ -91,14 +91,14 @@ namespace xcore
     // 'app_datadir:\' => "c:\users\john\programs\mygame\data\'
     // 'app_profilesdir:\' => "c:\users\john\programs\mygame\profiles\'
     // 'win_tempdir:\' => "c:\users\john\programs\mygame\temp\'
-    bool xdevicemanager::add_alias(const utf32::crunes& alias, const utf32::crunes& target)
+    bool devicemanager_t::add_alias(const utf32::crunes& alias, const utf32::crunes& target)
     {
         for (s32 i = 0; i < mNumAliases; ++i)
         {
             if (utf32::compare(mAliasList[i].mAlias, alias) == 0)
             {
                 utf32::copy(target, mAliasList[i].mTarget, mStrAlloc, 8);
-                console->writeLine("INFO replaced alias for '%s'", x_va_list(x_va(alias)));
+                console->writeLine("INFO replaced alias for '%s'", va_list_t(va_t(alias)));
 				mNeedsResolve = true;
                 return true;
             }
@@ -119,19 +119,19 @@ namespace xcore
         }
     }
 
-    bool xdevicemanager::add_device(const char* devpath, xfiledevice* device)
+    bool devicemanager_t::add_device(const char* devpath, filedevice_t* device)
     {
 		utf32::runez<32> devpath32(devpath);
         return add_device(devpath32, device);
     }
 
-    bool xdevicemanager::add_alias(const char* alias, const utf32::crunes& devname)
+    bool devicemanager_t::add_alias(const char* alias, const utf32::crunes& devname)
     {
 		utf32::runez<32> alias32(alias);
         return add_alias(alias32, devname);
     }
 
-    void xdevicemanager::resolve()
+    void devicemanager_t::resolve()
     {
         // "data"   - "appdir:\data\"
         // "appdir" - "c:\projects\a\"
@@ -250,7 +250,7 @@ namespace xcore
         }
     }
 
-    s32 xdevicemanager::find_indexof_alias(const utf32::crunes& path) const
+    s32 devicemanager_t::find_indexof_alias(const utf32::crunes& path) const
     {
         // reduce path to just the alias part
         utf32::crunes alias = utf32::findSelectUntilIncluded(path, sDeviceSeperator);
@@ -263,7 +263,7 @@ namespace xcore
         }
         return -1;
     }
-    s32 xdevicemanager::find_indexof_device(const utf32::crunes& path) const
+    s32 devicemanager_t::find_indexof_device(const utf32::crunes& path) const
     {
         // reduce path to just the device part
         utf32::crunes devname = utf32::findSelectUntilIncluded(path, sDeviceSeperator);
@@ -278,14 +278,14 @@ namespace xcore
     }
 
     //------------------------------------------------------------------------------
-	bool xdevicemanager::has_device(const xpath& path)
+	bool devicemanager_t::has_device(const path_t& path)
 	{
 		if (mNeedsResolve)
 		{
 			resolve();
 		}
 
-		xfiledevice* fd = nullptr;
+		filedevice_t* fd = nullptr;
         utf32::runes devname = utf32::findSelectUntilIncluded(path.m_path, sDeviceSeperator);
 		if (!devname.is_empty())
 		{
@@ -301,16 +301,16 @@ namespace xcore
         return fd != nullptr;
 	}
 
-    xfiledevice* xdevicemanager::find_device(const xpath& path, xpath& device_syspath)
+    filedevice_t* devicemanager_t::find_device(const path_t& path, path_t& device_syspath)
 	{
 		if (mNeedsResolve)
 		{
 			resolve();
 		}
 
-		device_syspath = xpath(mStrAlloc);
+		device_syspath = path_t(mStrAlloc);
 
-		xfiledevice* fd = nullptr;
+		filedevice_t* fd = nullptr;
         utf32::runes devname = utf32::findSelectUntilIncluded(path.m_path, sDeviceSeperator);
 		if (!devname.is_empty())
 		{
