@@ -97,22 +97,11 @@ namespace xcore
         bool operator==(const xpath&) const;
         bool operator!=(const xpath&) const;
 
-        // These should be used carefully, since they are modifying the
-        // runes_t array from holding utf32::rune characters to
-        // utf16::rune characters. You should also use these 2 functions
-        // as a begin/end pair. Do not leave this structure hanging in
-        // utf16 format.
-        static void append_utf16(xpath const& p, crunes_t const&);
-        static void view_utf16(xpath const& fp, crunes_t& runes);
-        static void release_utf16(xpath const& fp, crunes_t& runes);
-
-        static void append_utf16(xfilepath const& fp, crunes_t const&);
-        static void view_utf16(xfilepath const& fp, crunes_t& runes);
-        static void release_utf16(xfilepath const& fp, crunes_t& runes);
-
-        static void append_utf16(xdirpath const& fp, crunes_t const&);
-        static void view_utf16(xdirpath const& fp, crunes_t& runes);
-        static void release_utf16(xdirpath const& fp, crunes_t& runes);
+        static void as_utf16(xpath const& p,  xpath& dst);
+        static void as_utf16(xfilepath const& fp, xpath& dst);
+        static void as_utf16(xfilepath const& fp, xfilepath& dst);
+        static void as_utf16(xdirpath const& dp, xpath& dst);
+        static void as_utf16(xdirpath const& dp, xdirpath& dst);
     };
 
 }; // namespace xcore

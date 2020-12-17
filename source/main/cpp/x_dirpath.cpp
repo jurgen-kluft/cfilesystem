@@ -17,7 +17,7 @@ namespace xcore
         mPath.m_alloc = path.m_alloc;
         mPath.m_path  = path.m_path;
         path.m_alloc  = nullptr;
-        path.m_path   = utf32::runes();
+        path.m_path   = runes_t();
     }
 
     xdirpath::xdirpath() : mParent(nullptr), mPath() {}
@@ -70,7 +70,7 @@ namespace xcore
     {
         // Copy the runes
         xpath const& path = xfilesys::get_xpath(fp);
-        utf32::copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
+        copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
         return *this;
     }
 
@@ -81,7 +81,7 @@ namespace xcore
 
         // Copy the runes
         xpath const& path = xfilesys::get_xpath(dp);
-        utf32::copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
+        copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
 
         return *this;
     }
