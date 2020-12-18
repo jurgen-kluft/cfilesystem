@@ -4,7 +4,7 @@
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
 
-#include "filesystem_t/x_attributes.h"
+#include "xfilesystem/x_attributes.h"
 
 namespace xcore
 {

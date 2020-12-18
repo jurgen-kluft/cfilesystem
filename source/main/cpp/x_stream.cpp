@@ -1,9 +1,9 @@
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
 
-#include "filesystem_t/x_stream.h"
-#include "filesystem_t/private/x_istream.h"
-#include "filesystem_t/private/x_enumerations.h"
+#include "xfilesystem/x_stream.h"
+#include "xfilesystem/private/x_istream.h"
+#include "xfilesystem/private/x_enumerations.h"
 
 namespace xcore
 {

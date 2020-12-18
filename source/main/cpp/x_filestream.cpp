@@ -1,23 +1,17 @@
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_target.h"
 #include "xbase/x_bit_field.h"
 #include "xbase/x_debug.h"
 #include "xbase/x_limits.h"
 #include "xbase/x_va_list.h"
 
-#include "filesystem_t/x_filesystem.h"
-#include "filesystem_t/x_filepath.h"
-#include "filesystem_t/x_stream.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_stream.h"
 
-#include "filesystem_t/private/x_enumerations.h"
-#include "filesystem_t/private/x_filedevice.h"
-#include "filesystem_t/private/x_istream.h"
+#include "xfilesystem/private/x_enumerations.h"
+#include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_istream.h"
 
-//==============================================================================
-// xcore namespace
-//==============================================================================
 namespace xcore
 {
     class xifilestream : public istream_t

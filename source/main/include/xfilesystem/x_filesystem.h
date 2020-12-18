@@ -10,7 +10,7 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 
-#include "filesystem_t/private/x_enumerations.h"
+#include "xfilesystem/private/x_enumerations.h"
 
 namespace xcore
 {
@@ -42,14 +42,14 @@ namespace xcore
         static void create(filesyscfg_t const&);
         static void destroy();
 
-        static bool register_device(const utf32::crunes& device_name, filedevice_t*);
+        static bool register_device(const crunes_t& device_name, filedevice_t*);
 
         static filepath_t filepath(const char* str);
         static dirpath_t  dirpath(const char* str);
-        static filepath_t filepath(const utf32::crunes& str);
-        static dirpath_t  dirpath(const utf32::crunes& str);
-        static void      to_ascii(filepath_t const& fp, ascii::runes& str);
-        static void      to_ascii(dirpath_t const& dp, ascii::runes& str);
+        static filepath_t filepath(const crunes_t& str);
+        static dirpath_t  dirpath(const crunes_t& str);
+        static void      to_ascii(filepath_t const& fp, runes_t& str);
+        static void      to_ascii(dirpath_t const& dp, runes_t& str);
 
         static file_t*     open(filepath_t const& filename, EFileMode mode);
         static stream_t*   open_stream(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);

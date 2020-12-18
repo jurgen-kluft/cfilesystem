@@ -6,7 +6,7 @@
 #endif
 
 #include "xbase/x_allocator.h"
-#include "filesystem_t/private/x_path.h"
+#include "xfilesystem/private/x_path.h"
 
 namespace xcore
 {
@@ -33,7 +33,7 @@ namespace xcore
             MAX_FILE_ALIASES = 16,
             MAX_FILE_DEVICES = 48,
         };
-        typedef utf32::runes runes;
+        typedef runes_t      runes;
         typedef utf32::rune  rune;
 
     public:
@@ -45,10 +45,10 @@ namespace xcore
         void exit();
 
         bool add_device(const char* device_name, filedevice_t*);
-        bool add_alias(const char* alias_name, const utf32::crunes& alias_target);
+        bool add_alias(const char* alias_name, const crunes_t& alias_target);
 
-        bool add_device(const utf32::crunes& device_name, filedevice_t*);
-        bool add_alias(const utf32::crunes& alias_name, const utf32::crunes& device_name);
+        bool add_device(const crunes_t& device_name, filedevice_t*);
+        bool add_alias(const crunes_t& alias_name, const crunes_t& device_name);
 
         // Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
 		bool has_device(const path_t& path);
@@ -72,8 +72,8 @@ namespace xcore
         };
 
         // Return index of found alias, otherwise -1
-        s32 find_indexof_alias(const utf32::crunes& path) const;
-        s32 find_indexof_device(const utf32::crunes& path) const;
+        s32 find_indexof_alias(const crunes_t& path) const;
+        s32 find_indexof_device(const crunes_t& path) const;
 
 		void resolve();
 

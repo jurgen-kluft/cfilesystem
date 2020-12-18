@@ -4,11 +4,11 @@
 #include "xbase/x_runes.h"
 #include "xbase/x_va_list.h"
 
-#include "filesystem_t/x_dirpath.h"
-#include "filesystem_t/x_filepath.h"
-#include "filesystem_t/private/x_devicemanager.h"
-#include "filesystem_t/private/x_filedevice.h"
-#include "filesystem_t/private/x_path.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/private/x_devicemanager.h"
+#include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_path.h"
 
 namespace xcore
 {
@@ -44,7 +44,7 @@ namespace xcore
     }
 
 	static utf32::rune sDeviceSeperatorStr[] = { uchar32(':'), uchar32('\\'), uchar32(0) };
-	static utf32::crunes sDeviceSeperator(sDeviceSeperatorStr, sDeviceSeperatorStr + 2);
+	static utf32::crunes_t sDeviceSeperator((utf32::pcrune)sDeviceSeperatorStr, (utf32::pcrune)(sDeviceSeperatorStr + 2));
 
     //==============================================================================
     // Functions
@@ -58,7 +58,7 @@ namespace xcore
 
     //------------------------------------------------------------------------------
 
-    bool devicemanager_t::add_device(const utf32::crunes& devicename, filedevice_t* device)
+    bool devicemanager_t::add_device(const crunes_t& devicename, filedevice_t* device)
     {
         for (s32 i = 0; i < mNumDevices; ++i)
         {
@@ -73,7 +73,7 @@ namespace xcore
 
         if (mNumDevices < MAX_FILE_DEVICES)
         {
-            utf32::copy(devicename, mDeviceList[mNumDevices].mDevName);
+            copy(devicename, mDeviceList[mNumDevices].mDevName);
             mDeviceList[mNumDevices].mDevice = device;
             mNumDevices++;
 			mNeedsResolve = true;
@@ -91,13 +91,13 @@ namespace xcore
     // 'app_datadir:\' => "c:\users\john\programs\mygame\data\'
     // 'app_profilesdir:\' => "c:\users\john\programs\mygame\profiles\'
     // 'win_tempdir:\' => "c:\users\john\programs\mygame\temp\'
-    bool devicemanager_t::add_alias(const utf32::crunes& alias, const utf32::crunes& target)
+    bool devicemanager_t::add_alias(const crunes_t& alias, const crunes_t& target)
     {
         for (s32 i = 0; i < mNumAliases; ++i)
         {
-            if (utf32::compare(mAliasList[i].mAlias, alias) == 0)
+            if (compare(mAliasList[i].mAlias, alias) == 0)
             {
-                utf32::copy(target, mAliasList[i].mTarget, mStrAlloc, 8);
+                copy(target, mAliasList[i].mTarget, mStrAlloc, 8);
                 console->writeLine("INFO replaced alias for '%s'", va_list_t(va_t(alias)));
 				mNeedsResolve = true;
                 return true;
@@ -106,8 +106,8 @@ namespace xcore
 
         if (mNumAliases < MAX_FILE_ALIASES)
         {
-            utf32::copy(alias, mAliasList[mNumAliases].mAlias);
-            utf32::copy(target, mAliasList[mNumAliases].mTarget, mStrAlloc, 8);
+            copy(alias, mAliasList[mNumAliases].mAlias);
+            copy(target, mAliasList[mNumAliases].mTarget, mStrAlloc, 8);
             mNumAliases++;
 			mNeedsResolve = true;
             return true;
@@ -121,13 +121,13 @@ namespace xcore
 
     bool devicemanager_t::add_device(const char* devpath, filedevice_t* device)
     {
-		utf32::runez<32> devpath32(devpath);
+		runez_t<utf32::rune, 32> devpath32(devpath);
         return add_device(devpath32, device);
     }
 
-    bool devicemanager_t::add_alias(const char* alias, const utf32::crunes& devname)
+    bool devicemanager_t::add_alias(const char* alias, const crunes_t& devname)
     {
-		utf32::runez<32> alias32(alias);
+        runez_t<utf32::rune, 32> alias32(alias);
         return add_alias(alias32, devname);
     }
 
@@ -218,23 +218,23 @@ namespace xcore
             if (valid)
             {
                 // Walk the stack and concatenate the target strings into 'Resolved'
-				utf32::runes& resolved_path = mAliasList[i].mResolved;
+				runes_t& resolved_path = mAliasList[i].mResolved;
                 resolved_path.reset();
 
                 s32 indexof_alias = stack.pop();
-                utf32::concatenate(resolved_path, mAliasList[indexof_alias].mTarget, mStrAlloc, 8);
+                concatenate(resolved_path, mAliasList[indexof_alias].mTarget, mStrAlloc, 8);
                 while (stack.empty() == false)
                 {
-                    indexof_alias                   = stack.pop();
-                    utf32::crunes target_path       = utf32::crunes(mAliasList[indexof_alias].mTarget);
-                    utf32::crunes alias_target_path = utf32::findSelectUntilIncluded(target_path, sDeviceSeperator);
-                    alias_target_path               = utf32::selectUntilEndExcludeSelection(target_path, alias_target_path);
-                    utf32::concatenate(resolved_path, alias_target_path, mStrAlloc, 8);
+                    indexof_alias              = stack.pop();
+                    crunes_t target_path       = crunes_t(mAliasList[indexof_alias].mTarget);
+                    crunes_t alias_target_path = findSelectUntilIncluded(target_path, sDeviceSeperator);
+                    alias_target_path          = selectAfterExclude(target_path, alias_target_path);
+                    concatenate(resolved_path, alias_target_path, mStrAlloc, 8);
                 }
 
 				// Cache the device index that our resolved path is referencing
 				mAliasList[i].mDeviceIndex = -1;
-				utf32::runes resolved_devname = utf32::findSelectUntilIncluded(resolved_path, sDeviceSeperator);
+				runes_t resolved_devname = findSelectUntilIncluded(resolved_path, sDeviceSeperator);
 				if (!resolved_devname.is_empty())
 				{
 					for (s32 di = 0; di < mNumDevices; ++di)
@@ -250,10 +250,10 @@ namespace xcore
         }
     }
 
-    s32 devicemanager_t::find_indexof_alias(const utf32::crunes& path) const
+    s32 devicemanager_t::find_indexof_alias(const crunes_t& path) const
     {
         // reduce path to just the alias part
-        utf32::crunes alias = utf32::findSelectUntilIncluded(path, sDeviceSeperator);
+        crunes_t alias = findSelectUntilIncluded(path, sDeviceSeperator);
         for (s32 i = 0; i < mNumAliases; ++i)
         {
             if (compare(mAliasList[i].mAlias, alias) == 0)
@@ -263,10 +263,10 @@ namespace xcore
         }
         return -1;
     }
-    s32 devicemanager_t::find_indexof_device(const utf32::crunes& path) const
+    s32 devicemanager_t::find_indexof_device(const crunes_t& path) const
     {
         // reduce path to just the device part
-        utf32::crunes devname = utf32::findSelectUntilIncluded(path, sDeviceSeperator);
+        crunes_t devname = findSelectUntilIncluded(path, sDeviceSeperator);
         for (s32 i = 0; i < mNumDevices; ++i)
         {
             if (compare(mDeviceList[i].mDevName, devname) == 0)
@@ -286,7 +286,7 @@ namespace xcore
 		}
 
 		filedevice_t* fd = nullptr;
-        utf32::runes devname = utf32::findSelectUntilIncluded(path.m_path, sDeviceSeperator);
+        runes_t devname = findSelectUntilIncluded(path.m_path, sDeviceSeperator);
 		if (!devname.is_empty())
 		{
 			for (s32 i = 0; i < mNumAliases; ++i)
@@ -311,7 +311,7 @@ namespace xcore
 		device_syspath = path_t(mStrAlloc);
 
 		filedevice_t* fd = nullptr;
-        utf32::runes devname = utf32::findSelectUntilIncluded(path.m_path, sDeviceSeperator);
+        runes_t devname = findSelectUntilIncluded(path.m_path, sDeviceSeperator);
 		if (!devname.is_empty())
 		{
 			for (s32 i = 0; i < mNumAliases; ++i)
@@ -319,8 +319,8 @@ namespace xcore
 				if (compare(mAliasList[i].mAlias, devname) == 0)
 				{
 					// Concatenate the path (filepath or dirpath) that the user provided to our resolved path
-					utf32::runes relpath = utf32::selectUntilEndExcludeSelection(path.m_path, devname);
-					utf32::concatenate(device_syspath.m_path, mAliasList[i].mResolved, relpath, device_syspath.m_alloc, 16);
+					runes_t relpath = selectAfterExclude(path.m_path, devname);
+					concatenate(device_syspath.m_path, mAliasList[i].mResolved, relpath, device_syspath.m_alloc, 16);
 					if (mAliasList[i].mDeviceIndex >= 0)
 					{
 						return mDeviceList[mAliasList[i].mDeviceIndex].mDevice;
@@ -332,8 +332,8 @@ namespace xcore
 				if (compare(mDeviceList[i].mDevName, devname) == 0)
 				{
 					// Concatenate the path (filepath or dirpath) that the user provided to our device path
-					utf32::runes relpath = utf32::selectUntilEndExcludeSelection(path.m_path, devname);
-					utf32::concatenate(device_syspath.m_path, mDeviceList[i].mDevName, relpath, mStrAlloc, 16);
+					runes_t relpath = selectAfterExclude(path.m_path, devname);
+					concatenate(device_syspath.m_path, mDeviceList[i].mDevName, relpath, mStrAlloc, 16);
 					return mDeviceList[i].mDevice;
 				}
 			}

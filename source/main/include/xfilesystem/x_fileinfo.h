@@ -7,8 +7,8 @@
 
 #include "xbase/x_debug.h"
 
-#include "filesystem_t/x_filepath.h"
-#include "filesystem_t/x_attributes.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_attributes.h"
 
 namespace xcore
 {

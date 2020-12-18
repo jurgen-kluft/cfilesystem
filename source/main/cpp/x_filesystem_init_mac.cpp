@@ -13,12 +13,12 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_va_list.h"
 
-#include "filesystem_t/private/x_filedevice.h"
-#include "filesystem_t/private/x_filesystem.h"
-#include "filesystem_t/private/x_devicemanager.h"
+#include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem.h"
+#include "xfilesystem/private/x_devicemanager.h"
 
-#include "filesystem_t/x_filesystem.h"
-#include "filesystem_t/x_filepath.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
 
 namespace xcore
 {

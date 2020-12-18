@@ -10,11 +10,11 @@
 
 #include "xtime/x_datetime.h"
 
-#include "filesystem_t/private/x_filedevice.h"
-#include "filesystem_t/private/x_filesystem.h"
-#include "filesystem_t/x_attributes.h"
-#include "filesystem_t/x_fileinfo.h"
-#include "filesystem_t/x_dirinfo.h"
+#include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem.h"
+#include "xfilesystem/x_attributes.h"
+#include "xfilesystem/x_fileinfo.h"
+#include "xfilesystem/x_dirinfo.h"
 
 namespace xcore
 {

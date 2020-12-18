@@ -4,23 +4,21 @@
 
 #include "xtime/x_datetime.h"
 
-#include "filesystem_t/x_dirpath.h"
-#include "filesystem_t/x_filepath.h"
-#include "filesystem_t/x_dirinfo.h"
-#include "filesystem_t/x_fileinfo.h"
-#include "filesystem_t/x_stream.h"
-#include "filesystem_t/x_filesystem.h"
-#include "filesystem_t/private/x_filedevice.h"
-#include "filesystem_t/private/x_filesystem.h"
-#include "filesystem_t/private/x_istream.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_dirinfo.h"
+#include "xfilesystem/x_fileinfo.h"
+#include "xfilesystem/x_stream.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem.h"
+#include "xfilesystem/private/x_istream.h"
 
 //==============================================================================
 namespace xcore
 {
     fileinfo_t::fileinfo_t() : mFileExists(false), mFileTimes(), mFileAttributes(), mParent(nullptr), mPath() {}
-
     fileinfo_t::fileinfo_t(const fileinfo_t& fi) : mFileExists(fi.mFileExists), mFileTimes(fi.mFileTimes), mFileAttributes(fi.mFileAttributes), mParent(fi.mParent), mPath(fi.mPath) {}
-
     fileinfo_t::fileinfo_t(const filepath_t& fp) : mParent(fp.mParent), mPath(fp) {}
 
     u64  fileinfo_t::getLength() const { return sGetLength(mPath); }
@@ -35,7 +33,6 @@ namespace xcore
 
     bool fileinfo_t::isRooted() const { return mPath.isRooted(); }
     bool fileinfo_t::exists() const { return sExists(mPath); }
-
     bool fileinfo_t::create(stream_t*& outFilestream) const { return (sCreate(mPath, outFilestream)); }
 
     bool fileinfo_t::create()

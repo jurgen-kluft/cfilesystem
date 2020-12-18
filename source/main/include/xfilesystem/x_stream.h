@@ -8,7 +8,7 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_buffer.h"
 
-#include "filesystem_t/private/x_enumerations.h"
+#include "xfilesystem/private/x_enumerations.h"
 
 namespace xcore
 {

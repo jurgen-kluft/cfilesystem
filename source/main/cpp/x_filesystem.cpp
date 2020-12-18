@@ -1,12 +1,12 @@
 #include "xbase/x_target.h"
-#include "filesystem_t/x_filesystem.h"
-#include "filesystem_t/x_filepath.h"
-#include "filesystem_t/x_fileinfo.h"
-#include "filesystem_t/x_dirpath.h"
-#include "filesystem_t/x_dirinfo.h"
-#include "filesystem_t/private/x_devicemanager.h"
-#include "filesystem_t/private/x_filesystem.h"
-#include "filesystem_t/private/x_filedevice.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_fileinfo.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_dirinfo.h"
+#include "xfilesystem/private/x_devicemanager.h"
+#include "xfilesystem/private/x_filesystem.h"
+#include "xfilesystem/private/x_filedevice.h"
 
 namespace xcore
 {
@@ -23,14 +23,14 @@ namespace xcore
 
 	filesys_t* filesystem_t::mImpl = nullptr;
 
-	bool      filesystem_t::register_device(const utf32::crunes& device_name, filedevice_t* device) { return mImpl->register_device(device_name, device); }
+	bool      filesystem_t::register_device(const crunes_t& device_name, filedevice_t* device) { return mImpl->register_device(device_name, device); }
 
     filepath_t filesystem_t::filepath(const char* str) { return mImpl->filepath(str); }
 	dirpath_t  filesystem_t::dirpath(const char* str) { return mImpl->dirpath(str); }
-    filepath_t filesystem_t::filepath(const utf32::crunes& str) { return mImpl->filepath(str); }
-	dirpath_t  filesystem_t::dirpath(const utf32::crunes& str) { return mImpl->dirpath(str); }
-    void      filesystem_t::to_ascii(filepath_t const& fp, ascii::runes& str) { mImpl->to_ascii(fp, str); }
-	void      filesystem_t::to_ascii(dirpath_t const& dp, ascii::runes& str) { mImpl->to_ascii(dp, str); }
+    filepath_t filesystem_t::filepath(const crunes_t& str) { return mImpl->filepath(str); }
+	dirpath_t  filesystem_t::dirpath(const crunes_t& str) { return mImpl->dirpath(str); }
+    void      filesystem_t::to_ascii(filepath_t const& fp, runes_t& str) { mImpl->to_ascii(fp, str); }
+	void      filesystem_t::to_ascii(dirpath_t const& dp, runes_t& str) { mImpl->to_ascii(dp, str); }
 
     file_t*   filesystem_t::open(filepath_t const& filename, EFileMode mode) { return mImpl->open(filename, mode); }
     stream_t* filesystem_t::open_stream(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op) { return mImpl->open_stream(filename, mode, access, op); }
@@ -151,7 +151,7 @@ namespace xcore
 		return dirpath;
 	}
 
-    filepath_t  filesys_t::filepath(const utf32::crunes& str)
+    filepath_t  filesys_t::filepath(const crunes_t& str)
 	{
 		filepath_t filepath;
 		filepath.mParent = this;
@@ -159,7 +159,7 @@ namespace xcore
 		return filepath;
 	}
 	
-	dirpath_t   filesys_t::dirpath(const utf32::crunes& str)
+	dirpath_t   filesys_t::dirpath(const crunes_t& str)
 	{
 		dirpath_t dirpath;
 		dirpath.mParent = this;
@@ -167,15 +167,15 @@ namespace xcore
 		return dirpath;
 	}
 
-	void       filesys_t::to_ascii(filepath_t const& fp, ascii::runes& str)
+	void       filesys_t::to_ascii(filepath_t const& fp, runes_t& str)
 	{
 	}
 	
-	void       filesys_t::to_ascii(dirpath_t const& dp, ascii::runes& str)
+	void       filesys_t::to_ascii(dirpath_t const& dp, runes_t& str)
 	{
 	}
 
-	bool   filesys_t::register_device(const utf32::crunes& device_name, filedevice_t* device)
+	bool   filesys_t::register_device(const crunes_t& device_name, filedevice_t* device)
 	{
 		return m_devman->add_device(device_name, device);
 	}

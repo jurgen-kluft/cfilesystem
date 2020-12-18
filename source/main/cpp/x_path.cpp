@@ -2,11 +2,11 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 
-#include "filesystem_t/private/x_path.h"
-#include "filesystem_t/x_filepath.h"
-#include "filesystem_t/x_dirpath.h"
-#include "filesystem_t/x_enumerator.h"
-#include "filesystem_t/private/x_devicemanager.h"
+#include "xfilesystem/private/x_path.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_enumerator.h"
+#include "xfilesystem/private/x_devicemanager.h"
 
 namespace xcore
 {
@@ -28,12 +28,6 @@ namespace xcore
     path_t::path_t() : m_alloc(nullptr), m_path() {}
 
     path_t::path_t(runes_alloc_t* allocator) : m_alloc(allocator), m_path() { fix_slashes(m_path); }
-
-    path_t::path_t(runes_alloc_t* allocator, const crunes_t& path) : m_alloc(allocator)
-    {
-        copy(path, m_path, m_alloc, 16);
-        fix_slashes(m_path);
-    }
 
     path_t::path_t(runes_alloc_t* allocator, const crunes_t& path) : m_alloc(allocator)
     {
@@ -475,34 +469,25 @@ namespace xcore
     bool path_t::operator==(const path_t& rhs) const { return compare(m_path, rhs.m_path) == 0; }
     bool path_t::operator!=(const path_t& rhs) const { return compare(m_path, rhs.m_path) != 0; }
 
-    void path_t::append_utf16(path_t const& fp, crunes_t const& r)
+    void path_t::as_utf16(path_t const& p, path_t& dst)
     {
-        runes_t dst(fp.m_path);
-        runes_writer_t writer(dst);
-        
-        writer.write(r);
+    }
+    
+    void path_t::as_utf16(filepath_t const& fp, path_t& dst)
+    {
     }
 
-    //@note: need a convert_inline function to go from ut16 to utf32 and back
-    void path_t::view_utf16(path_t const& fp, crunes_t& r)
+    void path_t::as_utf16(filepath_t const& fp, filepath_t& dst)
     {
-        runes_t dst(fp.m_path);
-        convert_inline(dst, utf16::TYPE);
-        r = crunes_t(dst);
+    }
+    
+    void path_t::as_utf16(dirpath_t const& dp, path_t& dst)
+    {
     }
 
-    void path_t::release_utf16(path_t const& fp, crunes_t& r)
+    void path_t::as_utf16(dirpath_t const& dp, dirpath_t& dst)
     {
-        runes_t dst(fp.m_path);
-        convert_inline(dst, utf32::TYPE);
-        r = crunes_t(dst);
     }
 
-    void path_t::append_utf16(filepath_t const& fp, crunes_t const& r) { append_utf16(fp.mPath, r); }
-    void path_t::view_utf16(filepath_t const& fp, crunes_t& runes_t) { view_utf16(fp.mPath, runes_t); }
-    void path_t::release_utf16(filepath_t const& fp, crunes_t& runes_t) { release_utf16(fp.mPath, runes_t); }
-    void path_t::append_utf16(dirpath_t const& fp, crunes_t const& r) { append_utf16(fp.mPath, r); }
-    void path_t::view_utf16(dirpath_t const& fp, crunes_t& runes_t) { view_utf16(fp.mPath, runes_t); }
-    void path_t::release_utf16(dirpath_t const& fp, crunes_t& runes_t) { release_utf16(fp.mPath, runes_t); }
 
 } // namespace xcore

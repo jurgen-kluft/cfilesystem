@@ -7,8 +7,8 @@
 
 //==============================================================================
 #include "xbase/x_runes.h"
-#include "filesystem_t/x_enumerator.h"
-#include "filesystem_t/private/x_enumerations.h"
+#include "xfilesystem/x_enumerator.h"
+#include "xfilesystem/private/x_enumerations.h"
 
 #define MAX_ENUM_SEARCH_FILES 32
 #define MAX_ENUM_SEARCH_DIRS 16
@@ -26,7 +26,7 @@ namespace xcore
     class stream_t;
 
     // System file device
-    extern filedevice_t* x_CreateFileDevice(alloc_t* allocator, utf32::crunes& pDrivePath, bool boCanWrite);
+    extern filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t& pDrivePath, bool boCanWrite);
     extern void         x_DestroyFileDevice(filedevice_t*);
 
     extern filedevice_t* x_NullFileDevice();

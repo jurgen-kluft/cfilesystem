@@ -2,9 +2,9 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 
-#include "filesystem_t/x_filepath.h"
-#include "filesystem_t/x_dirpath.h"
-#include "filesystem_t/private/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/private/x_filesystem.h"
 
 namespace xcore
 {

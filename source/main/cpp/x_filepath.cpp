@@ -2,10 +2,10 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 
-#include "filesystem_t/private/x_enumerations.h"
-#include "filesystem_t/private/x_path.h"
-#include "filesystem_t/x_dirpath.h"
-#include "filesystem_t/x_filepath.h"
+#include "xfilesystem/private/x_enumerations.h"
+#include "xfilesystem/private/x_path.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_filepath.h"
 
 namespace xcore
 {
@@ -24,7 +24,6 @@ namespace xcore
         mPath.m_alloc = path.m_alloc;
         mPath.m_path  = path.m_path;
         path.m_alloc  = fsys->m_stralloc;
-        path.m_path   = utf32::runes();
     }
 
     filepath_t::filepath_t(const filepath_t& filepath)

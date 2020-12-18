@@ -10,12 +10,12 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_va_list.h"
 
-#include "filesystem_t/private/x_filedevice.h"
-#include "filesystem_t/private/x_filesystem.h"
-#include "filesystem_t/private/x_devicemanager.h"
+#include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem.h"
+#include "xfilesystem/private/x_devicemanager.h"
 
-#include "filesystem_t/x_filesystem.h"
-#include "filesystem_t/x_filepath.h"
+#include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
 
 namespace xcore
 {
@@ -42,7 +42,7 @@ namespace xcore
 
         static void x_FileSystemRegisterSystemAliases(alloc_t* allocator, devicemanager_t* devman)
         {
-            utf32::runez<255> string32;
+            runez_t<utf32::rune, 255> string32;
 
             // Get all logical drives.
             DWORD drives   = GetLogicalDrives();
@@ -77,8 +77,8 @@ namespace xcore
 
                     // Convert drivePath (Ascii) to utf-32
                     string32.reset();
-                    utf16::crunes devicePath16((utf16::pcrune)devicePath);
-                    utf::copy(devicePath16, string32);
+                    crunes_t devicePath16((utf16::pcrune)devicePath);
+                    copy(devicePath16, string32);
 
                     path_t devicename;
                     devicename.m_path = string32;
@@ -87,10 +87,10 @@ namespace xcore
                         if (sFileDevices[eDriveType] == NULL)
                         {
                             string32.reset();
-                            utf32::runes  devicePath32(string32);
-                            utf16::crunes devicePath16((utf16::pcrune)devicePath);
-                            utf::copy(devicePath16, devicePath32);
-                            sFileDevices[eDriveType] = x_CreateFileDevice(allocator, utf32::crunes(devicePath32), boCanWrite);
+                            runes_t  devicePath32(string32);
+                            crunes_t devicePath16((utf16::pcrune)devicePath);
+                            copy(devicePath16, devicePath32);
+                            sFileDevices[eDriveType] = x_CreateFileDevice(allocator, crunes_t(devicePath32), boCanWrite);
                         }
                         filedevice_t* device = sFileDevices[eDriveType];
 
@@ -99,27 +99,25 @@ namespace xcore
                         DWORD ret_val  = ::QueryDosDeviceW(driveLetter, local_alias, sizeof(local_alias));
 
                         string32.reset();
-                        utf32::runes  local_alias32(string32);
-                        utf16::crunes local_alias16((utf16::pcrune)local_alias);
-                        utf::copy(local_alias16, local_alias32);
+                        runes_t  local_alias32(string32);
+                        crunes_t local_alias16((utf16::pcrune)local_alias);
+                        copy(local_alias16, local_alias32);
 
-                        utf32::runez<8> wincrap("\\??\\");
-                        utf32::runes    wincrapsel = utf32::find(local_alias32, wincrap);
+                        runez_t<ascii::rune, 8> wincrap("\\??\\");
+                        runes_t    wincrapsel = find(local_alias32, wincrap);
 
-                        utf32::runez<255> string32b;
-                        utf32::runes      devicePath32(string32b);
-                        utf16::crunes     devicePath16((utf16::pcrune)devicePath);
-                        utf::copy(devicePath16, devicePath32);
+                        runez_t<utf32::rune, 255> string32b;
+                        runes_t      devicePath32(string32b);
+                        crunes_t     devicePath16((utf16::pcrune)devicePath);
+                        copy(devicePath16, devicePath32);
 
                         if (ret_val != 0 && !wincrapsel.is_empty())
                         {
                             // Remove windows text crap.
-                            utf32::runes alias32 = utf32::selectUntilEndExcludeSelection(local_alias32, wincrapsel);
-                            if (alias32.size() > 0 && alias32.m_end[-1] != '\\')
+                            runes_t alias32 = selectAfterExclude(local_alias32, wincrapsel);
+                            if (alias32.size() > 0 && last_char(alias32) != '\\')
                             {
-                                alias32.m_end[0] = '\\';
-                                alias32.m_end[1] = '\0';
-                                alias32.m_end++;
+                                alias32.concatenate('\\');
                             }
 
                             devman->add_alias(alias32, devicePath32);
@@ -146,23 +144,23 @@ namespace xcore
         public:
             fs_utfalloc(alloc_t* _allocator) : m_allocator(_allocator) {}
 
-            virtual utf32::runes allocate(s32 len, s32 cap)
+            virtual runes_t allocate(s32 len, s32 cap, s32 type)
             {
                 if (len > cap)
                     cap = len;
-                utf32::runes str;
-                str.m_str      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
-                str.m_end      = str.m_str + len;
-                str.m_eos      = str.m_str + cap;
-                str.m_str[cap] = '\0';
-                str.m_str[len] = '\0';
+                runes_t str;
+                str.m_runes.m_utf32.m_str      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
+                str.m_runes.m_utf32.m_end      = str.m_runes.m_utf32.m_str + len;
+                str.m_runes.m_utf32.m_eos      = str.m_runes.m_utf32.m_str + cap;
+                str.m_runes.m_utf32.m_str[cap] = '\0';
+                str.m_runes.m_utf32.m_str[len] = '\0';
                 return str;
             }
 
-            virtual void deallocate(utf32::runes& slice_t)
+            virtual void deallocate(runes_t& slice_t)
             {
-                m_allocator->deallocate(slice_t.m_str);
-                slice_t = utf32::runes();
+                m_allocator->deallocate(slice_t.m_runes.m_utf32.m_bos);
+                slice_t = runes_t();
             }
 
             XCORE_CLASS_PLACEMENT_NEW_DELETE
@@ -188,9 +186,10 @@ namespace xcore
         DWORD   result   = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
         if (result != 0)
         {
-            utf32::runes dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
-            utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
-            utf32::runes appdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
+            runes_t dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
+            crunes_t dir16((utf16::pcrune)dir);
+            xcore::copy(dir16, dir32);
+            runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
             imp->m_devman->add_alias("appdir:\\", appdir);
         }
 
@@ -198,8 +197,9 @@ namespace xcore
         result = ::GetCurrentDirectoryW(sizeof(dir) - 1, dir);
         if (result != 0)
         {
-            utf32::runes curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
-            utf::copy(utf16::crunes((utf16::pcrune)dir), curdir);
+            runes_t curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
+            crunes_t dir16((utf16::pcrune)dir);
+            xcore::copy(dir16, curdir);
             imp->m_devman->add_alias("curdir:\\", curdir);
         }
     }
