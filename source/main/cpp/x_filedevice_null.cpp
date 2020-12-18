@@ -5,7 +5,7 @@
 #include "xbase/x_limits.h"
 #include "xbase/x_memory.h"
 #include "xbase/x_runes.h"
-#include "xbase/va_list_t.h"
+#include "xbase/x_va_list.h"
 #include "xbase/x_integer.h"
 
 #include "xtime/x_datetime.h"

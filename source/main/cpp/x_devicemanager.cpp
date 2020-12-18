@@ -2,7 +2,7 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_console.h"
 #include "xbase/x_runes.h"
-#include "xbase/va_list_t.h"
+#include "xbase/x_va_list.h"
 
 #include "filesystem_t/x_dirpath.h"
 #include "filesystem_t/x_filepath.h"

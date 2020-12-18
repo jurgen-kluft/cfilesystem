@@ -11,7 +11,7 @@
 #include <dlfcn.h>
 
 #include "xbase/x_debug.h"
-#include "xbase/va_list_t.h"
+#include "xbase/x_va_list.h"
 
 #include "filesystem_t/private/x_filedevice.h"
 #include "filesystem_t/private/x_filesystem.h"

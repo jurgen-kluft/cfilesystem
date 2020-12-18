@@ -5,7 +5,7 @@
 #include "xbase/x_bit_field.h"
 #include "xbase/x_debug.h"
 #include "xbase/x_limits.h"
-#include "xbase/va_list_t.h"
+#include "xbase/x_va_list.h"
 
 #include "filesystem_t/x_filesystem.h"
 #include "filesystem_t/x_filepath.h"
