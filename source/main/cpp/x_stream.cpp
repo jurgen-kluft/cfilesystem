@@ -42,29 +42,15 @@ namespace xcore
     static xstream_nil sNullStreamImp;
 
     //------------------------------------------------------------------------------------------
-    stream_t::stream_t()
-        : m_pimpl(&sNullStreamImp)
-    {
-    }
-
-    stream_t::stream_t(istream_t* pimpl)
-        : m_pimpl(pimpl)
-    {
-        pimpl->hold();
-    }
-
-    stream_t::stream_t(const stream_t& other)
-        : m_pimpl(other.m_pimpl)
-    {
-        m_pimpl->hold();
-    }
-
+    stream_t::stream_t() : m_pimpl(&sNullStreamImp) {}
+    stream_t::stream_t(istream_t* pimpl) : m_pimpl(pimpl) { pimpl->hold(); }
+    stream_t::stream_t(const stream_t& other) : m_pimpl(other.m_pimpl) { m_pimpl->hold(); }
     stream_t::~stream_t()
     {
         if (m_pimpl->release() == 0)
-		{
-			m_pimpl->destroy();
-		}
+        {
+            m_pimpl->destroy();
+        }
         m_pimpl = 0;
     }
 
@@ -74,7 +60,7 @@ namespace xcore
     bool stream_t::isOpen() const { return m_pimpl->isOpen(); }
     bool stream_t::isAsync() const { return m_pimpl->isAsync(); }
 
-    u64 stream_t::getLength() const { return m_pimpl->getLength(); }
+    u64  stream_t::getLength() const { return m_pimpl->getLength(); }
     void stream_t::setLength(u64 length) { m_pimpl->setLength(length); }
 
     s64 stream_t::getPos() const { return m_pimpl->getPos(); }
@@ -84,9 +70,9 @@ namespace xcore
     {
         m_pimpl->close();
         if (m_pimpl->release() == 0)
-		{
-			m_pimpl->destroy();
-		}
+        {
+            m_pimpl->destroy();
+        }
 
         m_pimpl = &sNullStreamImp;
     }
@@ -101,4 +87,4 @@ namespace xcore
 
     bool stream_t::beginWrite(const xbyte* buffer, u64 count) { return m_pimpl->beginWrite(buffer, count); }
     s64  stream_t::endWrite(bool block) { return m_pimpl->endWrite(block); }
-};
+}; // namespace xcore

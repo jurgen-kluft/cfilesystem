@@ -83,23 +83,24 @@ namespace xcore
             fs_utfalloc(alloc_t* _allocator) : m_allocator(_allocator) {}
             ~fs_utfalloc() {}
 
-            virtual utf32::runes allocate(s32 len, s32 cap)
+            virtual runes_t allocate(s32 len, s32 cap, s32 type)
             {
                 if (len > cap)
                     cap = len;
-                utf32::runes str;
-                str.m_str      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
-                str.m_end      = str.m_str + len;
-                str.m_eos      = str.m_str + cap;
-                str.m_str[cap] = '\0';
-                str.m_str[len] = '\0';
+                runes_t str;
+                str.m_runes.m_utf32.m_bos      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
+                str.m_runes.m_utf32.m_str      = str.m_runes.m_utf32.m_bos;
+                str.m_runes.m_utf32.m_end      = str.m_runes.m_utf32.m_str + len;
+                str.m_runes.m_utf32.m_eos      = str.m_runes.m_utf32.m_str + cap;
+                str.m_runes.m_utf32.m_str[cap] = '\0';
+                str.m_runes.m_utf32.m_str[len] = '\0';
                 return str;
             }
 
-            virtual void deallocate(utf32::runes& slice_t)
+            virtual void deallocate(runes_t& r)
             {
-                m_allocator->deallocate(slice_t.m_str);
-                slice_t = utf32::runes();
+                m_allocator->deallocate(r.m_runes.m_utf32.m_bos);
+                r = runes_t();
             }
 
             XCORE_CLASS_PLACEMENT_NEW_DELETE
@@ -129,9 +130,10 @@ namespace xcore
         s32     result   = 1;
         if (result != 0)
         {
-            utf32::runes dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
-            utf::copy(utf16::crunes((utf16::pcrune)dir), dir32);
-            utf32::runes appdir = utf32::findLastSelectUntilIncluded(dir32, '\\');
+            runes_t dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
+            crunes_t dir16((utf16::pcrune)dir);
+            xcore::copy(dir16, dir32);
+            runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
             imp->m_devman->add_alias("appdir:\\", appdir);
         }
 
@@ -140,8 +142,9 @@ namespace xcore
         // getExecutablePath();
         if (result != 0)
         {
-            utf32::runes curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
-            utf::copy(utf16::crunes((utf16::pcrune)dir), curdir);
+            runes_t curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
+            crunes_t dir16((utf16::pcrune)dir);
+            xcore::copy(dir16, curdir);
             imp->m_devman->add_alias("curdir:\\", curdir);
         }
     }

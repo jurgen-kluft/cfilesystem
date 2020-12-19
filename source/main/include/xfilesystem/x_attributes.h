@@ -6,12 +6,11 @@
 #endif
 
 #include "xtime/x_datetime.h"
-
 namespace xcore
 {
     class fileattrs_t
     {
-	public:
+    public:
         fileattrs_t();
         fileattrs_t(const fileattrs_t&);
         fileattrs_t(bool boArchive, bool boReadonly, bool boHidden, bool boSystem);
@@ -37,7 +36,7 @@ namespace xcore
 
     class filetimes_t
     {
-	public:
+    public:
         filetimes_t();
         filetimes_t(const filetimes_t&);
         filetimes_t(const datetime_t& creationTime, const datetime_t& lastAccessTime, const datetime_t& lastWriteTime);

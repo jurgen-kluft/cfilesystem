@@ -1,11 +1,7 @@
-//==============================================================================
-// INCLUDES
-//==============================================================================
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
 
 #include "xfilesystem/x_attributes.h"
-
 namespace xcore
 {
     enum EAttributes
@@ -16,18 +12,11 @@ namespace xcore
         FILE_ATTRIBUTE_SYSTEM   = 8,
     };
 
-    fileattrs_t::fileattrs_t()
-        : mFlags(0)
-    {
-    }
+    fileattrs_t::fileattrs_t() : mFlags(0) {}
 
-    fileattrs_t::fileattrs_t(const fileattrs_t& other)
-        : mFlags(other.mFlags)
-    {
-    }
+    fileattrs_t::fileattrs_t(const fileattrs_t& other) : mFlags(other.mFlags) {}
 
-    fileattrs_t::fileattrs_t(bool boArchive, bool boReadonly, bool boHidden, bool boSystem)
-        : mFlags(0)
+    fileattrs_t::fileattrs_t(bool boArchive, bool boReadonly, bool boHidden, bool boSystem) : mFlags(0)
     {
         setArchive(boArchive);
         setReadOnly(boReadonly);
@@ -82,19 +71,9 @@ namespace xcore
     bool fileattrs_t::operator!=(const fileattrs_t& other) const { return mFlags != other.mFlags; }
 
     filetimes_t::filetimes_t() {}
-    filetimes_t::filetimes_t(const filetimes_t& ftimes)
-        : m_creationtime(ftimes.m_creationtime)
-        , m_lastaccesstime(ftimes.m_lastaccesstime)
-        , m_lastwritetime(ftimes.m_lastwritetime)
-    {
-    }
+    filetimes_t::filetimes_t(const filetimes_t& ftimes) : m_creationtime(ftimes.m_creationtime), m_lastaccesstime(ftimes.m_lastaccesstime), m_lastwritetime(ftimes.m_lastwritetime) {}
 
-    filetimes_t::filetimes_t(const datetime_t& creationTime, const datetime_t& lastAccessTime, const datetime_t& lastWriteTime)
-        : m_creationtime(creationTime)
-        , m_lastaccesstime(lastAccessTime)
-        , m_lastwritetime(lastWriteTime)
-    {
-    }
+    filetimes_t::filetimes_t(const datetime_t& creationTime, const datetime_t& lastAccessTime, const datetime_t& lastWriteTime) : m_creationtime(creationTime), m_lastaccesstime(lastAccessTime), m_lastwritetime(lastWriteTime) {}
 
     void filetimes_t::getTime(datetime_t& outCreationTime, datetime_t& outLastAccessTime, datetime_t& outLastWriteTime) const
     {
@@ -126,13 +105,7 @@ namespace xcore
         return *this;
     }
 
-    bool filetimes_t::operator==(const filetimes_t& other) const
-    {
-        return m_creationtime == other.m_creationtime && m_lastaccesstime == other.m_lastaccesstime && m_lastwritetime == other.m_lastwritetime;
-    }
+    bool filetimes_t::operator==(const filetimes_t& other) const { return m_creationtime == other.m_creationtime && m_lastaccesstime == other.m_lastaccesstime && m_lastwritetime == other.m_lastwritetime; }
 
-    bool filetimes_t::operator!=(const filetimes_t& other) const
-    {
-        return m_creationtime != other.m_creationtime || m_lastaccesstime != other.m_lastaccesstime || m_lastwritetime != other.m_lastwritetime;
-    }
+    bool filetimes_t::operator!=(const filetimes_t& other) const { return m_creationtime != other.m_creationtime || m_lastaccesstime != other.m_lastaccesstime || m_lastwritetime != other.m_lastwritetime; }
 } // namespace xcore

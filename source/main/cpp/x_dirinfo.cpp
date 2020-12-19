@@ -16,33 +16,25 @@
 namespace xcore
 {
     dirinfo_t::dirinfo_t() {}
+    dirinfo_t::dirinfo_t(const dirinfo_t& dirinfo) : mPath(dirinfo.mPath) {}
+    dirinfo_t::dirinfo_t(const dirpath_t& dir) : mPath(dir) {}
 
-    dirinfo_t::dirinfo_t(const dirinfo_t& dirinfo)
-        : mPath(dirinfo.mPath)
-    {
-    }
-
-    dirinfo_t::dirinfo_t(const dirpath_t& dir)
-        : mPath(dir)
-    {
-    }
-
-    bool            dirinfo_t::isRoot() const { return mPath.isRoot(); }
-    bool            dirinfo_t::isRooted() const { return mPath.isRooted(); }
-    bool            dirinfo_t::exists() const { return sExists(mPath); }
-    bool            dirinfo_t::create() { return sCreate(mPath); }
-    bool            dirinfo_t::remove() { return sDelete(mPath); }
-    void            dirinfo_t::refresh() {}
-    void            dirinfo_t::copy(const dirpath_t& toDirectory, bool overwrite) { sCopy(mPath, toDirectory, overwrite); }
-    void            dirinfo_t::move(const dirpath_t& toDirectory) { sMove(mPath, toDirectory); }
-    void            dirinfo_t::enumerate(enumerate_delegate_t& enumerator) { sEnumerate(mPath, enumerator); }
+    bool             dirinfo_t::isRoot() const { return mPath.isRoot(); }
+    bool             dirinfo_t::isRooted() const { return mPath.isRooted(); }
+    bool             dirinfo_t::exists() const { return sExists(mPath); }
+    bool             dirinfo_t::create() { return sCreate(mPath); }
+    bool             dirinfo_t::remove() { return sDelete(mPath); }
+    void             dirinfo_t::refresh() {}
+    void             dirinfo_t::copy(const dirpath_t& toDirectory, bool overwrite) { sCopy(mPath, toDirectory, overwrite); }
+    void             dirinfo_t::move(const dirpath_t& toDirectory) { sMove(mPath, toDirectory); }
+    void             dirinfo_t::enumerate(enumerate_delegate_t& enumerator) { sEnumerate(mPath, enumerator); }
     dirpath_t const& dirinfo_t::getDirpath() const { return mPath; }
-    bool            dirinfo_t::getRoot(dirinfo_t& outRootDirPath) const { return (mPath.getRoot(outRootDirPath.mPath)); }
-    bool            dirinfo_t::getParent(dirinfo_t& outParentDirPath) const { return (mPath.getParent(outParentDirPath.mPath)); }
-    bool            dirinfo_t::getTimes(filetimes_t& times) const { return sGetTime(mPath, times); }
-    bool            dirinfo_t::setTimes(filetimes_t times) { return sSetTime(mPath, times); }
-    bool            dirinfo_t::getAttrs(fileattrs_t& fattrs) const { return sGetAttrs(mPath, fattrs); }
-    bool            dirinfo_t::setAttrs(fileattrs_t fattrs) { return sSetAttrs(mPath, fattrs); }
+    bool             dirinfo_t::getRoot(dirinfo_t& outRootDirPath) const { return (mPath.getRoot(outRootDirPath.mPath)); }
+    bool             dirinfo_t::getParent(dirinfo_t& outParentDirPath) const { return (mPath.getParent(outParentDirPath.mPath)); }
+    bool             dirinfo_t::getTimes(filetimes_t& times) const { return sGetTime(mPath, times); }
+    bool             dirinfo_t::setTimes(filetimes_t times) { return sSetTime(mPath, times); }
+    bool             dirinfo_t::getAttrs(fileattrs_t& fattrs) const { return sGetAttrs(mPath, fattrs); }
+    bool             dirinfo_t::setAttrs(fileattrs_t fattrs) { return sSetAttrs(mPath, fattrs); }
 
     dirinfo_t& dirinfo_t::operator=(const dirinfo_t& other)
     {

@@ -29,7 +29,7 @@ namespace xcore
     public:
         alloc_t*  mAllocator;
         dirpath_t mDrivePath;
-        bool    mCanWrite;
+        bool      mCanWrite;
 
         XCORE_CLASS_PLACEMENT_NEW_DELETE
 
@@ -105,7 +105,7 @@ namespace xcore
         file_device->mAllocator->destruct(file_device);
     }
 
-    filedevice_t* x_CreateFileDevice(alloc_t* allocator, utf32::crunes& pDrivePath, bool boCanWrite)
+    filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes const& pDrivePath, bool boCanWrite)
     {
         dirpath_t drivePath = filesystem_t::dirpath(pDrivePath);
         return x_CreateFileDeviceMac(allocator, drivePath, boCanWrite);

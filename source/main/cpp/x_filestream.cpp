@@ -18,9 +18,9 @@ namespace xcore
     {
         alloc_t*      mAllocator;
         filedevice_t* mFileDevice;
-        s32   mRefCount;
-        void* mFileHandle;
-        s64   mOffset;
+        s32           mRefCount;
+        void*         mFileHandle;
+        s64           mOffset;
 
         enum ECaps
         {
@@ -39,15 +39,7 @@ namespace xcore
         ~xifilestream(void);
 
     public:
-        xifilestream()
-            : mAllocator(nullptr)
-			, mFileDevice(nullptr)
-			, mRefCount(2)
-            , mFileHandle(INVALID_FILE_HANDLE)
-            , mCaps(0)
-        {
-        }
-
+        xifilestream() : mAllocator(nullptr), mFileDevice(nullptr), mRefCount(2), mFileHandle(INVALID_FILE_HANDLE), mCaps(0) {}
         xifilestream(alloc_t* allocator, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);
 
         virtual void hold() { mRefCount++; }
@@ -57,12 +49,12 @@ namespace xcore
             return mRefCount;
         }
         virtual void destroy()
-		{
-			if (release() == 0)
-			{
-				mAllocator->deallocate(this);
-			}
-		}
+        {
+            if (release() == 0)
+            {
+                mAllocator->deallocate(this);
+            }
+        }
 
         virtual bool canRead() const;
         virtual bool canSeek() const;
@@ -84,17 +76,12 @@ namespace xcore
         virtual bool beginWrite(const xbyte* buffer, u64 count);
         virtual s64  endWrite(bool block);
 
-		XCORE_CLASS_PLACEMENT_NEW_DELETE
+        XCORE_CLASS_PLACEMENT_NEW_DELETE
     };
 
     // ---------------------------------------------------------------------------------------------
 
-    xifilestream::xifilestream(alloc_t* allocator, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op)
-        : mAllocator(allocator)
-        , mFileDevice(fd)
-        , mRefCount(1)
-        , mFileHandle(INVALID_FILE_HANDLE)
-        , mCaps(NONE)
+    xifilestream::xifilestream(alloc_t* allocator, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op) : mAllocator(allocator), mFileDevice(fd), mRefCount(1), mFileHandle(INVALID_FILE_HANDLE), mCaps(NONE)
     {
         bool can_read, can_write, can_seek, can_async;
         // mFileDevice->caps(filename, can_read, can_write, can_seek, can_async);
@@ -332,10 +319,6 @@ namespace xcore
         return filestream;
     }
 
-	void		istream_t::destroy_filestream(alloc_t* allocator, istream_t* strm)
-	{
-		strm->destroy();
-	}
-
+    void istream_t::destroy_filestream(alloc_t* allocator, istream_t* strm) { strm->destroy(); }
 
 }; // namespace xcore

@@ -133,7 +133,7 @@ namespace xcore
         return fp;
     }
 
-    void             fileinfo_t::getFilepath(filepath_t& filepath) const { filepath = mPath; }
+    void              fileinfo_t::getFilepath(filepath_t& filepath) const { filepath = mPath; }
     filepath_t const& fileinfo_t::getFilepath() const { return mPath; }
 
     void fileinfo_t::up() { mPath.up(); }
@@ -314,7 +314,7 @@ namespace xcore
 
     u64 fileinfo_t::sReadAllBytes(const filepath_t& filepath, xbyte* buffer, u64 count)
     {
-        u64       rc     = 0;
+        u64        rc     = 0;
         istream_t* stream = filesys_t::create_filestream(filepath, FileMode_Open, FileAccess_Read, FileOp_Sync);
         if (stream->isOpen())
         {
@@ -327,7 +327,7 @@ namespace xcore
 
     u64 fileinfo_t::sWriteAllBytes(const filepath_t& filepath, const xbyte* buffer, u64 count)
     {
-        u64       rc     = 0;
+        u64        rc     = 0;
         istream_t* stream = filesys_t::create_filestream(filepath, FileMode_Open, FileAccess_Write, FileOp_Sync);
         if (stream->isOpen())
         {

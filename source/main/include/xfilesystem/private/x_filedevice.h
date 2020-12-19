@@ -26,7 +26,7 @@ namespace xcore
     class stream_t;
 
     // System file device
-    extern filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t& pDrivePath, bool boCanWrite);
+    extern filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t const& pDrivePath, bool boCanWrite);
     extern void         x_DestroyFileDevice(filedevice_t*);
 
     extern filedevice_t* x_NullFileDevice();
