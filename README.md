@@ -2,7 +2,7 @@
 
 ## __Cross platform filesystem library__
 
-* xfilesystem
+* filesystem
   * filepath
   * dirpath
   * file info
@@ -13,19 +13,19 @@
 ## __TODO__
 
 * Implement file device for Win32 and Mac
-* Have xfilepath and xdirpath use xpath
+* Have filepath and dirpath use path
 * Debug filesystem init for Win32 and Mac (use wchar API)
 * Implement file stream and memory stream
-* Finish device manager (use xpath)
+* Finish device manager (use path)
 
 ## __API__
 
 ```c++
 // API
-struct xfile;
-struct xinfo;
+struct file_t;
+struct info_t;
 
-class xfilesystem
+class filesystem_t
 {
 public:
     enum emode
@@ -39,32 +39,32 @@ public:
         INVALID    = 0xffffffff,
     };
 
-    xfile*      open(xfilepath const& filename, emode mode);
-    xwriter*    writer(xfile*);
-    xreader*    reader(xfile*);
+    file_t*     open(filepath_t const& filename, emode mode);
+    writer_t*   writer(file_t*);
+    reader_t*   reader(file_t*);
 
-    void        close(xfile*);
-    void        close(xinfo*);
-    void        close(xreader*);
-    void        close(xwriter*);
+    void        close(file_t*);
+    void        close(info_t*);
+    void        close(reader_t*);
+    void        close(writer_t*);
 
-    s64         get_pos(xfile*);
-    s64         set_pos(xfile*, s64 pos);
+    s64         get_pos(file_t*);
+    s64         set_pos(file_t*, s64 pos);
 
-    xinfo*      info(xfilepath const& path);
-    bool        exists(xinfo*);
-    s64         size(xinfo*);
-    xfile*      open(xinfo*, emode mode);
-    void        rename(xinfo*, xfilepath const&);
-    void        move(xinfo* src, xinfo* dst);
-    void        copy(xinfo* src, xinfo* dst);
-    void        remove(xinfo*);
+    info_t*     info(filepath_t const& path);
+    bool        exists(info_t*);
+    s64         size(info_t*);
+    file_t*     open(info_t*, emode mode);
+    void        rename(info_t*, filepath_t const&);
+    void        move(info_t* src, info_t* dst);
+    void        copy(info_t* src, info_t* dst);
+    void        remove(info_t*);
 
-    s32         read(reader*, xbuffer&);
-    s32         write(writer*, xcbuffer const&);
+    s32         read(reader_t*, buffer_t&);
+    s32         write(writer_t*, cbuffer_t const&);
 
-    void        read_async(reader*, xbuffer&);
-    s32         wait_async(reader*);
+    void        read_async(reader_t*, buffer_t&);
+    s32         wait_async(reader_t*);
 };
 ```
 
@@ -72,10 +72,10 @@ public:
 // USE CASE: Initialization of a file-system
 
 ```c++
-xfilesyscfg cfg;
+filesyscfg_t cfg;
 cfg.slash = '\\';                           // The filesystem slash of the system
-cfg.allocator = xalloc::get_system();       // You can also give it its own allocator
-xfilesystem* xfs = xfilesystem::create(config)
+cfg.allocator = alloc_t::get_system();       // You can also give it its own allocator
+filesystem_t* fs = filesystem_t::create(config)
 ```
 
 // ======================================================================  
@@ -89,35 +89,35 @@ xfilesystem* xfs = xfilesystem::create(config)
 
 // SYNC
 
-xfile* f = xfs->open("d:/test.bin", xfilesystem::READ);
-xreader* reader = xfs->reader(f);
-s32 numbytesread = xfs->read(reader, xbuffer& data);
-xfs->close(reader);
-xfs->close(f);
+file_t* f = fs->open("d:/test.bin", filesystem_t::READ);
+reader_t* reader = fs->reader(f);
+s32 numbytesread = fs->read(reader, buffer_t& data);
+fs->close(reader);
+fs->close(f);
 
-xfile* f = xfs->open("d:/test.bin", xfilesystem::READ_WRITE);
-xwriter* writer = xfs->writer(f);
-s32 numbyteswritten = xfs->write(writer, xcbuffer& data);
-xfs->close(writer);
-xfs->close(f);
+file_t* f = fs->open("d:/test.bin", filesystem_t::READ_WRITE);
+writer_t* writer = fs->writer(f);
+s32 numbyteswritten = fs->write(writer, cbuffer_t& data);
+fs->close(writer);
+fs->close(f);
 
 // ASYNC
 
-xfile* f = xfs->open("d:/test.bin", xfilesystem::READ);
-xreader* reader = xfs->reader(f);
-xfs->read_async(reader, xbuffer& data);
-xfs->wait_async(reader);
-xfs->close(reader);
-xfs->close(f);
+file_t* f = fs->open("d:/test.bin", filesystem_t::READ);
+reader_t* reader = fs->reader(f);
+fs->read_async(reader, buffer_t& data);
+fs->wait_async(reader);
+fs->close(reader);
+fs->close(f);
 ```
 
 // =====================================================================  
 // USE CASE: Attributes and times of a file
 
 ```c++
-xfileinfo finfo = xfs->info("E:/Dev.c++/main.cpp");
-xfileattrs fattrs = finfo->getAttrs();
-xfiletimes ftimes = finfo->getTimes();
+fileinfo_t finfo = fs->info("E:/Dev.c++/main.cpp");
+fileattrs_t fattrs = finfo->getAttrs();
+filetimes_t ftimes = finfo->getTimes();
 
 fattrs.setArchive(true);
 finfo->setAttrs(fattrs);
@@ -127,8 +127,8 @@ finfo->setAttrs(fattrs);
 // USE CASE: Globbing, navigating and searching files
 
 ```c++
-xdirpath dir = mfs->dirpath("E:/data");
-myfs->search(dir, [](xfileinfo const* fileinfo, xdirinfo const* dirinfo, s32 dirdepth){
+dirpath_t dir = fs->dirpath("E:/data");
+fs->search(dir, [](fileinfo_t const* fileinfo, dirinfo_t const* dirinfo, s32 dirdepth){
     if (dirinfo!=nullptr)
     {
         // Do not recurse into any directory
@@ -150,21 +150,21 @@ myfs->search(dir, [](xfileinfo const* fileinfo, xdirinfo const* dirinfo, s32 dir
 ```c++
 // NOTE: This requires you to add a dependency on xtext
 
-xfile* f = xfs->open("d:\\test.bin", xfilesystem::READ);
-xreader* reader = xfs->reader(f);
-//NOTE: xtextreader in the xtext package ?
-xtextreader* textreader = xnew<xtextreader>(reader);
-//xtextreader* textreader = xfs->xnew<xtextreader>(reader); // When you want to use xfilesystem memory
+file_t* f = fs->open("d:\\test.bin", filesystem_t::READ);
+reader_t* reader = fs->reader(f);
+//NOTE: textreader_t in the xtext package ?
+textreader_t* textreader = xnew<textreader_t>(reader);
+//textreader_t* textreader = fs->create<textreader>(reader); // When you want to use xfilesystem memory
 
-xstring line;
+string_t line;
 while (textreader.readLine(line))
 {
     // Do something with 'line'
 }
 
-xtextreader->close();
+textreader->close();
 xdelete<>(textreader);
 
-xfs->close(reader);
-xfs->close(f);
+fs->close(reader);
+fs->close(f);
 ```
