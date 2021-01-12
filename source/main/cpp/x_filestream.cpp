@@ -226,11 +226,11 @@ namespace xcore
     }
 
 
-    void xstream_copy(stream_t* src, stream_t* dst, buffer_t& buffer)
+    void xstream_copy(stream_t& src, stream_t& dst, buffer_t& buffer)
     {
-        reader_t* reader = src->get_reader();
-        writer_t* writer = dst->get_writer();
-        s64 streamLength = (s64)src->getLength();
+        reader_t* reader = src.get_reader();
+        writer_t* writer = dst.get_writer();
+        s64 streamLength = (s64)src.getLength();
         while (streamLength > 0)
         {
             u64 const r = reader->read(buffer.m_mutable, buffer.m_len);
@@ -239,7 +239,7 @@ namespace xcore
         }
     }
 
-    void xstream_copy(stream_t* src, stream_t* dst, u64 count) {}
+    void xstream_copy(stream_t& src, stream_t& dst, u64 count) {}
 
 
 }; // namespace xcore

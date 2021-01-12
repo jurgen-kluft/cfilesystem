@@ -69,7 +69,7 @@ namespace xcore
     dirpath_t& dirpath_t::operator=(const filepath_t& fp)
     {
         // Copy the runes
-        path_t const& path = filesys_t::get_xpath(fp);
+        path_t const& path = filesys_t::get_path(fp);
         copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
         return *this;
     }
@@ -80,7 +80,7 @@ namespace xcore
             return *this;
 
         // Copy the runes
-        path_t const& path = filesys_t::get_xpath(dp);
+        path_t const& path = filesys_t::get_path(dp);
         copy(path.m_path, mPath.m_path, mPath.m_alloc, 16);
 
         return *this;

@@ -11,6 +11,7 @@
 #include "xbase/x_runes.h"
 
 #include "xfilesystem/private/x_enumerations.h"
+#include "xfilesystem/x_stream.h"
 
 namespace xcore
 {
@@ -25,7 +26,6 @@ namespace xcore
         alloc_t* m_allocator;
     };
 
-    class stream_t;
     class filepath_t;
     class fileinfo_t;
     class dirpath_t;
@@ -46,8 +46,8 @@ namespace xcore
         static filepath_t filepath(const crunes_t& str);
         static dirpath_t  dirpath(const crunes_t& str);
 
-        static stream_t*   open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);
-        static void        close(stream_t*);
+        static stream_t    open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);
+        static void        close(stream_t&);
         static fileinfo_t  info(filepath_t const& path);
         static dirinfo_t   info(dirpath_t const& path);
         static bool        exists(fileinfo_t const&);

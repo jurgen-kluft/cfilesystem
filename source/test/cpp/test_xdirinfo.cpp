@@ -21,23 +21,33 @@ extern xcore::alloc_t* gTestAllocator;
 class utf32_alloc : public xcore::runes_alloc_t
 {
 public:
-    virtual utf32::runes allocate(s32 len, s32 cap) 
+    virtual runes_t allocate(s32 len, s32 cap, s32 type) 
 	{
-		utf32::prune prunes = (utf32::prune)gTestAllocator->allocate(sizeof(utf32::rune) * cap, sizeof(utf32::rune));
-		prunes[cap - 1] = utf32::TERMINATOR;
-		utf32::runes runes(prunes, prunes, prunes + cap - 1);
-		return runes;
+		if (type == utf32::TYPE)
+		{
+			utf32::prune prunes = (utf32::prune)gTestAllocator->allocate(sizeof(utf32::rune) * cap, sizeof(utf32::rune));
+			prunes[cap - 1] = utf32::TERMINATOR;
+			runes_t runes(prunes, prunes, prunes + cap - 1);
+			return runes;
+		}
+		else if (type == ascii::TYPE)
+		{
+			ascii::prune prunes = (ascii::prune)gTestAllocator->allocate(sizeof(ascii::rune) * cap, sizeof(ascii::rune));
+			prunes[cap - 1] = ascii::TERMINATOR;
+			runes_t runes(prunes, prunes, prunes + cap - 1);
+			return runes;
+		}
 	}
             
-	virtual void  deallocate(utf32::runes& slice_t)
+	virtual void  deallocate(runes_t& slice_t)
 	{
-		if (slice_t.m_str != nullptr)
+		if (slice_t.m_runes.m_ascii.m_bos != nullptr)
 		{
-			gTestAllocator->deallocate(slice_t.m_str);
+			gTestAllocator->deallocate(slice_t.m_runes.m_ascii.m_bos);
 		}
-		slice_t.m_str = nullptr;
-		slice_t.m_end = nullptr;
-		slice_t.m_eos = nullptr;
+		slice_t.m_runes.m_ascii.m_str = nullptr;
+		slice_t.m_runes.m_ascii.m_end = nullptr;
+		slice_t.m_runes.m_ascii.m_eos = nullptr;
 	}
 };
 static utf32_alloc sUtf32Alloc;

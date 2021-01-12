@@ -11,13 +11,14 @@
 #include "xbase/x_runes.h"
 
 #include "xfilesystem/private/x_enumerations.h"
-#include "xfilesystem/x_fileinfo.h"
-#include "xfilesystem/x_dirinfo.h"
+#include "xfilesystem/private/x_path.h"
 
 namespace xcore
 {
     class filesys_t;
     class filedevice_t;
+    class fileinfo_t;
+    class dirinfo_t;
     class devicemanager_t;
     class stream_t;
     class istream_t;
@@ -70,8 +71,6 @@ namespace xcore
 
         stream_t   open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);
         void       close(stream_t&);
-        fileinfo_t info(filepath_t const& path);
-        dirinfo_t  info(dirpath_t const& path);
         bool       exists(fileinfo_t const&);
         bool       exists(dirinfo_t const&);
         s64        size(fileinfo_t const&);

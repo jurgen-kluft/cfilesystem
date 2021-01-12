@@ -1,5 +1,9 @@
 #include "xbase/x_target.h"
 #include "xfilesystem/x_filesystem.h"
+#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/x_fileinfo.h"
+#include "xfilesystem/x_dirpath.h"
+#include "xfilesystem/x_dirinfo.h"
 #include "xfilesystem/private/x_devicemanager.h"
 #include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/private/x_filedevice.h"
@@ -17,12 +21,11 @@ namespace xcore
     filepath_t filesystem_t::filepath(const crunes_t& str) { return mImpl->filepath(str); }
     dirpath_t  filesystem_t::dirpath(const crunes_t& str) { return mImpl->dirpath(str); }
 
-    stream_t* filesystem_t::open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op) { return mImpl->open(filename, mode, access, op); }
+    stream_t  filesystem_t::open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op) 
+    { return mImpl->open(filename, mode, access, op); }
 
-    void filesystem_t::close(stream_t* xs) { return mImpl->close(xs); }
+    void filesystem_t::close(stream_t& xs) { return mImpl->close(xs); }
 
-    fileinfo_t  filesystem_t::info(filepath_t const& path) { return mImpl->info(path); }
-    dirinfo_t   filesystem_t::info(dirpath_t const& path) { return mImpl->info(path); }
     bool        filesystem_t::exists(fileinfo_t const& xfi) { return mImpl->exists(xfi); }
     bool        filesystem_t::exists(dirinfo_t const& xdi) { return mImpl->exists(xdi); }
     s64         filesystem_t::size(fileinfo_t const& xfi) { return mImpl->size(xfi); }
@@ -66,13 +69,11 @@ namespace xcore
     filesys_t* filesys_t::get_filesystem(dirpath_t const& dirpath) { return dirpath.mParent; }
     filesys_t* filesys_t::get_filesystem(filepath_t const& filepath) { return filepath.mParent; }
 
-    stream_t* filesys_t::create_filestream(const filepath_t& filepath, EFileMode fm, EFileAccess fa, EFileOp fo)
+    stream_t filesys_t::create_filestream(const filepath_t& filepath, EFileMode fm, EFileAccess fa, EFileOp fo)
     {
-        return nullptr; 
+        return stream_t(); 
     }
     
-    void filesys_t::destroy(istream_t* stream) {}
-
     filepath_t filesys_t::filepath(const char* str)
     {
         filepath_t filepath;
@@ -107,16 +108,13 @@ namespace xcore
 
     bool filesys_t::register_device(const crunes_t& device_name, filedevice_t* device) { return m_devman->add_device(device_name, device); }
 
-    stream_t* filesys_t::open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op) 
+    stream_t filesys_t::open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op) 
     {
-        stream_t* fs = create_filestream(filename, mode, access, op);
-        return fs;
+        return stream_t();
     }
 
-    void filesys_t::close(stream_t*) {}
+    void filesys_t::close(stream_t& stream) {}
 
-    fileinfo_t filesys_t::info(filepath_t const& path) { return fileinfo_t(); }
-    dirinfo_t  filesys_t::info(dirpath_t const& path) { return dirinfo_t(); }
     bool       filesys_t::exists(fileinfo_t const&) { return false; }
     bool       filesys_t::exists(dirinfo_t const&) { return false; }
     s64        filesys_t::size(fileinfo_t const&) { return 0; }

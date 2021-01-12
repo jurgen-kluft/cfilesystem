@@ -8,8 +8,6 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_buffer.h"
 
-#include "xfilesystem/private/x_enumerations.h"
-
 namespace xcore
 {
     class istream_t;
@@ -22,6 +20,7 @@ namespace xcore
     {
     public:
         stream_t();
+        stream_t(const stream_t&);
         ~stream_t();
 
         bool canRead() const;
@@ -39,12 +38,14 @@ namespace xcore
         void close();
         void flush();
 
+        s64 read(xbyte*, s64);
+        s64 write(xbyte const*, s64);
+
         reader_t* get_reader();
         writer_t* get_writer();
 
     protected:
         stream_t(istream_t*);
-        stream_t(const stream_t&);
 
         stream_t& operator=(const stream_t&) { return *this; }
 
@@ -59,7 +60,7 @@ namespace xcore
         friend class stream_t;
     };
 
-    void xstream_copy(stream_t* src, stream_t* dst, buffer_t& buffer);
+    void xstream_copy(stream_t& src, stream_t& dst, buffer_t& buffer);
 
 }; // namespace xcore
 

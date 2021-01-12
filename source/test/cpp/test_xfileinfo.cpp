@@ -34,7 +34,7 @@ UNITTEST_SUITE_BEGIN(fileinfo)
 		static datetime_t sLastWriteTime(2011, 2, 11, 10, 46, 20);
 
 		static ascii::rune sStringBuffer[512];
-		static ascii::runes sCString(sStringBuffer, sStringBuffer, sStringBuffer + sizeof(sStringBuffer));
+		static runes_t sCString(sStringBuffer, sStringBuffer, sStringBuffer + sizeof(sStringBuffer));
 
 		UNITTEST_TEST(constructor1)
 		{

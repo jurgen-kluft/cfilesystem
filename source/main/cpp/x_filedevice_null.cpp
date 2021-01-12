@@ -59,12 +59,11 @@ namespace xcore
 
         virtual bool closeFile(void* nFileHandle) { return false; }
 
-        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm)
+        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t& strm)
         {
-            strm = nullptr;
             return false;
         }
-        virtual bool closeStream(stream_t* strm) { return true; }
+        virtual bool closeStream(stream_t& strm) { return true; }
 
         virtual bool setLengthOfFile(void* nFileHandle, u64 inLength) { return false; }
         virtual bool getLengthOfFile(void* nFileHandle, u64& outLength)

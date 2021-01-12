@@ -129,8 +129,8 @@ namespace xcore
     void devicemanager_t::resolve()
     {
         // "data"   - "appdir:\data\"
-        // "appdir" - "c:\projects\a\"
-        // resolves "data" as "c:\projects\a\data\"
+        // "appdir" - "c:\games\sudoku\"
+        // resolves "data:\textures\" as "c:\games\sudoku\data\textures\"
 
         struct indexstack_t
         {

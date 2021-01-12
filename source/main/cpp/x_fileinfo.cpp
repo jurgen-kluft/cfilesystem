@@ -33,11 +33,11 @@ namespace xcore
 
     bool fileinfo_t::isRooted() const { return mPath.isRooted(); }
     bool fileinfo_t::exists() const { return sExists(mPath); }
-    bool fileinfo_t::create(stream_t*& outFilestream) const { return (sCreate(mPath, outFilestream)); }
+    bool fileinfo_t::create(stream_t& outFilestream) const { return (sCreate(mPath, outFilestream)); }
 
     bool fileinfo_t::create()
     {
-        stream_t* fs;
+        stream_t fs;
         if (sCreate(mPath, fs))
         {
             mParent->close(fs);
@@ -48,9 +48,9 @@ namespace xcore
 
     bool fileinfo_t::remove() { return sDelete(mPath); }
     void fileinfo_t::refresh() {}
-    bool fileinfo_t::open(stream_t*& outFilestream) { return (sCreate(mPath, outFilestream)); }
-    bool fileinfo_t::openRead(stream_t*& outFileStream) { return sOpenRead(mPath, outFileStream); }
-    bool fileinfo_t::openWrite(stream_t*& outFileStream) { return sOpenWrite(mPath, outFileStream); }
+    bool fileinfo_t::open(stream_t& outFilestream) { return (sCreate(mPath, outFilestream)); }
+    bool fileinfo_t::openRead(stream_t& outFileStream) { return sOpenRead(mPath, outFileStream); }
+    bool fileinfo_t::openWrite(stream_t& outFileStream) { return sOpenWrite(mPath, outFileStream); }
     u64  fileinfo_t::readAllBytes(xbyte* buffer, u64 count) { return sReadAllBytes(mPath, buffer, count); }
     u64  fileinfo_t::writeAllBytes(const xbyte* buffer, u64 count) { return sWriteAllBytes(mPath, buffer, count); }
 
@@ -176,7 +176,7 @@ namespace xcore
         return false;
     }
 
-    bool fileinfo_t::sCreate(const filepath_t& filepath, stream_t*& outFileStream)
+    bool fileinfo_t::sCreate(const filepath_t& filepath, stream_t& outFileStream)
     {
         filedevice_t* device;
         filepath_t    syspath = filesys_t::resolve(filepath, device);
@@ -228,7 +228,7 @@ namespace xcore
         return false;
     }
 
-    bool fileinfo_t::sOpen(const filepath_t& filepath, stream_t*& outFileStream)
+    bool fileinfo_t::sOpen(const filepath_t& filepath, stream_t& outFileStream)
     {
         filedevice_t* device;
         filepath_t    syspath = filesys_t::resolve(filepath, device);
@@ -241,7 +241,7 @@ namespace xcore
         }
         return false;
     }
-    bool fileinfo_t::sOpenRead(const filepath_t& filepath, stream_t*& outFileStream)
+    bool fileinfo_t::sOpenRead(const filepath_t& filepath, stream_t& outFileStream)
     {
         filedevice_t* device;
         filepath_t    syspath = filesys_t::resolve(filepath, device);
@@ -254,7 +254,7 @@ namespace xcore
         }
         return false;
     }
-    bool fileinfo_t::sOpenWrite(const filepath_t& filepath, stream_t*& outFileStream)
+    bool fileinfo_t::sOpenWrite(const filepath_t& filepath, stream_t& outFileStream)
     {
         filedevice_t* device;
         filepath_t    syspath = filesys_t::resolve(filepath, device);
@@ -315,11 +315,11 @@ namespace xcore
     u64 fileinfo_t::sReadAllBytes(const filepath_t& filepath, xbyte* buffer, u64 count)
     {
         u64        rc     = 0;
-        istream_t* stream = filesys_t::create_filestream(filepath, FileMode_Open, FileAccess_Read, FileOp_Sync);
-        if (stream->isOpen())
+        stream_t stream = filesys_t::create_filestream(filepath, FileMode_Open, FileAccess_Read, FileOp_Sync);
+        if (stream.isOpen())
         {
-            rc = stream->read(buffer, count);
-            stream->close();
+            rc = stream.read(buffer, count);
+            stream.close();
         }
         filesys_t::destroy(stream);
         return rc;
@@ -328,12 +328,12 @@ namespace xcore
     u64 fileinfo_t::sWriteAllBytes(const filepath_t& filepath, const xbyte* buffer, u64 count)
     {
         u64        rc     = 0;
-        istream_t* stream = filesys_t::create_filestream(filepath, FileMode_Open, FileAccess_Write, FileOp_Sync);
-        if (stream->isOpen())
+        stream_t stream = filesys_t::create_filestream(filepath, FileMode_Open, FileAccess_Write, FileOp_Sync);
+        if (stream.isOpen())
         {
-            stream->setLength(0);
-            rc = stream->write(buffer, count);
-            stream->close();
+            stream.setLength(0);
+            rc = stream.write(buffer, count);
+            stream.close();
         }
         filesys_t::destroy(stream);
         return rc;

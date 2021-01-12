@@ -47,8 +47,8 @@ namespace xcore
         virtual bool writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) { return false; }
         virtual bool closeFile(void* nFileHandle) { return false; }
 
-        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm) { return false; }
-        virtual bool closeStream(stream_t* strm) { return false; }
+        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t& strm) { return false; }
+        virtual bool closeStream(stream_t& strm) { return false; }
 
         virtual bool setLengthOfFile(void* nFileHandle, u64 inLength) { return false; }
         virtual bool getLengthOfFile(void* nFileHandle, u64& outLength) { return false; }
@@ -105,7 +105,7 @@ namespace xcore
         file_device->mAllocator->destruct(file_device);
     }
 
-    filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes const& pDrivePath, bool boCanWrite)
+    filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t const& pDrivePath, bool boCanWrite)
     {
         dirpath_t drivePath = filesystem_t::dirpath(pDrivePath);
         return x_CreateFileDeviceMac(allocator, drivePath, boCanWrite);

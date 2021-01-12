@@ -54,8 +54,8 @@ namespace xcore
         virtual bool writeFile(void* pHandle, u64 pos, void const* buffer, u64 count, u64& outNumBytesWritten) = 0;
         virtual bool closeFile(void* pHandle)                                                                  = 0;
 
-        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm) = 0;
-        virtual bool closeStream(stream_t* strm)                                                           = 0;
+        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t& strm) = 0;
+        virtual bool closeStream(stream_t& strm)                                                           = 0;
 
         virtual bool setLengthOfFile(void* pHandle, u64 inLength)   = 0;
         virtual bool getLengthOfFile(void* pHandle, u64& outLength) = 0;

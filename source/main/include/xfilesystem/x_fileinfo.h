@@ -49,15 +49,15 @@ namespace xcore
         bool setAttrs(fileattrs_t fattrs);
         bool setTimes(filetimes_t ftimes);
 
-        bool create(stream_t*&) const;
+        bool create();
+        bool create(stream_t&) const;
         bool exists() const;
         bool remove();
         void refresh();
-        bool create();
 
-        bool open(stream_t*& outFileStream);
-        bool openRead(stream_t*& outFileStream);
-        bool openWrite(stream_t*& outFileStream);
+        bool open(stream_t& outFileStream);
+        bool openRead(stream_t& outFileStream);
+        bool openWrite(stream_t& outFileStream);
         u64  readAllBytes(xbyte* buffer, u64 count);
         u64  writeAllBytes(const xbyte* buffer, u64 count);
 
@@ -90,7 +90,7 @@ namespace xcore
         bool        operator!=(const fileinfo_t&) const;
 
         static bool sExists(const filepath_t& filepath);
-        static bool sCreate(const filepath_t& filepath, stream_t*& outFileStream);
+        static bool sCreate(const filepath_t& filepath, stream_t& outFileStream);
         static bool sDelete(const filepath_t& filepath);
 
         static bool sGetFileAttributes(const filepath_t& filepath, fileattrs_t& outAttr);
@@ -103,9 +103,9 @@ namespace xcore
         static bool sIsHidden(const filepath_t& filename);
         static bool sIsSystem(const filepath_t& filename);
 
-        static bool sOpen(const filepath_t& filename, stream_t*& outFileStream);
-        static bool sOpenRead(const filepath_t& filename, stream_t*& outFileStream);
-        static bool sOpenWrite(const filepath_t& filename, stream_t*& outFileStream);
+        static bool sOpen(const filepath_t& filename, stream_t& outFileStream);
+        static bool sOpenRead(const filepath_t& filename, stream_t& outFileStream);
+        static bool sOpenWrite(const filepath_t& filename, stream_t& outFileStream);
 
         static u64 sReadAllBytes(const filepath_t& filename, xbyte* buffer, u64 count);
         static u64 sWriteAllBytes(const filepath_t& filename, const xbyte* buffer, u64 count);
