@@ -30,7 +30,6 @@ namespace xcore
         bool        mFileExists;
         filetimes_t mFileTimes;
         fileattrs_t mFileAttributes;
-
         filesys_t* mParent;
         filepath_t mPath;
 

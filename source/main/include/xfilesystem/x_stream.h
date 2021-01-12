@@ -13,6 +13,8 @@
 namespace xcore
 {
     class istream_t;
+    class filehandle_t;
+    class filedevice_t;
 
     ///< stream_t object
     ///< The main interface of a stream object, user deals with this object most of the time.
@@ -37,14 +39,8 @@ namespace xcore
         void close();
         void flush();
 
-        u64  read(xbyte* buffer, u64 count);
-        u64  write(const xbyte* buffer, u64 count);
-
-        bool beginRead(xbyte* buffer, u64 count);
-        s64  endRead(bool block = true);
-        
-		bool beginWrite(const xbyte* buffer, u64 count);
-        s64  endWrite(bool block = true);
+        reader_t* get_reader();
+        writer_t* get_writer();
 
     protected:
         stream_t(istream_t*);
@@ -52,10 +48,15 @@ namespace xcore
 
         stream_t& operator=(const stream_t&) { return *this; }
 
+        filedevice_t* m_filedevice;
+        filehandle_t* m_filehandle;
         istream_t* m_pimpl;
+        u64 m_offset;
+        u32 m_caps;
 
         friend class filesystem_t;
 		friend class filesys_t;
+        friend class stream_t;
     };
 
     void xstream_copy(stream_t* src, stream_t* dst, buffer_t& buffer);

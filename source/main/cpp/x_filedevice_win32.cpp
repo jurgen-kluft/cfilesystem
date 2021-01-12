@@ -112,7 +112,7 @@ namespace xcore
         file_device->mAllocator->destruct(file_device);
     }
 
-    filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes const& pDrivePath, bool boCanWrite)
+    filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t const& pDrivePath, bool boCanWrite)
     {
         dirpath_t drivePath = filesystem_t::dirpath(pDrivePath);
         return x_CreateFileDevicePC(allocator, drivePath, boCanWrite);
@@ -149,7 +149,7 @@ namespace xcore
         path_t::as_utf16(szFilename, filename16);
 
         bool   result      = false;
-        HANDLE nFileHandle = ::CreateFileW(LPCWSTR(filename16.m_runes.m_utf16.m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        HANDLE nFileHandle = ::CreateFileW(LPCWSTR(filename16.m_path.m_runes.m_utf16.m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
         if (nFileHandle != INVALID_HANDLE_VALUE)
         {
             ::CloseHandle((HANDLE)nFileHandle);
@@ -170,7 +170,7 @@ namespace xcore
         path_t filename16;
         path_t::as_utf16(szFilename, filename16);
 
-        HANDLE handle = ::CreateFileW(LPCWSTR(filename16.m_runes.m_utf16.m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        HANDLE handle = ::CreateFileW(LPCWSTR(filename16.m_path.m_runes.m_utf16.m_str), fileMode, shareType, NULL, disposition, attrFlags, NULL);
         nFileHandle   = handle;
 
         //path_t::release_utf16(szFilename, filename16);
@@ -188,7 +188,7 @@ namespace xcore
         path_t filename16;
         path_t::as_utf16(szFilename, filename16);
 
-        HANDLE handle = ::CreateFileW((LPCWSTR)filename16.m_runes.m_utf16.m_str, fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        HANDLE handle = ::CreateFileW((LPCWSTR)filename16.m_path.m_runes.m_utf16.m_str, fileMode, shareType, NULL, disposition, attrFlags, NULL);
         nFileHandle   = handle;
 
         //path_t::release_utf16(szFilename, filename16);
@@ -269,7 +269,7 @@ namespace xcore
         path_t tofilename16;
         path_t::as_utf16(szToFilename, tofilename16);
 
-        BOOL result = ::MoveFileW((LPCWSTR)filename16.m_runes.m_utf16.m_str, (LPCWSTR)tofilename16.m_str) != 0;
+        BOOL result = ::MoveFileW((LPCWSTR)filename16.m_path.m_runes.m_utf16.m_str, (LPCWSTR)tofilename16.m_path.m_runes.m_utf16.m_str) != 0;
 
         //path_t::release_utf16(szFilename, filename16);
         //path_t::release_utf16(szToFilename, tofilename16);
@@ -289,7 +289,7 @@ namespace xcore
         path_t tofilename16;
         path_t::as_utf16(szToFilename, tofilename16);
 
-        BOOL result = ::CopyFileW((LPCWSTR)filename16.m_runes.m_utf16.m_str, (LPCWSTR)tofilename16.m_str, failIfExists) != 0;
+        BOOL result = ::CopyFileW((LPCWSTR)filename16.m_path.m_runes.m_utf16.m_str, (LPCWSTR)tofilename16.m_path.m_runes.m_utf16.m_str, failIfExists) != 0;
 
         //path_t::release_utf16(szFilename, filename16);
         //path_t::release_utf16(szToFilename, tofilename16);
@@ -314,7 +314,7 @@ namespace xcore
         path_t::as_utf16(szFilename, filename16);
 
         bool result = false;
-        if (::DeleteFileW(LPCWSTR(filename16.m_runes.m_utf16.m_str)))
+        if (::DeleteFileW(LPCWSTR(filename16.m_path.m_runes.m_utf16.m_str)))
         {
             result = true;
         }
@@ -357,18 +357,18 @@ namespace xcore
 
             FILETIME _creationTime;
             u64      uCreationTime       = creationTime.toFileTime();
-            _creationTime.dwHighDateTime = x_mem::hiu32(uCreationTime);
-            _creationTime.dwLowDateTime  = x_mem::lou32(uCreationTime);
+            _creationTime.dwHighDateTime = xmem::hiu32(uCreationTime);
+            _creationTime.dwLowDateTime  = xmem::lou32(uCreationTime);
 
             FILETIME _lastAccessTime;
             u64      uLastAccessTime       = lastAccessTime.toFileTime();
-            _lastAccessTime.dwHighDateTime = x_mem::hiu32(uLastAccessTime);
-            _lastAccessTime.dwLowDateTime  = x_mem::lou32(uLastAccessTime);
+            _lastAccessTime.dwHighDateTime = xmem::hiu32(uLastAccessTime);
+            _lastAccessTime.dwLowDateTime  = xmem::lou32(uLastAccessTime);
 
             FILETIME _lastWriteTime;
             u64      uLastWriteTime       = lastWriteTime.toFileTime();
-            _lastWriteTime.dwHighDateTime = x_mem::hiu32(uLastWriteTime);
-            _lastWriteTime.dwLowDateTime  = x_mem::lou32(uLastWriteTime);
+            _lastWriteTime.dwHighDateTime = xmem::hiu32(uLastWriteTime);
+            _lastWriteTime.dwLowDateTime  = xmem::lou32(uLastWriteTime);
 
             ::SetFileTime((HANDLE)nFileHandle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
             closeFile(nFileHandle);
@@ -386,9 +386,9 @@ namespace xcore
             FILETIME _lastAccessTime;
             FILETIME _lastWriteTime;
             ::GetFileTime((HANDLE)nFileHandle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
-            datetime_t CreationTime   = datetime_t::sFromFileTime((u64)x_mem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
-            datetime_t LastAccessTime = datetime_t::sFromFileTime((u64)x_mem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
-            datetime_t LastWriteTime  = datetime_t::sFromFileTime((u64)x_mem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
+            datetime_t CreationTime   = datetime_t::sFromFileTime((u64)xmem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
+            datetime_t LastAccessTime = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
+            datetime_t LastWriteTime  = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
             ftimes.setCreationTime(CreationTime);
             ftimes.setLastAccessTime(LastAccessTime);
             ftimes.setLastWriteTime(LastWriteTime);
@@ -413,7 +413,7 @@ namespace xcore
         path_t filename16;
         path_t::as_utf16(szFilename, filename16);
 
-        bool result = ::SetFileAttributesW(LPCWSTR(filename16.m_runes.m_utf16.m_str), dwFileAttributes) == TRUE;
+        bool result = ::SetFileAttributesW(LPCWSTR(filename16.m_path.m_runes.m_utf16.m_str), dwFileAttributes) == TRUE;
 
         //path_t::release_utf16(szFilename, filename16);
 
@@ -428,7 +428,7 @@ namespace xcore
         path_t::as_utf16(szFilename, filename16);
 
         bool result      = false;
-        dwFileAttributes = ::GetFileAttributesW(LPCWSTR(filename16.m_runes.m_utf16.m_str));
+        dwFileAttributes = ::GetFileAttributesW(LPCWSTR(filename16.m_path.m_runes.m_utf16.m_str));
         if (dwFileAttributes != INVALID_FILE_ATTRIBUTES)
         {
             result = true;
@@ -454,18 +454,18 @@ namespace xcore
 
         FILETIME _creationTime;
         u64      uCreationTime       = creationTime.toFileTime();
-        _creationTime.dwHighDateTime = x_mem::hiu32(uCreationTime);
-        _creationTime.dwLowDateTime  = x_mem::lou32(uCreationTime);
+        _creationTime.dwHighDateTime = xmem::hiu32(uCreationTime);
+        _creationTime.dwLowDateTime  = xmem::lou32(uCreationTime);
 
         FILETIME _lastAccessTime;
         u64      uLastAccessTime       = lastAccessTime.toFileTime();
-        _lastAccessTime.dwHighDateTime = x_mem::hiu32(uLastAccessTime);
-        _lastAccessTime.dwLowDateTime  = x_mem::lou32(uLastAccessTime);
+        _lastAccessTime.dwHighDateTime = xmem::hiu32(uLastAccessTime);
+        _lastAccessTime.dwLowDateTime  = xmem::lou32(uLastAccessTime);
 
         FILETIME _lastWriteTime;
         u64      uLastWriteTime       = lastWriteTime.toFileTime();
-        _lastWriteTime.dwHighDateTime = x_mem::hiu32(uLastWriteTime);
-        _lastWriteTime.dwLowDateTime  = x_mem::lou32(uLastWriteTime);
+        _lastWriteTime.dwHighDateTime = xmem::hiu32(uLastWriteTime);
+        _lastWriteTime.dwLowDateTime  = xmem::lou32(uLastWriteTime);
 
         ::SetFileTime((HANDLE)nFileHandle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
         return true;
@@ -477,9 +477,9 @@ namespace xcore
         FILETIME _lastAccessTime;
         FILETIME _lastWriteTime;
         ::GetFileTime((HANDLE)nFileHandle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
-        datetime_t CreationTime   = datetime_t::sFromFileTime((u64)x_mem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
-        datetime_t LastAccessTime = datetime_t::sFromFileTime((u64)x_mem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
-        datetime_t LastWriteTime  = datetime_t::sFromFileTime((u64)x_mem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
+        datetime_t CreationTime   = datetime_t::sFromFileTime((u64)xmem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
+        datetime_t LastAccessTime = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
+        datetime_t LastWriteTime  = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
         ftimes.setCreationTime(CreationTime);
         ftimes.setLastAccessTime(LastAccessTime);
         ftimes.setLastWriteTime(LastWriteTime);
@@ -495,7 +495,7 @@ namespace xcore
 
         path_t path16;
         path_t::as_utf16(szDirPath, path16);
-        HANDLE handle = ::CreateFileW((LPCWSTR)path16.m_str, fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        HANDLE handle = ::CreateFileW((LPCWSTR)path16.m_path.m_runes.m_utf16.m_str, fileMode, shareType, NULL, disposition, attrFlags, NULL);
         //path_t::release_utf16(szDirPath, path16);
         return handle;
     }
@@ -515,7 +515,7 @@ namespace xcore
     {
         path_t filename16;
         path_t::as_utf16(szDirPath, filename16);
-        BOOL result = ::CreateDirectoryW(LPCWSTR(filename16.m_runes.m_utf16.m_str), NULL) != 0;
+        BOOL result = ::CreateDirectoryW(LPCWSTR(filename16.m_path.m_runes.m_utf16.m_str), NULL) != 0;
         //path_t::release_utf16(szDirPath, filename16);
         return result;
     }
@@ -527,7 +527,7 @@ namespace xcore
         path_t::as_utf16(szDirPath, dirpath16);
         path_t todirpath16;
         path_t::as_utf16(szToDirPath, todirpath16);
-        BOOL result = ::MoveFileExW((LPCWSTR)dirpath16.m_str, (LPCWSTR)todirpath16.m_str, dwFlags) != 0;
+        BOOL result = ::MoveFileExW((LPCWSTR)dirpath16.m_path.m_runes.m_utf16.m_str, (LPCWSTR)todirpath16.m_path.m_runes.m_utf16.m_str, dwFlags) != 0;
         //path_t::release_utf16(szDirPath, dirpath16);
         //path_t::release_utf16(szToDirPath, todirpath16);
         return result;
@@ -578,11 +578,11 @@ namespace xcore
 
         xdirwalker(dirpath_t const& dirpath) : mNodeHeap(nullptr), mDirPath()
         {
-            mDirPath  = filesys_t::get_xpath(dirpath);
+            mDirPath  = filesys_t::get_path(dirpath);
             mNodeHeap = filesys_t::get_filesystem(dirpath)->m_allocator;
 
-            *mWildcard.m_end++ = '*';
-            *mWildcard.m_end   = '\0';
+            *mWildcard.m_runes.m_utf16.m_end++ = '*';
+            *mWildcard.m_runes.m_utf16.m_end   = '\0';
         }
 
         bool enter_dir()
@@ -592,12 +592,11 @@ namespace xcore
             concatenate(mDirPath.m_path, mWildcard, mDirPath.m_alloc, 16);
             path_t dirpath16;
             path_t::as_utf16(mDirPath, dirpath16);
-            nextnode->mFindHandle = ::FindFirstFileW(LPCWSTR(dirpath16.m_str), &nextnode->mFindData);
+            nextnode->mFindHandle = ::FindFirstFileW(LPCWSTR(dirpath16.m_path.m_runes.m_utf16.m_str), &nextnode->mFindData);
             //path_t::release_utf16(mDirPath, dirpath16);
 
-
-            mDirPath.m_path.m_end -= 1;
-            *mDirPath.m_path.m_end = '\0';
+            mDirPath.m_path.m_runes.m_utf16.m_end -= 1;
+            *mDirPath.m_path.m_runes.m_utf16.m_end = '\0';
 
             if (nextnode->mFindHandle != INVALID_HANDLE_VALUE)
             {
@@ -621,17 +620,17 @@ namespace xcore
         bool push_dir()
         {
             path_t dirname;
-            dirname.m_str = (utf16::prune)mDirStack->mFindData.cFileName;
-            dirname.m_end = dirname.m_str;
-            while (*dirname.m_end != '\0')
+            dirname.m_path.m_runes.m_utf16.m_str = (utf16::prune)mDirStack->mFindData.cFileName;
+            dirname.m_path.m_runes.m_utf16.m_end = dirname.m_path.m_runes.m_utf16.m_str;
+            while (*dirname.m_path.m_runes.m_utf16.m_end != '\0')
             {
-                dirname.m_end++;
+                dirname.m_path.m_runes.m_utf16.m_end++;
             }
-            path_t::append_utf16(mDirPath, dirname);
+            concatenate(mDirPath.m_path, dirname.m_path, mDirPath.m_alloc, 4);
 
             runez_t<utf32::rune, 4> slash;
-            *slash.m_end++ = '\\';
-            *slash.m_end   = '\0';
+            *slash.m_runes.m_utf16.m_end++ = '\\';
+            *slash.m_runes.m_utf16.m_end   = '\0';
 
             concatenate(mDirPath.m_path, slash, mDirPath.m_alloc, 16);
 
@@ -647,7 +646,7 @@ namespace xcore
 
         bool enumerate_dir(enumerate_delegate_t& enumerator)
         {
-            path_t& dirinfopath = filesys_t::get_xpath(mDirInfo);
+            path_t& dirinfopath = filesys_t::get_path(mDirInfo);
             dirinfopath.copy_dirpath(mDirPath.m_path);
             return (enumerator(mLevel, nullptr, &mDirInfo));
         }
@@ -658,16 +657,16 @@ namespace xcore
             // FilePath = DirPath + mNode->mFindData.cFileName
             mFilePath.m_path.clear();
 
-            utf16::runes filename;
-            filename.m_str = (utf16::prune)mDirStack->mFindData.cFileName;
-            filename.m_end = filename.m_str;
-            filename.m_eos = (utf16::prune)mDirStack->mFindData.cFileName[sizeof(mDirStack->mFindData.cFileName) - 1];
-            while (filename.m_end < filename.m_eos && *filename.m_end != '\0')
+            runes_t filename;
+            filename.m_runes.m_utf16.m_str = (utf16::prune)mDirStack->mFindData.cFileName;
+            filename.m_runes.m_utf16.m_end = filename.m_runes.m_utf16.m_str;
+            filename.m_runes.m_utf16.m_eos = (utf16::prune)mDirStack->mFindData.cFileName[sizeof(mDirStack->mFindData.cFileName) - 1];
+            while (filename.m_runes.m_utf16.m_end < filename.m_runes.m_utf16.m_eos && *filename.m_runes.m_utf16.m_end != '\0')
             {
-                filename.m_end++;
+                filename.m_runes.m_utf16.m_end++;
             }
             mFilePath.copy_dirpath(mDirPath.m_path);
-            path_t::append_utf16(mFilePath, filename);
+            concatenate(mFilePath.m_path, filename, mFilePath.m_alloc, 4);
 
             return (enumerator(mLevel, &mFileInfo, nullptr));
         }
@@ -733,7 +732,7 @@ namespace xcore
 
     struct enumerate_delegate_delete_dir : public enumerate_delegate_t
     {
-        utf16::alloc* mStrAlloc;
+        runes_alloc_t* mStrAlloc;
 
         virtual bool operator()(s32 depth, const fileinfo_t* finf, const dirinfo_t* dinf)
         {
@@ -743,10 +742,10 @@ namespace xcore
                 path_t    runes16;
                 path_t::as_utf16(fp, runes16);
                 ;
-                DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)runes16.m_str);
+                DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)runes16.m_path.m_runes.m_utf16.m_str);
                 if (dwFileAttributes & FILE_ATTRIBUTE_READONLY) // change read-only file mode
-                    ::SetFileAttributesW((LPCWSTR)runes16.m_str, dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
-                ::DeleteFileW((LPCWSTR)runes16.m_str);
+                    ::SetFileAttributesW((LPCWSTR)runes16.m_path.m_runes.m_utf16.m_str, dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
+                ::DeleteFileW((LPCWSTR)runes16.m_path.m_runes.m_utf16.m_str);
 
                 //path_t::release_utf16(fp, runes16);
             }
@@ -774,18 +773,18 @@ namespace xcore
 
             FILETIME _creationTime;
             u64      uCreationTime       = creationTime.toFileTime();
-            _creationTime.dwHighDateTime = x_mem::hiu32(uCreationTime);
-            _creationTime.dwLowDateTime  = x_mem::lou32(uCreationTime);
+            _creationTime.dwHighDateTime = xmem::hiu32(uCreationTime);
+            _creationTime.dwLowDateTime  = xmem::lou32(uCreationTime);
 
             FILETIME _lastAccessTime;
             u64      uLastAccessTime       = lastAccessTime.toFileTime();
-            _lastAccessTime.dwHighDateTime = x_mem::hiu32(uLastAccessTime);
-            _lastAccessTime.dwLowDateTime  = x_mem::lou32(uLastAccessTime);
+            _lastAccessTime.dwHighDateTime = xmem::hiu32(uLastAccessTime);
+            _lastAccessTime.dwLowDateTime  = xmem::lou32(uLastAccessTime);
 
             FILETIME _lastWriteTime;
             u64      uLastWriteTime       = lastWriteTime.toFileTime();
-            _lastWriteTime.dwHighDateTime = x_mem::hiu32(uLastWriteTime);
-            _lastWriteTime.dwLowDateTime  = x_mem::lou32(uLastWriteTime);
+            _lastWriteTime.dwHighDateTime = xmem::hiu32(uLastWriteTime);
+            _lastWriteTime.dwLowDateTime  = xmem::lou32(uLastWriteTime);
 
             ::SetFileTime(handle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
             sCloseDir(handle);
@@ -807,9 +806,9 @@ namespace xcore
             datetime_t outCreationTime;
             datetime_t outLastAccessTime;
             datetime_t outLastWriteTime;
-            outCreationTime   = datetime_t::sFromFileTime((u64)x_mem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
-            outLastAccessTime = datetime_t::sFromFileTime((u64)x_mem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
-            outLastWriteTime  = datetime_t::sFromFileTime((u64)x_mem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
+            outCreationTime   = datetime_t::sFromFileTime((u64)xmem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
+            outLastAccessTime = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
+            outLastWriteTime  = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
             ftimes.setCreationTime(outCreationTime);
             ftimes.setLastAccessTime(outLastAccessTime);
             ftimes.setLastWriteTime(outLastWriteTime);
@@ -833,7 +832,7 @@ namespace xcore
 
         path_t dirpath16;
         path_t::as_utf16(szDirPath, dirpath16);
-        bool result = ::SetFileAttributesW((LPCWSTR)dirpath16.m_str, dwFileAttributes) == TRUE;
+        bool result = ::SetFileAttributesW((LPCWSTR)dirpath16.m_path.m_runes.m_utf16.m_str, dwFileAttributes) == TRUE;
         //path_t::release_utf16(szDirPath, dirpath16);
         return result;
     }
@@ -844,7 +843,7 @@ namespace xcore
         path_t::as_utf16(szDirPath, dirpath16);
 
         bool  result           = false;
-        DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)dirpath16.m_str);
+        DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)dirpath16.m_path.m_runes.m_utf16.m_str);
         if (dwFileAttributes != INVALID_FILE_ATTRIBUTES)
         {
             result = true;

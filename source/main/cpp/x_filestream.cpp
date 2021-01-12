@@ -10,315 +10,236 @@
 
 #include "xfilesystem/private/x_enumerations.h"
 #include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/private/x_istream.h"
 
 namespace xcore
 {
-    class xifilestream : public istream_t
+    class filestream_t : public istream_t
     {
-        alloc_t*      mAllocator;
-        filedevice_t* mFileDevice;
-        s32           mRefCount;
-        void*         mFileHandle;
-        s64           mOffset;
-
-        enum ECaps
-        {
-            NONE      = 0x0000,
-            CAN_READ  = 0x0001,
-            CAN_SEEK  = 0x0002,
-            CAN_WRITE = 0x0004,
-            CAN_ASYNC = 0x0008,
-            USE_READ  = 0x1000,
-            USE_SEEK  = 0x2000,
-            USE_WRITE = 0x4000,
-            USE_ASYNC = 0x8000,
-        };
-        bits_t<u32> mCaps;
-
-        ~xifilestream(void);
-
     public:
-        xifilestream() : mAllocator(nullptr), mFileDevice(nullptr), mRefCount(2), mFileHandle(INVALID_FILE_HANDLE), mCaps(0) {}
-        xifilestream(alloc_t* allocator, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);
-
-        virtual void hold() { mRefCount++; }
-        virtual s32  release()
-        {
-            --mRefCount;
-            return mRefCount;
-        }
-        virtual void destroy()
-        {
-            if (release() == 0)
-            {
-                mAllocator->deallocate(this);
-            }
-        }
-
-        virtual bool canRead() const;
-        virtual bool canSeek() const;
-        virtual bool canWrite() const;
-        virtual bool isOpen() const;
-        virtual bool isAsync() const;
-        virtual u64  getLength() const;
-        virtual void setLength(u64 length);
-        virtual s64  getPos() const;
-        virtual s64  setPos(s64 pos);
-        virtual void close();
-        virtual void flush();
-
-        virtual u64 read(xbyte* buffer, u64 count);
-        virtual u64 write(const xbyte* buffer, u64 count);
-
-        virtual bool beginRead(xbyte* buffer, u64 count);
-        virtual s64  endRead(bool block);
-        virtual bool beginWrite(const xbyte* buffer, u64 count);
-        virtual s64  endWrite(bool block);
-
-        XCORE_CLASS_PLACEMENT_NEW_DELETE
+        virtual u64  getLength(filedevice_t* fd, filehandle_t* fh);
+        virtual void setLength(filedevice_t* fd, filehandle_t* fh, u64 length);
+        virtual s64  setPos(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& current, s64 pos);
+        virtual void close(filedevice_t* fd, filehandle_t*& fh);
+        virtual s64 read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, xbyte* buffer, s64 count);
+        virtual s64 write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const xbyte* buffer, s64 count);
     };
+
+    enum ECaps
+    {
+        NONE      = 0x0000,
+        CAN_READ  = 0x0001,
+        CAN_SEEK  = 0x0002,
+        CAN_WRITE = 0x0004,
+        CAN_ASYNC = 0x0008,
+        USE_READ  = 0x1000,
+        USE_SEEK  = 0x2000,
+        USE_WRITE = 0x4000,
+        USE_ASYNC = 0x8000,
+    };
+
+    //extern istream_t* get_filestream();
+    static filestream_t s_filestream;
+    istream_t* get_filestream()
+    {
+        return &s_filestream;
+    }
 
     // ---------------------------------------------------------------------------------------------
 
-    xifilestream::xifilestream(alloc_t* allocator, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op) : mAllocator(allocator), mFileDevice(fd), mRefCount(1), mFileHandle(INVALID_FILE_HANDLE), mCaps(NONE)
+    void* open_filestream(filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, u32 out_caps)
     {
         bool can_read, can_write, can_seek, can_async;
-        // mFileDevice->caps(filename, can_read, can_write, can_seek, can_async);
+        
+        // fd->caps(filename, can_read, can_write, can_seek, can_async);
         can_read  = true;
         can_write = true;
         can_seek  = true;
         can_async = true;
-        mCaps.set(CAN_WRITE, can_write);
-        mCaps.set(CAN_READ, can_read);
-        mCaps.set(CAN_SEEK, can_seek);
-        mCaps.set(CAN_ASYNC, can_async);
+        
+        enum_t<ECaps> caps;
+        caps.test_set(CAN_WRITE, can_write);
+        caps.test_set(CAN_READ, can_read);
+        caps.test_set(CAN_SEEK, can_seek);
+        caps.test_set(CAN_ASYNC, can_async);
 
-        mCaps.set(USE_READ, true);
-        mCaps.set(USE_SEEK, can_seek);
-        mCaps.set(USE_WRITE, can_write && ((access & FileAccess_Write) != 0));
-        mCaps.set(USE_ASYNC, can_async && (op == FileOp_Async));
+        caps.test_set(USE_READ, true);
+        caps.test_set(USE_SEEK, can_seek);
+        caps.test_set(USE_WRITE, can_write && ((access & FileAccess_Write) != 0));
+        caps.test_set(USE_ASYNC, can_async && (op == FileOp_Async));
 
+        void* handle = nullptr;
         switch (mode)
         {
-            case FileMode_CreateNew:
+        case FileMode_CreateNew:
+        {
+            if (caps.is_set(CAN_WRITE))
             {
-                if (mCaps.is_set(CAN_WRITE))
+                if (fd->hasFile(filename) == xFALSE)
                 {
-                    if (mFileDevice->hasFile(filename) == xFALSE)
-                    {
-                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
-                        mFileDevice->setLengthOfFile(mFileHandle, 0);
-                    }
+                    fd->openFile(filename, mode, access, op, handle);
+                    fd->setLengthOfFile(handle, 0);
                 }
             }
-            break;
-            case FileMode_Create:
+        }
+        break;
+        case FileMode_Create:
+        {
+            if (caps.is_set(CAN_WRITE))
             {
-                if (mCaps.is_set(CAN_WRITE))
+                if (fd->hasFile(filename) == xTRUE)
                 {
-                    if (mFileDevice->hasFile(filename) == xTRUE)
-                    {
-                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
-                        mFileDevice->setLengthOfFile(mFileHandle, 0);
-                    }
-                    else
-                    {
-                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
-                        mFileDevice->setLengthOfFile(mFileHandle, 0);
-                    }
-                }
-            }
-            break;
-            case FileMode_Open:
-            {
-                if (mFileDevice->hasFile(filename) == xTRUE)
-                {
-                    mFileDevice->openFile(filename, mode, access, op, mFileHandle);
+                    fd->openFile(filename, mode, access, op, handle);
+                    fd->setLengthOfFile(handle, 0);
                 }
                 else
                 {
-                    mFileHandle = INVALID_FILE_HANDLE;
+                    fd->openFile(filename, mode, access, op, handle);
+                    fd->setLengthOfFile(handle, 0);
                 }
             }
-            break;
-            case FileMode_OpenOrCreate:
-            {
-                {
-                    if (mFileDevice->hasFile(filename) == xTRUE)
-                    {
-                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
-                        mFileDevice->setLengthOfFile(mFileHandle, 0);
-                    }
-                    else
-                    {
-                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
-                        mFileDevice->setLengthOfFile(mFileHandle, 0);
-                    }
-                }
-            }
-            break;
-            case FileMode_Truncate:
-            {
-                if (mCaps.is_set(CAN_WRITE))
-                {
-                    if (mFileDevice->hasFile(filename) == xTRUE)
-                    {
-                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
-                        if (mFileHandle != INVALID_FILE_HANDLE)
-                        {
-                            mFileDevice->setLengthOfFile(mFileHandle, 0);
-                        }
-                    }
-                }
-            }
-            break;
-            case FileMode_Append:
-            {
-                if (mCaps.is_set(CAN_WRITE))
-                {
-                    if (mFileDevice->hasFile(filename) == xTRUE)
-                    {
-                        mFileDevice->openFile(filename, mode, access, op, mFileHandle);
-                        if (mFileHandle != INVALID_FILE_HANDLE)
-                        {
-                            mCaps.set(USE_READ, false);
-                            mCaps.set(USE_SEEK, false);
-                            mCaps.set(USE_WRITE, true);
-                        }
-                    }
-                }
-            }
-            break;
         }
+        break;
+        case FileMode_Open:
+        {
+            if (fd->hasFile(filename) == xTRUE)
+            {
+                fd->openFile(filename, mode, access, op, handle);
+            }
+            else
+            {
+                handle = INVALID_FILE_HANDLE;
+            }
+        }
+        break;
+        case FileMode_OpenOrCreate:
+        {
+            {
+                if (fd->hasFile(filename) == xTRUE)
+                {
+                    fd->openFile(filename, mode, access, op, handle);
+                    fd->setLengthOfFile(handle, 0);
+                }
+                else
+                {
+                    fd->openFile(filename, mode, access, op, handle);
+                    fd->setLengthOfFile(handle, 0);
+                }
+            }
+        }
+        break;
+        case FileMode_Truncate:
+        {
+            if (caps.is_set(CAN_WRITE))
+            {
+                if (fd->hasFile(filename) == xTRUE)
+                {
+                    fd->openFile(filename, mode, access, op, handle);
+                    if (handle != INVALID_FILE_HANDLE)
+                    {
+                        fd->setLengthOfFile(handle, 0);
+                    }
+                }
+            }
+        }
+        break;
+        case FileMode_Append:
+        {
+            if (caps.is_set(CAN_WRITE))
+            {
+                if (fd->hasFile(filename) == xTRUE)
+                {
+                    fd->openFile(filename, mode, access, op, handle);
+                    if (handle != INVALID_FILE_HANDLE)
+                    {
+                        caps.test_set(USE_READ, false);
+                        caps.test_set(USE_SEEK, false);
+                        caps.test_set(USE_WRITE, true);
+                    }
+                }
+            }
+        }
+        break;
+        }
+
+        return handle;
     }
 
-    xifilestream::~xifilestream(void) {}
-
-    bool xifilestream::canRead() const { return mCaps.is_set((CAN_READ | USE_READ)); }
-    bool xifilestream::canSeek() const { return mCaps.is_set((CAN_SEEK | USE_SEEK)); }
-    bool xifilestream::canWrite() const { return mCaps.is_set((CAN_WRITE | USE_WRITE)); }
-    bool xifilestream::isOpen() const { return mFileHandle != INVALID_FILE_HANDLE; }
-    bool xifilestream::isAsync() const { return mCaps.is_set((CAN_ASYNC | USE_ASYNC)); }
-    u64  xifilestream::getLength() const
+    u64  filestream_t::getLength(filedevice_t* fd, filehandle_t* fh)
     {
         u64 length;
-        if (mFileDevice->getLengthOfFile(mFileHandle, length))
+        if (fd->getLengthOfFile(fh, length))
             return length;
         return 0;
     }
 
-    void xifilestream::setLength(u64 length) { mFileDevice->setLengthOfFile(mFileHandle, length); }
+    void filestream_t::setLength(filedevice_t* fd, filehandle_t* fh, u64 length) { fd->setLengthOfFile(fh, length); }
 
-    s64 xifilestream::setPos(s64 offset)
+    s64 filestream_t::setPos(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& offset, s64 seek)
     {
-        s64 old_offset = mOffset;
-        if (mCaps.is_set(USE_SEEK))
+        s64 old_offset = offset;
+        enum_t<ECaps> ecaps(caps);
+        if (ecaps.is_set(USE_SEEK))
         {
-            mOffset = offset;
+            offset = seek;
         }
         return old_offset;
     }
 
-    s64 xifilestream::getPos() const { return mOffset; }
-
-    void xifilestream::close()
+    void filestream_t::close(filedevice_t* fd, filehandle_t*& fh)
     {
-        if (mFileHandle != INVALID_FILE_HANDLE)
+        if (fh != INVALID_FILE_HANDLE)
         {
-            mFileDevice->closeFile(mFileHandle);
+            fd->closeFile(fh);
         }
     }
 
-    void xifilestream::flush() {}
-
-    u64 xifilestream::read(xbyte* buffer, u64 count)
+    s64 filestream_t::read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, xbyte* buffer, s64 count)
     {
-        if (mCaps.is_set(USE_READ))
+        enum_t<ECaps> ecaps(caps);
+        if (ecaps.is_set(USE_READ))
         {
             u64 n;
-            if (mFileDevice->readFile(mFileHandle, mOffset, buffer, count, n))
+            if (fd->readFile(fh, pos, buffer, count, n))
             {
-                mOffset += n;
+                pos += n;
             }
             return n;
         }
         return 0;
     }
 
-    u64 xifilestream::write(const xbyte* buffer, u64 count)
+    s64 filestream_t::write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const xbyte* buffer, s64 count)
     {
-        if (mCaps.is_set(USE_WRITE))
+        enum_t<ECaps> ecaps(caps);
+        if (ecaps.is_set(USE_WRITE))
         {
             u64 n;
-            if (mFileDevice->writeFile(mFileHandle, mOffset, buffer, count, n))
+            if (fd->writeFile(fh, pos, buffer, count, n))
             {
-                mOffset += n;
+                pos += n;
             }
             return n;
         }
         return 0;
     }
 
-    bool xifilestream::beginRead(xbyte* buffer, u64 count)
-    {
-        if (mCaps.is_set(USE_READ))
-        {
-            u64 n;
-            if (mFileDevice->readFile(mFileHandle, mOffset, buffer, count, n))
-            {
-
-                return true;
-            }
-        }
-        return false;
-    }
-
-    s64 xifilestream::endRead(bool block)
-    {
-        // mOffset += n;
-        return 0;
-    }
-
-    bool xifilestream::beginWrite(const xbyte* buffer, u64 count)
-    {
-        if (mCaps.is_set(USE_WRITE))
-        {
-            u64 n;
-            if (mFileDevice->writeFile(mFileHandle, mOffset, buffer, count, n))
-            {
-
-                return true;
-            }
-        }
-        return false;
-    }
-
-    s64 xifilestream::endWrite(bool block)
-    {
-        // mOffset += n;
-        return 0;
-    }
 
     void xstream_copy(stream_t* src, stream_t* dst, buffer_t& buffer)
     {
+        reader_t* reader = src->get_reader();
+        writer_t* writer = dst->get_writer();
         s64 streamLength = (s64)src->getLength();
         while (streamLength > 0)
         {
-            u64 const r = src->read(buffer.m_mutable, buffer.m_len);
-            dst->write(buffer.m_mutable, buffer.m_len);
+            u64 const r = reader->read(buffer.m_mutable, buffer.m_len);
+            writer->write(buffer.m_mutable, buffer.m_len);
             streamLength -= r;
         }
     }
 
     void xstream_copy(stream_t* src, stream_t* dst, u64 count) {}
 
-    istream_t* istream_t::create_filestream(alloc_t* allocator, filedevice_t* device, const filepath_t& filepath, EFileMode mode, EFileAccess access, EFileOp op)
-    {
-        xifilestream* filestream = allocator->construct<xifilestream>(allocator, device, filepath, mode, access, op);
-        return filestream;
-    }
-
-    void istream_t::destroy_filestream(alloc_t* allocator, istream_t* strm) { strm->destroy(); }
 
 }; // namespace xcore

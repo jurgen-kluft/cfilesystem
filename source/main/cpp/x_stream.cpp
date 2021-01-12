@@ -7,10 +7,10 @@
 
 namespace xcore
 {
-    class xstream_nil : public istream_t
+    class stream_nil : public istream_t
     {
     public:
-        virtual ~xstream_nil() {}
+        virtual ~stream_nil() {}
 
         virtual void hold() {}
         virtual s32  release() { return 1; }
@@ -30,16 +30,11 @@ namespace xcore
         virtual void close() {}
         virtual void flush() {}
 
-        virtual u64 read(xbyte* buffer, u64 count) { return 0; }
-        virtual u64 write(const xbyte* buffer, u64 count) { return 0; }
-
-        virtual bool beginRead(xbyte* buffer, u64 count) { return false; }
-        virtual s64  endRead(bool block) { return 0; }
-        virtual bool beginWrite(const xbyte* buffer, u64 count) { return false; }
-        virtual s64  endWrite(bool block) { return 0; }
+        virtual s64 read(xbyte * buffer, s64 count) { return 0; }
+        virtual s64 write(xbyte const* buffer, s64 count) { return 0; }
     };
 
-    static xstream_nil sNullStreamImp;
+    static stream_nil sNullStreamImp;
 
     //------------------------------------------------------------------------------------------
     stream_t::stream_t() : m_pimpl(&sNullStreamImp) {}
@@ -79,12 +74,22 @@ namespace xcore
 
     void stream_t::flush() { m_pimpl->flush(); }
 
-    u64 stream_t::read(xbyte* buffer, u64 count) { return m_pimpl->read(buffer, count); }
-    u64 stream_t::write(const xbyte* buffer, u64 count) { return m_pimpl->write(buffer, count); }
+    reader_t* stream_t::get_reader() 
+    {
+        if (canRead())
+        {
+            return m_pimpl;
+        }
+        return nullptr;
+    }
+    
+    writer_t* stream_t::get_writer() 
+    {
+        if (canWrite())
+        {
+            return m_pimpl;
+        }
+        return nullptr;
+    }
 
-    bool stream_t::beginRead(xbyte* buffer, u64 count) { return m_pimpl->beginRead(buffer, count); }
-    s64  stream_t::endRead(bool block) { return m_pimpl->endRead(block); }
-
-    bool stream_t::beginWrite(const xbyte* buffer, u64 count) { return m_pimpl->beginWrite(buffer, count); }
-    s64  stream_t::endWrite(bool block) { return m_pimpl->endWrite(block); }
 }; // namespace xcore
