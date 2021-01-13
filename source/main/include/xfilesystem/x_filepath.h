@@ -26,7 +26,9 @@ namespace xcore
         friend class fileinfo_t;
 		friend class path_t;
 
-        filepath_t(filesys_t* parent, path_t& path);
+        filepath_t(filesys_t* parent);
+        filepath_t(filesys_t* parent, crunes_t const& path);
+
         filesys_t* mParent;
         path_t     mPath;
 
@@ -49,6 +51,8 @@ namespace xcore
         void       getExtension(filepath_t&) const;
         void       up();
         void       down(dirpath_t const&);
+
+        void       toString(runes_t& dst) const;
 
         filepath_t& operator=(const filepath_t&);
         bool       operator==(const filepath_t&) const;

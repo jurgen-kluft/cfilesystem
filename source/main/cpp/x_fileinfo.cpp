@@ -90,7 +90,7 @@ namespace xcore
         {
             return dp;
         }
-        path_t nullpath(mParent->m_stralloc);
+        crunes_t nullpath;
         return dirpath_t(mParent, nullpath);
     }
 
@@ -101,7 +101,7 @@ namespace xcore
         {
             return dp;
         }
-        path_t nullpath(mParent->m_stralloc);
+        crunes_t nullpath;
         return dirpath_t(mParent, nullpath);
     }
 

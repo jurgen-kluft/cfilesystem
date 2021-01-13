@@ -37,6 +37,8 @@ public:
 			runes_t runes(prunes, prunes, prunes + cap - 1);
 			return runes;
 		}
+		ASSERT(false);
+		return runes_t();
 	}
             
 	virtual void  deallocate(runes_t& slice_t)

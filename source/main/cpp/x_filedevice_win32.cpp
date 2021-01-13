@@ -54,8 +54,8 @@ namespace xcore
         virtual bool writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten);
         virtual bool closeFile(void* nFileHandle);
 
-        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm);
-        virtual bool closeStream(stream_t* strm);
+        virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t& strm);
+        virtual bool closeStream(stream_t& strm);
 
         virtual bool setLengthOfFile(void* nFileHandle, u64 inLength);
         virtual bool getLengthOfFile(void* nFileHandle, u64& outLength);
@@ -305,8 +305,8 @@ namespace xcore
     }
 
     //@todo: implement create and close stream
-    bool filedevice_pc_t::createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm) { return false; }
-    bool filedevice_pc_t::closeStream(stream_t* strm) { return false; }
+    bool filedevice_pc_t::createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t& strm) { return false; }
+    bool filedevice_pc_t::closeStream(stream_t& strm) { return false; }
 
     bool filedevice_pc_t::deleteFile(const filepath_t& szFilename)
     {

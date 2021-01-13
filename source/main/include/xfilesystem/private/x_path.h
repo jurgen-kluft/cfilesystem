@@ -94,6 +94,8 @@ namespace xcore
         bool operator==(const path_t&) const;
         bool operator!=(const path_t&) const;
 
+        void toString(runes_t& dst) const;
+
         static void as_utf16(path_t const& p,  path_t& dst);
         static void as_utf16(filepath_t const& fp, path_t& dst);
         static void as_utf16(filepath_t const& fp, filepath_t& dst);

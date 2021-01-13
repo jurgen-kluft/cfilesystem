@@ -9,14 +9,14 @@
 
 namespace xcore
 {
-    using namespace utf32;
-
     filepath_t::filepath_t() : mParent(nullptr), mPath() {}
-    filepath_t::filepath_t(filesys_t* fsys, path_t& path) : mParent(fsys), mPath()
+    filepath_t::filepath_t(filesys_t* fs) : mParent(fs), mPath(fs->m_stralloc)
     {
-        mPath.m_alloc = path.m_alloc;
-        mPath.m_path  = path.m_path;
-        path.m_alloc  = fsys->m_stralloc;
+    }
+    filepath_t::filepath_t(filesys_t* fs, crunes_t const& path) : mParent(fs), mPath()
+    {
+        mPath.m_alloc = fs->m_stralloc;
+        copy(path, mPath.m_path, fs->m_stralloc);
     }
 
     filepath_t::filepath_t(const filepath_t& filepath) : mParent(filepath.mParent), mPath() { mPath = filepath.mPath; }
@@ -38,6 +38,11 @@ namespace xcore
 
     void filepath_t::up() { mPath.up(); }
     void filepath_t::down(dirpath_t const& p) { mPath.down(p.mPath); }
+
+    void filepath_t::toString(runes_t& dst) const
+    {
+        return mPath.toString(dst);
+    }
 
     filepath_t& filepath_t::operator=(const filepath_t& path)
     {

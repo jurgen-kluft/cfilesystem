@@ -469,6 +469,11 @@ namespace xcore
     bool path_t::operator==(const path_t& rhs) const { return compare(m_path, rhs.m_path) == 0; }
     bool path_t::operator!=(const path_t& rhs) const { return compare(m_path, rhs.m_path) != 0; }
 
+    void path_t::toString(runes_t& dst) const
+    {
+        copy(m_path, dst, m_alloc, 4);
+    }
+
     void path_t::as_utf16(path_t const& p, path_t& dst)
     {
     }

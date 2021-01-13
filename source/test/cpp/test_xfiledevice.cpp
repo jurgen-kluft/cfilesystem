@@ -24,23 +24,23 @@ namespace xcore
 	class utf32_alloc : public runes_alloc_t
 	{
 	public:
-		virtual utf32::runes allocate(s32 len, s32 cap) 
+		virtual runes_t allocate(s32 len, s32 cap, s32 type) 
 		{
 			utf32::prune prunes = (utf32::prune)gTestAllocator->allocate(sizeof(utf32::rune) * cap, sizeof(utf32::rune));
 			prunes[cap - 1] = utf32::TERMINATOR;
-			utf32::runes runes(prunes, prunes, prunes + cap - 1);
+			runes_t runes(prunes, prunes, prunes + cap - 1);
 			return runes;
 		}
             
-		virtual void  deallocate(utf32::runes& slice_t)
+		virtual void  deallocate(runes_t& slice_t)
 		{
-			if (slice_t.m_str != nullptr)
+			if (slice_t.m_runes.m_ascii.m_bos != nullptr)
 			{
-				gTestAllocator->deallocate(slice_t.m_str);
+				gTestAllocator->deallocate(slice_t.m_runes.m_ascii.m_bos);
 			}
-			slice_t.m_str = nullptr;
-			slice_t.m_end = nullptr;
-			slice_t.m_eos = nullptr;
+			slice_t.m_runes.m_ascii.m_str = nullptr;
+			slice_t.m_runes.m_ascii.m_end = nullptr;
+			slice_t.m_runes.m_ascii.m_eos = nullptr;
 		}
 	};
 	static utf32_alloc sa;
@@ -88,7 +88,7 @@ namespace xcore
 
 	struct TestDir
 	{
-		ascii::runez<64>			mName;
+		runez_t<ascii::rune, 64>	mName;
 		datetime_t					mCreationTime;
 		datetime_t					mLastAccessTime;
 		datetime_t					mLastWriteTime;
@@ -97,7 +97,7 @@ namespace xcore
 
 	struct TestFile
 	{
-		ascii::runez<64>			mName;
+		runez_t<ascii::rune, 64>	mName;
 		fileattrs_t					mAttr;
 		datetime_t					mCreationTime;
 		datetime_t					mLastAccessTime;
@@ -255,34 +255,34 @@ namespace xcore
 
 	static TestFile					sFiles[] = 
 	{
-		{ ascii::runez<64>("textfiles\\readme1st.txt")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("textfiles\\authors.txt")		, fileattrs_t(true ,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("textfiles\\docs\\tech.txt")		, fileattrs_t(false,false,true ,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("textfiles\\tech\\install.txt")	, fileattrs_t(false,false,false,true ), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("textfiles\\readme1st.txt")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("textfiles\\authors.txt")		, fileattrs_t(true ,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("textfiles\\docs\\tech.txt")		, fileattrs_t(false,false,true ,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("textfiles\\tech\\install.txt")	, fileattrs_t(false,false,false,true ), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
 		 
-		{ ascii::runez<64>("binfiles\\texture1.bin")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\texture2.bin")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\objects\\object1.bin"), fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\objects\\object2.bin"), fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\tracks\\track1.bin")	, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("binfiles\\tracks\\track2.bin")	, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("binfiles\\texture1.bin")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("binfiles\\texture2.bin")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("binfiles\\objects\\object1.bin"), fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("binfiles\\objects\\object2.bin"), fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("binfiles\\tracks\\track1.bin")	, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("binfiles\\tracks\\track2.bin")	, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
 
-		{ ascii::runez<64>("readonly_files\\readme.txt")	, fileattrs_t(false,true,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("readonly_files\\data.bin")		, fileattrs_t(false,true,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("readonly_files\\readme.txt")	, fileattrs_t(false,true,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("readonly_files\\data.bin")		, fileattrs_t(false,true,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
 
-		{ ascii::runez<64>("writeable_files\\file.txt")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
-		{ ascii::runez<64>("writeable_files\\file.bin")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("writeable_files\\file.txt")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
+		{ runez_t<ascii::rune, 64>("writeable_files\\file.bin")		, fileattrs_t(false,false,false,false), datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20), 0, 0 },
 
 		// Room for creating files
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__NULL__") }
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__NULL__") }
 	};
 
 	static FileDataCopy				sFileData[] =
@@ -308,23 +308,23 @@ namespace xcore
 
 	static TestDir	sDirs[] = 
 	{
-		{ ascii::runez<64>("textfiles")				, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("textfiles\\docs")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("textfiles\\help")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("binfiles")				, datetime_t(2011, 3, 10, 15, 30, 10), datetime_t(2011, 3, 12, 16, 00, 20), datetime_t(2011, 3, 11, 10, 46, 20) },
-		{ ascii::runez<64>("binfiles\\objects")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("binfiles\\tracks")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
-		{ ascii::runez<64>("readonly_files")		, datetime_t(2011, 4, 10, 15, 30, 10), datetime_t(2011, 4, 12, 16, 00, 20), datetime_t(2011, 4, 11, 10, 46, 20) },
-		{ ascii::runez<64>("writeable_files")		, datetime_t(2011, 4, 10, 15, 30, 10), datetime_t(2011, 4, 12, 16, 00, 20), datetime_t(2011, 4, 11, 10, 46, 20) },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__EMPTY__") },
-		{ ascii::runez<64>("__NULL__") }
+		{ runez_t<ascii::rune, 64>("textfiles")				, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ runez_t<ascii::rune, 64>("textfiles\\docs")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ runez_t<ascii::rune, 64>("textfiles\\help")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ runez_t<ascii::rune, 64>("binfiles")				, datetime_t(2011, 3, 10, 15, 30, 10), datetime_t(2011, 3, 12, 16, 00, 20), datetime_t(2011, 3, 11, 10, 46, 20) },
+		{ runez_t<ascii::rune, 64>("binfiles\\objects")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ runez_t<ascii::rune, 64>("binfiles\\tracks")		, datetime_t(2011, 2, 10, 15, 30, 10), datetime_t(2011, 2, 12, 16, 00, 20), datetime_t(2011, 2, 11, 10, 46, 20) },
+		{ runez_t<ascii::rune, 64>("readonly_files")		, datetime_t(2011, 4, 10, 15, 30, 10), datetime_t(2011, 4, 12, 16, 00, 20), datetime_t(2011, 4, 11, 10, 46, 20) },
+		{ runez_t<ascii::rune, 64>("writeable_files")		, datetime_t(2011, 4, 10, 15, 30, 10), datetime_t(2011, 4, 12, 16, 00, 20), datetime_t(2011, 4, 11, 10, 46, 20) },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__EMPTY__") },
+		{ runez_t<ascii::rune, 64>("__NULL__") }
 	};
 
 	namespace xfilesystem_test
@@ -347,8 +347,8 @@ namespace xcore
 			virtual bool			writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten);
 			virtual bool			closeFile(void* nFileHandle);
 
-			virtual bool			createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm);
-			virtual bool			closeStream(stream_t* strm);
+			virtual bool			createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t& strm);
+			virtual bool			closeStream(stream_t& strm);
 
 			virtual bool			setLengthOfFile(void* nFileHandle, u64 inLength);
 			virtual bool			getLengthOfFile(void* nFileHandle, u64& outLength);
@@ -392,7 +392,7 @@ namespace xcore
 			while (true)
 			{
 				TestDir* testDir = &sDirs[i];
-				dirpath_t dp2 = filesystem_t::dirpath(testDir->mName.m_str);
+				dirpath_t dp2 = filesystem_t::dirpath(testDir->mName.m_runes.m_ascii.m_str);
 
 				if (dp == dp2)
 					return testDir;
@@ -426,7 +426,7 @@ namespace xcore
 			TestFile* testFile = sFiles;
 			while (true)
 			{
-				filepath_t fp2 = filesystem_t::filepath(testFile->mName.m_str);
+				filepath_t fp2 = filesystem_t::filepath(testFile->mName.m_runes.m_ascii.m_str);
 				if (fp == fp2)
 					return testFile;
 				if (testFile->mName == "__NULL__")
@@ -447,7 +447,7 @@ namespace xcore
 					// init creation time
 					// init last write time
 					// data copy
-					filesystem_t::to_ascii(szFilename, t->mName);
+					szFilename.toString(t->mName);
 
 					t->mFileLength = dataSize;
 					t->mMaxFileLength = sizeof(t->mFileData);
@@ -561,7 +561,8 @@ namespace xcore
 			{
 				filepath_t filePath(szFilename);
 //				filePath.removeFirstSlashAndBefore();
-				filesystem_t::to_ascii(szFilename, testFile->mName);
+//				filesystem_t::to_ascii(szFilename, testFile->mName);
+				szFilename.toString(testFile->mName);
 				return true;
 			}
 			return false;
@@ -602,13 +603,12 @@ namespace xcore
 			return false;
 		}
 
-		bool xfiledevice_TEST::createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t*& strm)
+		bool xfiledevice_TEST::createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t& strm)
 		{
-			strm = nullptr;
 			return false;
 		}
 		
-		bool xfiledevice_TEST::closeStream(stream_t* strm)
+		bool xfiledevice_TEST::closeStream(stream_t& strm)
 		{
 			return false;
 		}
@@ -704,7 +704,7 @@ namespace xcore
 			TestDir* testDir = sFindTestDir(szDirPath);
 			if (testDir!=NULL)
 			{
-				ascii::printf(ascii::crunes("test file device -- dir %s already exists!!!\n"), va_t(testDir->mName.m_str));
+				printf(crunes_t("test file device -- dir %s already exists!!!\n"), va_t(testDir->mName));
 				return false;
 			}
 
@@ -714,16 +714,18 @@ namespace xcore
 			TestDir* newDir = sFindEmptyTestDir();
 			if (newDir!=NULL)
 			{
-				filesystem_t::to_ascii(dp, newDir->mName);
+				dp.toString(newDir->mName);
+				//filesystem_t::to_ascii(dp, newDir->mName);
 				newDir->mCreationTime = datetime_t::sNow();
 				newDir->mLastAccessTime = newDir->mCreationTime;
 				newDir->mLastWriteTime = newDir->mCreationTime;
 			}
 			else
 			{
-				ascii::runez<64> dirname;
-				filesystem_t::to_ascii(szDirPath, dirname);
-				ascii::printf(ascii::crunes("Failed to create test filesystem dir %s!!! \n"), va_t(dirname.m_str));
+				runez_t<ascii::rune, 64> dirname;
+				//filesystem_t::to_ascii(szDirPath, dirname);
+				szDirPath.toString(dirname);
+				printf(crunes_t("Failed to create test filesystem dir %s!!! \n"), va_t(dirname));
 			}
 			return newDir!=NULL;
 		}
@@ -737,7 +739,7 @@ namespace xcore
 			bool terminate = false;
 			while (!terminate)
 			{
-				dirpath_t tdp = filesystem_t::dirpath(testDir->mName.m_str);
+				dirpath_t tdp = filesystem_t::dirpath(testDir->mName);
 				if (tdp == dp)
 				{
 					if (enumerator)
@@ -759,7 +761,7 @@ namespace xcore
 					}
 				}
 
-				if (testDir->mName == ascii::crunes("__NULL__"))
+				if (testDir->mName == crunes_t("__NULL__"))
 					break;
 				testDir++;
 			}
@@ -768,7 +770,7 @@ namespace xcore
 			TestFile* testFile = sFiles;
 			while(!terminateFile)
 			{
-				filepath_t fpTemp = filesystem_t::filepath(testFile->mName.m_str);
+				filepath_t fpTemp = filesystem_t::filepath(testFile->mName);
 				dirpath_t dpTemp;
 				fpTemp.getDirname(dpTemp);
 				if (dpTemp == dp)
@@ -792,7 +794,7 @@ namespace xcore
 					}
 				}
 
-				if (testFile->mName == ascii::crunes("__NULL__"))
+				if (testFile->mName == crunes_t("__NULL__"))
 					break;
 				testFile ++;
 			}
@@ -1005,7 +1007,7 @@ namespace xcore
 			bool terminate = false;
 			while (!terminate)
 			{
-				dirpath_t tdp = filesystem_t::dirpath(testDir->mName.m_str);
+				dirpath_t tdp = filesystem_t::dirpath(testDir->mName);
 				if (tdp == dp)
 				{
 					dirinfo_t di(tdp);
@@ -1021,7 +1023,7 @@ namespace xcore
 					}
 				}
 
-				if (testDir->mName == ascii::crunes("__NULL__"))
+				if (testDir->mName == crunes_t("__NULL__"))
 					break;
 
 				testDir++;
@@ -1032,7 +1034,7 @@ namespace xcore
 			
 			while(!terminateFile)
 			{
-				filepath_t tfp = filesystem_t::filepath(testFile->mName.m_str);
+				filepath_t tfp = filesystem_t::filepath(testFile->mName);
 				dirpath_t dpTemp;
 				tfp.getDirname(dpTemp);
 
@@ -1051,7 +1053,7 @@ namespace xcore
 					}
 				}
 
-				if (testFile->mName == ascii::crunes("__NULL__"))
+				if (testFile->mName == crunes_t("__NULL__"))
 					break;
 				testFile ++;
 			}
@@ -1076,7 +1078,7 @@ UNITTEST_SUITE_BEGIN(xfiledevice_register)
 		{
 			filesyscfg_t cfg;
 			cfg.m_allocator = gTestAllocator;
-			cfg.m_max_open_stream = 8;
+			cfg.m_max_open_files = 32;
 			filesystem_t::create(cfg);
 		}
 		
@@ -1090,7 +1092,7 @@ UNITTEST_SUITE_BEGIN(xfiledevice_register)
 		// main 
 		UNITTEST_TEST(register_test_filedevice)
 		{
-			utf32::runez<32> deviceName;
+			runez_t<utf32::rune, 32> deviceName;
 			deviceName = "TEST:\\";
 			CHECK_TRUE(filesystem_t::register_device(deviceName, &sTestFileDevice));
 		}

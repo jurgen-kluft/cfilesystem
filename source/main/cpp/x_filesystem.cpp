@@ -21,8 +21,10 @@ namespace xcore
     filepath_t filesystem_t::filepath(const crunes_t& str) { return mImpl->filepath(str); }
     dirpath_t  filesystem_t::dirpath(const crunes_t& str) { return mImpl->dirpath(str); }
 
-    stream_t  filesystem_t::open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op) 
-    { return mImpl->open(filename, mode, access, op); }
+    stream_t  filesystem_t::open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op)
+    {
+        return mImpl->open(filename, mode, access, op);
+    }
 
     void filesystem_t::close(stream_t& xs) { return mImpl->close(xs); }
 
@@ -47,17 +49,17 @@ namespace xcore
     filepath_t filesys_t::resolve(filepath_t const& fp, filedevice_t*& device)
     {
         filesys_t* fs = get_filesystem(fp);
-        path_t     fs_path;
-        device = fs->m_devman->find_device(fp.mPath, fs_path);
-        return filepath_t(fs, fs_path);
+        filepath_t  filepath(fs);
+        device = fs->m_devman->find_device(fp.mPath, filepath.mPath);
+        return filepath;
     }
 
     dirpath_t filesys_t::resolve(dirpath_t const& dp, filedevice_t*& device)
     {
         filesys_t* fs = get_filesystem(dp);
-        path_t     fs_path;
-        device = fs->m_devman->find_device(dp.mPath, fs_path);
-        return dirpath_t(fs, fs_path);
+        dirpath_t  dirpath(fs);
+        device = fs->m_devman->find_device(dp.mPath, dirpath.mPath);
+        return dirpath;
     }
 
     path_t& filesys_t::get_path(dirinfo_t& dirinfo) { return dirinfo.mPath.mPath; }
@@ -71,7 +73,12 @@ namespace xcore
 
     stream_t filesys_t::create_filestream(const filepath_t& filepath, EFileMode fm, EFileAccess fa, EFileOp fo)
     {
-        return stream_t(); 
+        return stream_t();
+    }
+
+    void       filesys_t::destroy(stream_t& stream)
+    {
+
     }
     
     filepath_t filesys_t::filepath(const char* str)
@@ -92,18 +99,12 @@ namespace xcore
 
     filepath_t filesys_t::filepath(const crunes_t& str)
     {
-        filepath_t filepath;
-        filepath.mParent = this;
-        filepath.mPath   = path_t(m_stralloc, str);
-        return filepath;
+        return filepath_t(this, str);
     }
 
     dirpath_t filesys_t::dirpath(const crunes_t& str)
     {
-        dirpath_t dirpath;
-        dirpath.mParent = this;
-        dirpath.mPath   = path_t(m_stralloc, str);
-        return dirpath;
+        return dirpath_t(this, str);;
     }
 
     bool filesys_t::register_device(const crunes_t& device_name, filedevice_t* device) { return m_devman->add_device(device_name, device); }

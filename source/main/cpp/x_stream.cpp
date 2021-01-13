@@ -22,4 +22,45 @@ namespace xcore
 
     static stream_nil sNullStreamImp;
 
+    stream_t::stream_t()
+    {
+
+    }
+
+    stream_t::stream_t(const stream_t&)
+    {
+
+    }
+
+    stream_t::~stream_t()
+    {
+
+    }
+
+    bool stream_t::canRead() const { return false; }
+    bool stream_t::canSeek() const{ return false; }
+    bool stream_t::canWrite() const{ return false; }
+
+    bool stream_t::isOpen() const{ return false; }
+    bool stream_t::isAsync() const{ return false; }
+
+    u64  stream_t::getLength() const { return 0; }
+    void stream_t::setLength(u64 length) { }
+    s64  stream_t::getPos() const{ return 0; }
+    s64  stream_t::setPos(s64 pos){ return 0; }
+
+    void stream_t::close() {}
+    void stream_t::flush() {}
+
+    s64 stream_t::read(xbyte*, s64){ return 0; }
+    s64 stream_t::write(xbyte const*, s64){ return 0; }
+
+    reader_t* stream_t::get_reader(){ return 0; }
+    writer_t* stream_t::get_writer(){ return 0; }
+
+    stream_t::stream_t(istream_t* impl)
+    {
+
+    }
+
 }; // namespace xcore

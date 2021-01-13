@@ -7,7 +7,7 @@
 
 namespace xcore
 {
-    class filehandle_t;
+    struct filehandle_t;
     class filedevice_t;
 
     class istream_t

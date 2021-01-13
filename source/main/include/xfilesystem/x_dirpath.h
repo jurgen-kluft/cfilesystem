@@ -37,7 +37,8 @@ namespace xcore
         filesys_t* mParent;
         path_t     mPath;
 
-        dirpath_t(filesys_t* fs, path_t& path);
+        dirpath_t(filesys_t* fs);
+        dirpath_t(filesys_t* fs, crunes_t const& path);
 
     public:
         dirpath_t();
@@ -67,6 +68,8 @@ namespace xcore
         bool getParent(dirpath_t& outParentDirPath) const;
         void setRoot(const dirpath_t& device);
         bool getRoot(dirpath_t& outDevice) const;
+
+        void toString(runes_t& dst) const;
 
         dirpath_t& operator=(const dirpath_t&);
         dirpath_t& operator=(const filepath_t&);

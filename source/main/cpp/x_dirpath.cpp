@@ -11,13 +11,14 @@ namespace xcore
     //==============================================================================
     // dirpath_t: "Device:\\Folder\Folder\"
     //==============================================================================
-
-    dirpath_t::dirpath_t(filesys_t* fs, path_t& path) : mParent(fs)
+    dirpath_t::dirpath_t(filesys_t* fs) : mParent(fs), mPath(fs->m_stralloc)
     {
-        mPath.m_alloc = path.m_alloc;
-        mPath.m_path  = path.m_path;
-        path.m_alloc  = nullptr;
-        path.m_path   = runes_t();
+    }
+
+    dirpath_t::dirpath_t(filesys_t* fs, crunes_t const& path) : mParent(fs)
+    {
+        mPath.m_alloc = fs->m_stralloc;
+        copy(path, mPath.m_path, fs->m_stralloc);
     }
 
     dirpath_t::dirpath_t() : mParent(nullptr), mPath() {}
@@ -58,6 +59,11 @@ namespace xcore
     bool dirpath_t::getRoot(dirpath_t& outRootDirPath) const { return false; }
     bool dirpath_t::getParent(dirpath_t& outParentDirPath) const { return true; }
     void dirpath_t::setRoot(const dirpath_t& inRoot) {}
+
+    void dirpath_t::toString(runes_t& dst) const
+    {
+        mPath.toString(dst);
+    }
 
     filepath_t dirpath_t::operator+=(const filepath_t& other) { return filepath_t(*this, other); }
     dirpath_t& dirpath_t::operator+=(const dirpath_t& other)
