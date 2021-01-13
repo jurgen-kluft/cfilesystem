@@ -2,23 +2,21 @@
 
 ## __Cross platform filesystem library__
 
-* filesystem
-  * filepath
-  * dirpath
-  * file info
-  * dir info
-  * file
-  * stream
+* filesystem_t
+  * filepath_t
+  * dirpath_t
+  * fileinfo_t
+  * dirinfo_t
+  * stream_t
 
 ## __TODO__
 
 * Implement file device for Win32 and Mac
-* Have filepath and dirpath use path
-* Debug filesystem init for Win32 and Mac (use wchar API)
-* Implement file stream and memory stream
-* Finish device manager (use path)
+* Have filepath_t and dirpath_t use path_t
+* Debug filesystem init for Win32 and Mac (use crunes_t/runes_t)
+* Finish device manager (use path_t)
 
-## __API__
+## __API__ (Prototype)
 
 ```c++
 // API
