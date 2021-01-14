@@ -117,7 +117,7 @@ namespace xcore
                             runes_t alias32 = selectAfterExclude(local_alias32, wincrapsel);
                             if (alias32.size() > 0 && last_char(alias32) != '\\')
                             {
-                                alias32.concatenate('\\');
+                                concatenate(alias32, crunes_t("\\"));
                             }
 
                             devman->add_alias(alias32, devicePath32);
@@ -149,7 +149,8 @@ namespace xcore
                 if (len > cap)
                     cap = len;
                 runes_t str;
-                str.m_runes.m_utf32.m_str      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
+                str.m_runes.m_utf32.m_bos      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
+                str.m_runes.m_utf32.m_str      = str.m_runes.m_utf32.m_bos;
                 str.m_runes.m_utf32.m_end      = str.m_runes.m_utf32.m_str + len;
                 str.m_runes.m_utf32.m_eos      = str.m_runes.m_utf32.m_str + cap;
                 str.m_runes.m_utf32.m_str[cap] = '\0';
@@ -174,6 +175,8 @@ namespace xcore
     {
         filesys_t* imp      = ctxt.m_allocator->construct<filesys_t>();
         imp->m_context      = ctxt;
+        imp->m_context.m_owner = imp;
+        imp->m_context.m_stralloc = ctxt.m_allocator->construct<fs_utfalloc>(ctxt.m_allocator);
         filesystem_t::mImpl = imp;
 
         imp->m_devman = ctxt.m_allocator->construct<devicemanager_t>(&imp->m_context);

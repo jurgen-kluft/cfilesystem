@@ -25,7 +25,6 @@ namespace xcore
     //     source:\folder\filename.ext, where source = c:\temp
     //     data:\folder\filename.ext, where data = g:\
 	//     dvd:\folder\filename.ext, where dvd = g:\
-	//
     //------------------------------------------------------------------------------
     class devicemanager_t
     {
