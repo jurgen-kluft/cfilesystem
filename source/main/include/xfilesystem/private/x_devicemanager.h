@@ -7,6 +7,7 @@
 
 #include "xbase/x_allocator.h"
 #include "xfilesystem/private/x_path.h"
+#include "xfilesystem/x_filesystem.h"
 
 namespace xcore
 {
@@ -37,7 +38,7 @@ namespace xcore
         typedef utf32::rune  rune;
 
     public:
-        devicemanager_t(runes_alloc_t* stralloc);
+        devicemanager_t(filesystem_t::context_t* stralloc);
 		
 		XCORE_CLASS_PLACEMENT_NEW_DELETE
 
@@ -91,7 +92,7 @@ namespace xcore
         };
 
 		bool          mNeedsResolve;
-		runes_alloc_t* mStrAlloc;
+        filesystem_t::context_t* mContext;
         s32           mNumAliases;
         alias_t       mAliasList[MAX_FILE_ALIASES];
         s32           mNumDevices;

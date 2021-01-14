@@ -25,33 +25,33 @@ namespace xcore
         trimDelimiters(str, sSlash, sSlash);
     }
 
-    path_t::path_t() : m_alloc(nullptr), m_path() {}
+    path_t::path_t() : m_context(nullptr), m_path() {}
 
-    path_t::path_t(runes_alloc_t* allocator) : m_alloc(allocator), m_path() { fix_slashes(m_path); }
+    path_t::path_t(filesystem_t::context_t* ctxt) : m_context(ctxt), m_path() { fix_slashes(m_path); }
 
-    path_t::path_t(runes_alloc_t* allocator, const crunes_t& path) : m_alloc(allocator)
+    path_t::path_t(filesystem_t::context_t* ctxt, const crunes_t& path) : m_context(ctxt)
     {
-        copy(path, m_path, m_alloc, 16);
+        copy(path, m_path, m_context->m_stralloc, 16);
         fix_slashes(m_path);
     }
 
-    path_t::path_t(const path_t& path) : m_alloc(path.m_alloc), m_path()
+    path_t::path_t(const path_t& path) : m_context(path.m_context), m_path()
     {
-        copy(path.m_path, m_path, m_alloc, 16);
+        copy(path.m_path, m_path, m_context->m_stralloc, 16);
         fix_slashes(m_path);
     }
 
-    path_t::path_t(const path_t& lhspath, const path_t& rhspath) : m_alloc(lhspath.m_alloc), m_path()
+    path_t::path_t(const path_t& lhspath, const path_t& rhspath) : m_context(lhspath.m_context), m_path()
     {
         // Combine both paths into a new path
-        concatenate(m_path, lhspath.m_path, rhspath.m_path, m_alloc, 16);
+        concatenate(m_path, lhspath.m_path, rhspath.m_path, m_context->m_stralloc, 16);
     }
 
     path_t::~path_t()
     {
-        if (m_alloc != nullptr)
+        if (m_context != nullptr)
         {
-            m_alloc->deallocate(m_path);
+            m_context->m_stralloc->deallocate(m_path);
         }
     }
 
@@ -79,8 +79,8 @@ namespace xcore
     void path_t::erase()
     {
         clear();
-        if (m_alloc != nullptr)
-            m_alloc->deallocate(m_path);
+        if (m_context != nullptr)
+            m_context->m_stralloc->deallocate(m_path);
     }
 
     bool path_t::isEmpty() const { return m_path.is_empty(); }
@@ -121,10 +121,10 @@ namespace xcore
         return false;
     }
 
-    void path_t::set_filepath(runes_t& runes_t, runes_alloc_t* allocator)
+    void path_t::set_filepath(runes_t& runes_t, filesystem_t::context_t* allocator)
     {
         erase();
-        m_alloc = allocator;
+        m_context = allocator;
         m_path  = runes_t;
 
         // Replace incorrect slashes with the correct one
@@ -136,10 +136,10 @@ namespace xcore
         trim(m_path, sSlash);
     }
 
-    void path_t::set_dirpath(runes_t& runes_t, runes_alloc_t* allocator)
+    void path_t::set_dirpath(runes_t& runes_t, filesystem_t::context_t* allocator)
     {
         erase();
-        m_alloc = allocator;
+        m_context = allocator;
         m_path  = runes_t;
 
         // Replace incorrect slashes with the correct one
@@ -154,26 +154,26 @@ namespace xcore
         if (!ends_with(m_path, sSlash))
         {
             crunes_t slashstr(sSemiColumnSlashStr + 1, sSemiColumnSlashStr + 2);
-            concatenate(m_path, slashstr, m_alloc, 16);
+            concatenate(m_path, slashstr, m_context->m_stralloc, 16);
         }
     }
 
     void path_t::combine(const path_t& dirpath, const path_t& otherpath)
     {
         erase();
-        m_alloc = dirpath.m_alloc;
+        m_context = dirpath.m_context;
         if (otherpath.isRooted())
         {
             runes_t relativefilepath = findSelectAfter(otherpath.m_path, sSemiColumnSlash);
-            concatenate(m_path, dirpath.m_path, relativefilepath, m_alloc, 16);
+            concatenate(m_path, dirpath.m_path, relativefilepath, m_context->m_stralloc, 16);
         }
         else
         {
-            concatenate(m_path, dirpath.m_path, otherpath.m_path, m_alloc, 16);
+            concatenate(m_path, dirpath.m_path, otherpath.m_path, m_context->m_stralloc, 16);
         }
     }
 
-    void path_t::copy_dirpath(runes_t& runes_t) { copy(runes_t, m_path, m_alloc, 16); }
+    void path_t::copy_dirpath(runes_t& runes_t) { copy(runes_t, m_path, m_context->m_stralloc, 16); }
 
     class enumerate_runes
     {
@@ -249,7 +249,7 @@ namespace xcore
         if (!dir.is_empty())
         {
             runes_t path = selectAfterInclude(m_path, dir);
-            copy(path, outpath.m_path, outpath.m_alloc, 16);
+            copy(path, outpath.m_path, outpath.m_context->m_stralloc, 16);
             return true;
         }
         return false;
@@ -301,9 +301,9 @@ namespace xcore
         if (!dir.is_empty())
         {
             runes_t parent_path = selectBeforeExclude(m_path, dir);
-            copy(parent_path, parent_dirpath.m_path, parent_dirpath.m_alloc, 16);
+            copy(parent_path, parent_dirpath.m_path, parent_dirpath.m_context->m_stralloc, 16);
             runes_t relative_path = selectAfterInclude(m_path, dir);
-            copy(relative_path, relative_filepath.m_path, relative_filepath.m_alloc, 16);
+            copy(relative_path, relative_filepath.m_path, relative_filepath.m_context->m_stralloc, 16);
             return true;
         }
 
@@ -348,11 +348,11 @@ namespace xcore
             runes_t rootpart = findSelectUntilIncluded(m_path, sSemiColumnSlash);
             if (rootpart.is_empty() == false)
             {
-                insert(m_path, in_root_dirpath.m_path, m_alloc, 16);
+                insert(m_path, in_root_dirpath.m_path, m_context->m_stralloc, 16);
             }
             else
             {
-                replaceSelection(m_path, rootpart, in_root_dirpath.m_path, m_alloc, 16);
+                replaceSelection(m_path, rootpart, in_root_dirpath.m_path, m_context->m_stralloc, 16);
             }
         }
     }
@@ -365,7 +365,7 @@ namespace xcore
             if (rootpart.is_empty() == false)
             {
                 root.erase();
-                copy(root.m_path, rootpart, root.m_alloc, 16);
+                copy(root.m_path, rootpart, root.m_context->m_stralloc, 16);
                 return true;
             }
         }
@@ -378,13 +378,13 @@ namespace xcore
             return false;
 
         outDirPath.clear();
-        outDirPath.m_alloc = m_alloc;
+        outDirPath.m_context = m_context;
 
         // Select a string until and included the last '\'
         runes_t dirpart = findLastSelectUntilIncluded(m_path, sSlash);
         if (dirpart.is_empty() == false)
         {
-            copy(dirpart, outDirPath.m_path, outDirPath.m_alloc, 16);
+            copy(dirpart, outDirPath.m_path, outDirPath.m_context->m_stralloc, 16);
             return true;
         }
         return false;
@@ -400,7 +400,7 @@ namespace xcore
         if (!filenamepart.is_empty())
         {
             filename.clear();
-            concatenate(filename.m_path, filenamepart, filename.m_alloc, 16);
+            concatenate(filename.m_path, filenamepart, filename.m_context->m_stralloc, 16);
         }
     }
 
@@ -411,7 +411,7 @@ namespace xcore
         if (!filenamepart.is_empty())
         {
             filenamepart = findLastSelectUntil(filenamepart, '.');
-            concatenate(filename.m_path, filenamepart, filename.m_alloc, 16);
+            concatenate(filename.m_path, filenamepart, filename.m_context->m_stralloc, 16);
         }
     }
 
@@ -421,15 +421,15 @@ namespace xcore
         runes_t filenamepart = findLastSelectAfter(m_path, sSlash);
         runes_t filenameonly = findLastSelectUntil(filenamepart, '.');
         runes_t fileext      = selectAfterExclude(filenamepart, filenameonly);
-        concatenate(filename.m_path, fileext, filename.m_alloc, 16);
+        concatenate(filename.m_path, fileext, filename.m_context->m_stralloc, 16);
     }
 
     path_t& path_t::operator=(const runes_t& path)
     {
-        if (m_alloc != nullptr)
+        if (m_context != nullptr)
         {
             erase();
-            copy(path, m_path, m_alloc, 16);
+            copy(path, m_path, m_context->m_stralloc, 16);
         }
         return *this;
     }
@@ -439,30 +439,30 @@ namespace xcore
         if (this == &path)
             return *this;
 
-        if (m_alloc != nullptr)
+        if (m_context != nullptr)
         {
-            if (path.m_alloc == m_alloc)
+            if (path.m_context == m_context)
             {
-                copy(path.m_path, m_path, m_alloc, 16);
+                copy(path.m_path, m_path, m_context->m_stralloc, 16);
             }
             else
             { // Allocator changed
-                m_alloc->deallocate(m_path);
-                m_alloc = path.m_alloc;
-                copy(path.m_path, m_path, m_alloc, 16);
+                m_context->m_stralloc->deallocate(m_path);
+                m_context = path.m_context;
+                copy(path.m_path, m_path, m_context->m_stralloc, 16);
             }
         }
         else
         {
-            m_alloc = path.m_alloc;
-            copy(path.m_path, m_path, m_alloc, 16);
+            m_context = path.m_context;
+            copy(path.m_path, m_path, m_context->m_stralloc, 16);
         }
         return *this;
     }
 
     path_t& path_t::operator+=(const runes_t& r)
     {
-        concatenate(m_path, r, m_alloc, 16);
+        concatenate(m_path, r, m_context->m_stralloc, 16);
         return *this;
     }
 
@@ -471,7 +471,7 @@ namespace xcore
 
     void path_t::toString(runes_t& dst) const
     {
-        copy(m_path, dst, m_alloc, 4);
+        copy(m_path, dst, m_context->m_stralloc, 4);
     }
 
     void path_t::as_utf16(path_t const& p, path_t& dst)

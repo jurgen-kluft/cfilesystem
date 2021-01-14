@@ -1076,10 +1076,10 @@ UNITTEST_SUITE_BEGIN(xfiledevice_register)
 	{
 		UNITTEST_FIXTURE_SETUP()
 		{
-			filesyscfg_t cfg;
-			cfg.m_allocator = gTestAllocator;
-			cfg.m_max_open_files = 32;
-			filesystem_t::create(cfg);
+			filesystem_t::context_t ctxt;
+			ctxt.m_allocator = gTestAllocator;
+			ctxt.m_max_open_files = 32;
+			filesystem_t::create(ctxt);
 		}
 		
 		UNITTEST_FIXTURE_TEARDOWN()

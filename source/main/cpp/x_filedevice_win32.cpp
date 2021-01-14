@@ -579,7 +579,7 @@ namespace xcore
         xdirwalker(dirpath_t const& dirpath) : mNodeHeap(nullptr), mDirPath()
         {
             mDirPath  = filesys_t::get_path(dirpath);
-            mNodeHeap = filesys_t::get_filesystem(dirpath)->m_allocator;
+            mNodeHeap = filesys_t::get_filesystem(dirpath)->m_context.m_allocator;
 
             *mWildcard.m_runes.m_utf16.m_end++ = '*';
             *mWildcard.m_runes.m_utf16.m_end   = '\0';
@@ -589,7 +589,7 @@ namespace xcore
         {
             xnode* nextnode = mNodeHeap->construct<xdirwalker::xnode>();
 
-            concatenate(mDirPath.m_path, mWildcard, mDirPath.m_alloc, 16);
+            concatenate(mDirPath.m_path, mWildcard, mDirPath.m_context->m_stralloc, 16);
             path_t dirpath16;
             path_t::as_utf16(mDirPath, dirpath16);
             nextnode->mFindHandle = ::FindFirstFileW(LPCWSTR(dirpath16.m_path.m_runes.m_utf16.m_str), &nextnode->mFindData);
@@ -626,13 +626,13 @@ namespace xcore
             {
                 dirname.m_path.m_runes.m_utf16.m_end++;
             }
-            concatenate(mDirPath.m_path, dirname.m_path, mDirPath.m_alloc, 4);
+            concatenate(mDirPath.m_path, dirname.m_path, mDirPath.m_context->m_stralloc, 4);
 
             runez_t<utf32::rune, 4> slash;
             *slash.m_runes.m_utf16.m_end++ = '\\';
             *slash.m_runes.m_utf16.m_end   = '\0';
 
-            concatenate(mDirPath.m_path, slash, mDirPath.m_alloc, 16);
+            concatenate(mDirPath.m_path, slash, mDirPath.m_context->m_stralloc, 16);
 
             // We have found a directory, enter
             if (!enter_dir())
@@ -666,7 +666,7 @@ namespace xcore
                 filename.m_runes.m_utf16.m_end++;
             }
             mFilePath.copy_dirpath(mDirPath.m_path);
-            concatenate(mFilePath.m_path, filename, mFilePath.m_alloc, 4);
+            concatenate(mFilePath.m_path, filename, mFilePath.m_context->m_stralloc, 4);
 
             return (enumerator(mLevel, &mFileInfo, nullptr));
         }

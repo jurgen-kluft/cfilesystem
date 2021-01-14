@@ -17,8 +17,8 @@ namespace xcore
     {
         for (s32 i = 0; i < mNumAliases; ++i)
         {
-            mStrAlloc->deallocate(mAliasList[i].mTarget);
-            mStrAlloc->deallocate(mAliasList[i].mResolved);
+            mContext->m_stralloc->deallocate(mAliasList[i].mTarget);
+            mContext->m_stralloc->deallocate(mAliasList[i].mResolved);
         }
 
         mNumAliases = 0;
@@ -49,7 +49,7 @@ namespace xcore
     //==============================================================================
     // Functions
     //==============================================================================
-    devicemanager_t::devicemanager_t(runes_alloc_t* stralloc) : mStrAlloc(stralloc), mNumAliases(0), mNumDevices(0) {}
+    devicemanager_t::devicemanager_t(filesystem_t::context_t* ctxt) : mContext(ctxt), mNumAliases(0), mNumDevices(0) {}
 
     //------------------------------------------------------------------------------
 
@@ -92,7 +92,7 @@ namespace xcore
         {
             if (compare(mAliasList[i].mAlias, alias) == 0)
             {
-                copy(target, mAliasList[i].mTarget, mStrAlloc, 8);
+                copy(target, mAliasList[i].mTarget, mContext->m_stralloc, 8);
                 console->writeLine("INFO replaced alias for '%s'", va_list_t(va_t(alias)));
                 mNeedsResolve = true;
                 return true;
@@ -102,7 +102,7 @@ namespace xcore
         if (mNumAliases < MAX_FILE_ALIASES)
         {
             copy(alias, mAliasList[mNumAliases].mAlias);
-            copy(target, mAliasList[mNumAliases].mTarget, mStrAlloc, 8);
+            copy(target, mAliasList[mNumAliases].mTarget, mContext->m_stralloc, 8);
             mNumAliases++;
             mNeedsResolve = true;
             return true;
@@ -216,14 +216,14 @@ namespace xcore
                 resolved_path.reset();
 
                 s32 indexof_alias = stack.pop();
-                concatenate(resolved_path, mAliasList[indexof_alias].mTarget, mStrAlloc, 8);
+                concatenate(resolved_path, mAliasList[indexof_alias].mTarget, mContext->m_stralloc, 8);
                 while (stack.empty() == false)
                 {
                     indexof_alias              = stack.pop();
                     crunes_t target_path       = crunes_t(mAliasList[indexof_alias].mTarget);
                     crunes_t alias_target_path = findSelectUntilIncluded(target_path, sDeviceSeperator);
                     alias_target_path          = selectAfterExclude(target_path, alias_target_path);
-                    concatenate(resolved_path, alias_target_path, mStrAlloc, 8);
+                    concatenate(resolved_path, alias_target_path, mContext->m_stralloc, 8);
                 }
 
                 // Cache the device index that our resolved path is referencing
@@ -306,14 +306,14 @@ namespace xcore
         runes_t       devname = findSelectUntilIncluded(path.m_path, sDeviceSeperator);
         if (!devname.is_empty())
         {
-            device_syspath = path_t(mStrAlloc);
+            device_syspath = path_t(mContext);
             for (s32 i = 0; i < mNumAliases; ++i)
             {
                 if (compare(mAliasList[i].mAlias, devname) == 0)
                 {
                     // Concatenate the path (filepath or dirpath) that the user provided to our resolved path
                     runes_t relpath = selectAfterExclude(path.m_path, devname);
-                    concatenate(device_syspath.m_path, mAliasList[i].mResolved, relpath, device_syspath.m_alloc, 16);
+                    concatenate(device_syspath.m_path, mAliasList[i].mResolved, relpath, device_syspath.m_context->m_stralloc, 16);
                     if (mAliasList[i].mDeviceIndex >= 0)
                     {
                         return mDeviceList[mAliasList[i].mDeviceIndex].mDevice;
@@ -326,7 +326,7 @@ namespace xcore
                 {
                     // Concatenate the path (filepath or dirpath) that the user provided to our device path
                     runes_t relpath = selectAfterExclude(path.m_path, devname);
-                    concatenate(device_syspath.m_path, mDeviceList[i].mDevName, relpath, mStrAlloc, 16);
+                    concatenate(device_syspath.m_path, mDeviceList[i].mDevName, relpath, mContext->m_stralloc, 16);
                     return mDeviceList[i].mDevice;
                 }
             }

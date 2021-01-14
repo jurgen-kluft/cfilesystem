@@ -159,6 +159,8 @@ namespace xcore
 
             virtual void deallocate(runes_t& slice_t)
             {
+                if (slice_t.is_nil())
+                    return;
                 m_allocator->deallocate(slice_t.m_runes.m_utf32.m_bos);
                 slice_t = runes_t();
             }
@@ -168,16 +170,14 @@ namespace xcore
     } // namespace
 
     //------------------------------------------------------------------------------
-    void filesystem_t::create(filesyscfg_t const& cfg)
+    void filesystem_t::create(filesystem_t::context_t const& ctxt)
     {
-        filesys_t* imp      = cfg.m_allocator->construct<filesys_t>();
-        imp->m_slash       = cfg.m_default_slash;
-        imp->m_allocator   = cfg.m_allocator;
-        imp->m_stralloc    = cfg.m_allocator->construct<fs_utfalloc>(cfg.m_allocator);
+        filesys_t* imp      = ctxt.m_allocator->construct<filesys_t>();
+        imp->m_context      = ctxt;
         filesystem_t::mImpl = imp;
 
-        imp->m_devman = cfg.m_allocator->construct<devicemanager_t>(imp->m_stralloc);
-        x_FileSystemRegisterSystemAliases(cfg.m_allocator, imp->m_devman);
+        imp->m_devman = ctxt.m_allocator->construct<devicemanager_t>(&imp->m_context);
+        x_FileSystemRegisterSystemAliases(ctxt.m_allocator, imp->m_devman);
 
         utf32::rune adir32[512] = {'\0'};
 
@@ -217,9 +217,9 @@ namespace xcore
     {
         mImpl->m_devman->exit();
 
-        mImpl->m_allocator->destruct(mImpl->m_stralloc);
-        mImpl->m_allocator->destruct(mImpl->m_devman);
-        mImpl->m_allocator->destruct(mImpl);
+        mImpl->m_context.m_allocator->destruct(mImpl->m_context.m_stralloc);
+        mImpl->m_context.m_allocator->destruct(mImpl->m_devman);
+        mImpl->m_context.m_allocator->destruct(mImpl);
         mImpl = nullptr;
     }
 

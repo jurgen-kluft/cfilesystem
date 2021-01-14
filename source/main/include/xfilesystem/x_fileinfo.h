@@ -30,8 +30,8 @@ namespace xcore
         bool        mFileExists;
         filetimes_t mFileTimes;
         fileattrs_t mFileAttributes;
-        filesys_t* mParent;
-        filepath_t mPath;
+        filesystem_t::context_t* m_context;
+        filepath_t m_path;
 
     public:
         fileinfo_t();

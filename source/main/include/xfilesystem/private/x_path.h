@@ -7,6 +7,7 @@
 
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
+#include "xfilesystem/x_filesystem.h"
 
 namespace xcore
 {
@@ -41,22 +42,20 @@ namespace xcore
     class path_t
     {
     public:
-        static crunes_t s_device_separator;
-
-        runes_alloc_t* m_alloc;
+        filesystem_t::context_t* m_context;
         runes_t m_path;
 
         path_t();
-        path_t(runes_alloc_t* allocator);
-        path_t(runes_alloc_t* allocator, const crunes_t& path);
+        path_t(filesystem_t::context_t* allocator);
+        path_t(filesystem_t::context_t* allocator, const crunes_t& path);
         path_t(const path_t& path);
         path_t(const path_t& lhspath, const path_t& rhspath);
         ~path_t();
 
         path_t resolve(filesys_t* fs, filedevice_t*& outdevice) const;
 
-        void set_filepath(runes_t& runes, runes_alloc_t* allocator);
-        void set_dirpath(runes_t& runes, runes_alloc_t* allocator);
+        void set_filepath(runes_t& runes, filesystem_t::context_t* ctxt);
+        void set_dirpath(runes_t& runes, filesystem_t::context_t* ctxt);
 
         void combine(const path_t& dirpath, const path_t& filepath);
         void copy_dirpath(runes_t& runes);

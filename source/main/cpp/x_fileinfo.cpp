@@ -17,47 +17,47 @@
 //==============================================================================
 namespace xcore
 {
-    fileinfo_t::fileinfo_t() : mFileExists(false), mFileTimes(), mFileAttributes(), mParent(nullptr), mPath() {}
-    fileinfo_t::fileinfo_t(const fileinfo_t& fi) : mFileExists(fi.mFileExists), mFileTimes(fi.mFileTimes), mFileAttributes(fi.mFileAttributes), mParent(fi.mParent), mPath(fi.mPath) {}
-    fileinfo_t::fileinfo_t(const filepath_t& fp) : mParent(fp.mParent), mPath(fp) {}
+    fileinfo_t::fileinfo_t() : mFileExists(false), mFileTimes(), mFileAttributes(), m_context(nullptr), m_path() {}
+    fileinfo_t::fileinfo_t(const fileinfo_t& fi) : mFileExists(fi.mFileExists), mFileTimes(fi.mFileTimes), mFileAttributes(fi.mFileAttributes), m_context(fi.m_context), m_path(fi.m_path) {}
+    fileinfo_t::fileinfo_t(const filepath_t& fp) : m_context(fp.m_context), m_path(fp) {}
 
-    u64  fileinfo_t::getLength() const { return sGetLength(mPath); }
-    void fileinfo_t::setLength(u64 length) { sSetLength(mPath, length); }
+    u64  fileinfo_t::getLength() const { return sGetLength(m_path); }
+    void fileinfo_t::setLength(u64 length) { sSetLength(m_path, length); }
 
     bool fileinfo_t::isValid() const
     {
         filedevice_t* device;
-        filepath_t    sysfilepath = mParent->resolve(mPath, device);
+        filepath_t    sysfilepath = m_context->m_owner->resolve(m_path, device);
         return device != nullptr;
     }
 
-    bool fileinfo_t::isRooted() const { return mPath.isRooted(); }
-    bool fileinfo_t::exists() const { return sExists(mPath); }
-    bool fileinfo_t::create(stream_t& outFilestream) const { return (sCreate(mPath, outFilestream)); }
+    bool fileinfo_t::isRooted() const { return m_path.isRooted(); }
+    bool fileinfo_t::exists() const { return sExists(m_path); }
+    bool fileinfo_t::create(stream_t& outFilestream) const { return (sCreate(m_path, outFilestream)); }
 
     bool fileinfo_t::create()
     {
         stream_t fs;
-        if (sCreate(mPath, fs))
+        if (sCreate(m_path, fs))
         {
-            mParent->close(fs);
+            m_context->m_owner->close(fs);
             return true;
         }
         return false;
     }
 
-    bool fileinfo_t::remove() { return sDelete(mPath); }
+    bool fileinfo_t::remove() { return sDelete(m_path); }
     void fileinfo_t::refresh() {}
-    bool fileinfo_t::open(stream_t& outFilestream) { return (sCreate(mPath, outFilestream)); }
-    bool fileinfo_t::openRead(stream_t& outFileStream) { return sOpenRead(mPath, outFileStream); }
-    bool fileinfo_t::openWrite(stream_t& outFileStream) { return sOpenWrite(mPath, outFileStream); }
-    u64  fileinfo_t::readAllBytes(xbyte* buffer, u64 count) { return sReadAllBytes(mPath, buffer, count); }
-    u64  fileinfo_t::writeAllBytes(const xbyte* buffer, u64 count) { return sWriteAllBytes(mPath, buffer, count); }
+    bool fileinfo_t::open(stream_t& outFilestream) { return (sCreate(m_path, outFilestream)); }
+    bool fileinfo_t::openRead(stream_t& outFileStream) { return sOpenRead(m_path, outFileStream); }
+    bool fileinfo_t::openWrite(stream_t& outFileStream) { return sOpenWrite(m_path, outFileStream); }
+    u64  fileinfo_t::readAllBytes(xbyte* buffer, u64 count) { return sReadAllBytes(m_path, buffer, count); }
+    u64  fileinfo_t::writeAllBytes(const xbyte* buffer, u64 count) { return sWriteAllBytes(m_path, buffer, count); }
 
     bool fileinfo_t::getParent(dirpath_t& parent) const
     {
         dirpath_t dirpath;
-        if (mPath.getDirname(dirpath))
+        if (m_path.getDirname(dirpath))
         {
             dirpath.getParent(parent);
             return true;
@@ -67,21 +67,21 @@ namespace xcore
 
     bool fileinfo_t::getRoot(dirpath_t& outInfo) const
     {
-        if (mPath.isRooted())
+        if (m_path.isRooted())
         {
-            mPath.getRoot(outInfo);
+            m_path.getRoot(outInfo);
             return true;
         }
         return false;
     }
 
-    void fileinfo_t::getDirpath(dirpath_t& dirpath) const { mPath.getDirname(dirpath); }
-    void fileinfo_t::getFilename(filepath_t& filename) const { mPath.getFilename(filename); }
-    void fileinfo_t::getFilenameWithoutExtension(filepath_t& extension) const { mPath.getFilenameWithoutExtension(extension); }
-    void fileinfo_t::getExtension(filepath_t& extension) const { mPath.getExtension(extension); }
+    void fileinfo_t::getDirpath(dirpath_t& dirpath) const { m_path.getDirname(dirpath); }
+    void fileinfo_t::getFilename(filepath_t& filename) const { m_path.getFilename(filename); }
+    void fileinfo_t::getFilenameWithoutExtension(filepath_t& extension) const { m_path.getFilenameWithoutExtension(extension); }
+    void fileinfo_t::getExtension(filepath_t& extension) const { m_path.getExtension(extension); }
 
-    bool fileinfo_t::copy_to(const filepath_t& toFilename, bool overwrite) { return sCopy(mPath, toFilename, overwrite); }
-    bool fileinfo_t::move_to(const filepath_t& toFilename, bool overwrite) { return sMove(mPath, toFilename); }
+    bool fileinfo_t::copy_to(const filepath_t& toFilename, bool overwrite) { return sCopy(m_path, toFilename, overwrite); }
+    bool fileinfo_t::move_to(const filepath_t& toFilename, bool overwrite) { return sMove(m_path, toFilename); }
 
     dirpath_t fileinfo_t::getParent() const
     {
@@ -91,7 +91,7 @@ namespace xcore
             return dp;
         }
         crunes_t nullpath;
-        return dirpath_t(mParent, nullpath);
+        return dirpath_t(m_context, nullpath);
     }
 
     dirpath_t fileinfo_t::getRoot() const
@@ -102,7 +102,7 @@ namespace xcore
             return dp;
         }
         crunes_t nullpath;
-        return dirpath_t(mParent, nullpath);
+        return dirpath_t(m_context, nullpath);
     }
 
     dirpath_t fileinfo_t::getDirpath() const
@@ -133,38 +133,38 @@ namespace xcore
         return fp;
     }
 
-    void              fileinfo_t::getFilepath(filepath_t& filepath) const { filepath = mPath; }
-    filepath_t const& fileinfo_t::getFilepath() const { return mPath; }
+    void              fileinfo_t::getFilepath(filepath_t& filepath) const { filepath = m_path; }
+    filepath_t const& fileinfo_t::getFilepath() const { return m_path; }
 
-    void fileinfo_t::up() { mPath.up(); }
-    void fileinfo_t::down(dirpath_t const& dir) { mPath.down(dir); }
+    void fileinfo_t::up() { m_path.up(); }
+    void fileinfo_t::down(dirpath_t const& dir) { m_path.down(dir); }
 
-    bool fileinfo_t::getAttrs(fileattrs_t& fattrs) const { return sGetAttrs(mPath, fattrs); }
-    bool fileinfo_t::getTimes(filetimes_t& ftimes) const { return sGetTime(mPath, ftimes); }
-    bool fileinfo_t::setAttrs(fileattrs_t fattrs) { return sSetAttrs(mPath, fattrs); }
-    bool fileinfo_t::setTimes(filetimes_t ftimes) { return sSetTime(mPath, ftimes); }
+    bool fileinfo_t::getAttrs(fileattrs_t& fattrs) const { return sGetAttrs(m_path, fattrs); }
+    bool fileinfo_t::getTimes(filetimes_t& ftimes) const { return sGetTime(m_path, ftimes); }
+    bool fileinfo_t::setAttrs(fileattrs_t fattrs) { return sSetAttrs(m_path, fattrs); }
+    bool fileinfo_t::setTimes(filetimes_t ftimes) { return sSetTime(m_path, ftimes); }
 
     fileinfo_t& fileinfo_t::operator=(const fileinfo_t& other)
     {
         if (this == &other)
             return *this;
 
-        mPath = other.mPath;
+        m_path = other.m_path;
         return *this;
     }
 
     fileinfo_t& fileinfo_t::operator=(const filepath_t& other)
     {
-        if (&mPath == &other)
+        if (&m_path == &other)
             return *this;
 
-        mPath = other;
+        m_path = other;
         return *this;
     }
 
-    bool fileinfo_t::operator==(const fileinfo_t& other) const { return mPath == other.mPath; }
+    bool fileinfo_t::operator==(const fileinfo_t& other) const { return m_path == other.m_path; }
 
-    bool fileinfo_t::operator!=(const fileinfo_t& other) const { return mPath != other.mPath; }
+    bool fileinfo_t::operator!=(const fileinfo_t& other) const { return m_path != other.m_path; }
 
     ///< Static functions
     bool fileinfo_t::sExists(const filepath_t& filepath)

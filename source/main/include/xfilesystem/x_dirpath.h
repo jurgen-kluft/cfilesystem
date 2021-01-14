@@ -34,11 +34,11 @@ namespace xcore
         friend class filesys_t;
         friend class filedevice_pc_t;
 
-        filesys_t* mParent;
-        path_t     mPath;
+        filesystem_t::context_t* m_context;
+        path_t     m_path;
 
-        dirpath_t(filesys_t* fs);
-        dirpath_t(filesys_t* fs, crunes_t const& path);
+        dirpath_t(filesystem_t::context_t* ctxt);
+        dirpath_t(filesystem_t::context_t* ctxt, crunes_t const& path);
 
     public:
         dirpath_t();

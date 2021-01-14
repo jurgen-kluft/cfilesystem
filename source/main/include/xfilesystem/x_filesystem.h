@@ -18,14 +18,6 @@ namespace xcore
     class alloc_t;
     class filesystem_t;
 
-    struct filesyscfg_t
-    {
-        inline filesyscfg_t() : m_max_open_files(32), m_default_slash('/'), m_allocator(nullptr) {}
-        u32      m_max_open_files;
-        char     m_default_slash;
-        alloc_t* m_allocator;
-    };
-
     class filepath_t;
     class fileinfo_t;
     class dirpath_t;
@@ -36,7 +28,17 @@ namespace xcore
     class filesystem_t
     {
     public:
-        static void create(filesyscfg_t const&);
+        struct context_t
+        {
+            inline context_t() : m_max_open_files(32), m_default_slash('/'), m_allocator(nullptr), m_stralloc(nullptr) {}
+            u32            m_max_open_files;
+            char           m_default_slash;
+            filesys_t*     m_owner;
+            alloc_t*       m_allocator;
+            runes_alloc_t* m_stralloc;
+        };
+
+        static void create(context_t const&);
         static void destroy();
 
         static bool register_device(const crunes_t& device_name, filedevice_t*);

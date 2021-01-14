@@ -12,6 +12,7 @@
 
 #include "xfilesystem/private/x_enumerations.h"
 #include "xfilesystem/private/x_path.h"
+#include "xfilesystem/x_filesystem.h"
 
 namespace xcore
 {
@@ -37,10 +38,9 @@ namespace xcore
     class filesys_t
     {
     public:
-        char             m_slash;
-        alloc_t*         m_allocator;
-        runes_alloc_t*   m_stralloc;
-        devicemanager_t* m_devman;
+        char                      m_slash;
+        filesystem_t::context_t   m_context;
+        devicemanager_t*          m_devman;
 
         filehandle_t* m_filehandle_list_free;
         filehandle_t* m_filehandle_list_active;

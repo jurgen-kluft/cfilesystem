@@ -8,6 +8,7 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
 #include "xfilesystem/private/x_path.h"
+#include "xfilesystem/x_filesystem.h"
 
 namespace xcore
 {
@@ -26,11 +27,11 @@ namespace xcore
         friend class fileinfo_t;
 		friend class path_t;
 
-        filepath_t(filesys_t* parent);
-        filepath_t(filesys_t* parent, crunes_t const& path);
+        filepath_t(filesystem_t::context_t* ctxt);
+        filepath_t(filesystem_t::context_t* ctxt, crunes_t const& path);
 
-        filesys_t* mParent;
-        path_t     mPath;
+        filesystem_t::context_t* m_context;
+        path_t     m_path;
 
     public:
         filepath_t();

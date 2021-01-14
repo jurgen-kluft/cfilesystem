@@ -9,50 +9,50 @@
 
 namespace xcore
 {
-    filepath_t::filepath_t() : mParent(nullptr), mPath() {}
-    filepath_t::filepath_t(filesys_t* fs) : mParent(fs), mPath(fs->m_stralloc)
+    filepath_t::filepath_t() : m_context(nullptr), m_path() {}
+    filepath_t::filepath_t(filesystem_t::context_t* ctxt) : m_context(ctxt), m_path(ctxt)
     {
     }
-    filepath_t::filepath_t(filesys_t* fs, crunes_t const& path) : mParent(fs), mPath()
+    filepath_t::filepath_t(filesystem_t::context_t* ctxt, crunes_t const& path) : m_context(ctxt), m_path()
     {
-        mPath.m_alloc = fs->m_stralloc;
-        copy(path, mPath.m_path, fs->m_stralloc);
+        m_path.m_context = ctxt;
+        copy(path, m_path.m_path, ctxt->m_stralloc);
     }
 
-    filepath_t::filepath_t(const filepath_t& filepath) : mParent(filepath.mParent), mPath() { mPath = filepath.mPath; }
-    filepath_t::filepath_t(const dirpath_t& dirpath, const filepath_t& filepath) : mParent(filepath.mParent), mPath() { mPath.combine(dirpath.mPath, filepath.mPath); }
+    filepath_t::filepath_t(const filepath_t& filepath) : m_context(filepath.m_context), m_path() { m_path = filepath.m_path; }
+    filepath_t::filepath_t(const dirpath_t& dirpath, const filepath_t& filepath) : m_context(filepath.m_context), m_path() { m_path.combine(dirpath.m_path, filepath.m_path); }
     filepath_t::~filepath_t() {}
 
-    void filepath_t::clear() { mPath.clear(); }
-    bool filepath_t::isEmpty() const { return mPath.isEmpty(); }
-    bool filepath_t::isRooted() const { return mPath.isRooted(); }
+    void filepath_t::clear() { m_path.clear(); }
+    bool filepath_t::isEmpty() const { return m_path.isEmpty(); }
+    bool filepath_t::isRooted() const { return m_path.isRooted(); }
 
-    void filepath_t::makeRelative() { mPath.makeRelative(); }
-    void filepath_t::makeRelativeTo(const dirpath_t& root) { mPath.makeRelativeTo(root.mPath); }
-    void filepath_t::makeAbsoluteTo(const dirpath_t& root) { mPath.setRootDir(root.mPath); }
-    bool filepath_t::getRoot(dirpath_t& root) const { return mPath.getRootDir(root.mPath); }
-    bool filepath_t::getDirname(dirpath_t& outDirPath) const { return mPath.getDirname(outDirPath.mPath); }
-    void filepath_t::getFilename(filepath_t& filename) const { mPath.getFilename(filename.mPath); }
-    void filepath_t::getFilenameWithoutExtension(filepath_t& filename) const { mPath.getFilenameWithoutExtension(filename.mPath); }
-    void filepath_t::getExtension(filepath_t& filename) const { mPath.getExtension(filename.mPath); }
+    void filepath_t::makeRelative() { m_path.makeRelative(); }
+    void filepath_t::makeRelativeTo(const dirpath_t& root) { m_path.makeRelativeTo(root.m_path); }
+    void filepath_t::makeAbsoluteTo(const dirpath_t& root) { m_path.setRootDir(root.m_path); }
+    bool filepath_t::getRoot(dirpath_t& root) const { return m_path.getRootDir(root.m_path); }
+    bool filepath_t::getDirname(dirpath_t& outDirPath) const { return m_path.getDirname(outDirPath.m_path); }
+    void filepath_t::getFilename(filepath_t& filename) const { m_path.getFilename(filename.m_path); }
+    void filepath_t::getFilenameWithoutExtension(filepath_t& filename) const { m_path.getFilenameWithoutExtension(filename.m_path); }
+    void filepath_t::getExtension(filepath_t& filename) const { m_path.getExtension(filename.m_path); }
 
-    void filepath_t::up() { mPath.up(); }
-    void filepath_t::down(dirpath_t const& p) { mPath.down(p.mPath); }
+    void filepath_t::up() { m_path.up(); }
+    void filepath_t::down(dirpath_t const& p) { m_path.down(p.m_path); }
 
     void filepath_t::toString(runes_t& dst) const
     {
-        return mPath.toString(dst);
+        return m_path.toString(dst);
     }
 
     filepath_t& filepath_t::operator=(const filepath_t& path)
     {
         if (this == &path)
             return *this;
-        mPath = path.mPath;
+        m_path = path.m_path;
         return *this;
     }
 
-    bool filepath_t::operator==(const filepath_t& rhs) const { return mPath == rhs.mPath; }
-    bool filepath_t::operator!=(const filepath_t& rhs) const { return mPath != rhs.mPath; }
+    bool filepath_t::operator==(const filepath_t& rhs) const { return m_path == rhs.m_path; }
+    bool filepath_t::operator!=(const filepath_t& rhs) const { return m_path != rhs.m_path; }
 
 } // namespace xcore

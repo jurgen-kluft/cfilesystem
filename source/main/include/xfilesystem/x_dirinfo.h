@@ -22,8 +22,8 @@ namespace xcore
     protected:
         friend class filesys_t;
 
-        filesys_t* mParent;
-        dirpath_t  mPath;
+        filesystem_t::context_t* m_context;
+        dirpath_t  m_path;
 
     public:
         dirinfo_t();
