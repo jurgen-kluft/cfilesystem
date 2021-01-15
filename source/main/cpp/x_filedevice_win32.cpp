@@ -106,10 +106,10 @@ namespace xcore
         return file_device;
     }
 
-    void x_DestroyFileDevicePC(filedevice_t* device)
+    void x_DestroyFileDevicePC(alloc_t* alloc, filedevice_t* device)
     {
-        filedevice_pc_t* file_device = (filedevice_pc_t*)device;
-        file_device->mAllocator->destruct(file_device);
+        filedevice_pc_t* pc_filedevice = (filedevice_pc_t*)device;
+        alloc->destruct(pc_filedevice);
     }
 
     filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t const& pDrivePath, bool boCanWrite)
@@ -118,7 +118,7 @@ namespace xcore
         return x_CreateFileDevicePC(allocator, drivePath, boCanWrite);
     }
 
-    void x_DestroyFileDevice(filedevice_t* fd) { x_DestroyFileDevicePC(fd); }
+    void x_DestroyFileDevice(alloc_t* allocator, filedevice_t* fd) { x_DestroyFileDevicePC(allocator, fd); }
 
     bool filedevice_pc_t::getDeviceInfo(u64& totalSpace, u64& freeSpace) const
     {

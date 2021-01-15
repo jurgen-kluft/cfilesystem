@@ -33,11 +33,19 @@ namespace xcore
     {
         for (s32 i = 0; i < mNumDevices; ++i)
         {
-            filedevice_t* device = mDeviceList[i].mDevice;
+            filedevice_t* const device = mDeviceList[i].mDevice;
             if (device != nullptr)
             {
-                x_DestroyFileDevice(device);
-                mDeviceList[i].mDevice = nullptr;
+                x_DestroyFileDevice(mContext->m_allocator, device);
+                // Device-Instances can be shared over multiple registered devices.
+                // Set all of the current device ptr's to nullptr.
+                for (s32 j = 0; j < mNumDevices; ++j)
+                {
+                    if (device == mDeviceList[j].mDevice)
+                    {
+                        mDeviceList[j].mDevice = nullptr;
+                    }
+                }
             }
         }
         clear();

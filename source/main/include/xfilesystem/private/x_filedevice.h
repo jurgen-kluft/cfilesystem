@@ -27,7 +27,7 @@ namespace xcore
 
     // System file device
     extern filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t const& pDrivePath, bool boCanWrite);
-    extern void         x_DestroyFileDevice(filedevice_t*);
+    extern void         x_DestroyFileDevice(alloc_t* allocator, filedevice_t*);
 
     extern filedevice_t* x_NullFileDevice();
 
