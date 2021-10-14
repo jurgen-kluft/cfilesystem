@@ -132,7 +132,7 @@ fs->search(dir, [](fileinfo_t const* fileinfo, dirinfo_t const* dirinfo, s32 dir
         // Do not recurse into any directory
         return false;
     } else if (fileinfo!=nullptr) {
-        if (fileinfo->getFilepath() == "README.md")
+        if (fileinfo->getFilename() == "README.md")
         {
             // Do something with it and end the search
             return false;

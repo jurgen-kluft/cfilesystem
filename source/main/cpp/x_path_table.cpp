@@ -286,9 +286,26 @@ namespace xcore
             m_extension_table.init(allocator, 6);
         }
 
-        void release(tname_t* name) {}
-        void release(tdevice_t* dev) {}
-        void release(tfolder_t* folder) {}
+        void release_filename(tname_t* name) 
+        {
+            if (tname_t::release(name))
+            {
+                m_filename_table.remove(name);
+                tname_t::destruct(m_allocator, name);
+            }
+        }
+
+        void release_extension(tname_t* name) 
+        {
+            if (tname_t::release(name))
+            {
+                m_extension_table.remove(name);
+                tname_t::destruct(m_allocator, name);
+            }
+        }
+
+        void release_device(tdevice_t* dev) {}
+        void release_folder(tfolder_t* folder) {}
 
         bool register_filename(crunes_t const& fullfilename, tname_t*& out_filename, tname_t*& out_extension)
         {
@@ -332,11 +349,11 @@ namespace xcore
             return name;
         }
 
-        tdevice_t* find_device(crunes_t const& folder_name)
+        tdevice_t* register_device(crunes_t const& device)
         {
             for (s32 i = 0; i < m_num_devices; ++i)
             {
-                if (xcore::compare(folder_name, m_tdevice[i].m_name->m_name) == 0)
+                if (xcore::compare(device, m_tdevice[i].m_name->m_name) == 0)
                 {
                     return &m_tdevice[i];
                 }
