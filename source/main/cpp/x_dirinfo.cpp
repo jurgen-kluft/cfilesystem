@@ -18,6 +18,7 @@ namespace xcore
     dirinfo_t::dirinfo_t() {}
     dirinfo_t::dirinfo_t(const dirinfo_t& dirinfo) : m_path(dirinfo.m_path) {}
     dirinfo_t::dirinfo_t(const dirpath_t& dir) : m_path(dir) {}
+    dirinfo_t::~dirinfo_t() {}
 
     bool             dirinfo_t::isRoot() const { return m_path.isRoot(); }
     bool             dirinfo_t::isRooted() const { return m_path.isRooted(); }

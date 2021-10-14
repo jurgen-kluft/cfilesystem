@@ -28,6 +28,7 @@ namespace xcore
     public:
         dirinfo_t();
         dirinfo_t(const dirinfo_t& dirinfo);
+        ~dirinfo_t();
 
         explicit dirinfo_t(const dirpath_t& dir);
 

@@ -40,6 +40,15 @@ namespace xcore
         static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
                                                       L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
 
+        static void x_FileSystemUnregisterSystemAliases(filesystem_t::context_t* ctxt, devicemanager_t* devman)
+        {
+            devman->exit();
+            for (s32 i = 0; i < DRIVE_TYPE_NUM; i++)
+            {
+                sFileDevices[i] = nullptr;
+            }
+        }
+
         static void x_FileSystemRegisterSystemAliases(filesystem_t::context_t* ctxt, devicemanager_t* devman)
         {
             runez_t<utf32::rune, 255> string32;
@@ -218,8 +227,7 @@ namespace xcore
     //------------------------------------------------------------------------------
     void filesystem_t::destroy()
     {
-        mImpl->m_devman->exit();
-
+        x_FileSystemUnregisterSystemAliases(&mImpl->m_context, mImpl->m_devman);
         mImpl->m_context.m_allocator->destruct(mImpl->m_context.m_stralloc);
         mImpl->m_context.m_allocator->destruct(mImpl->m_devman);
         mImpl->m_context.m_allocator->destruct(mImpl);

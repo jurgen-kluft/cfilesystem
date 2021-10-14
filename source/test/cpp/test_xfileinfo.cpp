@@ -14,19 +14,24 @@
 
 using namespace xcore;
 
+extern alloc_t* gTestAllocator;
+extern filedevice_t* sTestFileDevice;
 
 UNITTEST_SUITE_BEGIN(fileinfo)
 {
 	UNITTEST_FIXTURE(main)
 	{
-		UNITTEST_FIXTURE_SETUP() 
+		UNITTEST_FIXTURE_SETUP()
 		{
-
-			
+			filesystem_t::context_t ctxt;
+			ctxt.m_allocator = gTestAllocator;
+			ctxt.m_max_open_files = 32;
+			filesystem_t::create(ctxt);
 		}
-		UNITTEST_FIXTURE_TEARDOWN() 
-		{
 
+		UNITTEST_FIXTURE_TEARDOWN()
+		{
+			filesystem_t::destroy();
 		}
 
 		static datetime_t sCreationTime(2011, 2, 10, 15, 30, 10);
@@ -35,6 +40,13 @@ UNITTEST_SUITE_BEGIN(fileinfo)
 
 		static ascii::rune sStringBuffer[512];
 		static runes_t sCString(sStringBuffer, sStringBuffer, sStringBuffer + sizeof(sStringBuffer));
+
+		UNITTEST_TEST(register_test_filedevice)
+		{
+			runez_t<utf32::rune, 32> deviceName;
+			deviceName = "TEST:\\";
+			CHECK_TRUE(filesystem_t::register_device(deviceName, sTestFileDevice));
+		}
 
 		UNITTEST_TEST(constructor1)
 		{

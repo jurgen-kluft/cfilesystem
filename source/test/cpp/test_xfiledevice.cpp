@@ -21,30 +21,6 @@ extern alloc_t* gTestAllocator;
 
 namespace xcore
 {
-	class utf32_alloc : public runes_alloc_t
-	{
-	public:
-		virtual runes_t allocate(s32 len, s32 cap, s32 type) 
-		{
-			utf32::prune prunes = (utf32::prune)gTestAllocator->allocate(sizeof(utf32::rune) * cap, sizeof(utf32::rune));
-			prunes[cap - 1] = utf32::TERMINATOR;
-			runes_t runes(prunes, prunes, prunes + cap - 1);
-			return runes;
-		}
-            
-		virtual void  deallocate(runes_t& slice_t)
-		{
-			if (slice_t.m_runes.m_ascii.m_bos != nullptr)
-			{
-				gTestAllocator->deallocate(slice_t.m_runes.m_ascii.m_bos);
-			}
-			slice_t.m_runes.m_ascii.m_str = nullptr;
-			slice_t.m_runes.m_ascii.m_end = nullptr;
-			slice_t.m_runes.m_ascii.m_eos = nullptr;
-		}
-	};
-	static utf32_alloc sa;
-
 	template<class T>
 	class cstack
 	{
@@ -335,7 +311,11 @@ namespace xcore
 		public:
 									xfiledevice_TEST()
 										: mCanWrite(true)								{ } 
-			virtual					~xfiledevice_TEST()									{ }
+
+			virtual void destruct(alloc_t* allocator)
+			{
+
+			}
 
 			virtual bool			canSeek() const										{ return true; }
 			virtual bool			canWrite() const									{ return mCanWrite; }
@@ -1067,6 +1047,8 @@ namespace xcore
 		//==============================================================================
 	};
 };
+static xfilesystem_test::xfiledevice_TEST	sTestFileDeviceInstance;
+filedevice_t* sTestFileDevice = &sTestFileDeviceInstance;
 
 using namespace xfilesystem_test;
 
@@ -1086,8 +1068,6 @@ UNITTEST_SUITE_BEGIN(xfiledevice_register)
 		{
 			filesystem_t::destroy();
 		}
-
-		static xfiledevice_TEST	sTestFileDevice;
 
 		// main 
 		UNITTEST_TEST(register_test_filedevice)

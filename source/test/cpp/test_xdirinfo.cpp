@@ -58,8 +58,18 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 {
 	UNITTEST_FIXTURE(main)
 	{
-		UNITTEST_FIXTURE_SETUP() {}
-		UNITTEST_FIXTURE_TEARDOWN() {}
+		UNITTEST_FIXTURE_SETUP()
+		{
+			filesystem_t::context_t ctxt;
+			ctxt.m_allocator = gTestAllocator;
+			ctxt.m_max_open_files = 32;
+			filesystem_t::create(ctxt);
+		}
+
+		UNITTEST_FIXTURE_TEARDOWN()
+		{
+			filesystem_t::destroy();
+		}
 
 		static datetime_t sCreationTime(2011, 2, 10, 15, 30, 10);
 		static datetime_t sLastAccessTime(2011, 2, 12, 16, 00, 20);

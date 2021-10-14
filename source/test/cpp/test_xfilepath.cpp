@@ -14,12 +14,24 @@
 
 using namespace xcore;
 
+extern alloc_t* gTestAllocator;
+
 UNITTEST_SUITE_BEGIN(filepath)
 {
 	UNITTEST_FIXTURE(main)
 	{
-		UNITTEST_FIXTURE_SETUP() {}
-		UNITTEST_FIXTURE_TEARDOWN() {}
+		UNITTEST_FIXTURE_SETUP()
+		{
+			filesystem_t::context_t ctxt;
+			ctxt.m_allocator = gTestAllocator;
+			ctxt.m_max_open_files = 32;
+			filesystem_t::create(ctxt);
+		}
+
+		UNITTEST_FIXTURE_TEARDOWN()
+		{
+			filesystem_t::destroy();
+		}
 
 		UNITTEST_TEST(constructor1)
 		{

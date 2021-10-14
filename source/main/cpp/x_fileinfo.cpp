@@ -20,6 +20,7 @@ namespace xcore
     fileinfo_t::fileinfo_t() : mFileExists(false), mFileTimes(), mFileAttributes(), m_context(nullptr), m_path() {}
     fileinfo_t::fileinfo_t(const fileinfo_t& fi) : mFileExists(fi.mFileExists), mFileTimes(fi.mFileTimes), mFileAttributes(fi.mFileAttributes), m_context(fi.m_context), m_path(fi.m_path) {}
     fileinfo_t::fileinfo_t(const filepath_t& fp) : m_context(fp.m_context), m_path(fp) {}
+    fileinfo_t::~fileinfo_t() {}
 
     u64  fileinfo_t::getLength() const { return sGetLength(m_path); }
     void fileinfo_t::setLength(u64 length) { sSetLength(m_path, length); }

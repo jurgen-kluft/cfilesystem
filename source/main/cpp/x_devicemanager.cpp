@@ -25,7 +25,7 @@ namespace xcore
         for (s32 i = 0; i < MAX_FILE_ALIASES; ++i)
             mAliasList[i] = alias_t();
         mNumDevices = 0;
-        for (s32 i = 0; i < MAX_FILE_ALIASES; ++i)
+        for (s32 i = 0; i < MAX_FILE_DEVICES; ++i)
             mDeviceList[i] = device_t();
     }
 
@@ -36,7 +36,6 @@ namespace xcore
             filedevice_t* const device = mDeviceList[i].mDevice;
             if (device != nullptr)
             {
-                x_DestroyFileDevice(mContext->m_allocator, device);
                 // Device-Instances can be shared over multiple registered devices.
                 // Set all of the current device ptr's to nullptr.
                 for (s32 j = 0; j < mNumDevices; ++j)
@@ -46,6 +45,7 @@ namespace xcore
                         mDeviceList[j].mDevice = nullptr;
                     }
                 }
+                x_DestroyFileDevice(mContext->m_allocator, device);
             }
         }
         clear();

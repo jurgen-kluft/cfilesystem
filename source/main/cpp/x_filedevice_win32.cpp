@@ -43,6 +43,11 @@ namespace xcore
         filedevice_pc_t(alloc_t* alloc, const dirpath_t& pDrivePath, bool boCanWrite) : mAllocator(alloc), mDrivePath(pDrivePath), mCanWrite(boCanWrite) {}
         virtual ~filedevice_pc_t() {}
 
+        virtual void destruct(alloc_t* allocator)
+        {
+            allocator->destruct(this);
+        }
+
         virtual bool canSeek() const { return true; }
         virtual bool canWrite() const { return mCanWrite; }
 
@@ -108,8 +113,7 @@ namespace xcore
 
     void x_DestroyFileDevicePC(alloc_t* alloc, filedevice_t* device)
     {
-        filedevice_pc_t* pc_filedevice = (filedevice_pc_t*)device;
-        alloc->destruct(pc_filedevice);
+        device->destruct(alloc);
     }
 
     filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t const& pDrivePath, bool boCanWrite)

@@ -24,6 +24,11 @@ namespace xcore
         xfiledevice_null() {}
         virtual ~xfiledevice_null() {}
 
+        virtual void destruct(alloc_t* allocator)
+        {
+            allocator->destruct(this);
+        }
+
         virtual bool canSeek() const { return false; }
         virtual bool canWrite() const { return false; }
 

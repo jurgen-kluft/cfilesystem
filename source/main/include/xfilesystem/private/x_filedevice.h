@@ -44,6 +44,8 @@ namespace xcore
         virtual ~filedevice_t() {}
 
     public:
+        virtual void destruct(alloc_t* allocator) = 0;
+
         virtual bool canWrite() const = 0;
         virtual bool canSeek() const = 0;
 
