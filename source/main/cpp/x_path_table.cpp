@@ -105,11 +105,12 @@ namespace xcore
     {
     public:
         u64         m_hash;
+        s32         m_index;
         s32         m_refs;
         s32         m_len;
         utf32::rune m_name[2];
 
-        tname_t(s32 strlen) : m_refs(0), m_len(strlen), m_hash(0)
+        tname_t(s32 strlen) : m_hash(0), m_index(-1), m_refs(0), m_len(strlen)
         {
             m_name[0]      = utf32::TERMINATOR;
             m_name[strlen] = utf32::TERMINATOR;
@@ -148,7 +149,16 @@ namespace xcore
         bool operator==(const tname_t& other) const { return compare(&other) == 0; }
         bool operator!=(const tname_t& other) const { return compare(&other) != 0; }
 
-        void        incref() { m_refs++; }
+        tname_t* incref() { m_refs++; return this;  }
+        tname_t* release(alloc_t* allocator) 
+        {
+            if (tname_t::release(this))
+            {
+                allocator->deallocate(this);
+                return nullptr;
+            }
+            return this;
+        }
         static bool release(tname_t* name)
         {
             if (name->m_refs > 0)
@@ -175,12 +185,6 @@ namespace xcore
             return pname;
         }
 
-        template <class T> static void destruct(alloc_t* allocator, T*& name)
-        {
-            allocator->deallocate(name);
-            name = nullptr;
-        }
-
         XCORE_CLASS_PLACEMENT_NEW_DELETE
     };
 
@@ -195,10 +199,14 @@ namespace xcore
 
         void              init(troot_t* owner);
 
+        tdevice_t* attach();
+        tdevice_t* release(alloc_t* allocator);
+
         static tdevice_t* construct(alloc_t* allocator, troot_t* owner);
         static void       destruct(alloc_t* allocator, tdevice_t*& device);
     };
 
+    // mechanism: copy-on-write
     struct tname_table_t
     {
         s32                 m_len;
@@ -222,6 +230,70 @@ namespace xcore
         void remove(tname_t* name);
     };
 
+    // reference counted path array, to reduce copying.
+    // mechanism: copy-on-write
+    struct tpath_t
+    {
+        s32 m_ref;
+        s16 m_len;
+        s16 m_cap;
+        s32 m_path[2];
+
+        tpath_t() : m_ref(0), m_len(0), m_cap(2) { }
+
+        tpath_t* attach() { m_ref++; return this; }
+        bool detach(troot_t* root)
+        {
+            if (m_ref > 0)
+            {
+                m_ref -= 1;
+                if (m_ref == 0)
+                {
+                    for (s32 i = 0; i < m_len; i++)
+                    {
+                        tname_t* dirname = root->get_dirname(m_path[i]);
+                        dirname->release(root->m_allocator);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        s32 get_name_index() const
+        {
+            if (m_len == 0) return -1;
+            return m_path[m_len - 1];
+        }
+
+        tpath_t* prepend(tname_t* folder, alloc_t* allocator)
+        {
+            tpath_t* path = construct(allocator, folder->m_len + 1);
+            copy_array(m_path, 0, m_len, path->m_path, 1);
+            tname_t* f = folder->incref();
+            path->m_path[0] = f->m_index;
+            return path;
+        }
+
+        tpath_t* append(tname_t* folder, alloc_t* allocator)
+        {
+            tpath_t* path = construct(allocator, folder->m_len + 1);
+            copy_array(m_path, 0, m_len, path->m_path, 0);
+            tname_t* f = folder->incref();
+            path->m_path[m_len - 1] = f->m_index;
+            return path;
+        }
+
+        static tpath_t* construct(alloc_t* allocator, s32 len);
+        static void destruct(alloc_t* allocator, tpath_t* path)
+        {
+            allocator->deallocate(path);
+        }
+
+        static void copy_array(s32 const* from, s32 from_start, s32 from_len, s32* dst, s32 dst_start);
+    };
+
+
     // API prototype
     // root table
     class troot_t
@@ -239,6 +311,7 @@ namespace xcore
 
         static tdevice_t* sNilDevice;
         static tname_t*   sNilName;
+        static tpath_t*   sNilPath;
         static troot_t*   sNilRoot;
 
         void initialize(alloc_t* allocator)
@@ -257,7 +330,7 @@ namespace xcore
             if (tname_t::release(name))
             {
                 m_filename_table.remove(name);
-                tname_t::destruct(m_allocator, name);
+                name = name->release(m_allocator);
             }
         }
 
@@ -269,20 +342,35 @@ namespace xcore
             if (tname_t::release(name))
             {
                 m_extension_table.remove(name);
-                tname_t::destruct(m_allocator, name);
+                name = name->release(m_allocator);
             }
         }
 
-        void release_array(s32* arr)
+        void release_path(tpath_t* path)
         {
-            m_allocator->deallocate(arr);
+            if (path == sNilPath)
+                return;
+
+            if (path->detach(this))
+            { 
+                tpath_t::destruct(m_allocator, path);
+            }
         }
 
         void release_device(tdevice_t* dev) {}
 
-        tname_t* get_name(s32 index_of_name)
+        tname_t* get_filename(s32 index_of_name)
         {
-            return sNilName;
+            if (index_of_name == -1)
+                return sNilName;
+            return m_filename_table.get(index_of_name);
+        }
+
+        tname_t* get_dirname(s32 index_of_name)
+        {
+            if (index_of_name == -1)
+                return sNilName;
+            return m_filename_table.get(index_of_name);
         }
 
         tname_t* get_empty_name()
@@ -378,10 +466,7 @@ namespace xcore
     {
     protected:
         tdevice_t* m_device;
-        s32*       m_path;
-        s16        m_len;
-        s16        m_cap;
-        s32        m_dummy;
+        tpath_t* m_path;
         friend class tfilepath_t;
 
     public:
@@ -444,60 +529,70 @@ namespace xcore
 
     tdirpath_t::tdirpath_t() : m_device(troot_t::sNilDevice)
     {
-        m_path = nullptr;
-        m_len = 0;
-        m_cap = 0;
+        m_device->attach();
+        m_path = troot_t::sNilPath;
     }
     tdirpath_t::tdirpath_t() : m_device(troot_t::sNilDevice)
     {
-        m_path = nullptr;
+        m_device->attach();
+        m_path = troot_t::sNilPath;
     }
-    tdirpath_t::tdirpath_t(tdirpath_t const& other) : m_device(other.m_device)
+    tdirpath_t::tdirpath_t(tdirpath_t const& other)
     {
+        m_device = m_device->attach();
+        m_path = other.m_path->attach();
         // @TODO: copy the other stuff
     }
     tdirpath_t::~tdirpath_t()
     {
         troot_t* root = m_device->m_root;
         root->release_device(m_device);
-        root->release_array(m_path);
+        root->release_path(m_path);
     }
 
     void tdirpath_t::clear()
     {
         troot_t* root = m_device->m_root;
         root->release_device(m_device);
-        root->release_array(m_path);
+        root->release_path(m_path);
         m_device  = troot_t::sNilDevice;
-        m_path = nullptr;
-        m_len = 0;
-        m_cap = 0;
+        m_path = troot_t::sNilPath;
     }
 
-    bool tdirpath_t::isEmpty() const { return m_device == troot_t::sNilDevice && m_len == 0; }
+    bool tdirpath_t::isEmpty() const { return m_device == troot_t::sNilDevice && m_path == troot_t::sNilPath; }
 
-    void tdirpath_t::makeRelativeTo(const tdirpath_t& dirpath) {}
-    void tdirpath_t::makeAbsoluteTo(const tdirpath_t& dirpath) {}
+    void tdirpath_t::makeRelativeTo(const tdirpath_t& dirpath) 
+    {
+        // @TODO
+    }
+    void tdirpath_t::makeAbsoluteTo(const tdirpath_t& dirpath)
+    {
+        // @TODO
+    }
 
     tdirpath_t tdirpath_t::root() const { return tdirpath_t(m_device); }
 
     tname_t*   tdirpath_t::getname() const 
     { 
         troot_t* root = m_device->m_root;
-        if (m_len > 0)
-            return root->get_name(m_path[0]);
-        return root->get_empty_name();
+        return root->get_dirname(m_path->get_name_index());
     }
 
     tdirpath_t tdirpath_t::prepend(tname_t* folder)
     {   
         tdirpath_t d;
+        troot_t* root = m_device->m_root;
+        d.m_device = m_device;
+        d.m_path = m_path->prepend(folder, root->m_allocator);
         return d;
     }
 
     tdirpath_t tdirpath_t::append(tname_t* folder)
     {
         tdirpath_t d;
+        troot_t* root = m_device->m_root;
+        d.m_device = m_device;
+        d.m_path = m_path->append(folder, root->m_allocator);
         return d;
     }
 
@@ -514,15 +609,36 @@ namespace xcore
     void tfilepath_t::clear()
     {
         m_dirpath.clear();
-        troot_t* root = troot_t::sNilRoot;
+        troot_t* root = m_dirpath.m_device->m_root;
         root->release_filename(m_filename);
         root->release_extension(m_extension);
+        m_filename = troot_t::sNilName;
+        m_extension = troot_t::sNilName;
     }
 
     bool tfilepath_t::isEmpty() const { return m_dirpath.isEmpty() && m_filename == troot_t::sNilName && m_extension == troot_t::sNilName; }
 
-    void tfilepath_t::setFilename(tname_t* filename) { m_filename = filename; }
-    void tfilepath_t::setExtension(tname_t* extension) { m_extension = extension; }
+    void tfilepath_t::setFilename(tname_t* filename) { filename->incref(); m_filename->release(m_dirpath.m_device->m_root->m_allocator); m_filename = filename; }
+    void tfilepath_t::setFilename(crunes_t const& filenamestr)
+    {
+        troot_t* root = m_dirpath.m_device->m_root;
+        tname_t* out_filename = nullptr;
+        tname_t* out_extension = nullptr;
+        root->register_filename(filenamestr, out_filename, out_extension);
+        root->release_filename(m_filename);
+        root->release_extension(m_extension);
+        m_filename = out_filename->incref();
+        m_extension = out_extension->incref();
+    }
+
+    void tfilepath_t::setExtension(tname_t* extension) { extension->incref(); m_extension->release(m_dirpath.m_device->m_root->m_allocator); m_extension = extension; }
+    void tfilepath_t::setExtension(crunes_t const& extensionstr)
+    {
+        troot_t* root = m_dirpath.m_device->m_root;
+        tname_t* out_extension = root->register_extension(extensionstr);
+        root->release_extension(m_extension);
+        m_extension = out_extension->incref();
+    }
 
     tdirpath_t tfilepath_t::root() const { return m_dirpath.root(); }
     tdirpath_t tfilepath_t::dirpath() const { return m_dirpath; }
@@ -532,13 +648,15 @@ namespace xcore
 
     tfilepath_t tfilepath_t::prepend(tname_t* folder)
     {
-        tfilepath_t f;
+        tfilepath_t f(*this);
+        f.m_dirpath.prepend(folder);
         return f;
     }
 
     tfilepath_t tfilepath_t::append(tname_t* folder)
     {
-        tfilepath_t f;
+        tfilepath_t f(*this);
+        f.m_dirpath.append(folder);
         return f;
     }
 
