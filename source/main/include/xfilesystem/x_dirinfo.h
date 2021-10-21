@@ -22,7 +22,6 @@ namespace xcore
     protected:
         friend class filesys_t;
 
-        filesystem_t::context_t* m_context;
         dirpath_t  m_path;
 
     public:

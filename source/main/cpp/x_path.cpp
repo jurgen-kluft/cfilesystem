@@ -1,498 +1,525 @@
-#include "xbase/x_target.h"
+#include "xbase/x_allocator.h"
+#include "xbase/x_binary_search.h"
 #include "xbase/x_debug.h"
+#include "xbase/x_hash.h"
 #include "xbase/x_runes.h"
+#include "xbase/x_target.h"
 
-#include "xfilesystem/private/x_path.h"
-#include "xfilesystem/x_filepath.h"
+#include "xfilesystem/private/x_filedevice.h"
+#include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_enumerator.h"
-#include "xfilesystem/private/x_devicemanager.h"
+#include "xfilesystem/x_filepath.h"
 
 namespace xcore
 {
-    static utf32::rune sSlash                 = '\\';
-    static utf32::rune sSemiColumnSlashStr[3] = {':', '\\', 0};
-    static crunes_t    sSemiColumnSlash(sSemiColumnSlashStr, sSemiColumnSlashStr + 2);
+    //  What are the benefits of using a table like below to manage filepaths and dirpaths?
+    //  - Sharing of strings
+    //  - Easy manipulation of dirpath, can easily go to parent or child directory, likely without doing any allocations
+    //  - You can prime the table which then results in no allocations when you are using existing filepaths and dirpaths
+    //  - Combining dirpath with filepath becomes very easy
+    //  - No need to deal with different types of slashes
+    //
+    //  Use cases:
+    //  - From filesysroot_t* you can ask for the root directory of a device
+    //    - tdirpath_t appdir = root->device_root("appdir");
+    //  - So now with an existing tdirpath_t dir, you could do the following:
+    //    - tdirpath_t bins = appdir->down("bin") // even if this folder doesn't exist, it will be 'added'
+    //    - tfilepath_t coolexe = bins->file("cool.exe");
+    //    - pathname_t* datafilename; pathname_t* dataextension; root->filename("data.txt", datafilename, dataextension);
+    //    - tfilepath_t datafilepath = bins->file(datafilename, dataextension);
+    //    - stream_t datastream = datafilepath->open();
+    //      datastream.close();
 
-    static void fix_slashes(runes_t& str)
+    struct pathname_t;
+    struct pathdevice_t;
+
+    class filesysroot_t;
+    class path_t;
+
+
+
+    void fullpath_parser_utf32::parse(const crunes_t& fullpath)
     {
-        // Replace incorrect slashes with the correct one
-        findReplace(str, (uchar32)'/', sSlash);
+        utf32::rune slash_chars[] = {'\\', '\0'};
+        crunes_t    slash(slash_chars);
+        utf32::rune devicesep_chars[] = {':', '\\', '\0'};
+        crunes_t    devicesep(devicesep_chars);
 
-        // Remove double slashes like '\\' or '//'
-
-        // Remove slashes at the start and end of this string
-        trimDelimiters(str, sSlash, sSlash);
+        m_device          = findSelectUntilIncluded(fullpath, devicesep);
+        crunes_t filepath = selectAfterExclude(fullpath, m_device);
+        m_path            = findLastSelectUntil(filepath, slash);
+        m_filename        = selectAfterExclude(fullpath, m_path);
+        trimLeft(m_filename, '\\');
+        m_filename     = findLastSelectUntil(m_filename, '.');
+        m_extension    = selectAfterExclude(fullpath, m_filename);
+        m_first_folder = findSelectUntil(m_path, slash);
+        m_last_folder  = findLastSelectUntil(m_path, slash);
+        m_last_folder  = selectAfterExclude(m_path, m_last_folder);
+        trimLeft(m_last_folder, '\\');
+        trimRight(m_device, devicesep);
     }
 
-    path_t::path_t() : m_context(nullptr), m_path() {}
-
-    path_t::path_t(filesystem_t::context_t* ctxt) : m_context(ctxt), m_path() { fix_slashes(m_path); }
-
-    path_t::path_t(filesystem_t::context_t* ctxt, const crunes_t& path) : m_context(ctxt)
+    bool fullpath_parser_utf32::next_folder(crunes_t& folder) const
     {
-        copy(path, m_path, m_context->m_stralloc, 16);
-        fix_slashes(m_path);
+        // example: projects\binary_reader\bin\ 
+        folder = selectAfterExclude(m_path, folder);
+        trimLeft(folder, '\\');
+        folder = findSelectUntil(folder, '\\');
+        return !folder.is_empty();
     }
 
-    path_t::path_t(const path_t& path) : m_context(path.m_context), m_path()
+    bool fullpath_parser_utf32::prev_folder(crunes_t& folder) const
     {
-        copy(path.m_path, m_path, m_context->m_stralloc, 16);
-        fix_slashes(m_path);
-    }
-
-    path_t::path_t(const path_t& lhspath, const path_t& rhspath) : m_context(lhspath.m_context), m_path()
-    {
-        // Combine both paths into a new path
-        concatenate(m_path, lhspath.m_path, rhspath.m_path, m_context->m_stralloc, 16);
-    }
-
-    path_t::~path_t()
-    {
-        if (m_context != nullptr)
-        {
-            m_context->m_stralloc->deallocate(m_path);
-        }
-    }
-
-    path_t path_t::resolve(filesys_t* fs, filedevice_t*& outdevice) const
-    {
-        runes_t rootpart = find(m_path, sSemiColumnSlash);
-        if (rootpart.is_empty())
-        {
-            outdevice = nullptr;
-        }
-        else
-        {
-            path_t path;
-            outdevice = fs->m_devman->find_device(*this, path);
-            if (outdevice != nullptr)
-            {
-                return path;
-            }
-        }
-        return path_t();
-    }
-
-    void path_t::clear() { m_path.clear(); }
-
-    void path_t::erase()
-    {
-        clear();
-        if (m_context != nullptr)
-            m_context->m_stralloc->deallocate(m_path);
-    }
-
-    bool path_t::isEmpty() const { return m_path.is_empty(); }
-    bool path_t::isRoot() const
-    {
-        runes_t rootpart = find(m_path, sSemiColumnSlash);
-        if (rootpart.is_empty())
+        // example: projects\binary_reader\bin\ 
+        folder = selectBeforeExclude(m_path, folder);
+        if (folder.is_empty())
             return false;
-        // Now determine if we are an actual root, which means that we
-        // do not have any folders after our device statement.
-        runes_t pathpart = selectAfterExclude(m_path, rootpart);
-        return pathpart.is_empty();
-    }
-
-    bool path_t::isRooted() const
-    {
-        runes_t pos = find(m_path, sSemiColumnSlash);
-        return !pos.is_empty();
-    }
-
-    bool path_t::isSubDirOf(const path_t& parent) const
-    {
-        // example:
-        // parent = "E:\data\files\music\"
-        // this = "files\music\rnb\"
-        // overlap = "files\music\"
-        // remainder = "rnb\"
-        if (isRooted())
+        trimRight(folder, '\\');
+        crunes_t prevfolder = findLastSelectAfter(folder, '\\');
+        if (!prevfolder.is_empty())
         {
-            return false;
+            folder = prevfolder;
         }
+        return true;
+    }
 
-        if (parent.isRooted())
+
+
+    // 
+    // pathname_t implementations
+    // 
+    pathname_t::pathname_t(s32 strlen) : m_next(nullptr), m_id(-1), m_refs(0), m_len(strlen)
+    {
+        m_name[0]      = utf32::TERMINATOR;
+        m_name[strlen] = utf32::TERMINATOR;
+    }
+
+    bool pathname_t::isEmpty() const { return m_len == 0; }
+
+    s32 pathname_t::compare(const pathname_t* name, const pathname_t* other)
+    {
+        crunes_t cname(name->m_name, name->m_len);
+        crunes_t cother(other->m_name, other->m_len);
+        return xcore::compare(cname, cother);
+    }
+
+    s32 pathname_t::compare(const pathname_t* other) const
+    {
+        crunes_t name(m_name, m_len);
+        crunes_t othername(other->m_name, other->m_len);
+        return xcore::compare(name, othername);
+    }
+
+    s32 pathname_t::compare(crunes_t const& name) const { return xcore::compare(crunes_t(m_name, m_len), name); }
+
+    pathname_t* pathname_t::incref() { m_refs++; return this;  }
+    pathname_t* pathname_t::release(alloc_t* allocator) 
+    {
+        if (pathname_t::release(this))
         {
-            runes_t overlap = selectOverlap(parent.m_path, m_path);
-            return !overlap.is_empty();
+            allocator->deallocate(this);
+            return nullptr;
+        }
+        return this;
+    }
+
+    bool pathname_t::release(pathname_t* name)
+    {
+        if (name->m_refs > 0)
+        {
+            name->m_refs -= 1;
+            return name->m_refs == 0;
         }
         return false;
     }
 
-    void path_t::set_filepath(runes_t& runes_t, filesystem_t::context_t* allocator)
+    pathname_t* pathname_t::construct(alloc_t* allocator, u64 hname, crunes_t const& name)
     {
-        erase();
-        m_context = allocator;
-        m_path  = runes_t;
+        u32 const strlen = name.size();
+        u32 const strcap = strlen;
 
-        // Replace incorrect slashes with the correct one
-        findReplace(m_path, (uchar32)'/', sSlash);
+        void*    name_mem = allocator->allocate(sizeof(pathname_t) + (sizeof(utf32::rune) * strcap), sizeof(void*));
+        pathname_t* pname    = new (name_mem) pathname_t(strcap);
 
-        // Remove double slashes like '\\' or '//'
+        pname->m_hash = hname;
+        pname->m_next = nullptr;
+        pname->m_refs = 0;
+        runes_t dststr(pname->m_name, pname->m_name, pname->m_name + strlen);
+        copy(name, dststr);
 
-        // Remove slash at the beginning and end
-        trim(m_path, sSlash);
+        return pname;
     }
 
-    void path_t::set_dirpath(runes_t& runes_t, filesystem_t::context_t* allocator)
+
+
+    // mechanism: copy-on-write
+
+
+    //
+    // pathname_table_t implementations
+    // 
+    void pathname_table_t::initialize(alloc_t* allocator, s32 cap)
     {
-        erase();
-        m_context = allocator;
-        m_path  = runes_t;
+        m_len = 0;
+        m_cap = cap;
+        m_table = (pathname_t**)allocator->allocate(sizeof(pathname_t*) * cap);
+        for (s32 i = 0; i < m_cap; i++)
+            m_table[i] = nullptr;
+    }
 
-        // Replace incorrect slashes with the correct one
-        findReplace(m_path, (uchar32)'/', sSlash);
+    pathname_t* pathname_table_t::find(u64 hash) const
+    {
+        u32 index = hash_to_index(hash);
+        return m_table[index];
+    }
 
-        // Remove double slashes like '\\' or '//'
+    pathname_t* pathname_table_t::next(u64 hash, pathname_t* prev) const
+    {
+        return prev->m_next;
+    }
 
-        // Remove slash at the beginning
-        trimLeft(m_path, sSlash);
-
-        // Ensure slash at the end
-        if (!ends_with(m_path, sSlash))
+    void pathname_table_t::insert(pathname_t* name)
+    {
+        u32 const index = hash_to_index(name->m_hash);
+        pathname_t** iter = &m_table[index];
+        while (*iter!=nullptr)
         {
-            crunes_t slashstr(sSemiColumnSlashStr + 1, sSemiColumnSlashStr + 2);
-            concatenate(m_path, slashstr, m_context->m_stralloc, 16);
+            if (name->m_hash <= (*iter)->m_hash)
+            {
+                name->m_next = (*iter);
+                *iter = name;
+                return;
+            }
+            iter = &((*iter)->m_next);
         }
+        *iter = name;
     }
 
-    void path_t::combine(const path_t& dirpath, const path_t& otherpath)
+    bool pathname_table_t::remove(pathname_t* name)
     {
-        erase();
-        m_context = dirpath.m_context;
-        if (otherpath.isRooted())
+        u32 const index = hash_to_index(name->m_hash);
+        if (name == m_table[index])
         {
-            runes_t relativefilepath = findSelectAfter(otherpath.m_path, sSemiColumnSlash);
-            concatenate(m_path, dirpath.m_path, relativefilepath, m_context->m_stralloc, 16);
+            m_table[index] = name->m_next;
         }
         else
         {
-            concatenate(m_path, dirpath.m_path, otherpath.m_path, m_context->m_stralloc, 16);
-        }
-    }
-
-    void path_t::copy_dirpath(runes_t& runes_t) { copy(runes_t, m_path, m_context->m_stralloc, 16); }
-
-    class enumerate_runes
-    {
-    public:
-        virtual bool operator()(s32 level, const runes_t& folder) = 0;
-    };
-
-    static void enumerate_fn(const runes_t& dirpath, enumerate_runes& enumerator, bool right_to_left)
-    {
-        s32     level = 0;
-        runes_t path  = findSelectAfter(dirpath, sSemiColumnSlash);
-        if (right_to_left == false)
-        {
-            runes_t dir = selectBetween(path, sSlash, sSlash);
-            while (dir.is_empty() == false)
+            pathname_t* iter = m_table[index];
+            while (iter != nullptr)
             {
-                if (enumerator(level, dir) == false)
+                if (iter->m_next == name)
                 {
-                    break;
+                    iter->m_next = name->m_next;
+                    return true;
                 }
-                level++;
-                dir = selectNextBetween(path, dir, sSlash, sSlash);
+                iter = iter->m_next;
+            }
+        }
+        return false;
+    }
+
+    u32  pathname_table_t::hash_to_index(u64 hash) const
+    {
+        u32 index = (u32)(hash & (m_len - 1));
+        return index;
+    }
+
+    //
+    // filesysroot_t functions
+    //
+    void filesysroot_t::initialize(alloc_t* allocator)
+    {
+        m_allocator = allocator;
+
+        m_filename_table.initialize(m_allocator, 65536);
+        m_extension_table.initialize(m_allocator, 8192);
+    }
+
+    void filesysroot_t::release_name(pathname_t* name) 
+    {
+        if (name == sNilName)
+            return;
+
+        if (pathname_t::release(name))
+        {
+            m_filename_table.remove(name);
+            name = name->release(m_allocator);
+        }
+    }
+
+    void filesysroot_t::release_filename(pathname_t* name) 
+    {
+        release_name(name);
+    }
+
+    void filesysroot_t::release_extension(pathname_t* name) 
+    {
+        if (name == sNilName)
+            return;
+
+        if (pathname_t::release(name))
+        {
+            m_extension_table.remove(name);
+            name = name->release(m_allocator);
+        }
+    }
+
+    void filesysroot_t::release_path(path_t* path)
+    {
+        if (path == sNilPath)
+            return;
+
+        if (path->detach(this))
+        { 
+            path_t::destruct(m_allocator, path);
+        }
+    }
+
+    void filesysroot_t::release_device(pathdevice_t* dev) {}
+
+    pathname_t* filesysroot_t::register_name(crunes_t const& namestr) 
+    { 
+        const u64 hname = calchash(namestr);
+        pathname_t* name = m_filename_table.find(hname);
+        while (name != nullptr && xcore::compare(namestr, name->m_name) != 0)
+        {
+            name = m_filename_table.next(hname, name);
+        }
+        if (name == nullptr)
+        {
+            name = pathname_t::construct(m_allocator, hname, namestr);
+            m_filename_table.insert(name);
+        }
+        return name;
+    }
+
+    pathname_t* filesysroot_t::get_empty_name() const
+    {
+        return sNilName;
+    }
+
+    bool filesysroot_t::register_directory(crunes_t const& directory, pathname_t*& out_devicename, path_t*& out_path)
+    {
+        fullpath_parser_utf32 parser;
+        parser.parse(directory);
+
+        if (parser.has_device())
+        {
+            out_devicename = register_name(parser.m_device);
+        }
+        else
+        {
+            out_devicename = sNilName;
+        }
+
+        if (parser.has_path())
+        {
+            crunes_t folder = parser.iterate_folder();
+            s32 c = 1;
+            while (parser.next_folder(folder))
+            {
+                c += 1;
+            }
+
+            out_path = path_t::construct(m_allocator, c);
+            crunes_t folder = parser.iterate_folder();
+            c = 0;
+            out_path->m_path[c++] = register_dirname(folder);
+            while (parser.next_folder(folder))
+            {
+                out_path->m_path[c++] = register_dirname(folder);
             }
         }
         else
         {
-            runes_t dir = selectBetweenLast(path, sSlash, sSlash);
-            while (dir.is_empty() == false)
+            out_path = sNilPath;
+        }
+
+        return true;
+    }
+
+    bool filesysroot_t::register_directory(path_t** paths_to_concatenate, s32 paths_len, path_t*& out_path)
+    {
+        s32 depth = 0;
+        for (s32 i = 0; i < paths_len; i++)
+        {
+            depth += paths_to_concatenate[i]->m_len;
+        }
+        out_path = path_t::construct(m_allocator, depth);
+        
+        depth = 0;
+        for (s32 i = 0; i < paths_len; i++)
+        {
+            path_t::copy_array(paths_to_concatenate[i]->m_path, 0, paths_to_concatenate[i]->m_len, out_path->m_path, depth);
+            depth += paths_to_concatenate[i]->m_len;
+        }
+        return true;
+    }
+
+    bool filesysroot_t::register_filename(crunes_t const& fullfilename, pathname_t*& out_filename, pathname_t*& out_extension)
+    {
+        // split filename into name+extension
+        crunes_t filename = findLastSelectUntil(fullfilename, ".");
+        crunes_t extension = selectAfterExclude(fullfilename, filename);
+        out_filename = register_name(filename);
+        out_extension = register_extension(extension);
+        return false;
+    }
+
+    bool filesysroot_t::register_fullfilepath(crunes_t const& fullfilepath, pathname_t*& out_devicename, path_t*& out_path, pathname_t*& out_filename, pathname_t*& out_extension)
+    {
+
+    }
+
+    pathname_t* filesysroot_t::register_dirname(crunes_t const& fulldirname)
+    {
+        return register_name(fulldirname);
+    }
+
+    pathname_t* filesysroot_t::register_extension(crunes_t const& extension) 
+    { 
+        const u64 hname = calchash(extension);
+        pathname_t* name = m_extension_table.find(hname);
+        while (name != nullptr && xcore::compare(extension, name->m_name) != 0)
+        {
+            name = m_extension_table.next(hname, name);
+        }
+        if (name == nullptr)
+        {
+            name = pathname_t::construct(m_allocator, hname, extension);
+            m_extension_table.insert(name);
+        }
+        return name;
+    }
+
+    pathdevice_t* filesysroot_t::register_device(crunes_t const& device)
+    {
+        for (s32 i = 0; i < m_num_devices; ++i)
+        {
+            if (xcore::compare(device, m_tdevice[i].m_name->m_name) == 0)
             {
-                if (enumerator(level, dir) == false)
+                return &m_tdevice[i];
+            }
+        }
+        return sNilDevice;
+    }
+
+    path_t* filesysroot_t::get_parent_path(path_t* path)
+    {
+        if (path->m_len == 0)
+            return sNilPath;
+        if (path->m_len == 1)
+            return sNilPath;
+
+        s32 depth = path->m_len - 1;
+        path_t* out_path = path_t::construct(m_allocator, depth);
+        path_t::copy_array(path->m_path, 0, depth, out_path->m_path, 0);
+        return out_path;
+    }
+
+    //
+    // path_t implementations
+    // 
+
+    path_t* path_t::attach() 
+    { 
+        m_ref++; 
+        return this; 
+    }
+
+    bool path_t::detach(filesysroot_t* root)
+    {
+        if (m_ref > 0)
+        {
+            m_ref -= 1;
+            if (m_ref == 0)
+            {
+                for (s32 i = 0; i < m_len; i++)
                 {
-                    break;
+                    pathname_t* dirname = m_path[i];
+                    dirname->release(root->m_allocator);
                 }
-                level++;
-                dir = selectPreviousBetween(path, dir, sSlash, sSlash);
-            }
-        }
-    }
-
-    class folder_counting_enumerator : public enumerate_runes
-    {
-    public:
-        s32 mLevels;
-        folder_counting_enumerator() : mLevels(0) {}
-        virtual bool operator()(s32 level, const runes_t& folder)
-        {
-            mLevels++;
-            return true;
-        }
-    };
-
-    s32 path_t::getLevels() const
-    {
-        folder_counting_enumerator e;
-        enumerate_fn(m_path, e, false);
-        return e.mLevels;
-    }
-
-    bool path_t::getLevel(s32 level, path_t& outpath) const
-    {
-        // Return the path at level @level
-        runez_t<ascii::rune, 4> device(":\\");
-
-        runes_t path = findSelectAfter(m_path, device);
-        if (path.is_empty())
-            return false;
-        runes_t dir = selectBetween(m_path, sSlash, sSlash);
-        while (level > 0 && !dir.is_empty())
-        {
-            dir = selectNextBetween(m_path, dir, sSlash, sSlash);
-            level--;
-        }
-        if (!dir.is_empty())
-        {
-            runes_t path = selectAfterInclude(m_path, dir);
-            copy(path, outpath.m_path, outpath.m_context->m_stralloc, 16);
-            return true;
-        }
-        return false;
-    }
-
-    class folder_search_enumerator : public enumerate_delegate_t
-    {
-    public:
-        runes_t mFolderName;
-        bool    mFound;
-        s32     mLevel;
-
-        folder_search_enumerator(const runes_t& folder) : mFolderName(folder), mFound(false), mLevel(-1) {}
-
-        virtual bool operator()(s32 level, const runes_t& folder)
-        {
-            mFound = compare(mFolderName, folder) == 0;
-            mLevel = level;
-            return mFound;
-        }
-    };
-
-    s32 path_t::getLevelOf(const path_t& parent) const
-    {
-        // PARENT:   c:\disk
-        // THIS:     c:\disk\child
-        // RETURN 0
-        if (starts_with(m_path, parent.m_path)) {}
-
-        //@TODO: Implement this!
-
-        return 0;
-    }
-
-    bool path_t::split(s32 level, path_t& parent_dirpath, path_t& relative_filepath) const
-    {
-        // Split the path at level @level
-        runes_t path = findSelectAfter(m_path, sSemiColumnSlash);
-        if (path.is_empty())
-            return false;
-
-        runes_t dir = selectBetween(m_path, sSlash, sSlash);
-        while (level > 0 && !dir.is_empty())
-        {
-            dir = selectNextBetween(m_path, dir, sSlash, sSlash);
-            level--;
-        }
-
-        if (!dir.is_empty())
-        {
-            runes_t parent_path = selectBeforeExclude(m_path, dir);
-            copy(parent_path, parent_dirpath.m_path, parent_dirpath.m_context->m_stralloc, 16);
-            runes_t relative_path = selectAfterInclude(m_path, dir);
-            copy(relative_path, relative_filepath.m_path, relative_filepath.m_context->m_stralloc, 16);
-            return true;
-        }
-
-        return false;
-    }
-
-    void path_t::makeRelative()
-    {
-        if (isRooted())
-        {
-            runes_t pos = findSelectUntilIncluded(m_path, sSemiColumnSlash);
-            removeSelection(m_path, pos);
-        }
-    }
-
-    void path_t::makeRelativeTo(const path_t& parent)
-    {
-        makeRelative();
-
-        // PARENT:   "a\b\c\d\"
-        // THIS:     "c\d\e\f\"
-        // RESULT:   "e\f\"
-
-        runes_t parentpath = parent.m_path;
-        if (parent.isRooted())
-        {
-            parentpath = findSelectAfter(parentpath, sSemiColumnSlash);
-        }
-
-        runes_t overlap = selectOverlap(parentpath, m_path);
-        if (overlap.is_empty() == false)
-        {
-            runes_t remainder = selectAfterExclude(parentpath, overlap);
-            keepOnlySelection(m_path, remainder);
-        }
-    }
-
-    void path_t::setRootDir(const path_t& in_root_dirpath)
-    {
-        if (!isRooted())
-        {
-            runes_t rootpart = findSelectUntilIncluded(m_path, sSemiColumnSlash);
-            if (rootpart.is_empty() == false)
-            {
-                insert(m_path, in_root_dirpath.m_path, m_context->m_stralloc, 16);
-            }
-            else
-            {
-                replaceSelection(m_path, rootpart, in_root_dirpath.m_path, m_context->m_stralloc, 16);
-            }
-        }
-    }
-
-    bool path_t::getRootDir(path_t& root) const
-    {
-        if (isRooted())
-        {
-            runes_t rootpart = findSelectUntilIncluded(m_path, sSemiColumnSlash);
-            if (rootpart.is_empty() == false)
-            {
-                root.erase();
-                copy(root.m_path, rootpart, root.m_context->m_stralloc, 16);
                 return true;
             }
         }
         return false;
     }
 
-    bool path_t::getDirname(path_t& outDirPath) const
+    pathname_t* path_t::get_name() const
     {
-        if (isEmpty())
-            return false;
-
-        outDirPath.clear();
-        outDirPath.m_context = m_context;
-
-        // Select a string until and included the last '\'
-        runes_t dirpart = findLastSelectUntilIncluded(m_path, sSlash);
-        if (dirpart.is_empty() == false)
-        {
-            copy(dirpart, outDirPath.m_path, outDirPath.m_context->m_stralloc, 16);
-            return true;
-        }
-        return false;
+        if (m_len == 0) 
+            return filesysroot_t::sNilName;
+        return m_path[m_len - 1];
     }
 
-    bool path_t::up() { return false; }
-
-    bool path_t::down(path_t const& runes_t) { return false; }
-
-    void path_t::getFilename(path_t& filename) const
+    path_t* path_t::prepend(pathname_t* folder, alloc_t* allocator)
     {
-        runes_t filenamepart = findLastSelectAfter(m_path, sSlash);
-        if (!filenamepart.is_empty())
-        {
-            filename.clear();
-            concatenate(filename.m_path, filenamepart, filename.m_context->m_stralloc, 16);
-        }
+        path_t* path = construct(allocator, folder->m_len + 1);
+        copy_array(m_path, 0, m_len, path->m_path, 1);
+        path->m_path[0] = folder->incref();
+        return path;
     }
 
-    void path_t::getFilenameWithoutExtension(path_t& filename) const
+    path_t* path_t::append(pathname_t* folder, alloc_t* allocator)
     {
-        filename.clear();
-        runes_t filenamepart = findLastSelectAfter(m_path, sSlash);
-        if (!filenamepart.is_empty())
-        {
-            filenamepart = findLastSelectUntil(filenamepart, '.');
-            concatenate(filename.m_path, filenamepart, filename.m_context->m_stralloc, 16);
-        }
+        path_t* path = construct(allocator, folder->m_len + 1);
+        copy_array(m_path, 0, m_len, path->m_path, 0);
+        pathname_t* f = 
+            path->m_path[m_len - 1] = folder->incref();
+        return path;
     }
 
-    void path_t::getExtension(path_t& filename) const
+    path_t* path_t::construct(alloc_t* allocator, s32 cap)
     {
-        filename.clear();
-        runes_t filenamepart = findLastSelectAfter(m_path, sSlash);
-        runes_t filenameonly = findLastSelectUntil(filenamepart, '.');
-        runes_t fileext      = selectAfterExclude(filenamepart, filenameonly);
-        concatenate(filename.m_path, fileext, filename.m_context->m_stralloc, 16);
+        ASSERT(cap > 0);
+        s32 const allocsize = sizeof(path_t) + (((cap + 3) & ~3) - 1);
+        path_t* path = (path_t*)allocator->allocate(allocsize);
+        path->m_cap = (((cap + 3) & ~3) - 1);
+        path->m_len = 0;
+        path->m_ref = 0;
+        path->m_path[0] = '\0';
+        path->m_path[1] = '\0';
+        return path;
     }
 
-    path_t& path_t::operator=(const runes_t& path)
+    void path_t::destruct(alloc_t* allocator, path_t* path)
     {
-        if (m_context != nullptr)
-        {
-            erase();
-            copy(path, m_path, m_context->m_stralloc, 16);
-        }
-        return *this;
+        allocator->deallocate(path);
     }
 
-    path_t& path_t::operator=(const path_t& path)
+    void path_t::copy_array(pathname_t** from, u32 from_start, u32 from_len, pathname_t** to, u32 to_start)
     {
-        if (this == &path)
-            return *this;
-
-        if (m_context != nullptr)
-        {
-            if (path.m_context == m_context)
-            {
-                copy(path.m_path, m_path, m_context->m_stralloc, 16);
-            }
-            else
-            { // Allocator changed
-                m_context->m_stralloc->deallocate(m_path);
-                m_context = path.m_context;
-                copy(path.m_path, m_path, m_context->m_stralloc, 16);
-            }
-        }
-        else
-        {
-            m_context = path.m_context;
-            copy(path.m_path, m_path, m_context->m_stralloc, 16);
-        }
-        return *this;
-    }
-
-    path_t& path_t::operator+=(const runes_t& r)
-    {
-        concatenate(m_path, r, m_context->m_stralloc, 16);
-        return *this;
-    }
-
-    bool path_t::operator==(const path_t& rhs) const { return compare(m_path, rhs.m_path) == 0; }
-    bool path_t::operator!=(const path_t& rhs) const { return compare(m_path, rhs.m_path) != 0; }
-
-    void path_t::toString(runes_t& dst) const
-    {
-        copy(m_path, dst, m_context->m_stralloc, 4);
-    }
-
-    void path_t::as_utf16(path_t const& p, path_t& dst)
-    {
-    }
-    
-    void path_t::as_utf16(filepath_t const& fp, path_t& dst)
-    {
-    }
-
-    void path_t::as_utf16(filepath_t const& fp, filepath_t& dst)
-    {
-    }
-    
-    void path_t::as_utf16(dirpath_t const& dp, path_t& dst)
-    {
-    }
-
-    void path_t::as_utf16(dirpath_t const& dp, dirpath_t& dst)
-    {
+        pathname_t* const* src = from + from_start;
+        pathname_t* const* end = src + from_len;
+        pathname_t** dst = to + to_start;
+        while (src < end)
+            *dst++ = *src++;
     }
 
 
-} // namespace xcore
+    //
+    // pathdevice_t implementations
+    // 
+    void pathdevice_t::init(filesysroot_t* owner)
+    {
+        m_name = nullptr;
+        m_root = owner;
+        m_path = nullptr;
+        m_fd   = x_NullFileDevice();
+    }
+
+    pathdevice_t* pathdevice_t::construct(alloc_t* allocator, filesysroot_t* owner)
+    {
+        // Allocate a pathdevice_t
+        void*      device_mem = allocator->allocate(sizeof(pathdevice_t), sizeof(void*));
+        pathdevice_t* device     = static_cast<pathdevice_t*>(device_mem);
+        device->init(owner);
+        return device;
+    }
+    void pathdevice_t::destruct(alloc_t* allocator, pathdevice_t*& device)
+    {
+        allocator->deallocate(device);
+        device = nullptr;
+    }
+
+}; // namespace xcore

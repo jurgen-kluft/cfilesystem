@@ -17,8 +17,10 @@ namespace xcore
     {
         for (s32 i = 0; i < mNumAliases; ++i)
         {
-            mContext->m_stralloc->deallocate(mAliasList[i].mTarget);
-            mContext->m_stralloc->deallocate(mAliasList[i].mResolved);
+            mContext->release_name(mAliasList[i].mTargetDeviceName);
+            mContext->release_name(mAliasList[i].mResolvedDeviceName);
+            mContext->release_path(mAliasList[i].mTargetPath);
+            mContext->release_path(mAliasList[i].mResolvedPath);
         }
 
         mNumAliases = 0;
@@ -57,15 +59,16 @@ namespace xcore
     //==============================================================================
     // Functions
     //==============================================================================
-    devicemanager_t::devicemanager_t(filesystem_t::context_t* ctxt) : mContext(ctxt), mNumAliases(0), mNumDevices(0) {}
+    devicemanager_t::devicemanager_t(filesysroot_t* ctxt) : mContext(ctxt), mNumAliases(0), mNumDevices(0) {}
 
     //------------------------------------------------------------------------------
 
     bool devicemanager_t::add_device(const crunes_t& devicename, filedevice_t* device)
     {
+        pathname_t* pathdevicename = mContext->register_name(devicename);
         for (s32 i = 0; i < mNumDevices; ++i)
         {
-            if (compare(mDeviceList[i].mDevName, devicename) == 0)
+            if (mDeviceList[i].mDevName == pathdevicename)
             {
                 mDeviceList[i].mDevice = device;
                 console->writeLine("INFO replaced file device for '%s'", va_list_t(va_t(devicename)));
@@ -76,7 +79,7 @@ namespace xcore
 
         if (mNumDevices < MAX_FILE_DEVICES)
         {
-            copy(devicename, mDeviceList[mNumDevices].mDevName);
+            mDeviceList[mNumDevices].mDevName = pathdevicename->incref();
             mDeviceList[mNumDevices].mDevice = device;
             mNumDevices++;
             mNeedsResolve = true;
@@ -96,24 +99,52 @@ namespace xcore
     // 'win_tempdir:\' => "c:\users\john\programs\mygame\temp\'
     bool devicemanager_t::add_alias(const crunes_t& alias, const crunes_t& target)
     {
+        pathname_t* aliasname = mContext->register_name(alias);
+
         for (s32 i = 0; i < mNumAliases; ++i)
         {
-            if (compare(mAliasList[i].mAlias, alias) == 0)
+            if (mAliasList[i].mAlias == aliasname)
             {
-                copy(target, mAliasList[i].mTarget, mContext->m_stralloc, 8);
-                console->writeLine("INFO replaced alias for '%s'", va_list_t(va_t(alias)));
-                mNeedsResolve = true;
-                return true;
+                pathname_t* targetdevicename;
+                path_t* targetpath;
+                if (mContext->register_directory(target, targetdevicename, targetpath))
+                {
+                    targetdevicename->incref();
+                    targetpath->attach();
+
+                    mContext->release_name(mAliasList[i].mTargetDeviceName);
+                    mAliasList[i].mTargetDeviceName = targetdevicename;
+                    mContext->release_path(mAliasList[i].mTargetPath);
+                    mAliasList[i].mTargetPath = targetpath;
+                    console->writeLine("INFO replaced alias for '%s'", va_list_t(va_t(alias)));
+                    mNeedsResolve = true;
+                    return true;
+                }
+                console->writeLine("ERROR cannot add invalid target path");
+                return false;
             }
         }
 
         if (mNumAliases < MAX_FILE_ALIASES)
         {
-            copy(alias, mAliasList[mNumAliases].mAlias);
-            copy(target, mAliasList[mNumAliases].mTarget, mContext->m_stralloc, 8);
-            mNumAliases++;
-            mNeedsResolve = true;
-            return true;
+            pathname_t* targetdevicename;
+            path_t* targetpath;
+            if (mContext->register_directory(target, targetdevicename, targetpath))
+            {
+                targetdevicename->incref();
+                targetpath->attach();
+
+                mAliasList[mNumAliases].mAlias = aliasname->incref();
+                mContext->release_name(mAliasList[mNumAliases].mTargetDeviceName);
+                mAliasList[mNumAliases].mTargetDeviceName = targetdevicename;
+                mContext->release_path(mAliasList[mNumAliases].mTargetPath);
+                mAliasList[mNumAliases].mTargetPath = targetpath;
+                mNumAliases++;
+                mNeedsResolve = true;
+                return true;
+            }
+            console->writeLine("ERROR cannot add invalid target path");
+            return false;
         }
         else
         {
@@ -122,41 +153,31 @@ namespace xcore
         }
     }
 
-    bool devicemanager_t::add_device(const char* devpath, filedevice_t* device)
-    {
-        runez_t<utf32::rune, 32> devpath32(devpath);
-        return add_device(devpath32, device);
-    }
-
-    bool devicemanager_t::add_alias(const char* alias, const crunes_t& devname)
-    {
-        runez_t<utf32::rune, 32> alias32(alias);
-        return add_alias(alias32, devname);
-    }
-
     void devicemanager_t::resolve()
     {
         // "data"   - "appdir:\data\"
         // "appdir" - "c:\games\sudoku\"
         // resolves "data:\textures\" as "c:\games\sudoku\data\textures\"
-
+        const s32 cStackSize = 8;
         struct indexstack_t
         {
-            s32 m_stack[15];
+            s32 m_stack[cStackSize];
             s32 m_index;
 
             indexstack_t() : m_index(0)
             {
-                for (s32 i = 0; i < 15; ++i)
+                for (s32 i = 0; i < cStackSize; ++i)
                     m_stack[i] = -1;
             }
 
             void reset() { m_index = 0; }
             bool empty() const { return m_index == 0; }
+            s32 length() const { return m_index; }
+            s32 operator[](s32 index) const { return m_stack[index]; }
 
             void push(s32 index)
             {
-                ASSERT(m_index < 15);
+                ASSERT(m_index < cStackSize);
                 m_stack[m_index] = index;
                 m_index++;
             }
@@ -191,7 +212,7 @@ namespace xcore
             {
                 stack.push(indexof_alias);
 
-                s32 indexof_next_alias = find_indexof_alias(mAliasList[indexof_alias].mTarget);
+                s32 indexof_next_alias = find_indexof_alias(mAliasList[indexof_alias].mTargetDeviceName);
                 if (indexof_next_alias >= 0)
                 {
                     // Target is directing us to another alias, so we need to
@@ -211,7 +232,7 @@ namespace xcore
                     // Target is likely directing us to a device, see if that
                     // is true. If it is not true then we should store a '-1'
                     // to indicate on the stack that there is a problem.
-                    s32 indexof_device = find_indexof_device(mAliasList[indexof_alias].mTarget);
+                    s32 indexof_device = find_indexof_device(mAliasList[indexof_alias].mTargetDeviceName);
                     valid              = indexof_device >= 0;
                     break;
                 }
@@ -220,58 +241,58 @@ namespace xcore
             if (valid)
             {
                 // Walk the stack and concatenate the target strings into 'Resolved'
-                runes_t& resolved_path = mAliasList[i].mResolved;
-                resolved_path.reset();
-
-                s32 indexof_alias = stack.pop();
-                concatenate(resolved_path, mAliasList[indexof_alias].mTarget, mContext->m_stralloc, 8);
-                while (stack.empty() == false)
+                // path_t* resolved_path = mAliasList[i].mResolvedPath;
+                if (stack.length() > 1)
                 {
-                    indexof_alias              = stack.pop();
-                    crunes_t target_path       = crunes_t(mAliasList[indexof_alias].mTarget);
-                    crunes_t alias_target_path = findSelectUntilIncluded(target_path, sDeviceSeperator);
-                    alias_target_path          = selectAfterExclude(target_path, alias_target_path);
-                    concatenate(resolved_path, alias_target_path, mContext->m_stralloc, 8);
-                }
-
-                // Cache the device index that our resolved path is referencing
-                mAliasList[i].mDeviceIndex = -1;
-                runes_t resolved_devname   = findSelectUntilIncluded(resolved_path, sDeviceSeperator);
-                if (!resolved_devname.is_empty())
-                {
-                    for (s32 di = 0; di < mNumDevices; ++di)
+                    s32 pathslen = 0;
+                    path_t* paths[cStackSize];
+                    for (s32 di = stack.length() - 1; di >= 0; --di)
                     {
-                        if (compare(mDeviceList[di].mDevName, resolved_devname) == 0)
+                        if (pathslen == 0)
                         {
-                            mAliasList[i].mDeviceIndex = di;
-                            break;
+                            mAliasList[i].mResolvedDeviceName = mAliasList[stack[di]].mTargetDeviceName;
+                            mAliasList[i].mDeviceIndex = find_indexof_device(mAliasList[stack[di]].mTargetDeviceName);
                         }
+                        paths[pathslen++] = mAliasList[stack[di]].mTargetPath;
                     }
+
+                    // We need to allocate a path_t* which can hold 'depth' folders
+                    path_t* fullpath = nullptr;
+                    mContext->register_directory(paths, pathslen, fullpath);
+                    mAliasList[i].mResolvedPath = fullpath;
+                }
+                else
+                {
+                    mAliasList[i].mResolvedDeviceName = mAliasList[stack[0]].mTargetDeviceName;
+                    mAliasList[i].mDeviceIndex = find_indexof_device(mAliasList[stack[0]].mTargetDeviceName);
                 }
             }
         }
     }
 
-    s32 devicemanager_t::find_indexof_alias(const crunes_t& path) const
+    s32 devicemanager_t::find_indexof_alias(pathname_t* alias) const
     {
-        // reduce path to just the alias part
-        crunes_t alias = findSelectUntilIncluded(path, sDeviceSeperator);
+        if (alias == nullptr)
+            return -1;
+
         for (s32 i = 0; i < mNumAliases; ++i)
         {
-            if (compare(mAliasList[i].mAlias, alias) == 0)
+            if (mAliasList[i].mAlias == alias)
             {
                 return i;
             }
         }
         return -1;
     }
-    s32 devicemanager_t::find_indexof_device(const crunes_t& path) const
+    s32 devicemanager_t::find_indexof_device(pathname_t* devname) const
     {
+        if (devname == nullptr)
+            return -1;
+
         // reduce path to just the device part
-        crunes_t devname = findSelectUntilIncluded(path, sDeviceSeperator);
         for (s32 i = 0; i < mNumDevices; ++i)
         {
-            if (compare(mDeviceList[i].mDevName, devname) == 0)
+            if (mDeviceList[i].mDevName == devname)
             {
                 return i;
             }
@@ -280,7 +301,7 @@ namespace xcore
     }
 
     //------------------------------------------------------------------------------
-    bool devicemanager_t::has_device(const path_t& path)
+    bool devicemanager_t::has_device(const runes_t& path)
     {
         if (mNeedsResolve)
         {
@@ -288,12 +309,13 @@ namespace xcore
         }
 
         filedevice_t* fd      = nullptr;
-        runes_t       devname = findSelectUntilIncluded(path.m_path, sDeviceSeperator);
+        runes_t       devname = findSelectUntilIncluded(path, sDeviceSeperator);
         if (!devname.is_empty())
         {
+            pathname_t* devpathname = mContext->register_name(devname);
             for (s32 i = 0; i < mNumAliases; ++i)
             {
-                if (compare(mAliasList[i].mAlias, devname) == 0)
+                if (mAliasList[i].mAlias == devpathname)
                 {
                     fd = mDeviceList[mAliasList[i].mDeviceIndex].mDevice;
                     break;
@@ -303,7 +325,7 @@ namespace xcore
         return fd != nullptr;
     }
 
-    filedevice_t* devicemanager_t::find_device(const path_t& path, path_t& device_syspath)
+    filedevice_t* devicemanager_t::find_device(const filepath_t& filepath, dirpath_t& devicepath)
     {
         if (mNeedsResolve)
         {
@@ -311,17 +333,13 @@ namespace xcore
         }
 
         filedevice_t* fd      = nullptr;
-        runes_t       devname = findSelectUntilIncluded(path.m_path, sDeviceSeperator);
-        if (!devname.is_empty())
+        if (!filepath.root().isEmpty())
         {
-            device_syspath = path_t(mContext);
             for (s32 i = 0; i < mNumAliases; ++i)
             {
-                if (compare(mAliasList[i].mAlias, devname) == 0)
+                if (mAliasList[i].mAlias == filepath.root().devname())
                 {
                     // Concatenate the path (filepath or dirpath) that the user provided to our resolved path
-                    runes_t relpath = selectAfterExclude(path.m_path, devname);
-                    concatenate(device_syspath.m_path, mAliasList[i].mResolved, relpath, device_syspath.m_context->m_stralloc, 16);
                     if (mAliasList[i].mDeviceIndex >= 0)
                     {
                         return mDeviceList[mAliasList[i].mDeviceIndex].mDevice;
@@ -330,11 +348,9 @@ namespace xcore
             }
             for (s32 i = 0; i < mNumDevices; ++i)
             {
-                if (compare(mDeviceList[i].mDevName, devname) == 0)
+                if (mDeviceList[i].mDevName, filepath.root().devname())
                 {
                     // Concatenate the path (filepath or dirpath) that the user provided to our device path
-                    runes_t relpath = selectAfterExclude(path.m_path, devname);
-                    concatenate(device_syspath.m_path, mDeviceList[i].mDevName, relpath, mContext->m_stralloc, 16);
                     return mDeviceList[i].mDevice;
                 }
             }

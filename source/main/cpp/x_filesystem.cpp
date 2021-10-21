@@ -62,14 +62,8 @@ namespace xcore
         return dirpath;
     }
 
-    path_t& filesys_t::get_path(dirinfo_t& dirinfo) { return dirinfo.m_path.m_path; }
-    path_t const& filesys_t::get_path(dirinfo_t const& dirinfo) { return dirinfo.m_path.m_path; }
-    path_t& filesys_t::get_path(dirpath_t& dirpath) { return dirpath.m_path; }
-    path_t const& filesys_t::get_path(dirpath_t const& dirpath) { return dirpath.m_path; }
-    path_t& filesys_t::get_path(filepath_t& filepath) { return filepath.m_path; }
-    path_t const& filesys_t::get_path(filepath_t const& filepath) { return filepath.m_path; }
-    filesys_t* filesys_t::get_filesystem(dirpath_t const& dirpath) { return dirpath.m_context->m_owner; }
-    filesys_t* filesys_t::get_filesystem(filepath_t const& filepath) { return filepath.m_context->m_owner; }
+    filesys_t* filesys_t::get_filesystem(dirpath_t const& dirpath) { return dirpath.m_device->m_root->m_owner; }
+    filesys_t* filesys_t::get_filesystem(filepath_t const& filepath) { return filepath.root().m_device->m_root->m_owner; }
 
     stream_t filesys_t::create_filestream(const filepath_t& filepath, EFileMode fm, EFileAccess fa, EFileOp fo)
     {
@@ -84,7 +78,7 @@ namespace xcore
     filepath_t filesys_t::filepath(const char* str)
     {
         filepath_t filepath;
-        filepath.m_context = &m_context;
+        filepath.m_context = m_context;
         filepath.m_path   = path_t(&m_context, str);
         return filepath;
     }

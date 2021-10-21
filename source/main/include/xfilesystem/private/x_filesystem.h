@@ -38,9 +38,8 @@ namespace xcore
     class filesys_t
     {
     public:
-        char                      m_slash;
-        filesystem_t::context_t   m_context;
-        devicemanager_t*          m_devman;
+        filesysroot_t      m_context;
+        devicemanager_t*   m_devman;
 
         filehandle_t* m_filehandle_list_free;
         filehandle_t* m_filehandle_list_active;

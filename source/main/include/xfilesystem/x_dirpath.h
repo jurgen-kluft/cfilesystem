@@ -25,61 +25,41 @@ namespace xcore
     class dirpath_t
     {
     protected:
-        friend class path_t;
+        pathdevice_t* m_device;
+        path_t* m_path;
+
         friend class filepath_t;
+        friend class filesys_t;
         friend class fileinfo_t;
         friend class dirinfo_t;
-        friend class xdirpathz;
-        friend class xdirpathc;
-        friend class filesys_t;
-        friend class filedevice_pc_t;
-
-        filesystem_t::context_t* m_context;
-        path_t     m_path;
-
-        dirpath_t(filesystem_t::context_t* ctxt);
-        dirpath_t(filesystem_t::context_t* ctxt, crunes_t const& path);
 
     public:
         dirpath_t();
-        dirpath_t(const dirpath_t& dir);
-        dirpath_t(const dirpath_t& rootdir, const dirpath_t& subdir);
+        dirpath_t(dirpath_t const& other);
+        dirpath_t(pathdevice_t* device);
         ~dirpath_t();
 
         void clear();
-
         bool isEmpty() const;
         bool isRoot() const;
         bool isRooted() const;
-        bool isSubDirOf(const dirpath_t&) const;
 
-        void relative(dirpath_t& outRelative) const;
-        void makeRelative();
-        void makeRelativeTo(const dirpath_t& parent);
-        void makeRelativeTo(const dirpath_t& parent, dirpath_t& sub) const;
+        void makeRelativeTo(const dirpath_t& dirpath);
+        void makeAbsoluteTo(const dirpath_t& dirpath);
 
-        s32  getLevels() const;
-        bool getLevel(s32 level, dirpath_t& name) const;
-        s32  getLevelOf(const dirpath_t& name) const;
-        bool split(s32 level, dirpath_t& parent, dirpath_t& subDir) const;
+        pathname_t* devname() const;
+        pathname_t* getname() const;
 
-        bool getName(dirpath_t& outName) const;
-        bool hasName(const dirpath_t& inName) const;
-        bool getParent(dirpath_t& outParentDirPath) const;
-        void setRoot(const dirpath_t& device);
-        bool getRoot(dirpath_t& outDevice) const;
+        dirpath_t root() const;
 
-        void toString(runes_t& dst) const;
+        void split(s32 pivot, dirpath_t left, dirpath_t right) const;
+        void truncate(dirpath_t& dirpath, pathname_t*& folder) const;
+        void truncate(pathname_t*& folder, dirpath_t& dirpath) const;
+        void combine(pathname_t* folder, dirpath_t const& dirpath);
+        void combine(dirpath_t const& dirpath, pathname_t* folder);
 
-        dirpath_t& operator=(const dirpath_t&);
-        dirpath_t& operator=(const filepath_t&);
-        dirpath_t& operator+=(const dirpath_t&);
-        filepath_t operator+=(const filepath_t&);
-        bool      operator==(const dirpath_t& rhs) const;
-        bool      operator!=(const dirpath_t& rhs) const;
+        void to_string(runes_t& str) const;
     };
-
-    dirpath_t operator+(const dirpath_t&, const dirpath_t&);
 
 }; // namespace xcore
 

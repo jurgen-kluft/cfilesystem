@@ -15,6 +15,7 @@ namespace xcore
     class dirpath_t;
     class filepath_t;
     class filedevice_t;
+    struct filesysroot_t;
 
     //------------------------------------------------------------------------------
     // Description:
@@ -37,61 +38,59 @@ namespace xcore
         typedef utf32::rune  rune;
 
     public:
-        devicemanager_t(filesystem_t::context_t* stralloc);
+        devicemanager_t(filesysroot_t* stralloc);
 		
 		XCORE_CLASS_PLACEMENT_NEW_DELETE
 
         void clear();
         void exit();
 
-        bool add_device(const char* device_name, filedevice_t*);
-        bool add_alias(const char* alias_name, const crunes_t& alias_target);
-
         bool add_device(const crunes_t& device_name, filedevice_t*);
         bool add_alias(const crunes_t& alias_name, const crunes_t& device_name);
 
         // Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
-		bool has_device(const path_t& path);
-        filedevice_t* find_device(const path_t& path, path_t& device_rootpath);
+		bool has_device(const runes_t& path);
+        filedevice_t* find_device(const filepath_t& filepath, dirpath_t& devicepath);
 
         struct alias_t
         {
             inline alias_t()
-                : mAlias(mAliasRunes, mAliasRunes, mAliasRunes + (sizeof(mAliasRunes)/sizeof(mAliasRunes[0])) - 1)
-                , mTarget()
-                , mResolved()
+                : mAlias(nullptr)
+                , mTargetDeviceName(nullptr)
+                , mTargetPath(nullptr)
+                , mResolvedDeviceName(nullptr)
+                , mResolvedPath(nullptr)
                 , mDeviceIndex(-1)
             {
-                mAliasRunes[(sizeof(mAliasRunes) / sizeof(mAliasRunes[0])) - 1] = '\0';
             }
-            rune  mAliasRunes[16]; // 
-            runes mAlias;          // "data"
-            runes mTarget;         // "appdir:\data\bin.pc\", "data:\file.txt" to "appdir:\data\bin.pc\file.txt"
-            runes mResolved;       // "appdir:\data\bin.pc\" to "d:\project\data\bin.pc\"
-			s32   mDeviceIndex;    // Index of the device that we resolve to
+
+            pathname_t* mAlias;              // "data"
+            pathname_t* mTargetDeviceName;   // "appdir:\data\bin.pc\", "data:\file.txt" to "appdir:\data\bin.pc\file.txt"
+            path_t*     mTargetPath;         // 
+            pathname_t* mResolvedDeviceName; // "appdir:\data\bin.pc\" to "d:\project\data\bin.pc\"
+            path_t*     mResolvedPath;       // 
+			s32         mDeviceIndex;        // Index of the device that we resolve to
         };
 
         // Return index of found alias, otherwise -1
-        s32 find_indexof_alias(const crunes_t& path) const;
-        s32 find_indexof_device(const crunes_t& path) const;
+        s32 find_indexof_alias(pathname_t* path) const;
+        s32 find_indexof_device(pathname_t* path) const;
 
 		void resolve();
 
 		struct device_t
         {
             inline device_t()
-                : mDevName(mDevNameRunes, mDevNameRunes, mDevNameRunes + (sizeof(mDevNameRunes) / sizeof(mDevNameRunes[0])) - 1)
+                : mDevName(nullptr)
                 , mDevice(nullptr)
             {
-                mDevNameRunes[(sizeof(mDevNameRunes) / sizeof(mDevNameRunes[0])) - 1] = '\0';
             }
-            rune         mDevNameRunes[16];
-            runes        mDevName;
+            pathname_t*   mDevName;
             filedevice_t* mDevice;
         };
 
 		bool          mNeedsResolve;
-        filesystem_t::context_t* mContext;
+        filesysroot_t* mContext;
         s32           mNumAliases;
         alias_t       mAliasList[MAX_FILE_ALIASES];
         s32           mNumDevices;

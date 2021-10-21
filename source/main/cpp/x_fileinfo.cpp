@@ -17,9 +17,9 @@
 //==============================================================================
 namespace xcore
 {
-    fileinfo_t::fileinfo_t() : mFileExists(false), mFileTimes(), mFileAttributes(), m_context(nullptr), m_path() {}
-    fileinfo_t::fileinfo_t(const fileinfo_t& fi) : mFileExists(fi.mFileExists), mFileTimes(fi.mFileTimes), mFileAttributes(fi.mFileAttributes), m_context(fi.m_context), m_path(fi.m_path) {}
-    fileinfo_t::fileinfo_t(const filepath_t& fp) : m_context(fp.m_context), m_path(fp) {}
+    fileinfo_t::fileinfo_t() : mFileExists(false), mFileTimes(), mFileAttributes(), m_path() {}
+    fileinfo_t::fileinfo_t(const fileinfo_t& fi) : mFileExists(fi.mFileExists), mFileTimes(fi.mFileTimes), mFileAttributes(fi.mFileAttributes), m_path(fi.m_path) {}
+    fileinfo_t::fileinfo_t(const filepath_t& fp) : m_path(fp) {}
     fileinfo_t::~fileinfo_t() {}
 
     u64  fileinfo_t::getLength() const { return sGetLength(m_path); }
@@ -28,7 +28,7 @@ namespace xcore
     bool fileinfo_t::isValid() const
     {
         filedevice_t* device;
-        filepath_t    sysfilepath = m_context->m_owner->resolve(m_path, device);
+        filepath_t    sysfilepath = m_path.m_dirpath.m_device->m_root->m_owner->resolve(m_path, device);
         return device != nullptr;
     }
 
@@ -41,7 +41,7 @@ namespace xcore
         stream_t fs;
         if (sCreate(m_path, fs))
         {
-            m_context->m_owner->close(fs);
+            m_path.m_dirpath.m_device->m_root->m_owner->close(fs);
             return true;
         }
         return false;
@@ -55,31 +55,54 @@ namespace xcore
     u64  fileinfo_t::readAllBytes(xbyte* buffer, u64 count) { return sReadAllBytes(m_path, buffer, count); }
     u64  fileinfo_t::writeAllBytes(const xbyte* buffer, u64 count) { return sWriteAllBytes(m_path, buffer, count); }
 
-    bool fileinfo_t::getParent(dirpath_t& parent) const
+    void fileinfo_t::getParent(dirpath_t& parent) const
     {
-        dirpath_t dirpath;
-        if (m_path.getDirname(dirpath))
-        {
-            dirpath.getParent(parent);
-            return true;
-        }
-        return false;
+        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        root->release_device(parent.m_device);
+        parent.m_device = m_path.m_dirpath.m_device->attach();
+        path_t* parentpath = root->get_parent_path(parent.m_path);
+        root->release_path(parent.m_path);
+        parent.m_path = parentpath->attach();
     }
 
-    bool fileinfo_t::getRoot(dirpath_t& outInfo) const
+    void fileinfo_t::getRoot(dirpath_t& outInfo) const
     {
-        if (m_path.isRooted())
-        {
-            m_path.getRoot(outInfo);
-            return true;
-        }
-        return false;
+        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        root->release_device(outInfo.m_device);
+        outInfo.m_device = m_path.m_dirpath.m_device->attach();
     }
 
-    void fileinfo_t::getDirpath(dirpath_t& dirpath) const { m_path.getDirname(dirpath); }
-    void fileinfo_t::getFilename(filepath_t& filename) const { m_path.getFilename(filename); }
-    void fileinfo_t::getFilenameWithoutExtension(filepath_t& extension) const { m_path.getFilenameWithoutExtension(extension); }
-    void fileinfo_t::getExtension(filepath_t& extension) const { m_path.getExtension(extension); }
+    void fileinfo_t::getDirpath(dirpath_t& dirpath) const 
+    { 
+        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        root->release_device(dirpath.m_device);
+        dirpath.m_device = m_path.m_dirpath.m_device->attach();
+        root->release_path(dirpath.m_path);
+        dirpath.m_path = m_path.m_dirpath.m_path->attach();
+    }
+
+    void fileinfo_t::getFilename(filepath_t& filename) const
+    {
+        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        root->release_filename(filename.m_filename); 
+        filename.m_filename = m_path.m_filename->incref(); 
+        root->release_extension(filename.m_extension);
+        filename.m_extension = m_path.m_extension->incref(); 
+    }
+
+    void fileinfo_t::getFilenameWithoutExtension(filepath_t& filename_without_extension) const 
+    { 
+        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        root->release_filename(filename_without_extension.m_filename); 
+        filename_without_extension.m_filename = m_path.m_filename->incref(); 
+    }
+
+    void fileinfo_t::getExtension(filepath_t& extension) const 
+    { 
+        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        root->release_extension(extension.m_extension);
+        extension.m_extension = m_path.m_extension->incref(); 
+    }
 
     bool fileinfo_t::copy_to(const filepath_t& toFilename, bool overwrite) { return sCopy(m_path, toFilename, overwrite); }
     bool fileinfo_t::move_to(const filepath_t& toFilename, bool overwrite) { return sMove(m_path, toFilename); }
@@ -87,23 +110,15 @@ namespace xcore
     dirpath_t fileinfo_t::getParent() const
     {
         dirpath_t dp;
-        if (getParent(dp))
-        {
-            return dp;
-        }
-        crunes_t nullpath;
-        return dirpath_t(m_context, nullpath);
+        getParent(dp);
+        return dp;
     }
 
     dirpath_t fileinfo_t::getRoot() const
     {
         dirpath_t dp;
-        if (getRoot(dp))
-        {
-            return dp;
-        }
-        crunes_t nullpath;
-        return dirpath_t(m_context, nullpath);
+        getRoot(dp);
+        return dp;
     }
 
     dirpath_t fileinfo_t::getDirpath() const

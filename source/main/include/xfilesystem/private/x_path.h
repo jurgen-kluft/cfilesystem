@@ -11,6 +11,8 @@
 
 namespace xcore
 {
+    class alloc_t;
+
     class filesystem_t;
     class filedevice_t;
     class filesys_t;
@@ -36,70 +38,156 @@ namespace xcore
     // Filename                 = "Filename.ext"
     // FilenameWithoutExtension = "Filename"
     //==============================================================================
-    class filepath_t;
-    class dirpath_t;
 
-    class path_t
+    class fullpath_parser_utf32
     {
     public:
-        filesystem_t::context_t* m_context;
-        runes_t m_path;
+        crunes_t m_device;
+        crunes_t m_path;
+        crunes_t m_filename;
+        crunes_t m_extension;
+        crunes_t m_first_folder;
+        crunes_t m_last_folder;
 
-        path_t();
-        path_t(filesystem_t::context_t* allocator);
-        path_t(filesystem_t::context_t* allocator, const crunes_t& path);
-        path_t(const path_t& path);
-        path_t(const path_t& lhspath, const path_t& rhspath);
-        ~path_t();
+        void parse(const crunes_t& fullpath);
 
-        path_t resolve(filesys_t* fs, filedevice_t*& outdevice) const;
+        bool has_device() const { return !m_device.is_empty(); }
+        bool has_path() const { return !m_path.is_empty(); }
+        bool has_filename() const { return !m_filename.is_empty(); }
+        bool has_extension() const { return !m_extension.is_empty(); }
 
-        void set_filepath(runes_t& runes, filesystem_t::context_t* ctxt);
-        void set_dirpath(runes_t& runes, filesystem_t::context_t* ctxt);
+        crunes_t iterate_folder() const { return m_first_folder; }
+        bool     next_folder(crunes_t& folder) const;
+        crunes_t last_folder() const { return m_last_folder; }
+        bool     prev_folder(crunes_t& folder) const;
+    };
 
-        void combine(const path_t& dirpath, const path_t& filepath);
-        void copy_dirpath(runes_t& runes);
-        void clear();
-        void erase();
+
+    class filepath_t;
+    class dirpath_t;
+    class pathname_t;
+    class filesysroot_t;
+
+    struct path_t
+    {
+        s32 m_ref;
+        s16 m_len;
+        s16 m_cap;
+        pathname_t* m_path[1];
+
+        path_t() : m_ref(0), m_len(0), m_cap(1) { }
+
+        path_t* attach();
+        bool detach(filesysroot_t* root);
+
+        pathname_t* get_name() const;
+        path_t* prepend(pathname_t* folder, alloc_t* allocator);
+        path_t* append(pathname_t* folder, alloc_t* allocator);
+
+        static path_t* construct(alloc_t* allocator, s32 len);
+        static void destruct(alloc_t* allocator, path_t* path);
+        static void copy_array(pathname_t** from, u32 from_start, u32 from_len, pathname_t** dst, u32 dst_start);
+    };
+
+    struct pathname_t
+    {
+        u64      m_hash;
+        pathname_t* m_next;
+        u32      m_id;
+        s32      m_refs;
+        s32      m_len;
+        utf32::rune m_name[1];
+
+        pathname_t(s32 strlen);
 
         bool isEmpty() const;
-        bool isRoot() const;
-        bool isRooted() const;
-        bool isSubDirOf(const path_t& dirpath) const;
 
-        s32  getLevels() const;
-        bool getLevel(s32 level, path_t& dirpath) const;
-        s32  getLevelOf(const path_t& dirname) const;
-        bool split(s32 level, path_t& parent_dirpath, path_t& relative_filepath) const;
+        static s32 compare(const pathname_t* name, const pathname_t* other);
+        s32 compare(const pathname_t* other) const;
+        s32 compare(crunes_t const& name) const;
 
-        void makeRelative();
-        void makeRelativeTo(const path_t& parent_dirpath);
+        pathname_t* incref();
+        pathname_t* release(alloc_t* allocator);
+        static bool release(pathname_t* name);
+        static pathname_t* construct(alloc_t* allocator, u64 hname, crunes_t const& name);
 
-        void setRootDir(const path_t& in_root_dirpath);
-        bool getRootDir(path_t& out_root_dirpath) const;
-        bool getDirname(path_t& out_dirpath) const;
+        XCORE_CLASS_PLACEMENT_NEW_DELETE
+    };
 
-        bool up();
-        bool down(path_t const& runes);
+    struct pathname_table_t
+    {
+        void     initialize(alloc_t* allocator, s32 cap=65536);
 
-        void getFilename(path_t& out_filename) const;
-        void getFilenameWithoutExtension(path_t& out_filename_no_ext) const;
-        void getExtension(path_t& out_ext) const;
+        pathname_t* find(u64 hash) const;
+        pathname_t* next(u64 hash, pathname_t* prev) const;
+        void     insert(pathname_t* name);
+        bool     remove(pathname_t* name);
+        u32      hash_to_index(u64 hash) const;
 
-        path_t& operator=(const runes_t&);
-        path_t& operator=(const path_t&);
-        path_t& operator+=(const runes_t&);
+        s32       m_len;
+        s32       m_cap;
+        pathname_t** m_table;
+    };
 
-        bool operator==(const path_t&) const;
-        bool operator!=(const path_t&) const;
+    struct pathdevice_t
+    {
+        filesysroot_t*   m_root; // If alias, pathdevice_t ("work") | nullptr
+        filedevice_t*    m_fd;   // nullptr                      | xfiledevice("e")
+        pathname_t*      m_name; // "codedir"                    | "E"
+        pathname_t*      m_path; // "codedir:\\xfilesystem\\"    | "E:\\dev.go\\src\\github.com\\jurgen-kluft\\"
 
-        void toString(runes_t& dst) const;
+        void       init(filesysroot_t* owner);
 
-        static void as_utf16(path_t const& p,  path_t& dst);
-        static void as_utf16(filepath_t const& fp, path_t& dst);
-        static void as_utf16(filepath_t const& fp, filepath_t& dst);
-        static void as_utf16(dirpath_t const& dp, path_t& dst);
-        static void as_utf16(dirpath_t const& dp, dirpath_t& dst);
+        pathdevice_t* attach() { return this; }
+        pathdevice_t* release(alloc_t* allocator) { return this; }
+
+        static pathdevice_t* construct(alloc_t* allocator, filesysroot_t* owner);
+        static void       destruct(alloc_t* allocator, pathdevice_t*& device);
+    };
+
+    class filesysroot_t
+    {
+    public:
+        filesysroot_t(alloc_t* allocator) : m_allocator(allocator) {}
+
+        u32                 m_max_open_files;
+        u32                 m_max_path_objects;
+        char                m_default_slash;
+        filesys_t*          m_owner;
+        alloc_t*            m_allocator;
+        runes_alloc_t*      m_stralloc;
+        s32                 m_num_devices;
+        s32                 m_max_devices;
+        pathdevice_t        m_tdevice[64];
+        pathname_table_t    m_filename_table;
+        pathname_table_t    m_extension_table;
+
+        static pathdevice_t* sNilDevice;
+        static pathname_t*   sNilName;
+        static path_t*       sNilPath;
+
+        void initialize(alloc_t* allocator);
+
+        void release_name(pathname_t* name);
+        void release_filename(pathname_t* name);
+        void release_extension(pathname_t* name);
+        void release_path(path_t* path);
+        void release_device(pathdevice_t* dev);
+
+        pathname_t* register_name(crunes_t const& namestr);
+        pathname_t* get_empty_name() const;
+
+        bool register_directory(crunes_t const& directory, pathname_t*& out_devicename, path_t*& out_path);
+        bool register_directory(path_t** paths_to_concatenate, s32 paths_len, path_t*& out_path);
+        bool register_filename(crunes_t const& filename, pathname_t*& out_filename, pathname_t*& out_extension);
+        bool register_fullfilepath(crunes_t const& fullfilepath, pathname_t*& out_devicename, path_t*& out_path, pathname_t*& out_filename, pathname_t*& out_extension);
+
+        pathname_t* register_dirname(crunes_t const& fulldirname);
+        pathname_t* register_extension(crunes_t const& extension);
+        pathdevice_t* register_device(crunes_t const& device);
+
+        path_t* get_parent_path(path_t* path);
+        void get_split_path(path_t* path, s32 pivot, path_t*& left, path_t*& right);
     };
 
 }; // namespace xcore

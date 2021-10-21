@@ -30,12 +30,12 @@ namespace xcore
     public:
         struct context_t
         {
-            inline context_t() : m_max_open_files(32), m_default_slash('/'), m_allocator(nullptr), m_stralloc(nullptr) {}
-            u32            m_max_open_files;
-            char           m_default_slash;
-            filesys_t*     m_owner;
+            inline context_t() : m_allocator(nullptr), m_stralloc(nullptr), m_max_open_files(32), m_max_path_objects(8192), m_default_slash('/') {}
             alloc_t*       m_allocator;
             runes_alloc_t* m_stralloc;
+            u32            m_max_open_files;
+            u32            m_max_path_objects;
+            char           m_default_slash;
         };
 
         static void create(context_t const&);

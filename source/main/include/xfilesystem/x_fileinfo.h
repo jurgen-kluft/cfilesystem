@@ -30,8 +30,7 @@ namespace xcore
         bool        mFileExists;
         filetimes_t mFileTimes;
         fileattrs_t mFileAttributes;
-        filesystem_t::context_t* m_context;
-        filepath_t m_path;
+        filepath_t  m_path;
 
     public:
         fileinfo_t();
@@ -62,8 +61,8 @@ namespace xcore
         u64  readAllBytes(xbyte* buffer, u64 count);
         u64  writeAllBytes(const xbyte* buffer, u64 count);
 
-        bool getParent(dirpath_t& parentpath) const;
-        bool getRoot(dirpath_t& rootpath) const;
+        void getParent(dirpath_t& parentpath) const;
+        void getRoot(dirpath_t& rootpath) const;
         void getDirpath(dirpath_t& dirpath) const;
         void getFilename(filepath_t& filename) const;
         void getFilenameWithoutExtension(filepath_t& filename) const;
