@@ -19,8 +19,6 @@ namespace xcore
     class filedevice_t;
     class filepath_t;
     class dirpath_t;
-    class fileinfo_t;
-    class dirinfo_t;
     class fileattrs_t;
     class filetimes_t;
     class stream_t;
@@ -75,6 +73,7 @@ namespace xcore
         virtual bool copyFile(filepath_t const& szFilename, filepath_t const& szToFilename, bool boOverwrite) = 0;
         virtual bool deleteFile(filepath_t const& szFilename)                                                = 0;
 
+        virtual bool openDir(dirpath_t const& szDirPath, void*& nDirHandle)                             = 0;
         virtual bool hasDir(dirpath_t const& szDirPath)                                                 = 0;
         virtual bool moveDir(dirpath_t const& szDirPath, dirpath_t const& szToDirPath, bool boOverwrite) = 0;
         virtual bool copyDir(dirpath_t const& szDirPath, dirpath_t const& szToDirPath, bool boOverwrite) = 0;

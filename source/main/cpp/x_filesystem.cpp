@@ -49,17 +49,18 @@ namespace xcore
     filepath_t filesys_t::resolve(filepath_t const& fp, filedevice_t*& device)
     {
         filesys_t* fs = get_filesystem(fp);
-        filepath_t  filepath(&fs->m_context);
-        device = fs->m_devman->find_device(fp.m_path, filepath.m_path);
-        return filepath;
+        filepath_t full_filepath;
+        device = fs->m_devman->find_device(fp, full_filepath);
+        return full_filepath;
     }
 
     dirpath_t filesys_t::resolve(dirpath_t const& dp, filedevice_t*& device)
     {
-        filesys_t* fs = get_filesystem(dp);
-        dirpath_t  dirpath(&fs->m_context);
-        device = fs->m_devman->find_device(dp.m_path, dirpath.m_path);
-        return dirpath;
+        filepath_t fp(dp, filesysroot_t::sNilName, filesysroot_t::sNilName);
+        filesys_t* fs = get_filesystem(fp);
+        filepath_t full_filepath;
+        device = fs->m_devman->find_device(fp, full_filepath);
+        return full_filepath.dirpath();
     }
 
     filesys_t* filesys_t::get_filesystem(dirpath_t const& dirpath) { return dirpath.m_device->m_root->m_owner; }
@@ -77,28 +78,38 @@ namespace xcore
     
     filepath_t filesys_t::filepath(const char* str)
     {
-        filepath_t filepath;
-        filepath.m_context = m_context;
-        filepath.m_path   = path_t(&m_context, str);
-        return filepath;
+        crunes_t filepathstr(str);
+        return filepath(filepathstr);
     }
 
     dirpath_t filesys_t::dirpath(const char* str)
     {
-        dirpath_t dirpath;
-        dirpath.m_context = &m_context;
-        dirpath.m_path   = path_t(&m_context, str);
-        return dirpath;
+        crunes_t dirpathstr(str);
+        return dirpath(dirpathstr);
     }
 
     filepath_t filesys_t::filepath(const crunes_t& str)
     {
-        return filepath_t(&m_context, str);
+        pathname_t* devicename = nullptr;
+        path_t* path = nullptr;
+        pathname_t* filename = nullptr;
+        pathname_t* extension = nullptr;
+        m_context.register_fullfilepath(str, devicename, path, filename, extension);
+        pathdevice_t* device = m_context.register_device(devicename);
+
+        dirpath_t dirpath(device, path);
+        filepath_t filepath(dirpath, filename, extension);
+        return filepath;
     }
 
     dirpath_t filesys_t::dirpath(const crunes_t& str)
     {
-        return dirpath_t(&m_context, str);;
+        pathname_t* devicename = nullptr;
+        path_t* path = nullptr;
+        m_context.register_directory(str, devicename, path);
+        pathdevice_t* device = m_context.register_device(devicename);
+        dirpath_t dirpath(device, path);
+        return dirpath;
     }
 
     bool filesys_t::register_device(const crunes_t& device_name, filedevice_t* device) { return m_devman->add_device(device_name, device); }

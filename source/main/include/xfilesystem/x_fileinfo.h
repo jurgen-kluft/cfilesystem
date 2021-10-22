@@ -35,7 +35,7 @@ namespace xcore
     public:
         fileinfo_t();
         fileinfo_t(const fileinfo_t& fileinfo);
-        fileinfo_t(const filepath_t& filename);
+        fileinfo_t(const filepath_t& filename, const fileattrs_t& attrs, const filetimes_t& times);
         ~fileinfo_t();
 
         u64  getLength() const;

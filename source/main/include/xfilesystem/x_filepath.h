@@ -35,6 +35,10 @@ namespace xcore
         bool isRooted() const;
         bool isEmpty() const;
 
+        void makeRelativeTo(const dirpath_t& dirpath);
+        void makeAbsoluteTo(const dirpath_t& dirpath);
+
+        void setDirpath(dirpath_t const& dirpath);
         void setFilename(pathname_t* filename);
         void setFilename(crunes_t const& filename);
         void setExtension(pathname_t* extension);
@@ -47,13 +51,18 @@ namespace xcore
         pathname_t* extension() const;
 
         void split(s32 pivot, dirpath_t& left, filepath_t& right) const;
-        void truncate(filepath_t& dirpath, pathname_t*& folder) const;
-        void truncate(pathname_t*& folder, filepath_t& dirpath) const;
-        void combine(pathname_t* folder, filepath_t const& dirpath);
-        void combine(filepath_t const& dirpath, pathname_t* folder);
+        void truncate(filepath_t& filepath, pathname_t*& folder) const;
+        void truncate(pathname_t*& folder, filepath_t& filepath) const;
+        void combine(pathname_t* folder, filepath_t const& filepath);
+        void combine(filepath_t const& filepath, pathname_t* folder);
+
+        void down(pathname_t* folder);
+        void up();
 
         void to_string(runes_t& str) const;
     };
+
+    extern filepath_t operator+(const dirpath_t& dirpath, const filepath_t& filepath);
 
 }; // namespace xcore
 

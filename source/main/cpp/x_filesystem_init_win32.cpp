@@ -40,7 +40,7 @@ namespace xcore
         static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
                                                       L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
 
-        static void x_FileSystemUnregisterSystemAliases(filesystem_t::context_t* ctxt, devicemanager_t* devman)
+        static void x_FileSystemUnregisterSystemAliases(filesysroot_t* ctxt, devicemanager_t* devman)
         {
             devman->exit();
             for (s32 i = 0; i < DRIVE_TYPE_NUM; i++)
@@ -49,7 +49,7 @@ namespace xcore
             }
         }
 
-        static void x_FileSystemRegisterSystemAliases(filesystem_t::context_t* ctxt, devicemanager_t* devman)
+        static void x_FileSystemRegisterSystemAliases(filesysroot_t* ctxt, devicemanager_t* devman)
         {
             runez_t<utf32::rune, 255> string32;
 
@@ -89,9 +89,7 @@ namespace xcore
                     crunes_t devicePath16((utf16::pcrune)devicePath);
                     copy(devicePath16, string32);
 
-                    path_t devicename;
-                    devicename.m_path = string32;
-                    if (!devman->has_device(devicename))
+                    if (!devman->has_device(string32))
                     {
                         if (sFileDevices[eDriveType] == NULL)
                         {
@@ -183,10 +181,15 @@ namespace xcore
     void filesystem_t::create(filesystem_t::context_t const& ctxt)
     {
         filesys_t* imp      = ctxt.m_allocator->construct<filesys_t>();
-        imp->m_context      = ctxt;
-        imp->m_context.m_owner = imp;
+        imp->m_context.m_allocator      = ctxt.m_allocator;
         imp->m_context.m_stralloc = ctxt.m_allocator->construct<fs_utfalloc>(ctxt.m_allocator);
+        imp->m_context.m_default_slash = ctxt.m_default_slash;
+        imp->m_context.m_max_open_files = ctxt.m_max_open_files;
+        imp->m_context.m_max_path_objects = ctxt.m_max_path_objects;
+        imp->m_context.m_owner = imp;
         filesystem_t::mImpl = imp;
+
+        imp->m_context.initialize(ctxt.m_allocator);
 
         imp->m_devman = ctxt.m_allocator->construct<devicemanager_t>(&imp->m_context);
         x_FileSystemRegisterSystemAliases(&imp->m_context, imp->m_devman);

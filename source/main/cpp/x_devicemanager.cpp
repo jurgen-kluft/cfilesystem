@@ -325,7 +325,7 @@ namespace xcore
         return fd != nullptr;
     }
 
-    filedevice_t* devicemanager_t::find_device(const filepath_t& filepath, dirpath_t& devicepath)
+    filedevice_t* devicemanager_t::find_device(const filepath_t& filepath, filepath_t& full_filepath)
     {
         if (mNeedsResolve)
         {

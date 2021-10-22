@@ -404,6 +404,18 @@ namespace xcore
         return sNilDevice;
     }
 
+    pathdevice_t* filesysroot_t::register_device(pathname_t* device)
+    {
+        for (s32 i = 0; i < m_num_devices; ++i)
+        {
+            if (device == m_tdevice[i].m_name)
+            {
+                return &m_tdevice[i];
+            }
+        }
+        return sNilDevice;
+    }
+
     path_t* filesysroot_t::get_parent_path(path_t* path)
     {
         if (path->m_len == 0)
@@ -415,6 +427,49 @@ namespace xcore
         path_t* out_path = path_t::construct(m_allocator, depth);
         path_t::copy_array(path->m_path, 0, depth, out_path->m_path, 0);
         return out_path;
+    }
+
+    void filesysroot_t::get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right)
+    {
+        if (pivot == 0)
+        {
+            if (left != nullptr)
+            {
+                *left = path;
+            }
+            if (right != nullptr)
+            {
+                *right = nullptr;
+            }
+        }
+        else if (pivot >= path->m_len)
+        {
+            if (left != nullptr)
+            {
+                *left = nullptr;
+            }
+            if (right != nullptr)
+            {
+                *right = path;
+            }
+        }
+        else
+        {
+            if (left != nullptr)
+            {
+                s32 len = pivot;
+                path_t* newpath = path_t::construct(m_allocator, len);
+                path_t::copy_array(path->m_path, 0, len, newpath->m_path, 0);
+                *left = newpath;
+            }
+            if (right != nullptr)
+            {
+                s32 len = path->m_len - pivot;
+                path_t* newpath = path_t::construct(m_allocator, len);
+                path_t::copy_array(path->m_path, 0, len, newpath->m_path, 0);
+                *right = newpath;
+            }
+        }
     }
 
     //
@@ -467,6 +522,24 @@ namespace xcore
         pathname_t* f = 
             path->m_path[m_len - 1] = folder->incref();
         return path;
+    }
+
+    s32 path_t::compare(path_t* other) const
+    {
+        if (other == this)
+            return 0;
+
+        if (m_len < other->m_len)
+            return -1;
+        if (m_len > other->m_len)
+            return 1;
+        for (s32 i = 0; i < m_len; i++)
+        {
+            s32 c = m_path[i]->compare(other->m_path[i]);
+            if (c != 0)
+                return c;
+        }
+        return 0;
     }
 
     path_t* path_t::construct(alloc_t* allocator, s32 cap)

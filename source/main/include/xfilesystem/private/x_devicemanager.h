@@ -50,7 +50,8 @@ namespace xcore
 
         // Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
 		bool has_device(const runes_t& path);
-        filedevice_t* find_device(const filepath_t& filepath, dirpath_t& devicepath);
+
+        filedevice_t* find_device(const filepath_t& filepath, filepath_t& full_filepath);
 
         struct alias_t
         {

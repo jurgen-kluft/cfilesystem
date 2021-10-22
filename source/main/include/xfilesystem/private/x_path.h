@@ -84,6 +84,8 @@ namespace xcore
         path_t* prepend(pathname_t* folder, alloc_t* allocator);
         path_t* append(pathname_t* folder, alloc_t* allocator);
 
+        s32 compare(path_t* other) const;
+
         static path_t* construct(alloc_t* allocator, s32 len);
         static void destruct(alloc_t* allocator, path_t* path);
         static void copy_array(pathname_t** from, u32 from_start, u32 from_len, pathname_t** dst, u32 dst_start);
@@ -185,9 +187,10 @@ namespace xcore
         pathname_t* register_dirname(crunes_t const& fulldirname);
         pathname_t* register_extension(crunes_t const& extension);
         pathdevice_t* register_device(crunes_t const& device);
+        pathdevice_t* register_device(pathname_t* device);
 
         path_t* get_parent_path(path_t* path);
-        void get_split_path(path_t* path, s32 pivot, path_t*& left, path_t*& right);
+        void get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right);
     };
 
 }; // namespace xcore
