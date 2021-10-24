@@ -239,7 +239,4 @@ namespace xcore
         }
     }
 
-    void xstream_copy(stream_t& src, stream_t& dst, u64 count) {}
-
-
 }; // namespace xcore

@@ -550,8 +550,7 @@ namespace xcore
         path->m_cap = (((cap + 3) & ~3) - 1);
         path->m_len = 0;
         path->m_ref = 0;
-        path->m_path[0] = '\0';
-        path->m_path[1] = '\0';
+        path->m_path[0] = nullptr;
         return path;
     }
 
