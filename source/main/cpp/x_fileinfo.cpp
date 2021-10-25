@@ -153,7 +153,7 @@ namespace xcore
     filepath_t const& fileinfo_t::getFilepath() const { return m_path; }
 
     void fileinfo_t::up() { m_path.up(); }
-    void fileinfo_t::down(dirpath_t const& dir) { m_path.down(dir); }
+    void fileinfo_t::down(dirpath_t const& dir) { m_path.m_dirpath = m_path.m_dirpath + dir; }
 
     bool fileinfo_t::getAttrs(fileattrs_t& fattrs) const { return sGetAttrs(m_path, fattrs); }
     bool fileinfo_t::getTimes(filetimes_t& ftimes) const { return sGetTime(m_path, ftimes); }

@@ -65,8 +65,8 @@ namespace xcore
 
     class filepath_t;
     class dirpath_t;
-    class pathname_t;
-    class filesysroot_t;
+    struct filesysroot_t;
+    struct pathname_t;
 
     struct path_t
     {
@@ -147,9 +147,8 @@ namespace xcore
         static void       destruct(alloc_t* allocator, pathdevice_t*& device);
     };
 
-    class filesysroot_t
+    struct filesysroot_t
     {
-    public:
         filesysroot_t(alloc_t* allocator) : m_allocator(allocator) {}
 
         u32                 m_max_open_files;
@@ -190,6 +189,9 @@ namespace xcore
         pathdevice_t* register_device(pathname_t* device);
 
         path_t* get_parent_path(path_t* path);
+        void get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path);
+        void get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path);
+        void get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path);
         void get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right);
     };
 

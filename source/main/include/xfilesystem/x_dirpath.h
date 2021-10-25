@@ -48,7 +48,7 @@ namespace xcore
         void makeRelativeTo(const dirpath_t& dirpath);
         void makeAbsoluteTo(const dirpath_t& dirpath);
 
-        void makeRelativeTo(const dirpath_t& parentpath, dirpath_t& out_subdir) const;
+        void relativeTo(const dirpath_t& parentpath, dirpath_t& out_subdir) const;
 
         pathname_t* devname() const; // "E:\documents\old\inventory\", -> "E"
         pathname_t* rootname() const;// "E:\documents\old\inventory\", -> "documents"
@@ -58,7 +58,7 @@ namespace xcore
         dirpath_t root() const;
         dirpath_t parent() const;
 
-        void split(s32 pivot, dirpath_t left, dirpath_t right) const;
+        void split(s32 pivot, dirpath_t& left, dirpath_t& right) const;
         void truncate(dirpath_t& dirpath, pathname_t*& folder) const;
         void truncate(pathname_t*& folder, dirpath_t& dirpath) const;
         void combine(pathname_t* folder, dirpath_t const& dirpath);
@@ -67,8 +67,7 @@ namespace xcore
         void down(pathname_t* folder);
         void up();
 
-        bool operator==(const dirpath_t& other) const;
-        bool operator!=(const dirpath_t& other) const;
+        s32 compare(const dirpath_t& other) const;
 
         void to_string(runes_t& str) const;
     };

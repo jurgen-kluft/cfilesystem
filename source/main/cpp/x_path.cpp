@@ -30,11 +30,11 @@ namespace xcore
     //    - stream_t datastream = datafilepath->open();
     //      datastream.close();
 
+    struct path_t;
     struct pathname_t;
     struct pathdevice_t;
 
     class filesysroot_t;
-    class path_t;
 
 
 
@@ -322,7 +322,7 @@ namespace xcore
             }
 
             out_path = path_t::construct(m_allocator, c);
-            crunes_t folder = parser.iterate_folder();
+            folder = parser.iterate_folder();
             c = 0;
             out_path->m_path[c++] = register_dirname(folder);
             while (parser.next_folder(folder))
@@ -368,6 +368,58 @@ namespace xcore
 
     bool filesysroot_t::register_fullfilepath(crunes_t const& fullfilepath, pathname_t*& out_devicename, path_t*& out_path, pathname_t*& out_filename, pathname_t*& out_extension)
     {
+        fullpath_parser_utf32 parser;
+        parser.parse(fullfilepath);
+
+        if (parser.has_device())
+        {
+            out_devicename = register_name(parser.m_device);
+        }
+        else
+        {
+            out_devicename = sNilName;
+        }
+
+        if (parser.has_path())
+        {
+            crunes_t folder = parser.iterate_folder();
+            s32 c = 1;
+            while (parser.next_folder(folder))
+            {
+                c += 1;
+            }
+
+            out_path = path_t::construct(m_allocator, c);
+            folder = parser.iterate_folder();
+            c = 0;
+            out_path->m_path[c++] = register_dirname(folder);
+            while (parser.next_folder(folder))
+            {
+                out_path->m_path[c++] = register_dirname(folder);
+            }
+        }
+        else
+        {
+            out_path = sNilPath;
+        }
+
+        if (parser.has_filename())
+        { 
+            out_filename = register_name(parser.m_filename);
+        }
+        else {
+            out_filename = sNilName;
+        }
+
+        if (parser.has_extension())
+        { 
+            out_extension = register_name(parser.m_extension);
+        }
+        else {
+            out_extension = sNilName;
+        }
+
+        return true;
 
     }
 
@@ -427,6 +479,30 @@ namespace xcore
         path_t* out_path = path_t::construct(m_allocator, depth);
         path_t::copy_array(path->m_path, 0, depth, out_path->m_path, 0);
         return out_path;
+    }
+
+    void filesysroot_t::get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path)
+    {
+        s32 depth = path->m_len + 1;
+        out_path = path_t::construct(m_allocator, depth);
+        path_t::copy_array(path->m_path, 0, depth-1, out_path->m_path, 0);
+        out_path->m_path[path->m_len] = folder;
+    }
+
+    void filesysroot_t::get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path)
+    {
+        s32 depth = path->m_len + 1;
+        out_path = path_t::construct(m_allocator, depth);
+        path_t::copy_array(path->m_path, 0, depth-1, out_path->m_path, 1);
+        out_path->m_path[0] = folder;
+    }
+
+    void filesysroot_t::get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path)
+    {
+        s32 depth = llen + rlen;
+        out_path = path_t::construct(m_allocator, depth);
+        path_t::copy_array(left->m_path, lstart, llen, out_path->m_path, 0);
+        path_t::copy_array(right->m_path, rstart, rlen, out_path->m_path, llen);
     }
 
     void filesysroot_t::get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right)

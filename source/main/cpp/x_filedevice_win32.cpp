@@ -585,7 +585,6 @@ namespace xcore
         dirwalker(dirpath_t const& dirpath) : mNodeHeap(nullptr)
         {
             mNodeHeap = mSysRoot->m_allocator;
-            mPath = path_t::construct(mSysRoot->m_allocator, 256);
             mFilePath.setDirpath(dirpath);
         }
 
@@ -617,7 +616,7 @@ namespace xcore
 
         bool enumerate_dir(enumerate_delegate_t& enumerator) 
         {
-            mDirInfo = mFilePath.getDirpath();
+            mDirInfo = mFilePath.dirpath();
             return (enumerator(mLevel, nullptr, &mDirInfo)); 
         }
 
@@ -686,7 +685,6 @@ namespace xcore
             return mDirStack != nullptr;
         }
 
-    private:
         bool enter_dir()
         {
             node* nextnode = mNodeHeap->construct<dirwalker::node>();

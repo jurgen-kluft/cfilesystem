@@ -11,7 +11,7 @@
 
 namespace xcore
 {
-    class path_t;
+    struct path_t;
     class dirpath_t;
     class filepath_t;
     class filedevice_t;

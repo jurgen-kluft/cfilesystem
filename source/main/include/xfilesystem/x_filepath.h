@@ -13,9 +13,9 @@
 
 namespace xcore
 {
-    class pathname_t;
     class dirpath_t;
     class filesystem_t;
+    struct pathname_t;
 
     class filepath_t
     {
@@ -28,7 +28,8 @@ namespace xcore
     public:
         filepath_t();
         filepath_t(pathname_t* filename, pathname_t* extension);
-        filepath_t(dirpath_t dirpath, pathname_t* filename, pathname_t* extension);
+        filepath_t(pathdevice_t* device, path_t* path, pathname_t* filename, pathname_t* extension);
+        filepath_t(dirpath_t const& dirpath, pathname_t* filename, pathname_t* extension);
         ~filepath_t();
 
         void clear();
@@ -59,8 +60,12 @@ namespace xcore
         void down(pathname_t* folder);
         void up();
 
+        s32 compare(const filepath_t& right) const;
         void to_string(runes_t& str) const;
     };
+
+    extern bool operator==(const filepath_t& left, const filepath_t& right);
+    extern bool operator!=(const filepath_t& left, const filepath_t& right);
 
     extern filepath_t operator+(const dirpath_t& dirpath, const filepath_t& filepath);
 
