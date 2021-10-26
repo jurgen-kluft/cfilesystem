@@ -6,8 +6,6 @@
 #endif
 
 //==============================================================================
-#include "xbase/x_runes.h"
-#include "xfilesystem/x_enumerator.h"
 #include "xfilesystem/private/x_enumerations.h"
 
 #define MAX_ENUM_SEARCH_FILES 32
@@ -16,6 +14,11 @@
 namespace xcore
 {
 	class alloc_t;
+    struct runes_t;
+    struct crunes_t;
+
+    class enumerate_delegate_t;
+
     class filedevice_t;
     class filepath_t;
     class dirpath_t;

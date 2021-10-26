@@ -63,7 +63,7 @@ namespace xcore
                     const wchar_t* driveLetter = sSystemDeviceLetters[driveIdx];
                     const wchar_t* devicePath  = sSystemDevicePaths[driveIdx];
 
-                    bool       boCanWrite      = true;
+                    bool        boCanWrite      = true;
                     EDriveTypes eDriveType      = DRIVE_TYPE_UNKNOWN;
                     const u32   uDriveTypeWin32 = 1 << (GetDriveTypeW(devicePath));
                     if (uDriveTypeWin32 & (1 << (s32)DRIVE_TYPE_REMOVABLE))
@@ -111,11 +111,11 @@ namespace xcore
                         copy(local_alias16, local_alias32);
 
                         runez_t<ascii::rune, 8> wincrap("\\??\\");
-                        runes_t    wincrapsel = find(local_alias32, wincrap);
+                        runes_t                 wincrapsel = find(local_alias32, wincrap);
 
                         runez_t<utf32::rune, 255> string32b;
-                        runes_t      devicePath32(string32b);
-                        crunes_t     devicePath16((utf16::pcrune)devicePath);
+                        runes_t                   devicePath32(string32b);
+                        crunes_t                  devicePath16((utf16::pcrune)devicePath);
                         copy(devicePath16, devicePath32);
 
                         if (ret_val != 0 && !wincrapsel.is_empty())
@@ -180,19 +180,21 @@ namespace xcore
     //------------------------------------------------------------------------------
     void filesystem_t::create(filesystem_t::context_t const& ctxt)
     {
-        filesys_t* imp      = ctxt.m_allocator->construct<filesys_t>();
-        imp->m_context.m_allocator      = ctxt.m_allocator;
-        imp->m_context.m_stralloc = ctxt.m_allocator->construct<fs_utfalloc>(ctxt.m_allocator);
-        imp->m_context.m_default_slash = ctxt.m_default_slash;
-        imp->m_context.m_max_open_files = ctxt.m_max_open_files;
-        imp->m_context.m_max_path_objects = ctxt.m_max_path_objects;
-        imp->m_context.m_owner = imp;
-        filesystem_t::mImpl = imp;
+        filesys_t*     imp       = ctxt.m_allocator->construct<filesys_t>();
+        filesysroot_t* root      = ctxt.m_allocator->construct<filesysroot_t>();
+        imp->m_context           = root;
+        root->m_allocator        = ctxt.m_allocator;
+        root->m_stralloc         = ctxt.m_allocator->construct<fs_utfalloc>(ctxt.m_allocator);
+        root->m_default_slash    = ctxt.m_default_slash;
+        root->m_max_open_files   = ctxt.m_max_open_files;
+        root->m_max_path_objects = ctxt.m_max_path_objects;
+        root->m_owner            = imp;
+        filesystem_t::mImpl      = imp;
 
-        imp->m_context.initialize(ctxt.m_allocator);
+        root->initialize(ctxt.m_allocator);
 
-        imp->m_devman = ctxt.m_allocator->construct<devicemanager_t>(&imp->m_context);
-        x_FileSystemRegisterSystemAliases(&imp->m_context, imp->m_devman);
+        imp->m_devman = ctxt.m_allocator->construct<devicemanager_t>(root);
+        x_FileSystemRegisterSystemAliases(root, imp->m_devman);
 
         utf32::rune adir32[512] = {'\0'};
 
@@ -201,7 +203,7 @@ namespace xcore
         DWORD   result   = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
         if (result != 0)
         {
-            runes_t dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
+            runes_t  dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
             crunes_t dir16((utf16::pcrune)dir);
             xcore::copy(dir16, dir32);
             runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
@@ -212,7 +214,7 @@ namespace xcore
         result = ::GetCurrentDirectoryW(sizeof(dir) - 1, dir);
         if (result != 0)
         {
-            runes_t curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
+            runes_t  curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
             crunes_t dir16((utf16::pcrune)dir);
             xcore::copy(dir16, curdir);
             imp->m_devman->add_alias("curdir:\\", curdir);
@@ -230,10 +232,12 @@ namespace xcore
     //------------------------------------------------------------------------------
     void filesystem_t::destroy()
     {
-        x_FileSystemUnregisterSystemAliases(&mImpl->m_context, mImpl->m_devman);
-        mImpl->m_context.m_allocator->destruct(mImpl->m_context.m_stralloc);
-        mImpl->m_context.m_allocator->destruct(mImpl->m_devman);
-        mImpl->m_context.m_allocator->destruct(mImpl);
+        filesysroot_t* root = mImpl->m_context;
+        x_FileSystemUnregisterSystemAliases(root, mImpl->m_devman);
+        root->m_allocator->destruct(root->m_stralloc);
+        root->m_allocator->destruct(mImpl->m_devman);
+        root->m_allocator->destruct(mImpl);
+        root->m_allocator->destruct(root);
         mImpl = nullptr;
     }
 

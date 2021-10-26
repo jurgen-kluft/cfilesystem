@@ -725,7 +725,7 @@ namespace xcore
                 if (dinf != nullptr)
                 {
                     dirpath_t subpath;
-                    dinf->getDirpath().makeRelativeTo(mSrcDir, subpath);
+                    dirpath_t::getSubDir(mSrcDir, dinf->getDirpath(), subpath);
                     dirpath_t dstdirpath = mDstDir + subpath;
                     mDstDevice->createDir(dstdirpath);
                     return true;

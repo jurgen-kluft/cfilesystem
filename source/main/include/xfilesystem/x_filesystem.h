@@ -48,10 +48,10 @@ namespace xcore
         static filepath_t filepath(const crunes_t& str);
         static dirpath_t  dirpath(const crunes_t& str);
 
-        static stream_t    open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);
+        static void        open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream);
         static void        close(stream_t&);
-        static fileinfo_t  info(filepath_t const& path);
-        static dirinfo_t   info(dirpath_t const& path);
+        static void        info(filepath_t const& path, fileinfo_t& out_fileinfo);
+        static void        info(dirpath_t const& path, dirinfo_t& out_dirinfo);
         static bool        exists(fileinfo_t const&);
         static bool        exists(dirinfo_t const&);
         static s64         size(fileinfo_t const&);

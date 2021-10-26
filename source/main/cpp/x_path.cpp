@@ -88,7 +88,12 @@ namespace xcore
     // 
     // pathname_t implementations
     // 
-    pathname_t::pathname_t(s32 strlen) : m_next(nullptr), m_id(-1), m_refs(0), m_len(strlen)
+    pathname_t::pathname_t() : m_hash(0), m_next(nullptr), m_refs(0), m_len(0)
+    {
+        m_name[0] = utf32::TERMINATOR;
+        m_name[1] = utf32::TERMINATOR;
+    }
+    pathname_t::pathname_t(s32 strlen) : m_hash(0), m_next(nullptr), m_refs(0), m_len(strlen)
     {
         m_name[0]      = utf32::TERMINATOR;
         m_name[strlen] = utf32::TERMINATOR;
@@ -136,7 +141,7 @@ namespace xcore
     pathname_t* pathname_t::construct(alloc_t* allocator, u64 hname, crunes_t const& name)
     {
         u32 const strlen = name.size();
-        u32 const strcap = strlen;
+        u32 const strcap = strlen - 1;
 
         void*    name_mem = allocator->allocate(sizeof(pathname_t) + (sizeof(utf32::rune) * strcap), sizeof(void*));
         pathname_t* pname    = new (name_mem) pathname_t(strcap);
@@ -149,11 +154,6 @@ namespace xcore
 
         return pname;
     }
-
-
-
-    // mechanism: copy-on-write
-
 
     //
     // pathname_table_t implementations
@@ -201,6 +201,8 @@ namespace xcore
         if (name == m_table[index])
         {
             m_table[index] = name->m_next;
+            name->m_next = nullptr;
+            return true;
         }
         else
         {
@@ -210,6 +212,7 @@ namespace xcore
                 if (iter->m_next == name)
                 {
                     iter->m_next = name->m_next;
+                    name->m_next = nullptr;
                     return true;
                 }
                 iter = iter->m_next;

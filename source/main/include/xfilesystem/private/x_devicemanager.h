@@ -5,17 +5,18 @@
 #pragma once
 #endif
 
-#include "xbase/x_allocator.h"
-#include "xfilesystem/private/x_path.h"
-#include "xfilesystem/x_filesystem.h"
-
 namespace xcore
 {
-    struct path_t;
+    struct runes_t;
+    struct crunes_t;
+
     class dirpath_t;
     class filepath_t;
     class filedevice_t;
+
     struct filesysroot_t;
+    struct path_t;
+    struct pathdevice_t;
 
     //------------------------------------------------------------------------------
     // Description:
@@ -51,7 +52,7 @@ namespace xcore
         // Pass on the filepath or dirpath, e.g. 'c:\folder\subfolder\' or 'appdir:\data\texture.jpg'
 		bool has_device(const runes_t& path);
 
-        filedevice_t* find_device(const filepath_t& filepath, filepath_t& full_filepath);
+        pathdevice_t* find_device(pathname_t* devicename);
 
         struct alias_t
         {
@@ -82,12 +83,10 @@ namespace xcore
 		struct device_t
         {
             inline device_t()
-                : mDevName(nullptr)
-                , mDevice(nullptr)
+                : mDevice(nullptr)
             {
             }
-            pathname_t*   mDevName;
-            filedevice_t* mDevice;
+            pathdevice_t* mDevice;
         };
 
 		bool          mNeedsResolve;

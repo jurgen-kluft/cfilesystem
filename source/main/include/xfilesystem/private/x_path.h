@@ -95,11 +95,11 @@ namespace xcore
     {
         u64      m_hash;
         pathname_t* m_next;
-        u32      m_id;
         s32      m_refs;
         s32      m_len;
-        utf32::rune m_name[1];
+        utf32::rune m_name[2];
 
+        pathname_t();
         pathname_t(s32 strlen);
 
         bool isEmpty() const;

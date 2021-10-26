@@ -7,7 +7,6 @@
 
 #include "xbase/x_debug.h"
 #include "xbase/x_runes.h"
-#include "xfilesystem/private/x_path.h"
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_filesystem.h"
 
@@ -15,6 +14,7 @@ namespace xcore
 {
     class dirpath_t;
     class filesystem_t;
+
     struct pathname_t;
 
     class filepath_t
@@ -24,6 +24,7 @@ namespace xcore
         pathname_t* m_extension;
 
         friend class fileinfo_t;
+        friend class filesys_t;
 
     public:
         filepath_t();

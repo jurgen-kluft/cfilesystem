@@ -35,7 +35,7 @@ namespace xcore
     {
         for (s32 i = 0; i < mNumDevices; ++i)
         {
-            filedevice_t* const device = mDeviceList[i].mDevice;
+            pathdevice_t* const device = mDeviceList[i].mDevice;
             if (device != nullptr)
             {
                 // Device-Instances can be shared over multiple registered devices.
@@ -47,7 +47,7 @@ namespace xcore
                         mDeviceList[j].mDevice = nullptr;
                     }
                 }
-                x_DestroyFileDevice(mContext->m_allocator, device);
+                x_DestroyFileDevice(mContext->m_allocator, device->m_fd);
             }
         }
         clear();
@@ -66,11 +66,12 @@ namespace xcore
     bool devicemanager_t::add_device(const crunes_t& devicename, filedevice_t* device)
     {
         pathname_t* pathdevicename = mContext->register_name(devicename);
+        pathdevice_t* pathdevice = mContext->register_device(pathdevicename);
         for (s32 i = 0; i < mNumDevices; ++i)
         {
-            if (mDeviceList[i].mDevName == pathdevicename)
+            if (mDeviceList[i].mDevice->m_name == pathdevicename)
             {
-                mDeviceList[i].mDevice = device;
+                mDeviceList[i].mDevice->m_fd = device;
                 console->writeLine("INFO replaced file device for '%s'", va_list_t(va_t(devicename)));
                 mNeedsResolve = true;
                 return true;
@@ -79,8 +80,7 @@ namespace xcore
 
         if (mNumDevices < MAX_FILE_DEVICES)
         {
-            mDeviceList[mNumDevices].mDevName = pathdevicename->incref();
-            mDeviceList[mNumDevices].mDevice = device;
+            mDeviceList[mNumDevices].mDevice = pathdevice;
             mNumDevices++;
             mNeedsResolve = true;
             return true;
@@ -292,7 +292,7 @@ namespace xcore
         // reduce path to just the device part
         for (s32 i = 0; i < mNumDevices; ++i)
         {
-            if (mDeviceList[i].mDevName == devname)
+            if (mDeviceList[i].mDevice->m_name == devname)
             {
                 return i;
             }
@@ -308,7 +308,7 @@ namespace xcore
             resolve();
         }
 
-        filedevice_t* fd      = nullptr;
+        pathdevice_t* pd      = nullptr;
         runes_t       devname = findSelectUntilIncluded(path, sDeviceSeperator);
         if (!devname.is_empty())
         {
@@ -317,27 +317,26 @@ namespace xcore
             {
                 if (mAliasList[i].mAlias == devpathname)
                 {
-                    fd = mDeviceList[mAliasList[i].mDeviceIndex].mDevice;
+                    pd = mDeviceList[mAliasList[i].mDeviceIndex].mDevice;
                     break;
                 }
             }
         }
-        return fd != nullptr;
+        return pd != nullptr;
     }
 
-    filedevice_t* devicemanager_t::find_device(const filepath_t& filepath, filepath_t& full_filepath)
+    pathdevice_t* devicemanager_t::find_device(pathname_t* devicename)
     {
         if (mNeedsResolve)
         {
             resolve();
         }
 
-        filedevice_t* fd      = nullptr;
-        if (!filepath.root().isEmpty())
+        pathdevice_t* fd      = nullptr;
         {
             for (s32 i = 0; i < mNumAliases; ++i)
             {
-                if (mAliasList[i].mAlias == filepath.root().devname())
+                if (mAliasList[i].mAlias == devicename)
                 {
                     // Concatenate the path (filepath or dirpath) that the user provided to our resolved path
                     if (mAliasList[i].mDeviceIndex >= 0)
@@ -348,7 +347,7 @@ namespace xcore
             }
             for (s32 i = 0; i < mNumDevices; ++i)
             {
-                if (mDeviceList[i].mDevName, filepath.root().devname())
+                if (mDeviceList[i].mDevice->m_name == devicename)
                 {
                     // Concatenate the path (filepath or dirpath) that the user provided to our device path
                     return mDeviceList[i].mDevice;

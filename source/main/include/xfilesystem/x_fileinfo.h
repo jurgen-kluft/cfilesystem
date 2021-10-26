@@ -32,6 +32,8 @@ namespace xcore
         fileattrs_t mFileAttributes;
         filepath_t  m_path;
 
+        static filedevice_t* sGetFileDevice(const filepath_t& fp);
+
     public:
         fileinfo_t();
         fileinfo_t(const fileinfo_t& fileinfo);

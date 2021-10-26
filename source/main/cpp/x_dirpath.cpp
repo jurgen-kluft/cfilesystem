@@ -67,9 +67,9 @@ namespace xcore
         // try and find an overlap of folder
         //   this    = a b c d [e f]
         //   dirpath = [e f] g h i j
-        // the overlap is [e f]
-        //   result = g h i j
-        s32 max = xmax(m_path->m_len, dirpath.m_path->m_len);
+        //   overlap = [e f]
+        //   result  = g h i j
+        s32 max = xmin(m_path->m_len, dirpath.m_path->m_len);
         for (s32 c=max; c>0; --c)
         {
             s32 sstart = dirpath.m_path->m_len - c;
@@ -92,6 +92,7 @@ namespace xcore
                     root->release_path(m_path);
                 }
                 m_path = right->attach();
+                return;
             }
         }
     }
@@ -99,11 +100,12 @@ namespace xcore
     void dirpath_t::makeAbsoluteTo(const dirpath_t& dirpath)
     {
         //   this    = a b c d [e f]
-        //   dirpath = [e f] g h i j
-        // the overlap is [e f]
-        //   a b c d [e f] g h i j
-        s32 max = xmax(m_path->m_len, dirpath.m_path->m_len);
-        for (s32 c=max; c>0; --c)
+        //   dirpath = [e f] g h i j k
+        //   overlap = [e f]
+        //   result  = a b c d [e f] g h i j k
+        s32 max = xmin(m_path->m_len, dirpath.m_path->m_len);
+        s32 c = max;
+        for ( ; c>0; --c)
         {
             s32 sstart = dirpath.m_path->m_len - c;
             s32 i = 0;
@@ -116,33 +118,35 @@ namespace xcore
             }
             if (i == c)
             {
-                // strip of the top 'c' folders
-                filesysroot_t* root = m_device->m_root;
-                path_t* right = nullptr;
-                root->get_expand_path(m_path, 0, m_path->m_len - c, dirpath.m_path, c, dirpath.m_path->m_len - c, right);
-                if (right != m_path)
-                {
-                    root->release_path(m_path);
-                }
-                m_path = right->attach();
+                break;
             }
         }
+
+        // there was no overlap so just append, dirpath + this
+        filesysroot_t* root = m_device->m_root;
+        path_t* path = nullptr;
+        root->get_expand_path(dirpath.m_path, c, dirpath.m_path->m_len - c, m_path, 0, m_path->m_len - c, path);
+        if (path != m_path)
+        {
+            root->release_path(m_path);
+        }
+        m_path = path->attach();
     }
 
-    void dirpath_t::relativeTo(const dirpath_t& parentpath, dirpath_t& out_subdir) const
+    void dirpath_t::getSubDir(const dirpath_t& parentpath, const dirpath_t& path, dirpath_t& out_subpath)
     {
-        //   this    = a b c d [e f]
-        //   dirpath = [e f] g h i j
-        // the overlap is [e f]
-        //   a b c d [e f] g h i j
-        s32 max = xmax(m_path->m_len, parentpath.m_path->m_len);
+        //   parent  = [a b c d e f]
+        //   path    = [a b c d e f] g h i j
+        //   overlap = [a b c d e f]
+        //   subpath = g h i j
+        s32 max = xmin(path.m_path->m_len, parentpath.m_path->m_len);
         for (s32 c=max; c>0; --c)
         {
             s32 sstart = parentpath.m_path->m_len - c;
             s32 i = 0;
             for ( ; i<c; ++i)
             {
-                if (parentpath.m_path->m_path[sstart-i] != m_path->m_path[i])
+                if (parentpath.m_path->m_path[sstart-i] != path.m_path->m_path[i])
                 {
                     break;
                 }
@@ -150,10 +154,11 @@ namespace xcore
             if (i == c)
             {
                 // only take the sub folders
-                filesysroot_t* root = m_device->m_root;
+                filesysroot_t* root = path.m_device->m_root;
                 path_t* right = nullptr;
-                root->get_split_path(m_path, c, nullptr, &right);
-                out_subdir = dirpath_t(m_device, right);
+                root->get_split_path(path.m_path, c, nullptr, &right);
+                out_subpath = dirpath_t(root->sNilDevice, right);
+                return;
             }
         }
     }

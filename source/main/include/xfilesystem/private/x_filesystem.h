@@ -6,16 +6,14 @@
 #endif
 
 //==============================================================================
-#include "xbase/x_allocator.h"
-#include "xbase/x_buffer.h"
-#include "xbase/x_runes.h"
-
 #include "xfilesystem/private/x_enumerations.h"
-#include "xfilesystem/private/x_path.h"
-#include "xfilesystem/x_filesystem.h"
 
 namespace xcore
 {
+    struct runes_t;
+    struct crunes_t;
+    class alloc_t;
+
     class filesys_t;
     class filedevice_t;
     class fileinfo_t;
@@ -24,13 +22,20 @@ namespace xcore
     class stream_t;
     class istream_t;
 
+    struct pathdevice_t;
+    struct path_t;
+    struct pathname_t;
+
     struct filehandle_t
     {
         void*         m_handle;
         filesys_t*    m_owner;
         s32           m_refcount;
         s32           m_salt;
-        path_t        m_path;
+        pathdevice_t* m_device;
+        path_t*       m_path;
+        pathname_t*   m_filename;
+        pathname_t*   m_extension;
         filehandle_t* m_prev;
         filehandle_t* m_next;
     };
@@ -38,7 +43,7 @@ namespace xcore
     class filesys_t
     {
     public:
-        filesysroot_t      m_context;
+        filesysroot_t*     m_context;
         devicemanager_t*   m_devman;
 
         filehandle_t* m_filehandle_list_free;
@@ -47,28 +52,35 @@ namespace xcore
 
         XCORE_CLASS_PLACEMENT_NEW_DELETE
 
-        static stream_t      create_filestream(const filepath_t& filepath, EFileMode fm, EFileAccess fa, EFileOp fo);
+        static void          create_filestream(const filepath_t& filepath, EFileMode fm, EFileAccess fa, EFileOp fo, stream_t& out_stream);
         static void          destroy(stream_t& stream);
-        static filepath_t    resolve(filepath_t const&, filedevice_t*& device);
-        static dirpath_t     resolve(dirpath_t const&, filedevice_t*& device);
-        static path_t&       get_path(dirinfo_t& dirinfo);
-        static path_t const& get_path(dirinfo_t const& dirinfo);
-        static path_t&       get_path(dirpath_t& dirpath);
-        static path_t const& get_path(dirpath_t const& dirpath);
-        static path_t&       get_path(filepath_t& filepath);
-        static path_t const& get_path(filepath_t const& filepath);
+
+        static void          resolve(filepath_t const&, pathdevice_t*& device, path_t*& dir, pathname_t*& filename, pathname_t*& extension);
+        static void          resolve(dirpath_t const&, pathdevice_t*& device, path_t*& dir);
+        
+        static pathdevice_t * get_pathdevice(dirinfo_t const& dirinfo);
+        static pathdevice_t * get_pathdevice(dirpath_t const& dirpath);
+        static pathdevice_t * get_pathdevice(filepath_t const& filepath);
+
+        static path_t * get_path(dirinfo_t const& dirinfo);
+        static path_t * get_path(dirpath_t const& dirpath);
+        static path_t * get_path(filepath_t const& filepath);
+
+        static pathname_t * get_filename(filepath_t const& filepath);
+        static pathname_t * get_extension(filepath_t const& filepath);
+
         static filesys_t*    get_filesystem(dirpath_t const& dirpath);
         static filesys_t*    get_filesystem(filepath_t const& filepath);
 
         // -----------------------------------------------------------
         bool register_device(const crunes_t& device_name, filedevice_t* device);
 
-        filepath_t filepath(const char* str);
-        dirpath_t  dirpath(const char* str);
-        filepath_t filepath(const crunes_t& str);
-        dirpath_t  dirpath(const crunes_t& str);
+        void       filepath(const char* str, filepath_t&);
+        void       dirpath(const char* str, dirpath_t&);
+        void       filepath(const crunes_t& str, filepath_t&);
+        void       dirpath(const crunes_t& str, dirpath_t&);
 
-        stream_t   open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op);
+        void       open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream);
         void       close(stream_t&);
         bool       exists(fileinfo_t const&);
         bool       exists(dirinfo_t const&);
