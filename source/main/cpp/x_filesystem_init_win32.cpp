@@ -40,7 +40,7 @@ namespace xcore
         static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
                                                       L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
 
-        static void x_FileSystemUnregisterSystemAliases(filesysroot_t* ctxt, devicemanager_t* devman)
+        static void x_FileSystemUnregisterSystemAliases(filesys_t* ctxt, devicemanager_t* devman)
         {
             devman->exit();
             for (s32 i = 0; i < DRIVE_TYPE_NUM; i++)
@@ -49,7 +49,7 @@ namespace xcore
             }
         }
 
-        static void x_FileSystemRegisterSystemAliases(filesysroot_t* ctxt, devicemanager_t* devman)
+        static void x_FileSystemRegisterSystemAliases(filesys_t* ctxt, devicemanager_t* devman)
         {
             runez_t<utf32::rune, 255> string32;
 
@@ -93,11 +93,7 @@ namespace xcore
                     {
                         if (sFileDevices[eDriveType] == NULL)
                         {
-                            string32.reset();
-                            runes_t  devicePath32(string32);
-                            crunes_t devicePath16((utf16::pcrune)devicePath);
-                            copy(devicePath16, devicePath32);
-                            sFileDevices[eDriveType] = x_CreateFileDevice(ctxt->m_allocator, crunes_t(devicePath32), boCanWrite);
+                            sFileDevices[eDriveType] = x_CreateFileDevice(ctxt->m_allocator, boCanWrite);
                         }
                         filedevice_t* device = sFileDevices[eDriveType];
 
@@ -181,8 +177,7 @@ namespace xcore
     void filesystem_t::create(filesystem_t::context_t const& ctxt)
     {
         filesys_t*     imp       = ctxt.m_allocator->construct<filesys_t>();
-        filesysroot_t* root      = ctxt.m_allocator->construct<filesysroot_t>();
-        imp->m_context           = root;
+        filesys_t* root          = ctxt.m_allocator->construct<filesys_t>();
         root->m_allocator        = ctxt.m_allocator;
         root->m_stralloc         = ctxt.m_allocator->construct<fs_utfalloc>(ctxt.m_allocator);
         root->m_default_slash    = ctxt.m_default_slash;
@@ -232,12 +227,10 @@ namespace xcore
     //------------------------------------------------------------------------------
     void filesystem_t::destroy()
     {
-        filesysroot_t* root = mImpl->m_context;
-        x_FileSystemUnregisterSystemAliases(root, mImpl->m_devman);
-        root->m_allocator->destruct(root->m_stralloc);
-        root->m_allocator->destruct(mImpl->m_devman);
-        root->m_allocator->destruct(mImpl);
-        root->m_allocator->destruct(root);
+        x_FileSystemUnregisterSystemAliases(mImpl, mImpl->m_devman);
+        mImpl->m_allocator->destruct(mImpl->m_stralloc);
+        mImpl->m_allocator->destruct(mImpl->m_devman);
+        mImpl->m_allocator->destruct(mImpl);
         mImpl = nullptr;
     }
 

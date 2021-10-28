@@ -52,10 +52,13 @@ namespace xcore
         pathname_t* rootname() const;// "E:\documents\old\inventory\", -> "documents"
         pathname_t* basename() const;// "E:\documents\old\inventory\", -> "inventory"
 
-        dirpath_t device() const;
-        dirpath_t root() const;
-        dirpath_t parent() const;
+        dirpath_t device() const; // "E:\documents\old\inventory\", -> "E:\"
+        dirpath_t root() const;   // "E:\documents\old\inventory\", -> "E:\documents\"
+        dirpath_t parent() const; // "E:\documents\old\inventory\", -> "E:\documents\old\"
+        dirpath_t relative() const;   // "E:\documents\old\inventory\", -> "documents\old\inventory\"
+        dirpath_t base() const;   // "E:\documents\old\inventory\", -> "inventory\"
 
+        s32 getLevels() const;
         void split(s32 pivot, dirpath_t& left, dirpath_t& right) const;
         void truncate(dirpath_t& dirpath, pathname_t*& folder) const;
         void truncate(pathname_t*& folder, dirpath_t& dirpath) const;
@@ -70,8 +73,10 @@ namespace xcore
         void to_string(runes_t& str) const;
 
         static void getSubDir(const dirpath_t& parentpath, const dirpath_t& path, dirpath_t& out_subpath);
-
     };
+
+    inline bool operator==(const dirpath_t& left, const dirpath_t& right) { return left.compare(right) == 0; }
+    inline bool operator!=(const dirpath_t& left, const dirpath_t& right) { return left.compare(right) != 0; }
 
     extern dirpath_t operator+(const dirpath_t& dirpath, const dirpath_t& append_dirpath);
 

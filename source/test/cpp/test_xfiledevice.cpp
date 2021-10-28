@@ -320,7 +320,7 @@ namespace xcore
 			virtual bool			canSeek() const										{ return true; }
 			virtual bool			canWrite() const									{ return mCanWrite; }
 
-			virtual bool			getDeviceInfo(u64& totalSpace, u64& freeSpace) const;
+			virtual bool			getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const;
 
 			virtual bool			openFile(filepath_t const& filepath, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle);
 			virtual bool			readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead);
@@ -346,6 +346,7 @@ namespace xcore
 			virtual bool			copyFile(filepath_t const& filepath, filepath_t const& szToFilename, bool boOverwrite);
 			virtual bool			deleteFile(filepath_t const& filepath);
 
+			virtual bool            openDir(dirpath_t const& szDirPath, void*& nDirHandle);
 			virtual bool			hasDir(dirpath_t const& dirpath);
 			virtual bool			moveDir(dirpath_t const& dirpath, dirpath_t const& szToDirPath, bool boOverwrite);
 			virtual bool			copyDir(dirpath_t const& dirpath, dirpath_t const& szToDirPath, bool boOverwrite);
@@ -364,9 +365,7 @@ namespace xcore
 
 		static TestDir*		sFindTestDir(const dirpath_t& szDir)
 		{
-			dirpath_t dp(szDir);
-
-			dp.makeRelative();
+			dirpath_t dp(szDir.relative());
 
 			s32 i=0;
 			while (true)
@@ -400,8 +399,7 @@ namespace xcore
 
 		static TestFile*	sFindTestFile(filepath_t const& szFilename)
 		{
-			filepath_t fp(szFilename);			
-			fp.makeRelative();
+			filepath_t fp(szFilename.relative());	
 
 			TestFile* testFile = sFiles;
 			while (true)
@@ -427,7 +425,7 @@ namespace xcore
 					// init creation time
 					// init last write time
 					// data copy
-					szFilename.toString(t->mName);
+					szFilename.to_string(t->mName);
 
 					t->mFileLength = dataSize;
 					t->mMaxFileLength = sizeof(t->mFileData);
@@ -452,7 +450,7 @@ namespace xcore
 
 
 
-		bool xfiledevice_TEST::getDeviceInfo(u64& totalSpace, u64& freeSpace) const
+		bool xfiledevice_TEST::getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const
 		{
 			totalSpace = 16 * 1024 * 1024;
 			freeSpace  = 12 * 1024 * 1024;
@@ -542,7 +540,7 @@ namespace xcore
 				filepath_t filePath(szFilename);
 //				filePath.removeFirstSlashAndBefore();
 //				filesystem_t::to_ascii(szFilename, testFile->mName);
-				szFilename.toString(testFile->mName);
+				szFilename.to_string(testFile->mName);
 				return true;
 			}
 			return false;
@@ -674,6 +672,12 @@ namespace xcore
 			return testFile!=NULL;
 		}
 
+		bool xfiledevice_TEST::openDir(dirpath_t const& szDirPath, void*& nDirHandle)
+		{
+			nDirHandle = sFindTestDir(szDirPath);
+			return nDirHandle != nullptr;
+		}
+
 		bool xfiledevice_TEST::hasDir(dirpath_t const& szDirPath)
 		{
 			return sFindTestDir(szDirPath)!=NULL;
@@ -689,13 +693,12 @@ namespace xcore
 			}
 
 			dirpath_t dp(szDirPath);
-			dp.makeRelative();
+			dp.relative();
 
 			TestDir* newDir = sFindEmptyTestDir();
 			if (newDir!=NULL)
 			{
-				dp.toString(newDir->mName);
-				//filesystem_t::to_ascii(dp, newDir->mName);
+				dp.to_string(newDir->mName);
 				newDir->mCreationTime = datetime_t::sNow();
 				newDir->mLastAccessTime = newDir->mCreationTime;
 				newDir->mLastWriteTime = newDir->mCreationTime;
@@ -703,8 +706,7 @@ namespace xcore
 			else
 			{
 				runez_t<ascii::rune, 64> dirname;
-				//filesystem_t::to_ascii(szDirPath, dirname);
-				szDirPath.toString(dirname);
+				szDirPath.to_string(dirname);
 				printf(crunes_t("Failed to create test filesystem dir %s!!! \n"), va_t(dirname));
 			}
 			return newDir!=NULL;
@@ -712,8 +714,7 @@ namespace xcore
 
 		static bool enumerateCopyTestDir(dirpath_t const& szDirPath, bool boSearchSubDirectories, enumerate_delegate_t* enumerator, s32 depth)
 		{
-			dirpath_t dp(szDirPath);
-			dp.makeRelative();
+			dirpath_t dp(szDirPath.relative());
 
 			TestDir* testDir = sDirs;
 			bool terminate = false;
@@ -751,8 +752,7 @@ namespace xcore
 			while(!terminateFile)
 			{
 				filepath_t fpTemp = filesystem_t::filepath(testFile->mName);
-				dirpath_t dpTemp;
-				fpTemp.getDirname(dpTemp);
+				dirpath_t dpTemp = fpTemp.base();
 				if (dpTemp == dp)
 				{
 					if (enumerator)
@@ -795,20 +795,18 @@ namespace xcore
 
 		static void changeFilePath(dirpath_t const& szDirPath, const dirpath_t& szToDirPath, const fileinfo_t* szFileinfo, filepath_t& outFilePath)
 		{
-			dirpath_t nDir;
-			szFileinfo->getFilepath().getDirname(nDir);
+			dirpath_t nDir = szFileinfo->getFilepath().dirpath();
 
 			dirpath_t nDirpath_from(szDirPath);
 			dirpath_t nDirpath_to(szToDirPath);
 
-			filepath_t fileName;
-			szFileinfo->getFilepath().getFilename(fileName);
+			filepath_t fileName = szFileinfo->getFilepath().filename();
 			s32 depth = nDirpath_from.getLevels();
 
 			dirpath_t parent,child,copyDirPath_To;
 			nDir.split(depth,parent,child);
 			copyDirPath_To = nDirpath_to + child;
-			outFilePath = filepath_t(copyDirPath_To,fileName);
+			outFilePath = copyDirPath_To + fileName;
 		}
 
 		struct enumerate_delegate_dirs_copy_testDir : public enumerate_delegate_t
@@ -980,8 +978,7 @@ namespace xcore
 
 		bool xfiledevice_TEST::enumerate(dirpath_t const& szDirPath, enumerate_delegate_t& enumerator) 
 		{
-			dirpath_t dp(szDirPath);
-			dp.makeRelative();
+			dirpath_t dp(szDirPath.relative());
 
 			TestDir* testDir = sDirs;
 			bool terminate = false;
@@ -1015,8 +1012,7 @@ namespace xcore
 			while(!terminateFile)
 			{
 				filepath_t tfp = filesystem_t::filepath(testFile->mName);
-				dirpath_t dpTemp;
-				tfp.getDirname(dpTemp);
+				dirpath_t dpTemp = tfp.base();
 
 				if (dpTemp == dp)
 				{
@@ -1074,7 +1070,7 @@ UNITTEST_SUITE_BEGIN(xfiledevice_register)
 		{
 			runez_t<utf32::rune, 32> deviceName;
 			deviceName = "TEST:\\";
-			CHECK_TRUE(filesystem_t::register_device(deviceName, &sTestFileDevice));
+			CHECK_TRUE(filesystem_t::register_device(deviceName, sTestFileDevice));
 		}
 
 		UNITTEST_TEST(hasFile)

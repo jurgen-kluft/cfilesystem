@@ -20,7 +20,7 @@ namespace xcore
     //  - No need to deal with different types of slashes
     //
     //  Use cases:
-    //  - From filesysroot_t* you can ask for the root directory of a device
+    //  - From filesys_t* you can ask for the root directory of a device
     //    - tdirpath_t appdir = root->device_root("appdir");
     //  - So now with an existing tdirpath_t dir, you could do the following:
     //    - tdirpath_t bins = appdir->down("bin") // even if this folder doesn't exist, it will be 'added'
@@ -34,7 +34,7 @@ namespace xcore
     struct pathname_t;
     struct pathdevice_t;
 
-    class filesysroot_t;
+    class filesys_t;
 
 
 
@@ -228,9 +228,9 @@ namespace xcore
     }
 
     //
-    // filesysroot_t functions
+    // filesys_t functions
     //
-    void filesysroot_t::initialize(alloc_t* allocator)
+    void filesys_t::initialize(alloc_t* allocator)
     {
         m_allocator = allocator;
 
@@ -238,7 +238,7 @@ namespace xcore
         m_extension_table.initialize(m_allocator, 8192);
     }
 
-    void filesysroot_t::release_name(pathname_t* name) 
+    void filesys_t::release_name(pathname_t* name) 
     {
         if (name == sNilName)
             return;
@@ -250,12 +250,12 @@ namespace xcore
         }
     }
 
-    void filesysroot_t::release_filename(pathname_t* name) 
+    void filesys_t::release_filename(pathname_t* name) 
     {
         release_name(name);
     }
 
-    void filesysroot_t::release_extension(pathname_t* name) 
+    void filesys_t::release_extension(pathname_t* name) 
     {
         if (name == sNilName)
             return;
@@ -267,7 +267,7 @@ namespace xcore
         }
     }
 
-    void filesysroot_t::release_path(path_t* path)
+    void filesys_t::release_path(path_t* path)
     {
         if (path == sNilPath)
             return;
@@ -278,9 +278,9 @@ namespace xcore
         }
     }
 
-    void filesysroot_t::release_device(pathdevice_t* dev) {}
+    void filesys_t::release_device(pathdevice_t* dev) {}
 
-    pathname_t* filesysroot_t::register_name(crunes_t const& namestr) 
+    pathname_t* filesys_t::register_name(crunes_t const& namestr) 
     { 
         const u64 hname = calchash(namestr);
         pathname_t* name = m_filename_table.find(hname);
@@ -296,12 +296,12 @@ namespace xcore
         return name;
     }
 
-    pathname_t* filesysroot_t::get_empty_name() const
+    pathname_t* filesys_t::get_empty_name() const
     {
         return sNilName;
     }
 
-    bool filesysroot_t::register_directory(crunes_t const& directory, pathname_t*& out_devicename, path_t*& out_path)
+    bool filesys_t::register_directory(crunes_t const& directory, pathname_t*& out_devicename, path_t*& out_path)
     {
         fullpath_parser_utf32 parser;
         parser.parse(directory);
@@ -341,7 +341,7 @@ namespace xcore
         return true;
     }
 
-    bool filesysroot_t::register_directory(path_t** paths_to_concatenate, s32 paths_len, path_t*& out_path)
+    bool filesys_t::register_directory(path_t** paths_to_concatenate, s32 paths_len, path_t*& out_path)
     {
         s32 depth = 0;
         for (s32 i = 0; i < paths_len; i++)
@@ -359,7 +359,7 @@ namespace xcore
         return true;
     }
 
-    bool filesysroot_t::register_filename(crunes_t const& fullfilename, pathname_t*& out_filename, pathname_t*& out_extension)
+    bool filesys_t::register_filename(crunes_t const& fullfilename, pathname_t*& out_filename, pathname_t*& out_extension)
     {
         // split filename into name+extension
         crunes_t filename = findLastSelectUntil(fullfilename, ".");
@@ -369,7 +369,7 @@ namespace xcore
         return false;
     }
 
-    bool filesysroot_t::register_fullfilepath(crunes_t const& fullfilepath, pathname_t*& out_devicename, path_t*& out_path, pathname_t*& out_filename, pathname_t*& out_extension)
+    bool filesys_t::register_fullfilepath(crunes_t const& fullfilepath, pathname_t*& out_devicename, path_t*& out_path, pathname_t*& out_filename, pathname_t*& out_extension)
     {
         fullpath_parser_utf32 parser;
         parser.parse(fullfilepath);
@@ -426,12 +426,12 @@ namespace xcore
 
     }
 
-    pathname_t* filesysroot_t::register_dirname(crunes_t const& fulldirname)
+    pathname_t* filesys_t::register_dirname(crunes_t const& fulldirname)
     {
         return register_name(fulldirname);
     }
 
-    pathname_t* filesysroot_t::register_extension(crunes_t const& extension) 
+    pathname_t* filesys_t::register_extension(crunes_t const& extension) 
     { 
         const u64 hname = calchash(extension);
         pathname_t* name = m_extension_table.find(hname);
@@ -447,7 +447,7 @@ namespace xcore
         return name;
     }
 
-    pathdevice_t* filesysroot_t::register_device(crunes_t const& device)
+    pathdevice_t* filesys_t::register_device(crunes_t const& device)
     {
         for (s32 i = 0; i < m_num_devices; ++i)
         {
@@ -459,7 +459,7 @@ namespace xcore
         return sNilDevice;
     }
 
-    pathdevice_t* filesysroot_t::register_device(pathname_t* device)
+    pathdevice_t* filesys_t::register_device(pathname_t* device)
     {
         for (s32 i = 0; i < m_num_devices; ++i)
         {
@@ -471,7 +471,7 @@ namespace xcore
         return sNilDevice;
     }
 
-    path_t* filesysroot_t::get_parent_path(path_t* path)
+    path_t* filesys_t::get_parent_path(path_t* path)
     {
         if (path->m_len == 0)
             return sNilPath;
@@ -484,7 +484,7 @@ namespace xcore
         return out_path;
     }
 
-    void filesysroot_t::get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path)
+    void filesys_t::get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path)
     {
         s32 depth = path->m_len + 1;
         out_path = path_t::construct(m_allocator, depth);
@@ -492,7 +492,7 @@ namespace xcore
         out_path->m_path[path->m_len] = folder;
     }
 
-    void filesysroot_t::get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path)
+    void filesys_t::get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path)
     {
         s32 depth = path->m_len + 1;
         out_path = path_t::construct(m_allocator, depth);
@@ -500,7 +500,7 @@ namespace xcore
         out_path->m_path[0] = folder;
     }
 
-    void filesysroot_t::get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path)
+    void filesys_t::get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path)
     {
         s32 depth = llen + rlen;
         out_path = path_t::construct(m_allocator, depth);
@@ -508,7 +508,7 @@ namespace xcore
         path_t::copy_array(right->m_path, rstart, rlen, out_path->m_path, llen);
     }
 
-    void filesysroot_t::get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right)
+    void filesys_t::get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right)
     {
         if (pivot == 0)
         {
@@ -561,7 +561,7 @@ namespace xcore
         return this; 
     }
 
-    bool path_t::detach(filesysroot_t* root)
+    bool path_t::detach(filesys_t* root)
     {
         if (m_ref > 0)
         {
@@ -582,7 +582,7 @@ namespace xcore
     pathname_t* path_t::get_name() const
     {
         if (m_len == 0) 
-            return filesysroot_t::sNilName;
+            return filesys_t::sNilName;
         return m_path[m_len - 1];
     }
 
@@ -651,7 +651,7 @@ namespace xcore
     //
     // pathdevice_t implementations
     // 
-    void pathdevice_t::init(filesysroot_t* owner)
+    void pathdevice_t::init(filesys_t* owner)
     {
         m_name = nullptr;
         m_root = owner;
@@ -659,7 +659,7 @@ namespace xcore
         m_fd   = x_NullFileDevice();
     }
 
-    pathdevice_t* pathdevice_t::construct(alloc_t* allocator, filesysroot_t* owner)
+    pathdevice_t* pathdevice_t::construct(alloc_t* allocator, filesys_t* owner)
     {
         // Allocate a pathdevice_t
         void*      device_mem = allocator->allocate(sizeof(pathdevice_t), sizeof(void*));

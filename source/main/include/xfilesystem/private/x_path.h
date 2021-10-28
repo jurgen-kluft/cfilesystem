@@ -82,7 +82,7 @@ namespace xcore
         s32         compare(path_t* other) const;
 
         path_t*        attach();
-        bool           detach(filesysroot_t* root);
+        bool           detach(filesys_t* root);
         static path_t* construct(alloc_t* allocator, s32 len);
         static void    destruct(alloc_t* allocator, path_t* path);
         static void    copy_array(pathname_t** from, u32 from_start, u32 from_len, pathname_t** dst, u32 dst_start);
@@ -131,67 +131,20 @@ namespace xcore
 
     struct pathdevice_t
     {
-        filesysroot_t* m_root; // If alias, pathdevice_t ("work") | nullptr
+        filesys_t*     m_root; // If alias, pathdevice_t ("work") | nullptr
         filedevice_t*  m_fd;   // nullptr                      | xfiledevice("e")
         pathname_t*    m_name; // "codedir"                    | "E"
         pathname_t*    m_path; // "codedir:\\xfilesystem\\"    | "E:\\dev.go\\src\\github.com\\jurgen-kluft\\"
 
         pathdevice_t() : m_root(nullptr), m_fd(nullptr), m_name(nullptr), m_path(nullptr) {}
 
-        void          init(filesysroot_t* owner);
+        void          init(filesys_t* owner);
         pathdevice_t* attach() { return this; }
         pathdevice_t* release(alloc_t* allocator) { return this; }
+        void          to_string(runes_t& str) const;
 
-        static pathdevice_t* construct(alloc_t* allocator, filesysroot_t* owner);
+        static pathdevice_t* construct(alloc_t* allocator, filesys_t* owner);
         static void          destruct(alloc_t* allocator, pathdevice_t*& device);
-    };
-
-    struct filesysroot_t
-    {
-        filesysroot_t(alloc_t* allocator) : m_allocator(allocator) {}
-
-        u32              m_max_open_files;
-        u32              m_max_path_objects;
-        char             m_default_slash;
-        filesys_t*       m_owner;
-        alloc_t*         m_allocator;
-        runes_alloc_t*   m_stralloc;
-        s32              m_num_devices;
-        s32              m_max_devices;
-        pathdevice_t     m_tdevice[64];
-        pathname_table_t m_filename_table;
-        pathname_table_t m_extension_table;
-
-        static pathdevice_t* sNilDevice;
-        static pathname_t*   sNilName;
-        static path_t*       sNilPath;
-
-        void initialize(alloc_t* allocator);
-
-        void release_name(pathname_t* name);
-        void release_filename(pathname_t* name);
-        void release_extension(pathname_t* name);
-        void release_path(path_t* path);
-        void release_device(pathdevice_t* dev);
-
-        pathname_t* register_name(crunes_t const& namestr);
-        pathname_t* get_empty_name() const;
-
-        bool register_directory(crunes_t const& directory, pathname_t*& out_devicename, path_t*& out_path);
-        bool register_directory(path_t** paths_to_concatenate, s32 paths_len, path_t*& out_path);
-        bool register_filename(crunes_t const& filename, pathname_t*& out_filename, pathname_t*& out_extension);
-        bool register_fullfilepath(crunes_t const& fullfilepath, pathname_t*& out_devicename, path_t*& out_path, pathname_t*& out_filename, pathname_t*& out_extension);
-
-        pathname_t*   register_dirname(crunes_t const& fulldirname);
-        pathname_t*   register_extension(crunes_t const& extension);
-        pathdevice_t* register_device(crunes_t const& device);
-        pathdevice_t* register_device(pathname_t* device);
-
-        path_t* get_parent_path(path_t* path);
-        void    get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path);
-        void    get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path);
-        void    get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path);
-        void    get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right);
     };
 
 }; // namespace xcore

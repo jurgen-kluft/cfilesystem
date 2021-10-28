@@ -59,7 +59,7 @@ namespace xcore
     //==============================================================================
     // Functions
     //==============================================================================
-    devicemanager_t::devicemanager_t(filesysroot_t* ctxt) : mContext(ctxt), mNumAliases(0), mNumDevices(0) {}
+    devicemanager_t::devicemanager_t(filesys_t* ctxt) : mContext(ctxt), mNumAliases(0), mNumDevices(0) {}
 
     //------------------------------------------------------------------------------
 

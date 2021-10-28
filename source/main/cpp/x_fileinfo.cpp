@@ -31,7 +31,7 @@ namespace xcore
         path_t* path = nullptr;
         pathname_t* filename = nullptr;
         pathname_t* extension = nullptr;
-        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->m_owner->resolve(m_path, pathdevice, path, filename, extension);
         return pathdevice != root->sNilDevice && filename != root->sNilName;
     }
@@ -61,7 +61,7 @@ namespace xcore
 
     void fileinfo_t::getParent(dirpath_t& parent) const
     {
-        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->release_device(parent.m_device);
         parent.m_device = m_path.m_dirpath.m_device->attach();
         path_t* parentpath = root->get_parent_path(parent.m_path);
@@ -71,14 +71,14 @@ namespace xcore
 
     void fileinfo_t::getRoot(dirpath_t& outInfo) const
     {
-        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->release_device(outInfo.m_device);
         outInfo.m_device = m_path.m_dirpath.m_device->attach();
     }
 
     void fileinfo_t::getDirpath(dirpath_t& dirpath) const 
     { 
-        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->release_device(dirpath.m_device);
         dirpath.m_device = m_path.m_dirpath.m_device->attach();
         root->release_path(dirpath.m_path);
@@ -87,7 +87,7 @@ namespace xcore
 
     void fileinfo_t::getFilename(filepath_t& filename) const
     {
-        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->release_filename(filename.m_filename); 
         filename.m_filename = m_path.m_filename->incref(); 
         root->release_extension(filename.m_extension);
@@ -96,14 +96,14 @@ namespace xcore
 
     void fileinfo_t::getFilenameWithoutExtension(filepath_t& filename_without_extension) const 
     { 
-        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->release_filename(filename_without_extension.m_filename); 
         filename_without_extension.m_filename = m_path.m_filename->incref(); 
     }
 
     void fileinfo_t::getExtension(filepath_t& extension) const 
     { 
-        filesysroot_t* root = m_path.m_dirpath.m_device->m_root;
+        filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->release_extension(extension.m_extension);
         extension.m_extension = m_path.m_extension->incref(); 
     }
@@ -209,7 +209,7 @@ namespace xcore
         path_t* path = nullptr;
         pathname_t* filename = nullptr;
         pathname_t* extension = nullptr;
-        filesysroot_t* root = fp.m_dirpath.m_device->m_root;
+        filesys_t* root = fp.m_dirpath.m_device->m_root;
         root->m_owner->resolve(fp, device, path, filename, extension);
         return device->m_fd;
     }

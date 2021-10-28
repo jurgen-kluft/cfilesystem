@@ -13,10 +13,10 @@ namespace xcore
     // dirpath_t: "Device:\\Folder\Folder\"
     //==============================================================================
 
-    dirpath_t::dirpath_t() : m_device(filesysroot_t::sNilDevice)
+    dirpath_t::dirpath_t() : m_device(filesys_t::sNilDevice)
     {
         m_device->attach();
-        m_path = filesysroot_t::sNilPath;
+        m_path = filesys_t::sNilPath;
     }
     dirpath_t::dirpath_t(dirpath_t const& other)
     {
@@ -26,7 +26,7 @@ namespace xcore
     dirpath_t::dirpath_t(pathdevice_t* device)
     {
         m_device = device->attach();
-        m_path = filesysroot_t::sNilPath;
+        m_path = filesys_t::sNilPath;
     }
     dirpath_t::dirpath_t(pathdevice_t* device, path_t* path)
     {
@@ -36,30 +36,30 @@ namespace xcore
 
     dirpath_t::~dirpath_t()
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         root->release_device(m_device);
         root->release_path(m_path);
     }
 
     void dirpath_t::clear()
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         root->release_device(m_device);
         root->release_path(m_path);
-        m_device = filesysroot_t::sNilDevice;
-        m_path = filesysroot_t::sNilPath;
+        m_device = filesys_t::sNilDevice;
+        m_path = filesys_t::sNilPath;
     }
 
-    bool dirpath_t::isEmpty() const { return m_device == filesysroot_t::sNilDevice && m_path == filesysroot_t::sNilPath; }
+    bool dirpath_t::isEmpty() const { return m_device == filesys_t::sNilDevice && m_path == filesys_t::sNilPath; }
 
     bool dirpath_t::isRoot() const
     {
-        return m_device != filesysroot_t::sNilDevice && m_path != filesysroot_t::sNilPath;
+        return m_device != filesys_t::sNilDevice && m_path != filesys_t::sNilPath;
     }
 
     bool dirpath_t::isRooted() const
     {
-        return m_device != filesysroot_t::sNilDevice;
+        return m_device != filesys_t::sNilDevice;
     }
 
     void dirpath_t::makeRelativeTo(const dirpath_t& dirpath)
@@ -84,7 +84,7 @@ namespace xcore
             if (i == c)
             {
                 // strip of the top 'c' folders
-                filesysroot_t* root = m_device->m_root;
+                filesys_t* root = m_device->m_root;
                 path_t* right = nullptr;
                 root->get_split_path(m_path, c, nullptr, &right);
                 if (right != m_path)
@@ -123,7 +123,7 @@ namespace xcore
         }
 
         // there was no overlap so just append, dirpath + this
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         path_t* path = nullptr;
         root->get_expand_path(dirpath.m_path, c, dirpath.m_path->m_len - c, m_path, 0, m_path->m_len - c, path);
         if (path != m_path)
@@ -154,7 +154,7 @@ namespace xcore
             if (i == c)
             {
                 // only take the sub folders
-                filesysroot_t* root = path.m_device->m_root;
+                filesys_t* root = path.m_device->m_root;
                 path_t* right = nullptr;
                 root->get_split_path(path.m_path, c, nullptr, &right);
                 out_subpath = dirpath_t(root->sNilDevice, right);
@@ -171,17 +171,38 @@ namespace xcore
     dirpath_t dirpath_t::root() const 
     { 
         dirpath_t dp(m_device); 
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         root->get_split_path(m_path, 1, &dp.m_path, nullptr);
         return dp;
     }
 
     dirpath_t dirpath_t::parent() const
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         dirpath_t dp(m_device);
         dp.m_path = root->get_parent_path(m_path);
         dp.m_path = dp.m_path->attach();
+        return dp;
+    }
+
+    dirpath_t dirpath_t::relative() const
+    {
+        filesys_t* root = m_device->m_root;
+        dirpath_t dp(root->sNilDevice);
+        dp.m_path = m_path->attach();
+        return dp;
+    }
+
+    dirpath_t dirpath_t::base() const
+    {
+        filesys_t* root = m_device->m_root;
+        dirpath_t dp(m_device);
+        path_t* right = root->sNilPath;
+        if (m_path->m_len > 0)
+        {
+            root->get_split_path(m_path, m_path->m_len - 1, nullptr, &right);
+        }
+        dp.m_path = right->attach();
         return dp;
     }
 
@@ -196,7 +217,7 @@ namespace xcore
         {
             return m_path->m_path[0];
         }
-        return filesysroot_t::sNilName;
+        return filesys_t::sNilName;
     }
 
     pathname_t* dirpath_t::devname() const
@@ -204,11 +225,16 @@ namespace xcore
         return m_device->m_name;
     }
 
+    s32 dirpath_t::getLevels() const
+    {
+        return m_path->m_len;
+    }
+
     void dirpath_t::split(s32 pivot, dirpath_t& left, dirpath_t& right) const
     {
         if (pivot == 0)
         {
-            filesysroot_t* root = m_device->m_root;
+            filesys_t* root = m_device->m_root;
             root->release_device(left.m_device);
             root->release_path(left.m_path);
             left.m_device = m_device->attach();
@@ -217,15 +243,15 @@ namespace xcore
             root->release_device(right.m_device);
             root->release_path(right.m_path);
             right.m_device = m_device->attach();
-            right.m_path = filesysroot_t::sNilPath;
+            right.m_path = filesys_t::sNilPath;
         }
         else if (pivot == m_path->m_len)
         {
-            filesysroot_t* root = m_device->m_root;
+            filesys_t* root = m_device->m_root;
             root->release_device(left.m_device);
             root->release_path(left.m_path);
             left.m_device = m_device->attach();
-            left.m_path = filesysroot_t::sNilPath;
+            left.m_path = filesys_t::sNilPath;
 
             root->release_device(right.m_device);
             root->release_path(right.m_path);
@@ -234,7 +260,7 @@ namespace xcore
         }
         else if (pivot > 0 && pivot < m_path->m_len)
         {
-            filesysroot_t* root = m_device->m_root;
+            filesys_t* root = m_device->m_root;
             root->release_device(left.m_device);
             root->release_path(left.m_path);
             root->release_device(right.m_device);
@@ -249,14 +275,14 @@ namespace xcore
 
     void dirpath_t::truncate(dirpath_t& dirpath, pathname_t*& folder) const
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         root->release_device(dirpath.m_device);
         root->release_path(dirpath.m_path);
         dirpath.m_device = m_device->attach();
         if (m_path->m_len <= 1)
         {
-            dirpath.m_path = filesysroot_t::sNilPath;
-            folder = filesysroot_t::sNilName;
+            dirpath.m_path = filesys_t::sNilPath;
+            folder = filesys_t::sNilName;
         }
         else
         {
@@ -268,14 +294,14 @@ namespace xcore
 
     void dirpath_t::truncate(pathname_t*& folder, dirpath_t& dirpath) const
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         root->release_device(dirpath.m_device);
         root->release_path(dirpath.m_path);
         dirpath.m_device = m_device->attach();
         if (m_path->m_len <= 1)
         {
-            dirpath.m_path = filesysroot_t::sNilPath;
-            folder = filesysroot_t::sNilName;
+            dirpath.m_path = filesys_t::sNilPath;
+            folder = filesys_t::sNilName;
         }
         else
         {
@@ -287,7 +313,7 @@ namespace xcore
 
     void dirpath_t::combine(pathname_t* folder, dirpath_t const& dirpath)
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         root->release_device(m_device);
         root->release_path(m_path);
         m_device = dirpath.m_device->attach();
@@ -297,7 +323,7 @@ namespace xcore
 
     void dirpath_t::combine(dirpath_t const& dirpath, pathname_t* folder)
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         root->release_device(m_device);
         root->release_path(m_path);
         m_device = dirpath.m_device->attach();
@@ -307,7 +333,7 @@ namespace xcore
 
     void dirpath_t::down(pathname_t* folder)
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         path_t* newpath = m_path->append(folder, root->m_allocator);
         root->release_path(m_path);
         m_path = newpath->attach();
@@ -315,7 +341,7 @@ namespace xcore
 
     void dirpath_t::up()
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         path_t* newpath = root->get_parent_path(m_path);
         root->release_path(m_path);
         m_path = newpath->attach();
@@ -323,7 +349,7 @@ namespace xcore
 
     void dirpath_t::to_string(runes_t& str) const
     {
-        filesysroot_t* root = m_device->m_root;
+        filesys_t* root = m_device->m_root;
         crunes_t devicestr(m_device->m_path->m_name, m_device->m_path->m_len);
         xcore::concatenate(str, devicestr);
         for (s32 i = 0; i < m_path->m_len; i++)
