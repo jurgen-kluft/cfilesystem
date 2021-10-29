@@ -176,20 +176,18 @@ namespace xcore
     //------------------------------------------------------------------------------
     void filesystem_t::create(filesystem_t::context_t const& ctxt)
     {
-        filesys_t*     imp       = ctxt.m_allocator->construct<filesys_t>();
         filesys_t* root          = ctxt.m_allocator->construct<filesys_t>();
         root->m_allocator        = ctxt.m_allocator;
         root->m_stralloc         = ctxt.m_allocator->construct<fs_utfalloc>(ctxt.m_allocator);
         root->m_default_slash    = ctxt.m_default_slash;
         root->m_max_open_files   = ctxt.m_max_open_files;
         root->m_max_path_objects = ctxt.m_max_path_objects;
-        root->m_owner            = imp;
-        filesystem_t::mImpl      = imp;
+        filesystem_t::mImpl      = root;
 
         root->initialize(ctxt.m_allocator);
 
-        imp->m_devman = ctxt.m_allocator->construct<devicemanager_t>(root);
-        x_FileSystemRegisterSystemAliases(root, imp->m_devman);
+        root->m_devman = ctxt.m_allocator->construct<devicemanager_t>(root);
+        x_FileSystemRegisterSystemAliases(root, root->m_devman);
 
         utf32::rune adir32[512] = {'\0'};
 
@@ -202,7 +200,7 @@ namespace xcore
             crunes_t dir16((utf16::pcrune)dir);
             xcore::copy(dir16, dir32);
             runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
-            imp->m_devman->add_alias("appdir:\\", appdir);
+            root->m_devman->add_alias("appdir:\\", appdir);
         }
 
         // Get the working directory
@@ -212,7 +210,7 @@ namespace xcore
             runes_t  curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
             crunes_t dir16((utf16::pcrune)dir);
             xcore::copy(dir16, curdir);
-            imp->m_devman->add_alias("curdir:\\", curdir);
+            root->m_devman->add_alias("curdir:\\", curdir);
         }
     }
 

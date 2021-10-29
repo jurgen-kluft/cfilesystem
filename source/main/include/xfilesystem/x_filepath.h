@@ -28,6 +28,7 @@ namespace xcore
 
     public:
         filepath_t();
+        filepath_t(const filepath_t&);
         filepath_t(pathname_t* filename, pathname_t* extension);
         filepath_t(pathdevice_t* device, path_t* path, pathname_t* filename, pathname_t* extension);
         filepath_t(dirpath_t const& dirpath, pathname_t* filename, pathname_t* extension);

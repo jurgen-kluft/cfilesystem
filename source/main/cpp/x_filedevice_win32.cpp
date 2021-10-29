@@ -106,8 +106,6 @@ namespace xcore
         bool seekOrigin(void* nFileHandle, u64 pos, u64& newPos);
         bool seekCurrent(void* nFileHandle, u64 pos, u64& newPos);
         bool seekEnd(void* nFileHandle, u64 pos, u64& newPos);
-
-        static HANDLE openDir(dirpath_t const& szDirPath);
     };
 
     filedevice_t* x_CreateFileDevicePC(alloc_t* alloc, bool boCanWrite)
@@ -504,14 +502,15 @@ namespace xcore
 
         nDirHandle = ::CreateFileW((LPCWSTR)path16.str16(), fileMode, shareType, NULL, disposition, attrFlags, NULL);
 
-        return true;
+        return nDirHandle != INVALID_HANDLE_VALUE;
     }
 
     static void sCloseDir(HANDLE handle) { ::CloseHandle(handle); }
 
     bool filedevice_pc_t::hasDir(const dirpath_t& szDirPath)
     {
-        HANDLE handle = openDir(szDirPath);
+        void* handle;
+        openDir(szDirPath, handle);
         if (handle == INVALID_HANDLE_VALUE)
             return false;
         sCloseDir(handle);
@@ -776,7 +775,8 @@ namespace xcore
 
     bool filedevice_pc_t::setDirTime(const dirpath_t& szDirPath, const filetimes_t& ftimes)
     {
-        HANDLE handle = openDir(szDirPath);
+        HANDLE handle;
+        openDir(szDirPath, handle);
         if (handle != INVALID_HANDLE_VALUE)
         {
             datetime_t creationTime;
@@ -810,7 +810,8 @@ namespace xcore
 
     bool filedevice_pc_t::getDirTime(const dirpath_t& szDirPath, filetimes_t& ftimes)
     {
-        HANDLE handle = openDir(szDirPath);
+        HANDLE handle;
+        openDir(szDirPath, handle);
         if (handle != INVALID_HANDLE_VALUE)
         {
             FILETIME _creationTime;

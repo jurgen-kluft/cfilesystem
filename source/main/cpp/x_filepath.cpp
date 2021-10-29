@@ -11,6 +11,12 @@ namespace xcore
 {
 
     filepath_t::filepath_t() : m_dirpath(), m_filename(filesys_t::sNilName), m_extension(filesys_t::sNilName) {}
+    filepath_t::filepath_t(const filepath_t& other)
+        : m_dirpath(other.m_dirpath)
+    {
+        m_filename = other.m_filename->incref();
+        m_extension = other.m_extension->incref();
+    }
     filepath_t::filepath_t(pathname_t* filename, pathname_t* extension) : m_dirpath(), m_filename(filename), m_extension(extension) {}
     filepath_t::filepath_t(pathdevice_t* device, path_t* path, pathname_t* filename, pathname_t* extension)
         : m_dirpath(device, path), m_filename(filename), m_extension(extension) {}

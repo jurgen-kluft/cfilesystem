@@ -230,6 +230,26 @@ namespace xcore
         return m_path->m_len;
     }
 
+    s32 dirpath_t::getLevelOf(dirpath_t const& parent) const
+    {
+        if (parent.m_device == m_device)
+        {
+            if (m_path->m_len >= parent.m_path->m_len)
+            {
+                s32 d = parent.m_path->m_len;
+                for (s32 i = 0; i < d; i++)
+                {
+                    if (parent.m_path->m_path[i] == m_path->m_path[i])
+                    {
+                        return -1;
+                    }
+                }
+                return m_path->m_len - parent.m_path->m_len;
+            }
+        }
+        return -1;
+    }
+
     void dirpath_t::split(s32 pivot, dirpath_t& left, dirpath_t& right) const
     {
         if (pivot == 0)

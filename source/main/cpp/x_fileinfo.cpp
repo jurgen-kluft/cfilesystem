@@ -20,6 +20,10 @@ namespace xcore
     fileinfo_t::fileinfo_t() : mFileExists(false), mFileTimes(), mFileAttributes(), m_path() {}
     fileinfo_t::fileinfo_t(const fileinfo_t& fi) : mFileExists(fi.mFileExists), mFileTimes(fi.mFileTimes), mFileAttributes(fi.mFileAttributes), m_path(fi.m_path) {}
     fileinfo_t::fileinfo_t(const filepath_t& fp) : m_path(fp) {}
+    fileinfo_t::fileinfo_t(const filepath_t& fp, const fileattrs_t& attrs, const filetimes_t& times)
+        : m_path(fp), mFileExists(false), mFileTimes(times), mFileAttributes(attrs)
+    {
+    }
     fileinfo_t::~fileinfo_t() {}
 
     u64  fileinfo_t::getLength() const { return sGetLength(m_path); }
@@ -32,7 +36,7 @@ namespace xcore
         pathname_t* filename = nullptr;
         pathname_t* extension = nullptr;
         filesys_t* root = m_path.m_dirpath.m_device->m_root;
-        root->m_owner->resolve(m_path, pathdevice, path, filename, extension);
+        root->resolve(m_path, pathdevice, path, filename, extension);
         return pathdevice != root->sNilDevice && filename != root->sNilName;
     }
 
@@ -45,7 +49,7 @@ namespace xcore
         stream_t fs;
         if (sCreate(m_path, fs))
         {
-            m_path.m_dirpath.m_device->m_root->m_owner->close(fs);
+            m_path.m_dirpath.m_device->m_root->close(fs);
             return true;
         }
         return false;
@@ -210,7 +214,7 @@ namespace xcore
         pathname_t* filename = nullptr;
         pathname_t* extension = nullptr;
         filesys_t* root = fp.m_dirpath.m_device->m_root;
-        root->m_owner->resolve(fp, device, path, filename, extension);
+        root->resolve(fp, device, path, filename, extension);
         return device->m_fd;
     }
 

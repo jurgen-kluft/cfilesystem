@@ -80,8 +80,8 @@ namespace xcore
     pathname_t * filesys_t::get_filename(filepath_t const& filepath) { return filepath.m_filename; }
     pathname_t * filesys_t::get_extension(filepath_t const& filepath) { return filepath.m_extension; }
 
-    filesys_t* filesys_t::get_filesystem(dirpath_t const& dirpath) { return dirpath.m_device->m_root->m_owner; }
-    filesys_t* filesys_t::get_filesystem(filepath_t const& filepath) { return filepath.root().m_device->m_root->m_owner; }
+    filesys_t* filesys_t::get_filesystem(dirpath_t const& dirpath) { return dirpath.m_device->m_root; }
+    filesys_t* filesys_t::get_filesystem(filepath_t const& filepath) { return filepath.root().m_device->m_root; }
 
 
     void filesys_t::filepath(const char* str, filepath_t& fp)

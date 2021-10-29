@@ -223,13 +223,17 @@ namespace xcore
 
     u32  pathname_table_t::hash_to_index(u64 hash) const
     {
-        u32 index = (u32)(hash & (m_len - 1));
+        u32 index = (u32)(hash & (m_cap - 1));
         return index;
     }
 
     //
     // filesys_t functions
     //
+    pathdevice_t* filesys_t::sNilDevice;
+    pathname_t*   filesys_t::sNilName;
+    path_t*       filesys_t::sNilPath;
+
     void filesys_t::initialize(alloc_t* allocator)
     {
         m_allocator = allocator;
@@ -671,6 +675,12 @@ namespace xcore
     {
         allocator->deallocate(device);
         device = nullptr;
+    }
+
+    void pathdevice_t::to_string(runes_t& str) const
+    {
+        crunes_t devicestr(m_name->m_name, m_name->m_len);
+        xcore::concatenate(str, devicestr);
     }
 
 }; // namespace xcore

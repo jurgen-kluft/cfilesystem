@@ -67,6 +67,7 @@ namespace xcore
     {
         pathname_t* pathdevicename = mContext->register_name(devicename);
         pathdevice_t* pathdevice = mContext->register_device(pathdevicename);
+
         for (s32 i = 0; i < mNumDevices; ++i)
         {
             if (mDeviceList[i].mDevice->m_name == pathdevicename)
@@ -94,9 +95,9 @@ namespace xcore
 
     // Examples:
     // 'app_dir:\' => "c:\users\john\programs\mygame\'
-    // 'app_datadir:\' => "c:\users\john\programs\mygame\data\'
-    // 'app_profilesdir:\' => "c:\users\john\programs\mygame\profiles\'
-    // 'win_tempdir:\' => "c:\users\john\programs\mygame\temp\'
+    // 'app_datadir:\' => "app_dir:\data\" => "c:\users\john\programs\mygame\data\'
+    // 'app_profilesdir:\' => "app_dir:\profiles\" => "c:\users\john\programs\mygame\profiles\'
+    // 'app_tempdir:\' => "app_dir:\temp\" => "c:\users\john\programs\mygame\temp\'
     bool devicemanager_t::add_alias(const crunes_t& alias, const crunes_t& target)
     {
         pathname_t* aliasname = mContext->register_name(alias);

@@ -25,6 +25,7 @@ namespace xcore
     class fileattrs_t;
     class filetimes_t;
     class stream_t;
+    struct pathdevice_t;
 
     // System file device
     extern filedevice_t* x_CreateFileDevice(alloc_t* allocator, bool boCanWrite);

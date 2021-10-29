@@ -14,7 +14,7 @@ namespace xcore
     class filepath_t;
     class filedevice_t;
 
-    struct filesys_t;
+    class filesys_t;
     struct path_t;
     struct pathdevice_t;
 

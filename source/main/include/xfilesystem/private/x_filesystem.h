@@ -8,6 +8,7 @@
 //==============================================================================
 #include "xbase/x_allocator.h"
 #include "xfilesystem/private/x_enumerations.h"
+#include "xfilesystem/private/x_path.h"
 
 namespace xcore
 {
@@ -23,7 +24,6 @@ namespace xcore
     class stream_t;
     class istream_t;
 
-    struct pathdevice_t;
     struct path_t;
     struct pathname_t;
 
@@ -87,7 +87,6 @@ namespace xcore
         u32              m_max_open_files;
         u32              m_max_path_objects;
         char             m_default_slash;
-        filesys_t*       m_owner;
         alloc_t*         m_allocator;
         runes_alloc_t*   m_stralloc;
         s32              m_num_devices;

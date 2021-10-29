@@ -59,6 +59,8 @@ namespace xcore
         dirpath_t base() const;   // "E:\documents\old\inventory\", -> "inventory\"
 
         s32 getLevels() const;
+        s32 getLevelOf(dirpath_t const& parent) const;
+
         void split(s32 pivot, dirpath_t& left, dirpath_t& right) const;
         void truncate(dirpath_t& dirpath, pathname_t*& folder) const;
         void truncate(pathname_t*& folder, dirpath_t& dirpath) const;
