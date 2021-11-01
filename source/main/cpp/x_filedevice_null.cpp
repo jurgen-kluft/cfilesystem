@@ -32,7 +32,7 @@ namespace xcore
         virtual bool canSeek() const { return false; }
         virtual bool canWrite() const { return false; }
 
-        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const
+        virtual bool getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const
         {
             totalSpace = 0;
             freeSpace  = 0;
@@ -102,6 +102,7 @@ namespace xcore
         virtual bool copyFile(const filepath_t& szFilename, const filepath_t& szToFilename, bool boOverwrite) { return false; }
         virtual bool deleteFile(const filepath_t& szFilename) { return false; }
 
+        virtual bool openDir(dirpath_t const& szDirPath, void*& nDirHandle) { nDirHandle = INVALID_DIR_HANDLE; return false; }
         virtual bool hasDir(const dirpath_t& szDirPath) { return false; }
         virtual bool createDir(const dirpath_t& szDirPath) { return false; }
         virtual bool moveDir(const dirpath_t& szDirPath, const dirpath_t& szToDirPath, bool boOverwrite) { return false; }

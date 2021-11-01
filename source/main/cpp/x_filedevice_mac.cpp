@@ -39,7 +39,7 @@ namespace xcore
         virtual bool canSeek() const { return true; }
         virtual bool canWrite() const { return mCanWrite; }
 
-        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const { return false; }
+        virtual bool getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const { return false; }
 
         virtual bool openFile(const filepath_t& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle) { return false; }
         virtual bool createFile(const filepath_t& szFilename, bool boRead, bool boWrite, void*& nFileHandle) { return false; }
@@ -93,9 +93,9 @@ namespace xcore
         static void* sOpenDir(dirpath_t const& szDirPath);
     };
 
-    filedevice_t* x_CreateFileDeviceMac(alloc_t* alloc, const dirpath_t& pDrivePath, bool boCanWrite)
+    filedevice_t* x_CreateFileDeviceMac(alloc_t* alloc, bool boCanWrite)
     {
-        xfiledevice_mac* file_device = alloc->construct<xfiledevice_mac>(alloc, pDrivePath, boCanWrite);
+        xfiledevice_mac* file_device = alloc->construct<xfiledevice_mac>(alloc, boCanWrite);
         return file_device;
     }
 
@@ -105,7 +105,7 @@ namespace xcore
         file_device->mAllocator->destruct(file_device);
     }
 
-    filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t const& pDrivePath, bool boCanWrite)
+    filedevice_t* x_CreateFileDevice(alloc_t* allocator, bool boCanWrite)
     {
         dirpath_t drivePath = filesystem_t::dirpath(pDrivePath);
         return x_CreateFileDeviceMac(allocator, drivePath, boCanWrite);

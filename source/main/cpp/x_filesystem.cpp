@@ -12,6 +12,8 @@
 namespace xcore
 {
     void* INVALID_FILE_HANDLE = (void*)-1;
+    void* PENDING_FILE_HANDLE = (void*)-2;
+    void* INVALID_DIR_HANDLE = (void*)-1;
 
     filesys_t* filesystem_t::mImpl = nullptr;
 
@@ -78,8 +80,8 @@ namespace xcore
     pathname_t * filesys_t::get_filename(filepath_t const& filepath) { return filepath.m_filename; }
     pathname_t * filesys_t::get_extension(filepath_t const& filepath) { return filepath.m_extension; }
 
-    filesys_t* filesys_t::get_filesystem(dirpath_t const& dirpath) { return dirpath.m_device->m_root->m_owner; }
-    filesys_t* filesys_t::get_filesystem(filepath_t const& filepath) { return filepath.root().m_device->m_root->m_owner; }
+    filesys_t* filesys_t::get_filesystem(dirpath_t const& dirpath) { return dirpath.m_device->m_root; }
+    filesys_t* filesys_t::get_filesystem(filepath_t const& filepath) { return filepath.root().m_device->m_root; }
 
 
     void filesys_t::filepath(const char* str, filepath_t& fp)
@@ -100,8 +102,8 @@ namespace xcore
         path_t*     path       = nullptr;
         pathname_t* filename   = nullptr;
         pathname_t* extension  = nullptr;
-        m_context->register_fullfilepath(str, devicename, path, filename, extension);
-        pathdevice_t* device = m_context->register_device(devicename);
+        register_fullfilepath(str, devicename, path, filename, extension);
+        pathdevice_t* device = register_device(devicename);
 
         dirpath_t  dirpath(device, path);
         filepath_t filepath(dirpath, filename, extension);
@@ -112,8 +114,8 @@ namespace xcore
     {
         pathname_t* devicename = nullptr;
         path_t*     path       = nullptr;
-        m_context->register_directory(str, devicename, path);
-        pathdevice_t* device = m_context->register_device(devicename);
+        register_directory(str, devicename, path);
+        pathdevice_t* device = register_device(devicename);
         dirpath_t     dirpath(device, path);
         dp = dirpath;
     }

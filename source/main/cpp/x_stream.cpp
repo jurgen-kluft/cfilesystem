@@ -55,8 +55,8 @@ namespace xcore
     s64 stream_t::read(xbyte*, s64){ return 0; }
     s64 stream_t::write(xbyte const*, s64){ return 0; }
 
-    reader_t* stream_t::get_reader(){ return 0; }
-    writer_t* stream_t::get_writer(){ return 0; }
+    reader_t* stream_t::get_reader(){ return nullptr; }
+    writer_t* stream_t::get_writer(){ return nullptr; }
 
     stream_t::stream_t(istream_t* impl)
     {

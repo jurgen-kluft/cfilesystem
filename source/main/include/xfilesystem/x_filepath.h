@@ -28,6 +28,7 @@ namespace xcore
 
     public:
         filepath_t();
+        filepath_t(const filepath_t&);
         filepath_t(pathname_t* filename, pathname_t* extension);
         filepath_t(pathdevice_t* device, path_t* path, pathname_t* filename, pathname_t* extension);
         filepath_t(dirpath_t const& dirpath, pathname_t* filename, pathname_t* extension);
@@ -47,10 +48,14 @@ namespace xcore
         void setExtension(crunes_t const& extension);
 
         dirpath_t   root() const;
+        dirpath_t   base() const;
         dirpath_t   dirpath() const;
-        pathname_t* dirname() const;
-        pathname_t* filename() const;
-        pathname_t* extension() const;
+        filepath_t  filename() const;
+        filepath_t  relative() const;
+
+        pathname_t* dirstr() const;
+        pathname_t* filenamestr() const;
+        pathname_t* extensionstr() const;
 
         void split(s32 pivot, dirpath_t& left, filepath_t& right) const;
         void truncate(filepath_t& filepath, pathname_t*& folder) const;

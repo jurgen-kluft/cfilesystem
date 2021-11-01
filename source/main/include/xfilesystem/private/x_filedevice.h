@@ -25,9 +25,10 @@ namespace xcore
     class fileattrs_t;
     class filetimes_t;
     class stream_t;
+    struct pathdevice_t;
 
     // System file device
-    extern filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t const& pDrivePath, bool boCanWrite);
+    extern filedevice_t* x_CreateFileDevice(alloc_t* allocator, bool boCanWrite);
     extern void         x_DestroyFileDevice(alloc_t* allocator, filedevice_t*);
 
     extern filedevice_t* x_NullFileDevice();
@@ -50,7 +51,7 @@ namespace xcore
         virtual bool canWrite() const = 0;
         virtual bool canSeek() const = 0;
 
-        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const = 0;
+        virtual bool getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const = 0;
 
         virtual bool openFile(filepath_t const& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& outHandle) = 0;
         virtual bool readFile(void* pHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead)           = 0;

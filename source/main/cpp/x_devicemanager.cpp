@@ -60,7 +60,7 @@ namespace xcore
     //==============================================================================
     // Functions
     //==============================================================================
-    devicemanager_t::devicemanager_t(filesysroot_t* ctxt) : mContext(ctxt), mNumAliases(0), mNumDevices(0) {}
+    devicemanager_t::devicemanager_t(filesys_t* ctxt) : mContext(ctxt), mNumAliases(0), mNumDevices(0) {}
 
     //------------------------------------------------------------------------------
 
@@ -68,6 +68,7 @@ namespace xcore
     {
         pathname_t* pathdevicename = mContext->register_name(devicename);
         pathdevice_t* pathdevice = mContext->register_device(pathdevicename);
+
         for (s32 i = 0; i < mNumDevices; ++i)
         {
             if (mDeviceList[i].mDevice->m_name == pathdevicename)
@@ -82,6 +83,7 @@ namespace xcore
         if (mNumDevices < MAX_FILE_DEVICES)
         {
             mDeviceList[mNumDevices].mDevice = pathdevice;
+            pathdevice->m_fd = device;
             mNumDevices++;
             mNeedsResolve = true;
             return true;
@@ -95,9 +97,9 @@ namespace xcore
 
     // Examples:
     // 'app_dir:\' => "c:\users\john\programs\mygame\'
-    // 'app_datadir:\' => "c:\users\john\programs\mygame\data\'
-    // 'app_profilesdir:\' => "c:\users\john\programs\mygame\profiles\'
-    // 'win_tempdir:\' => "c:\users\john\programs\mygame\temp\'
+    // 'app_datadir:\' => "app_dir:\data\" => "c:\users\john\programs\mygame\data\'
+    // 'app_profilesdir:\' => "app_dir:\profiles\" => "c:\users\john\programs\mygame\profiles\'
+    // 'app_tempdir:\' => "app_dir:\temp\" => "c:\users\john\programs\mygame\temp\'
     bool devicemanager_t::add_alias(const crunes_t& alias, const crunes_t& target)
     {
         pathname_t* aliasname = mContext->register_name(alias);
@@ -136,9 +138,7 @@ namespace xcore
                 targetpath->attach();
 
                 mAliasList[mNumAliases].mAlias = aliasname->incref();
-                mContext->release_name(mAliasList[mNumAliases].mTargetDeviceName);
                 mAliasList[mNumAliases].mTargetDeviceName = targetdevicename;
-                mContext->release_path(mAliasList[mNumAliases].mTargetPath);
                 mAliasList[mNumAliases].mTargetPath = targetpath;
                 mNumAliases++;
                 mNeedsResolve = true;

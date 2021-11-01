@@ -34,16 +34,15 @@ namespace xcore
     class filedevice_pc_t : public filedevice_t
     {
     public:
-        alloc_t*       mAllocator;
-        runes_t        mPathStr;
-        runes_t        mPathStr2;
-        dirpath_t      mDrivePath;
-        filesysroot_t* mSysRoot;
-        bool           mCanWrite;
+        alloc_t*   mAllocator;
+        runes_t    mPathStr;
+        runes_t    mPathStr2;
+        filesys_t* mSysRoot;
+        bool       mCanWrite;
 
         XCORE_CLASS_PLACEMENT_NEW_DELETE
 
-        filedevice_pc_t(alloc_t* alloc, runes_t& path16Str, runes_t& path16Str2, const dirpath_t& pDrivePath, bool boCanWrite) : mAllocator(alloc), mPathStr(path16Str), mPathStr2(path16Str2), mDrivePath(pDrivePath), mCanWrite(boCanWrite) {}
+        filedevice_pc_t(alloc_t* alloc, runes_t& path16Str, runes_t& path16Str2, bool boCanWrite) : mAllocator(alloc), mPathStr(path16Str), mPathStr2(path16Str2), mCanWrite(boCanWrite) {}
         virtual ~filedevice_pc_t() {}
 
         virtual void destruct(alloc_t* allocator)
@@ -56,7 +55,7 @@ namespace xcore
         virtual bool canSeek() const { return true; }
         virtual bool canWrite() const { return mCanWrite; }
 
-        virtual bool getDeviceInfo(u64& totalSpace, u64& freeSpace) const;
+        virtual bool getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const;
 
         virtual bool openFile(const filepath_t& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle);
         virtual bool createFile(const filepath_t& szFilename, bool boRead, bool boWrite, void*& nFileHandle);
@@ -107,36 +106,33 @@ namespace xcore
         bool seekOrigin(void* nFileHandle, u64 pos, u64& newPos);
         bool seekCurrent(void* nFileHandle, u64 pos, u64& newPos);
         bool seekEnd(void* nFileHandle, u64 pos, u64& newPos);
-
-        static HANDLE openDir(dirpath_t const& szDirPath);
     };
 
-    filedevice_t* x_CreateFileDevicePC(alloc_t* alloc, const dirpath_t& pDrivePath, bool boCanWrite)
+    filedevice_t* x_CreateFileDevicePC(alloc_t* alloc, bool boCanWrite)
     {
         utf16::prune     pPath16Str = (utf16::prune)alloc->allocate(8200 * sizeof(utf16::rune));
         runes_t          pathStr(pPath16Str, pPath16Str + 8192);
         utf16::prune     pPath16Str2 = (utf16::prune)alloc->allocate(8200 * sizeof(utf16::rune));
         runes_t          pathStr2(pPath16Str2, pPath16Str2 + 8192);
-        filedevice_pc_t* file_device = alloc->construct<filedevice_pc_t>(alloc, pathStr, pathStr2, pDrivePath, boCanWrite);
+        filedevice_pc_t* file_device = alloc->construct<filedevice_pc_t>(alloc, pathStr, pathStr2, boCanWrite);
         return file_device;
     }
 
     void x_DestroyFileDevicePC(alloc_t* alloc, filedevice_t* device) { device->destruct(alloc); }
 
-    filedevice_t* x_CreateFileDevice(alloc_t* allocator, crunes_t const& pDrivePath, bool boCanWrite)
+    filedevice_t* x_CreateFileDevice(alloc_t* allocator, bool boCanWrite)
     {
-        dirpath_t drivePath = filesystem_t::dirpath(pDrivePath);
-        return x_CreateFileDevicePC(allocator, drivePath, boCanWrite);
+        return x_CreateFileDevicePC(allocator, boCanWrite);
     }
 
     void x_DestroyFileDevice(alloc_t* allocator, filedevice_t* fd) { x_DestroyFileDevicePC(allocator, fd); }
 
-    bool filedevice_pc_t::getDeviceInfo(u64& totalSpace, u64& freeSpace) const
+    bool filedevice_pc_t::getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const
     {
         ULARGE_INTEGER totalbytes, freebytes;
 
         runes_t drivepath(mPathStr);
-        mDrivePath.to_string(drivepath);
+        device->to_string(drivepath);
 
         bool result = false;
         if (GetDiskFreeSpaceExW((LPCWSTR)drivepath.str16(), NULL, &totalbytes, &freebytes) != 0)
@@ -506,14 +502,15 @@ namespace xcore
 
         nDirHandle = ::CreateFileW((LPCWSTR)path16.str16(), fileMode, shareType, NULL, disposition, attrFlags, NULL);
 
-        return true;
+        return nDirHandle != INVALID_HANDLE_VALUE;
     }
 
     static void sCloseDir(HANDLE handle) { ::CloseHandle(handle); }
 
     bool filedevice_pc_t::hasDir(const dirpath_t& szDirPath)
     {
-        HANDLE handle = openDir(szDirPath);
+        void* handle;
+        openDir(szDirPath, handle);
         if (handle == INVALID_HANDLE_VALUE)
             return false;
         sCloseDir(handle);
@@ -575,8 +572,8 @@ namespace xcore
         node*    mDirStack;
         s32      mLevel;
 
-        filesysroot_t* mSysRoot;
-        runes_t        mPathStr;
+        filesys_t* mSysRoot;
+        runes_t    mPathStr;
 
         dirinfo_t  mDirInfo;
         fileinfo_t mFileInfo;
@@ -778,7 +775,8 @@ namespace xcore
 
     bool filedevice_pc_t::setDirTime(const dirpath_t& szDirPath, const filetimes_t& ftimes)
     {
-        HANDLE handle = openDir(szDirPath);
+        HANDLE handle;
+        openDir(szDirPath, handle);
         if (handle != INVALID_HANDLE_VALUE)
         {
             datetime_t creationTime;
@@ -812,7 +810,8 @@ namespace xcore
 
     bool filedevice_pc_t::getDirTime(const dirpath_t& szDirPath, filetimes_t& ftimes)
     {
-        HANDLE handle = openDir(szDirPath);
+        HANDLE handle;
+        openDir(szDirPath, handle);
         if (handle != INVALID_HANDLE_VALUE)
         {
             FILETIME _creationTime;

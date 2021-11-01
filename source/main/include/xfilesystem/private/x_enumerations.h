@@ -25,13 +25,9 @@ namespace xcore
 		FS_MEM_ALIGNMENT			= 128,
 	};
 
-	enum
-	{
-		PENDING_FILE_HANDLE			= (s64)(void*)-2,
-		
-	};
-
 	extern void* INVALID_FILE_HANDLE;
+	extern void* PENDING_FILE_HANDLE;
+	extern void* INVALID_DIR_HANDLE;
 
 	enum ESeekOrigin
 	{

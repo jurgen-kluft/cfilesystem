@@ -14,7 +14,7 @@ namespace xcore
     class filepath_t;
     class filedevice_t;
 
-    struct filesysroot_t;
+    class filesys_t;
     struct path_t;
     struct pathdevice_t;
 
@@ -39,7 +39,7 @@ namespace xcore
         typedef utf32::rune  rune;
 
     public:
-        devicemanager_t(filesysroot_t* stralloc);
+        devicemanager_t(filesys_t* stralloc);
 		
 		XCORE_CLASS_PLACEMENT_NEW_DELETE
 
@@ -90,7 +90,7 @@ namespace xcore
         };
 
 		bool          mNeedsResolve;
-        filesysroot_t* mContext;
+        filesys_t*    mContext;
         s32           mNumAliases;
         alias_t       mAliasList[MAX_FILE_ALIASES];
         s32           mNumDevices;

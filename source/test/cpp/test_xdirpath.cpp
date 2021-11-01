@@ -49,7 +49,7 @@ UNITTEST_SUITE_BEGIN(dirpath)
 
 		UNITTEST_TEST(constructor2)
 		{
-			dirpath_t dirpath = filesystem_t::dirpath("C:\\the\\name\\is\\johhnywalker");
+			dirpath_t dirpath = filesystem_t::dirpath("C:\\the\\name\\is\\johhnywalker\\");
 			CHECK_EQUAL(false, dirpath.isEmpty());
 		}
 	}
