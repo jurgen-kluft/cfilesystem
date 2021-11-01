@@ -1,6 +1,7 @@
 #include "xbase/x_target.h"
 #include "xbase/x_debug.h"
 #include "xbase/x_console.h"
+#include "xbase/x_log.h"
 #include "xbase/x_runes.h"
 #include "xbase/x_va_list.h"
 
@@ -72,7 +73,7 @@ namespace xcore
             if (mDeviceList[i].mDevice->m_name == pathdevicename)
             {
                 mDeviceList[i].mDevice->m_fd = device;
-                console->writeLine("INFO replaced file device for '%s'", va_list_t(va_t(devicename)));
+                log_t::writeLine(log_t::INFO, "replaced file device for '%s'", va_list_t(va_t(devicename)));
                 mNeedsResolve = true;
                 return true;
             }
@@ -87,7 +88,7 @@ namespace xcore
         }
         else
         {
-            console->writeLine("ERROR cannot add another file device, maximum amount of devices reached");
+            log_t::writeLine(log_t::ERROR, "cannot add another file device, maximum amount of devices reached");
             return false;
         }
     }
@@ -116,11 +117,11 @@ namespace xcore
                     mAliasList[i].mTargetDeviceName = targetdevicename;
                     mContext->release_path(mAliasList[i].mTargetPath);
                     mAliasList[i].mTargetPath = targetpath;
-                    console->writeLine("INFO replaced alias for '%s'", va_list_t(va_t(alias)));
+                    log_t::writeLine(log_t::INFO, "replaced alias for '%s'", va_list_t(va_t(alias)));
                     mNeedsResolve = true;
                     return true;
                 }
-                console->writeLine("ERROR cannot add invalid target path");
+                log_t::writeLine(log_t::ERROR, "cannot add invalid target path");
                 return false;
             }
         }
@@ -143,12 +144,12 @@ namespace xcore
                 mNeedsResolve = true;
                 return true;
             }
-            console->writeLine("ERROR cannot add invalid target path");
+            log_t::writeLine(log_t::ERROR, "cannot add invalid target path");
             return false;
         }
         else
         {
-            console->writeLine("ERROR cannot add another alias, maximum amount of aliases reached");
+            log_t::writeLine(log_t::ERROR, "cannot add another alias, maximum amount of aliases reached");
             return false;
         }
     }
