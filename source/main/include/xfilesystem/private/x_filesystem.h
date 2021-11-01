@@ -105,7 +105,6 @@ namespace xcore
         void dirpath(const crunes_t& str, dirpath_t&);
 
         pathname_t*   register_name(crunes_t const& namestr);
-        pathname_t*   get_empty_name() const;
         bool          register_directory(crunes_t const& directory, pathname_t*& out_devicename, path_t*& out_path);
         bool          register_directory(path_t** paths_to_concatenate, s32 paths_len, path_t*& out_path);
         bool          register_filename(crunes_t const& filename, pathname_t*& out_filename, pathname_t*& out_extension);
@@ -120,6 +119,7 @@ namespace xcore
         void          release_path(path_t* path);
         void          release_device(pathdevice_t* dev);
 
+        pathname_t*   get_empty_name() const;
         path_t* get_parent_path(path_t* path);
         void    get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path);
         void    get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path);

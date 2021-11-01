@@ -82,6 +82,7 @@ namespace xcore
         if (mNumDevices < MAX_FILE_DEVICES)
         {
             mDeviceList[mNumDevices].mDevice = pathdevice;
+            pathdevice->m_fd = device;
             mNumDevices++;
             mNeedsResolve = true;
             return true;
@@ -136,9 +137,7 @@ namespace xcore
                 targetpath->attach();
 
                 mAliasList[mNumAliases].mAlias = aliasname->incref();
-                mContext->release_name(mAliasList[mNumAliases].mTargetDeviceName);
                 mAliasList[mNumAliases].mTargetDeviceName = targetdevicename;
-                mContext->release_path(mAliasList[mNumAliases].mTargetPath);
                 mAliasList[mNumAliases].mTargetPath = targetpath;
                 mNumAliases++;
                 mNeedsResolve = true;

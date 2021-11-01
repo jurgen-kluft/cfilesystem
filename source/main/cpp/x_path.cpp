@@ -47,16 +47,14 @@ namespace xcore
 
         m_device          = findSelectUntilIncluded(fullpath, devicesep);
         crunes_t filepath = selectAfterExclude(fullpath, m_device);
-        m_path            = findLastSelectUntil(filepath, slash);
+        m_path            = findLastSelectUntilIncluded(filepath, slash);
         m_filename        = selectAfterExclude(fullpath, m_path);
-        trimLeft(m_filename, '\\');
         m_filename     = findLastSelectUntil(m_filename, '.');
         m_extension    = selectAfterExclude(fullpath, m_filename);
         m_first_folder = findSelectUntil(m_path, slash);
         m_last_folder  = findLastSelectUntil(m_path, slash);
         m_last_folder  = selectAfterExclude(m_path, m_last_folder);
         trimLeft(m_last_folder, '\\');
-        trimRight(m_device, devicesep);
     }
 
     bool fullpath_parser_utf32::next_folder(crunes_t& folder) const
@@ -240,6 +238,25 @@ namespace xcore
 
         m_filename_table.initialize(m_allocator, 65536);
         m_extension_table.initialize(m_allocator, 8192);
+
+        sNilName = (pathname_t*)allocator->allocate(sizeof(pathname_t));
+        sNilName->m_hash = 0;
+        sNilName->m_len = 0;
+        sNilName->m_name[0] = utf32::TERMINATOR;
+        sNilName->m_next = nullptr;
+        sNilName->m_refs = 0;
+
+        sNilDevice = (pathdevice_t*)allocator->allocate(sizeof(pathdevice_t));
+        sNilDevice->m_fd = nullptr;
+        sNilDevice->m_name = sNilName;
+        sNilDevice->m_path = sNilName;
+        sNilDevice->m_root = this;
+
+        sNilPath = (path_t*)allocator->allocate(sizeof(path_t));
+        sNilPath->m_cap = 1;
+        sNilPath->m_len = 0;
+        sNilPath->m_path[0] = nullptr;
+        sNilPath->m_ref = 0;
     }
 
     void filesys_t::release_name(pathname_t* name) 
@@ -330,11 +347,10 @@ namespace xcore
 
             out_path = path_t::construct(m_allocator, c);
             folder = parser.iterate_folder();
-            c = 0;
-            out_path->m_path[c++] = register_dirname(folder);
-            while (parser.next_folder(folder))
+            out_path->m_path[out_path->m_len++] = register_dirname(folder);
+            while (parser.next_folder(folder) && out_path->m_len < out_path->m_cap)
             {
-                out_path->m_path[c++] = register_dirname(folder);
+                out_path->m_path[out_path->m_len++] = register_dirname(folder);
             }
         }
         else
@@ -453,24 +469,27 @@ namespace xcore
 
     pathdevice_t* filesys_t::register_device(crunes_t const& device)
     {
+        pathname_t* devicename = register_name(device);
+        return register_device(devicename);
+    }
+
+    pathdevice_t* filesys_t::register_device(pathname_t* devicename)
+    {
         for (s32 i = 0; i < m_num_devices; ++i)
         {
-            if (xcore::compare(device, m_tdevice[i].m_name->m_name) == 0)
+            if (m_tdevice[i].m_name == devicename)
             {
                 return &m_tdevice[i];
             }
         }
-        return sNilDevice;
-    }
-
-    pathdevice_t* filesys_t::register_device(pathname_t* device)
-    {
-        for (s32 i = 0; i < m_num_devices; ++i)
+        if (m_num_devices < 64)
         {
-            if (device == m_tdevice[i].m_name)
-            {
-                return &m_tdevice[i];
-            }
+            m_tdevice[m_num_devices].m_name = devicename;
+            m_tdevice[m_num_devices].m_root = this;
+            m_tdevice[m_num_devices].m_fd = nullptr;
+            m_tdevice[m_num_devices].m_path = sNilName;
+            m_num_devices++;
+            return &m_tdevice[m_num_devices-1];
         }
         return sNilDevice;
     }
@@ -628,9 +647,10 @@ namespace xcore
     path_t* path_t::construct(alloc_t* allocator, s32 cap)
     {
         ASSERT(cap > 0);
-        s32 const allocsize = sizeof(path_t) + (((cap + 3) & ~3) - 1);
+        cap = ((cap + 3) & ~3);
+        s32 const allocsize = sizeof(path_t) + (sizeof(pathname_t*) * (cap - 1));
         path_t* path = (path_t*)allocator->allocate(allocsize);
-        path->m_cap = (((cap + 3) & ~3) - 1);
+        path->m_cap = cap;
         path->m_len = 0;
         path->m_ref = 0;
         path->m_path[0] = nullptr;
