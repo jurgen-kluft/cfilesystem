@@ -74,6 +74,8 @@ namespace xcore
 
         void to_string(runes_t& str) const;
 
+        dirpath_t& operator=(dirpath_t const& other);
+
         static void getSubDir(const dirpath_t& parentpath, const dirpath_t& path, dirpath_t& out_subpath);
     };
 

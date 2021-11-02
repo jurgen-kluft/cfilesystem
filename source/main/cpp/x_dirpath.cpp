@@ -367,6 +367,15 @@ namespace xcore
         m_path = newpath->attach();
     }
 
+    s32 dirpath_t::compare(const dirpath_t& other) const
+    {
+        s32 const de = m_device->m_name->compare(other.m_device->m_name);
+        if (de != 0)
+            return de;
+        s32 const pe = m_path->compare(other.m_path);
+        return pe;
+    }
+
     void dirpath_t::to_string(runes_t& str) const
     {
         filesys_t* root = m_device->m_root;
@@ -381,13 +390,17 @@ namespace xcore
         }
     }
 
-    s32 dirpath_t::compare(const dirpath_t& other) const
+    dirpath_t& dirpath_t::operator=(dirpath_t const& other)
     {
-        s32 const de = m_device->m_name->compare(other.m_device->m_name);
-        if (de != 0)
-            return de;
-        s32 const pe = m_path->compare(other.m_path);
-        return pe;
+        filesys_t* root = m_device->m_root;
+        
+        root->release_device(m_device);
+        root->release_path(m_path);
+
+        m_device = other.m_device->attach();
+        m_path = other.m_path->attach();
+
+        return *this;
     }
 
     dirpath_t operator+(const dirpath_t& left, const dirpath_t& right)

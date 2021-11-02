@@ -142,12 +142,12 @@ namespace xcore
         u32 const strcap = strlen - 1;
 
         void*    name_mem = allocator->allocate(sizeof(pathname_t) + (sizeof(utf32::rune) * strcap), sizeof(void*));
-        pathname_t* pname    = new (name_mem) pathname_t(strcap);
+        pathname_t* pname = new (name_mem) pathname_t(strlen);
 
         pname->m_hash = hname;
         pname->m_next = nullptr;
         pname->m_refs = 0;
-        runes_t dststr(pname->m_name, pname->m_name, pname->m_name + strlen);
+        runes_t dststr(pname->m_name, pname->m_name + strlen);
         copy(name, dststr);
 
         return pname;
@@ -351,6 +351,10 @@ namespace xcore
             while (parser.next_folder(folder) && out_path->m_len < out_path->m_cap)
             {
                 out_path->m_path[out_path->m_len++] = register_dirname(folder);
+            }
+            for (c = 0; c < out_path->m_len; c++)
+            {
+                out_path->m_path[c]->incref();
             }
         }
         else
