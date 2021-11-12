@@ -10,12 +10,12 @@
 namespace xcore
 {
 
-    filepath_t::filepath_t() : m_dirpath(), m_filename(filesys_t::sNilName), m_extension(filesys_t::sNilName) {}
+    filepath_t::filepath_t() : m_dirpath(), m_filename(&filesys_t::sNilName), m_extension(&filesys_t::sNilName) {}
     filepath_t::filepath_t(const filepath_t& other)
         : m_dirpath(other.m_dirpath)
     {
-        m_filename = other.m_filename->incref();
-        m_extension = other.m_extension->incref();
+        m_filename = other.m_filename->attach();
+        m_extension = other.m_extension->attach();
     }
     filepath_t::filepath_t(pathname_t* filename, pathname_t* extension) : m_dirpath(), m_filename(filename), m_extension(extension) {}
     filepath_t::filepath_t(pathdevice_t* device, path_t* path, pathname_t* filename, pathname_t* extension)
@@ -35,12 +35,12 @@ namespace xcore
         filesys_t* root = m_dirpath.m_device->m_root;
         root->release_filename(m_filename);
         root->release_extension(m_extension);
-        m_filename = filesys_t::sNilName;
-        m_extension = filesys_t::sNilName;
+        m_filename = &filesys_t::sNilName;
+        m_extension = &filesys_t::sNilName;
     }
 
     bool filepath_t::isRooted() const { return m_dirpath.isRooted(); }
-    bool filepath_t::isEmpty() const { return m_dirpath.isEmpty() && m_filename == filesys_t::sNilName && m_extension == filesys_t::sNilName; }
+    bool filepath_t::isEmpty() const { return m_dirpath.isEmpty() && m_filename == &filesys_t::sNilName && m_extension == &filesys_t::sNilName; }
 
     void filepath_t::makeRelativeTo(const dirpath_t& dirpath)
     {
@@ -57,7 +57,7 @@ namespace xcore
         m_dirpath = dirpath;
     }
 
-    void filepath_t::setFilename(pathname_t* filename) { filename->incref(); m_filename->release(m_dirpath.m_device->m_root->m_allocator); m_filename = filename; }
+    void filepath_t::setFilename(pathname_t* filename) { filename->attach(); m_filename->release(m_dirpath.m_device->m_root->m_allocator); m_filename = filename; }
     void filepath_t::setFilename(crunes_t const& filenamestr)
     {
         filesys_t* root = m_dirpath.m_device->m_root;
@@ -66,17 +66,17 @@ namespace xcore
         root->register_filename(filenamestr, out_filename, out_extension);
         root->release_filename(m_filename);
         root->release_extension(m_extension);
-        m_filename = out_filename->incref();
-        m_extension = out_extension->incref();
+        m_filename = out_filename->attach();
+        m_extension = out_extension->attach();
 
     }
-    void filepath_t::setExtension(pathname_t* extension) { extension->incref(); m_extension->release(m_dirpath.m_device->m_root->m_allocator); m_extension = extension; }
+    void filepath_t::setExtension(pathname_t* extension) { extension->attach(); m_extension->release(m_dirpath.m_device->m_root->m_allocator); m_extension = extension; }
     void filepath_t::setExtension(crunes_t const& extensionstr)
     {
         filesys_t* root = m_dirpath.m_device->m_root;
         pathname_t* out_extension = root->register_extension(extensionstr);
         root->release_extension(m_extension);
-        m_extension = out_extension->incref();
+        m_extension = out_extension->attach();
     }
 
     dirpath_t filepath_t::root() const { return m_dirpath.root(); }
@@ -87,7 +87,7 @@ namespace xcore
     filepath_t  filepath_t::relative() const
     {
         filesys_t* root = m_dirpath.m_device->m_root;
-        filepath_t fp(root->sNilDevice, m_dirpath.m_path, m_filename, m_extension);
+        filepath_t fp(&root->sNilDevice, m_dirpath.m_path, m_filename, m_extension);
         return fp;
     }
 
@@ -113,8 +113,8 @@ namespace xcore
         m_dirpath.split(pivot, left, right.m_dirpath);
         left.m_device = m_dirpath.m_device->attach();
         right.m_dirpath.m_device = m_dirpath.m_device->attach();
-        right.m_filename = m_filename->incref();
-        right.m_extension = m_extension->incref();
+        right.m_filename = m_filename->attach();
+        right.m_extension = m_extension->attach();
     }
 
     void filepath_t::truncate(filepath_t& left, pathname_t*& folder) const
@@ -124,8 +124,8 @@ namespace xcore
         filesys_t* root = m_dirpath.m_device->m_root;
         root->get_split_path(m_dirpath.m_path, m_dirpath.m_path->m_len - 1, &left.m_dirpath.m_path, nullptr);
         left.m_dirpath.m_device = m_dirpath.m_device->attach();
-        left.m_filename = m_filename->incref();
-        left.m_extension = m_extension->incref();
+        left.m_filename = m_filename->attach();
+        left.m_extension = m_extension->attach();
     }
 
     void filepath_t::truncate(pathname_t*& folder, filepath_t& filepath) const
@@ -135,8 +135,8 @@ namespace xcore
         filesys_t* root = m_dirpath.m_device->m_root;
         root->get_split_path(m_dirpath.m_path, m_dirpath.m_path->m_len - 1, &filepath.m_dirpath.m_path, nullptr);
         filepath.m_dirpath.m_device = m_dirpath.m_device->attach();
-        filepath.m_filename = m_filename->incref();
-        filepath.m_extension = m_extension->incref();
+        filepath.m_filename = m_filename->attach();
+        filepath.m_extension = m_extension->attach();
     }
 
     void filepath_t::combine(pathname_t* folder, filepath_t const& filepath)
@@ -148,8 +148,8 @@ namespace xcore
         m_dirpath.m_path = newpath->attach();
         root->release_filename(m_filename);
         root->release_extension(m_extension);
-        m_filename = filepath.m_filename->incref();
-        m_extension = filepath.m_extension->incref();
+        m_filename = filepath.m_filename->attach();
+        m_extension = filepath.m_extension->attach();
     }
 
     void filepath_t::combine(filepath_t const& filepath, pathname_t* folder)
@@ -158,8 +158,8 @@ namespace xcore
         root->release_device(m_dirpath.m_device);
         root->release_filename(m_filename);
         root->release_extension(m_extension);
-        m_filename = filepath.m_filename->incref();
-        m_extension = filepath.m_extension->incref();
+        m_filename = filepath.m_filename->attach();
+        m_extension = filepath.m_extension->attach();
         down(folder);
     }
 

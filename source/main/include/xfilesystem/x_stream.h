@@ -41,18 +41,15 @@ namespace xcore
         s64 read(xbyte*, s64);
         s64 write(xbyte const*, s64);
 
-        reader_t* get_reader();
-        writer_t* get_writer();
-
     protected:
-        stream_t(istream_t*);
+        stream_t(istream_t* impl, filedevice_t* fd, filehandle_t* fh);
 
         stream_t& operator=(const stream_t&) { return *this; }
 
         filedevice_t* m_filedevice;
         filehandle_t* m_filehandle;
         istream_t* m_pimpl;
-        u64 m_offset;
+        s64 m_offset;
         u32 m_caps;
 
         friend class filesystem_t;

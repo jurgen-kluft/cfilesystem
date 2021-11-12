@@ -20,7 +20,6 @@ namespace xcore
     class filedevice_t;
     class fileinfo_t;
     class dirinfo_t;
-    class devicemanager_t;
     class stream_t;
     class istream_t;
 
@@ -44,11 +43,10 @@ namespace xcore
     class filesys_t
     {
     public:
-        void initialize(alloc_t* allocator);
+        void init(alloc_t* allocator);
+        void exit(alloc_t* allocator);
 
         // -----------------------------------------------------------
-        devicemanager_t* m_devman;
-
         filehandle_t* m_filehandle_list_free;
         filehandle_t* m_filehandle_list_active;
         filehandle_t* m_filehandle_array;
@@ -69,8 +67,6 @@ namespace xcore
         static filesys_t*    get_filesystem(filepath_t const& filepath);
 
         // -----------------------------------------------------------
-        bool register_device(const crunes_t& device_name, filedevice_t* device);
-
         void open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream);
         void close(stream_t&);
         bool exists(fileinfo_t const&);
@@ -95,9 +91,9 @@ namespace xcore
         pathname_table_t m_filename_table;
         pathname_table_t m_extension_table;
 
-        static pathdevice_t* sNilDevice;
-        static pathname_t*   sNilName;
-        static path_t*       sNilPath;
+        static pathdevice_t sNilDevice;
+        static pathname_t   sNilName;
+        static path_t       sNilPath;
 
         void filepath(const char* str, filepath_t&);
         void dirpath(const char* str, dirpath_t&);
@@ -125,6 +121,13 @@ namespace xcore
         void    get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path);
         void    get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path);
         void    get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right);
+
+        bool has_device(const crunes_t& device_name);
+        bool register_device(const crunes_t& device_name, filedevice_t* device);
+        bool register_alias(const crunes_t& alias_name, const crunes_t& device_name);
+
+        pathname_t*   find_name(crunes_t const& namestr) const;
+        pathdevice_t* find_device(pathname_t* devicename) const;
 
         XCORE_CLASS_PLACEMENT_NEW_DELETE
     };

@@ -72,7 +72,7 @@ UNITTEST_SUITE_BEGIN(fileinfo)
 		{
 			const char* filename1 = "TEST:\\textfiles\\authors.txt";
 			filepath_t fp1 = filesystem_t::filepath(filename1);
-			const char* filename2 = "Test:\\sCopy\\test.txt";
+			const char* filename2 = "TEST:\\sCopy\\test.txt";
 			filepath_t fp2 = filesystem_t::filepath(filename2);
 			CHECK_TRUE(fileinfo_t::sCopy(fp1,fp2,true));
 			fileinfo_t fi1(fp1);
@@ -85,9 +85,9 @@ UNITTEST_SUITE_BEGIN(fileinfo)
 
 		UNITTEST_TEST(sMove)
 		{
-			const char* filename1 = "Test:\\readonly_files\\readme.txt";
+			const char* filename1 = "TEST:\\readonly_files\\readme.txt";
 			filepath_t fp1 = filesystem_t::filepath(filename1);
-			const char* filename2 = "Test:\\sMove\\test.txt";
+			const char* filename2 = "TEST:\\sMove\\test.txt";
 			filepath_t fp2 = filesystem_t::filepath(filename2);
 			CHECK_TRUE(fileinfo_t::sMove(fp1,fp2));
 			CHECK_FALSE(fileinfo_t::sExists(fp1));

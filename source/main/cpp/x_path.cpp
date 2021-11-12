@@ -108,22 +108,21 @@ namespace xcore
 
     s32 pathname_t::compare(const pathname_t* other) const
     {
-        crunes_t name(m_name, m_len);
-        crunes_t othername(other->m_name, other->m_len);
-        return xcore::compare(name, othername);
+        if (m_len == other->m_len)
+        {
+            crunes_t name(m_name, m_len);
+            crunes_t othername(other->m_name, other->m_len);
+            return xcore::compare(name, othername);
+        }
+        return false;
     }
 
     s32 pathname_t::compare(crunes_t const& name) const { return xcore::compare(crunes_t(m_name, m_len), name); }
 
-    pathname_t* pathname_t::incref() { m_refs++; return this;  }
-    pathname_t* pathname_t::release(alloc_t* allocator) 
+    pathname_t* pathname_t::attach() { m_refs++; return this;  }
+    void pathname_t::release(alloc_t* allocator) 
     {
-        if (pathname_t::release(this))
-        {
-            allocator->deallocate(this);
-            return nullptr;
-        }
-        return this;
+        allocator->deallocate(this);
     }
 
     bool pathname_t::release(pathname_t* name)
@@ -153,16 +152,31 @@ namespace xcore
         return pname;
     }
 
+    void    pathname_t::to_string(runes_t& out_str) const
+    {
+        crunes_t namestr(m_name, m_name + m_len);
+        xcore::concatenate(out_str, namestr);
+    }
+
+
     //
     // pathname_table_t implementations
     // 
-    void pathname_table_t::initialize(alloc_t* allocator, s32 cap)
+    void pathname_table_t::init(alloc_t* allocator, s32 cap)
     {
         m_len = 0;
         m_cap = cap;
         m_table = (pathname_t**)allocator->allocate(sizeof(pathname_t*) * cap);
         for (s32 i = 0; i < m_cap; i++)
             m_table[i] = nullptr;
+    }
+
+    void pathname_table_t::release(alloc_t* allocator)
+    {
+        allocator->deallocate(m_table);
+        m_table = nullptr;
+        m_len = 0;
+        m_cap = 0;
     }
 
     pathname_t* pathname_table_t::find(u64 hash) const
@@ -184,9 +198,17 @@ namespace xcore
         {
             if (name->m_hash <= (*iter)->m_hash)
             {
-                name->m_next = (*iter);
-                *iter = name;
-                return;
+                if (*iter==name || (name->m_hash == (*iter)->m_hash && name->compare(*iter) == 0))
+                {
+                    // already exists
+                    return;
+                }
+                else
+                {
+                    name->m_next = (*iter);
+                    *iter = name;
+                    return;
+                }
             }
             iter = &((*iter)->m_next);
         }
@@ -196,78 +218,87 @@ namespace xcore
     bool pathname_table_t::remove(pathname_t* name)
     {
         u32 const index = hash_to_index(name->m_hash);
-        if (name == m_table[index])
+        pathname_t** iter = &m_table[index];
+        while (*iter != nullptr)
         {
-            m_table[index] = name->m_next;
-            name->m_next = nullptr;
-            return true;
-        }
-        else
-        {
-            pathname_t* iter = m_table[index];
-            while (iter != nullptr)
+            if (*iter == name)
             {
-                if (iter->m_next == name)
-                {
-                    iter->m_next = name->m_next;
-                    name->m_next = nullptr;
-                    return true;
-                }
-                iter = iter->m_next;
+                *iter = name->m_next;
+                return true;
             }
+            iter = &((*iter)->m_next);
         }
         return false;
     }
 
     u32  pathname_table_t::hash_to_index(u64 hash) const
     {
-        u32 index = (u32)(hash & (m_cap - 1));
+        u32 const index = (u32)(hash & (m_cap - 1));
         return index;
     }
 
     //
     // filesys_t functions
     //
-    pathdevice_t* filesys_t::sNilDevice;
-    pathname_t*   filesys_t::sNilName;
-    path_t*       filesys_t::sNilPath;
+    pathdevice_t filesys_t::sNilDevice;
+    pathname_t   filesys_t::sNilName;
+    path_t       filesys_t::sNilPath;
 
-    void filesys_t::initialize(alloc_t* allocator)
+    void filesys_t::init(alloc_t* allocator)
     {
         m_allocator = allocator;
 
-        m_filename_table.initialize(m_allocator, 65536);
-        m_extension_table.initialize(m_allocator, 8192);
+        m_filename_table.init(m_allocator, 65536);
+        m_extension_table.init(m_allocator, 8192);
 
-        sNilName = (pathname_t*)allocator->allocate(sizeof(pathname_t));
-        sNilName->m_hash = 0;
-        sNilName->m_len = 0;
-        sNilName->m_name[0] = utf32::TERMINATOR;
-        sNilName->m_next = nullptr;
-        sNilName->m_refs = 0;
+        sNilName.m_hash = 0;
+        sNilName.m_len = 0;
+        sNilName.m_name[0] = utf32::TERMINATOR;
+        sNilName.m_next = nullptr;
+        sNilName.m_refs = 0;
 
-        sNilDevice = (pathdevice_t*)allocator->allocate(sizeof(pathdevice_t));
-        sNilDevice->m_fd = nullptr;
-        sNilDevice->m_name = sNilName;
-        sNilDevice->m_path = sNilName;
-        sNilDevice->m_root = this;
+        sNilPath.m_cap = 1;
+        sNilPath.m_len = 0;
+        sNilPath.m_path[0] = nullptr;
+        sNilPath.m_ref = 0;
 
-        sNilPath = (path_t*)allocator->allocate(sizeof(path_t));
-        sNilPath->m_cap = 1;
-        sNilPath->m_len = 0;
-        sNilPath->m_path[0] = nullptr;
-        sNilPath->m_ref = 0;
+        sNilDevice.m_root = this;
+        sNilDevice.m_alias = &sNilName;
+        sNilDevice.m_deviceName = &sNilName;
+        sNilDevice.m_devicePath = &sNilPath;
+        sNilDevice.m_redirector = nullptr;
+        sNilDevice.m_fileDevice = nullptr;
+    }
+
+    void filesys_t::exit(alloc_t* allocator)
+    {
+        for (s32 i = 0; i < m_num_devices; ++i)
+        {
+            release_name(m_tdevice[i].m_alias);
+            release_name(m_tdevice[i].m_deviceName);
+            release_path(m_tdevice[i].m_devicePath);
+            m_tdevice[i].m_root = nullptr;
+            m_tdevice[i].m_alias = nullptr;
+            m_tdevice[i].m_deviceName = nullptr;
+            m_tdevice[i].m_devicePath = nullptr;
+            m_tdevice[i].m_fileDevice = nullptr;
+            m_tdevice[i].m_redirector = nullptr;
+        }
+        m_num_devices = 0;
+
+        m_filename_table.release(allocator);
+        m_extension_table.release(allocator);
     }
 
     void filesys_t::release_name(pathname_t* name) 
     {
-        if (name == sNilName)
+        if (name == &sNilName)
             return;
 
         if (pathname_t::release(name))
         {
             m_filename_table.remove(name);
-            name = name->release(m_allocator);
+            name->release(m_allocator);
         }
     }
 
@@ -278,19 +309,19 @@ namespace xcore
 
     void filesys_t::release_extension(pathname_t* name) 
     {
-        if (name == sNilName)
+        if (name == &sNilName)
             return;
 
         if (pathname_t::release(name))
         {
             m_extension_table.remove(name);
-            name = name->release(m_allocator);
+            name->release(m_allocator);
         }
     }
 
     void filesys_t::release_path(path_t* path)
     {
-        if (path == sNilPath)
+        if (path == &sNilPath)
             return;
 
         if (path->detach(this))
@@ -301,16 +332,23 @@ namespace xcore
 
     void filesys_t::release_device(pathdevice_t* dev) {}
 
-    pathname_t* filesys_t::register_name(crunes_t const& namestr) 
-    { 
+    pathname_t* filesys_t::find_name(crunes_t const& namestr) const
+    {
         const u64 hname = calchash(namestr);
         pathname_t* name = m_filename_table.find(hname);
         while (name != nullptr && xcore::compare(namestr, name->m_name) != 0)
         {
             name = m_filename_table.next(hname, name);
         }
+        return name;
+    }
+
+    pathname_t* filesys_t::register_name(crunes_t const& namestr) 
+    { 
+        pathname_t* name = find_name(namestr);
         if (name == nullptr)
         {
+            const u64 hname = calchash(namestr);
             name = pathname_t::construct(m_allocator, hname, namestr);
             m_filename_table.insert(name);
         }
@@ -319,7 +357,7 @@ namespace xcore
 
     pathname_t* filesys_t::get_empty_name() const
     {
-        return sNilName;
+        return &sNilName;
     }
 
     bool filesys_t::register_directory(crunes_t const& directory, pathname_t*& out_devicename, path_t*& out_path)
@@ -333,7 +371,7 @@ namespace xcore
         }
         else
         {
-            out_devicename = sNilName;
+            out_devicename = &sNilName;
         }
 
         if (parser.has_path())
@@ -354,12 +392,12 @@ namespace xcore
             }
             for (c = 0; c < out_path->m_len; c++)
             {
-                out_path->m_path[c]->incref();
+                out_path->m_path[c]->attach();
             }
         }
         else
         {
-            out_path = sNilPath;
+            out_path = &sNilPath;
         }
 
         return true;
@@ -404,7 +442,7 @@ namespace xcore
         }
         else
         {
-            out_devicename = sNilName;
+            out_devicename = &sNilName;
         }
 
         if (parser.has_path())
@@ -427,7 +465,7 @@ namespace xcore
         }
         else
         {
-            out_path = sNilPath;
+            out_path = &sNilPath;
         }
 
         if (parser.has_filename())
@@ -435,7 +473,7 @@ namespace xcore
             out_filename = register_name(parser.m_filename);
         }
         else {
-            out_filename = sNilName;
+            out_filename = &sNilName;
         }
 
         if (parser.has_extension())
@@ -443,7 +481,7 @@ namespace xcore
             out_extension = register_name(parser.m_extension);
         }
         else {
-            out_extension = sNilName;
+            out_extension = &sNilName;
         }
 
         return true;
@@ -477,33 +515,48 @@ namespace xcore
         return register_device(devicename);
     }
 
-    pathdevice_t* filesys_t::register_device(pathname_t* devicename)
+    pathdevice_t* filesys_t::find_device(pathname_t* devicename) const
     {
         for (s32 i = 0; i < m_num_devices; ++i)
         {
-            if (m_tdevice[i].m_name == devicename)
+            if (m_tdevice[i].m_deviceName == devicename)
             {
-                return &m_tdevice[i];
+                return (pathdevice_t*)&m_tdevice[i];
             }
         }
-        if (m_num_devices < 64)
+        return nullptr;
+    }
+
+    pathdevice_t* filesys_t::register_device(pathname_t* devicename)
+    {
+        pathdevice_t* device = find_device(devicename);
+        if (device == nullptr)
         {
-            m_tdevice[m_num_devices].m_name = devicename;
-            m_tdevice[m_num_devices].m_root = this;
-            m_tdevice[m_num_devices].m_fd = nullptr;
-            m_tdevice[m_num_devices].m_path = sNilName;
-            m_num_devices++;
-            return &m_tdevice[m_num_devices-1];
+            if (m_num_devices < 64)
+            {
+                m_tdevice[m_num_devices].m_root = this;
+                m_tdevice[m_num_devices].m_alias = &sNilName;
+                m_tdevice[m_num_devices].m_deviceName = devicename;
+                m_tdevice[m_num_devices].m_devicePath = &sNilPath;
+                m_tdevice[m_num_devices].m_redirector = nullptr;
+                m_tdevice[m_num_devices].m_fileDevice = nullptr;
+                device = &m_tdevice[m_num_devices];
+                m_num_devices++;
+            }
+            else 
+            {
+                device = &sNilDevice;
+            }
         }
-        return sNilDevice;
+        return device;
     }
 
     path_t* filesys_t::get_parent_path(path_t* path)
     {
         if (path->m_len == 0)
-            return sNilPath;
+            return &sNilPath;
         if (path->m_len == 1)
-            return sNilPath;
+            return &sNilPath;
 
         s32 depth = path->m_len - 1;
         path_t* out_path = path_t::construct(m_allocator, depth);
@@ -598,7 +651,7 @@ namespace xcore
                 for (s32 i = 0; i < m_len; i++)
                 {
                     pathname_t* dirname = m_path[i];
-                    dirname->release(root->m_allocator);
+                    root->release_name(dirname);
                 }
                 return true;
             }
@@ -609,7 +662,7 @@ namespace xcore
     pathname_t* path_t::get_name() const
     {
         if (m_len == 0) 
-            return filesys_t::sNilName;
+            return &filesys_t::sNilName;
         return m_path[m_len - 1];
     }
 
@@ -617,7 +670,7 @@ namespace xcore
     {
         path_t* path = construct(allocator, folder->m_len + 1);
         copy_array(m_path, 0, m_len, path->m_path, 1);
-        path->m_path[0] = folder->incref();
+        path->m_path[0] = folder->attach();
         return path;
     }
 
@@ -625,8 +678,7 @@ namespace xcore
     {
         path_t* path = construct(allocator, folder->m_len + 1);
         copy_array(m_path, 0, m_len, path->m_path, 0);
-        pathname_t* f = 
-            path->m_path[m_len - 1] = folder->incref();
+        path->m_path[m_len - 1] = folder->attach();
         return path;
     }
 
@@ -646,6 +698,19 @@ namespace xcore
                 return c;
         }
         return 0;
+    }
+
+    void    path_t::to_string(runes_t& str) const
+    {
+        const char* slash = "\\";
+        crunes_t slashstr(slash, slash + 1);
+        for (s32 i = 0; i < m_len; i++)
+        {
+            pathname_t* dirname = m_path[i];
+            crunes_t dirstr(dirname->m_name, dirname->m_name + dirname->m_len);
+            xcore::concatenate(str, dirstr);
+            xcore::concatenate(str, slashstr);
+        }
     }
 
     path_t* path_t::construct(alloc_t* allocator, s32 cap)
@@ -681,30 +746,78 @@ namespace xcore
     // 
     void pathdevice_t::init(filesys_t* owner)
     {
-        m_name = nullptr;
         m_root = owner;
-        m_path = nullptr;
-        m_fd   = x_NullFileDevice();
+        m_alias = &owner->sNilName;
+        m_deviceName = &owner->sNilName;
+        m_devicePath = &owner->sNilPath;
+        m_redirector = nullptr;
+        m_fileDevice = x_NullFileDevice();
     }
 
     pathdevice_t* pathdevice_t::construct(alloc_t* allocator, filesys_t* owner)
     {
-        // Allocate a pathdevice_t
         void*      device_mem = allocator->allocate(sizeof(pathdevice_t), sizeof(void*));
-        pathdevice_t* device     = static_cast<pathdevice_t*>(device_mem);
+        pathdevice_t* device  = static_cast<pathdevice_t*>(device_mem);
         device->init(owner);
         return device;
     }
+
     void pathdevice_t::destruct(alloc_t* allocator, pathdevice_t*& device)
     {
         allocator->deallocate(device);
         device = nullptr;
     }
 
+    pathdevice_t* pathdevice_t::attach()
+    {
+        m_alias->attach();
+        m_deviceName->attach();
+        m_devicePath->attach();
+        if (m_redirector!=nullptr)
+            m_redirector->attach();
+        return this;
+    }
+
+    bool pathdevice_t::detach(filesys_t* root)
+    {
+        root->release_name(m_alias);
+        root->release_name(m_deviceName);
+        root->release_path(m_devicePath);
+        if (m_redirector != nullptr)
+            m_redirector->detach(root);
+
+        m_alias = &root->sNilName;
+        m_deviceName = &root->sNilName;
+        m_devicePath = &root->sNilPath;
+        m_redirector = nullptr;
+        m_fileDevice = nullptr;
+        
+        return false;
+    }
+
     void pathdevice_t::to_string(runes_t& str) const
     {
-        crunes_t devicestr(m_name->m_name, m_name->m_len);
-        xcore::concatenate(str, devicestr);
+        s32 i = 0;
+        pathdevice_t const* device = this;
+        pathdevice_t const* devices[32];
+        do
+        {
+            devices[i++] = device;
+            device = device->m_redirector;
+        } while (device != nullptr && i < 32);
+
+        device = devices[--i];
+
+        // should be the root device (has filedevice), so first emit the device name.
+        // this device should not have any device path.
+        device->m_deviceName->to_string(str);
+
+        // the rest of the devices are aliases and should be appending their paths
+        while (--i >= 0)
+        {
+            device = devices[i];
+            device->m_devicePath->to_string(str);
+        }
     }
 
 }; // namespace xcore

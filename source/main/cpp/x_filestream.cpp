@@ -18,7 +18,7 @@ namespace xcore
     class filestream_t : public istream_t
     {
     public:
-        virtual u64  getLength(filedevice_t* fd, filehandle_t* fh);
+        virtual u64  getLength(filedevice_t* fd, filehandle_t* fh) const;
         virtual void setLength(filedevice_t* fd, filehandle_t* fh, u64 length);
         virtual s64  setPos(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& current, s64 pos);
         virtual void close(filedevice_t* fd, filehandle_t*& fh);
@@ -166,7 +166,7 @@ namespace xcore
         return handle;
     }
 
-    u64  filestream_t::getLength(filedevice_t* fd, filehandle_t* fh)
+    u64  filestream_t::getLength(filedevice_t* fd, filehandle_t* fh) const
     {
         u64 length;
         if (fd->getLengthOfFile(fh, length))
@@ -228,13 +228,11 @@ namespace xcore
 
     void xstream_copy(stream_t& src, stream_t& dst, buffer_t& buffer)
     {
-        reader_t* reader = src.get_reader();
-        writer_t* writer = dst.get_writer();
         s64 streamLength = (s64)src.getLength();
         while (streamLength > 0)
         {
-            u64 const r = reader->read(buffer.m_mutable, buffer.m_len);
-            writer->write(buffer.m_mutable, buffer.m_len);
+            u64 const r = src.read(buffer.m_mutable, buffer.m_len);
+            dst.write(buffer.m_mutable, buffer.m_len);
             streamLength -= r;
         }
     }

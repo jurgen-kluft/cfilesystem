@@ -12,7 +12,6 @@
 
 #include "xfilesystem/private/x_filedevice.h"
 #include "xfilesystem/private/x_filesystem.h"
-#include "xfilesystem/private/x_devicemanager.h"
 
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
@@ -40,16 +39,24 @@ namespace xcore
         static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
                                                       L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
 
-        static void x_FileSystemUnregisterSystemAliases(filesys_t* ctxt, devicemanager_t* devman)
+        static void x_FileSystemDestroyFileDevices(filesys_t* ctxt)
         {
-            devman->exit();
             for (s32 i = 0; i < DRIVE_TYPE_NUM; i++)
             {
-                sFileDevices[i] = nullptr;
+                filedevice_t* fd = sFileDevices[i];
+                if (fd == nullptr)
+                    continue;
+
+                for (s32 j = 0; j < DRIVE_TYPE_NUM; j++)
+                {
+                    if (sFileDevices[j] == fd)
+                        sFileDevices[j] = nullptr;
+                }
+                x_DestroyFileDevice(ctxt->m_allocator, fd);
             }
         }
 
-        static void x_FileSystemRegisterSystemAliases(filesys_t* ctxt, devicemanager_t* devman)
+        static void x_FileSystemRegisterSystemAliases(filesys_t* ctxt)
         {
             runez_t<utf32::rune, 255> string32;
 
@@ -89,7 +96,7 @@ namespace xcore
                     crunes_t devicePath16((utf16::pcrune)devicePath);
                     copy(devicePath16, string32);
 
-                    if (!devman->has_device(string32))
+                    if (!ctxt->has_device(string32))
                     {
                         if (sFileDevices[eDriveType] == NULL)
                         {
@@ -123,13 +130,13 @@ namespace xcore
                                 concatenate(alias32, crunes_t("\\"));
                             }
 
-                            devman->add_alias(alias32, devicePath32);
-                            devman->add_device(devicePath32, device);
+                            ctxt->register_alias(alias32, devicePath32);
+                            ctxt->register_device(devicePath32, device);
                         }
                         else
                         {
                             // Register system device.
-                            devman->add_device(devicePath32, device);
+                            ctxt->register_device(devicePath32, device);
                         }
                     }
                 }
@@ -184,10 +191,9 @@ namespace xcore
         root->m_max_path_objects = ctxt.m_max_path_objects;
         filesystem_t::mImpl      = root;
 
-        root->initialize(ctxt.m_allocator);
+        root->init(ctxt.m_allocator);
 
-        root->m_devman = ctxt.m_allocator->construct<devicemanager_t>(root);
-        x_FileSystemRegisterSystemAliases(root, root->m_devman);
+        x_FileSystemRegisterSystemAliases(root);
 
         utf32::rune adir32[512] = {'\0'};
 
@@ -200,7 +206,7 @@ namespace xcore
             crunes_t dir16((utf16::pcrune)dir);
             xcore::copy(dir16, dir32);
             runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
-            root->m_devman->add_alias("appdir:\\", appdir);
+            root->register_alias("appdir:\\", appdir);
         }
 
         // Get the working directory
@@ -210,7 +216,7 @@ namespace xcore
             runes_t  curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
             crunes_t dir16((utf16::pcrune)dir);
             xcore::copy(dir16, curdir);
-            root->m_devman->add_alias("curdir:\\", curdir);
+            root->register_alias("curdir:\\", curdir);
         }
     }
 
@@ -225,9 +231,9 @@ namespace xcore
     //------------------------------------------------------------------------------
     void filesystem_t::destroy()
     {
-        x_FileSystemUnregisterSystemAliases(mImpl, mImpl->m_devman);
+        x_FileSystemDestroyFileDevices(mImpl);
+        mImpl->exit(mImpl->m_allocator);
         mImpl->m_allocator->destruct(mImpl->m_stralloc);
-        mImpl->m_allocator->destruct(mImpl->m_devman);
         mImpl->m_allocator->destruct(mImpl);
         mImpl = nullptr;
     }

@@ -42,7 +42,7 @@ UNITTEST_SUITE_BEGIN(filepath)
 
 		UNITTEST_TEST(constructor2)
 		{
-			const char* str = "TEST:\\textfiles\\docs";
+			const char* str = "TEST:\\textfiles\\docs\\readme.txt";
 			filepath_t p = filesystem_t::filepath(str);
 
 			CHECK_FALSE(p.isEmpty());

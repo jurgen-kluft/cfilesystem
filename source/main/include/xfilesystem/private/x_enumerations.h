@@ -29,6 +29,13 @@ namespace xcore
 	extern void* PENDING_FILE_HANDLE;
 	extern void* INVALID_DIR_HANDLE;
 
+	enum EStreamCaps
+	{
+		STREAM_CAPS_ASYNC = 0x0001,
+		STREAM_CAPS_WRITE = 0x0002,
+		STREAM_CAPS_SEEK = 0x0004,
+	};
+
 	enum ESeekOrigin
 	{
 		Seek_Begin, 						///< Specifies the beginning of a stream.

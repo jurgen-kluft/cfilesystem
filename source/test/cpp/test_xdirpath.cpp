@@ -49,8 +49,17 @@ UNITTEST_SUITE_BEGIN(dirpath)
 
 		UNITTEST_TEST(constructor2)
 		{
-			dirpath_t dirpath = filesystem_t::dirpath("C:\\the\\name\\is\\johhnywalker\\");
+			dirpath_t dirpath = filesystem_t::dirpath("c:\\the\\name\\is\\johhnywalker\\");
 			CHECK_EQUAL(false, dirpath.isEmpty());
+		}
+
+		UNITTEST_TEST(to_string)
+		{
+			const char* asciidirstr = "c:\\the\\name\\is\\johhnywalker\\";
+			dirpath_t dirpath = filesystem_t::dirpath(asciidirstr);
+			runez_t<ascii::rune, 128> dirstr;
+			dirpath.to_string(dirstr);
+			CHECK_EQUAL(0, compare(dirstr, asciidirstr));
 		}
 	}
 }

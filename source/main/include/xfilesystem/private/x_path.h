@@ -80,6 +80,7 @@ namespace xcore
         path_t*     prepend(pathname_t* folder, alloc_t* allocator);
         path_t*     append(pathname_t* folder, alloc_t* allocator);
         s32         compare(path_t* other) const;
+        void        to_string(runes_t& str) const;
 
         path_t*        attach();
         bool           detach(filesys_t* root);
@@ -105,8 +106,13 @@ namespace xcore
         s32        compare(const pathname_t* other) const;
         s32        compare(crunes_t const& name) const;
 
-        pathname_t*        incref();
-        pathname_t*        release(alloc_t* allocator);
+        pathname_t*        attach();
+        void               release(alloc_t* allocator);
+
+        void               to_string(runes_t& str) const;
+
+    protected:
+        friend class filesys_t;
         static bool        release(pathname_t* name);
         static pathname_t* construct(alloc_t* allocator, u64 hname, crunes_t const& name);
 
@@ -117,7 +123,9 @@ namespace xcore
     {
         inline pathname_table_t() : m_len(0), m_cap(0), m_table(nullptr) {}
 
-        void        initialize(alloc_t* allocator, s32 cap = 65536);
+        void        init(alloc_t* allocator, s32 cap = 65536);
+        void        release(alloc_t* allocator);
+
         pathname_t* find(u64 hash) const;
         pathname_t* next(u64 hash, pathname_t* prev) const;
         void        insert(pathname_t* name);
@@ -131,22 +139,30 @@ namespace xcore
 
     struct pathdevice_t
     {
-        filesys_t*     m_root; // If alias, pathdevice_t ("work") | nullptr
-        filedevice_t*  m_fd;   // nullptr                      | xfiledevice("e")
-        pathname_t*    m_name; // "codedir"                    | "E"
-        pathname_t*    m_path; // "codedir:\\xfilesystem\\"    | "E:\\dev.go\\src\\github.com\\jurgen-kluft\\"
+        inline pathdevice_t()
+            : m_root(nullptr)
+            , m_alias(nullptr)
+            , m_deviceName(nullptr)
+            , m_devicePath(nullptr)
+            , m_redirector(nullptr)
+            , m_fileDevice(nullptr)
+        {
+        }
 
-        pathdevice_t() : m_root(nullptr), m_fd(nullptr), m_name(nullptr), m_path(nullptr) {}
+        void           init(filesys_t* owner);
+        pathdevice_t*  construct(alloc_t* allocator, filesys_t* owner);
+        pathdevice_t*  attach();
+        bool           detach(filesys_t* root);
+        void           destruct(alloc_t* allocator, pathdevice_t*& device);
+        void           to_string(runes_t& str) const;
 
-        void          init(filesys_t* owner);
-        pathdevice_t* attach() { return this; }
-        pathdevice_t* release(alloc_t* allocator) { return this; }
-        void          to_string(runes_t& str) const;
-
-        static pathdevice_t* construct(alloc_t* allocator, filesys_t* owner);
-        static void          destruct(alloc_t* allocator, pathdevice_t*& device);
+        filesys_t*    m_root;         // 
+        pathname_t*   m_alias;        // an alias redirection (e.g. "data")
+        pathname_t*   m_deviceName;   // "[appdir:\]data\bin.pc\", "[data:\]files\" to "[appdir:\]data\bin.pc\files\"
+        path_t*       m_devicePath;   // "appdir:\[data\bin.pc\]", "data:\[files\]" to "appdir:\[data\bin.pc\files\]"
+        pathdevice_t* m_redirector;   // If device path can point to another pathdevice_t
+        filedevice_t* m_fileDevice;   // or the final device (e.g. "e:\")
     };
-
 }; // namespace xcore
 
 #endif // __X_FILESYSTEM_XPATH_H__

@@ -37,7 +37,7 @@ namespace xcore
         pathname_t* extension = nullptr;
         filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->resolve(m_path, pathdevice, path, filename, extension);
-        return pathdevice != root->sNilDevice && filename != root->sNilName;
+        return pathdevice != &root->sNilDevice && filename != &root->sNilName;
     }
 
     bool fileinfo_t::isRooted() const { return m_path.isRooted(); }
@@ -93,23 +93,23 @@ namespace xcore
     {
         filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->release_filename(filename.m_filename); 
-        filename.m_filename = m_path.m_filename->incref(); 
+        filename.m_filename = m_path.m_filename->attach(); 
         root->release_extension(filename.m_extension);
-        filename.m_extension = m_path.m_extension->incref(); 
+        filename.m_extension = m_path.m_extension->attach(); 
     }
 
     void fileinfo_t::getFilenameWithoutExtension(filepath_t& filename_without_extension) const 
     { 
         filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->release_filename(filename_without_extension.m_filename); 
-        filename_without_extension.m_filename = m_path.m_filename->incref(); 
+        filename_without_extension.m_filename = m_path.m_filename->attach(); 
     }
 
     void fileinfo_t::getExtension(filepath_t& extension) const 
     { 
         filesys_t* root = m_path.m_dirpath.m_device->m_root;
         root->release_extension(extension.m_extension);
-        extension.m_extension = m_path.m_extension->incref(); 
+        extension.m_extension = m_path.m_extension->attach(); 
     }
 
     bool fileinfo_t::copy_to(const filepath_t& toFilename, bool overwrite) { return sCopy(m_path, toFilename, overwrite); }
@@ -215,7 +215,7 @@ namespace xcore
         pathname_t* extension = nullptr;
         filesys_t* root = fp.m_dirpath.m_device->m_root;
         root->resolve(fp, device, path, filename, extension);
-        return device->m_fd;
+        return device->m_fileDevice;
     }
 
     bool fileinfo_t::sGetFileAttributes(const filepath_t& filepath, fileattrs_t& outAttr)

@@ -18,7 +18,7 @@ using namespace xcore;
 
 extern xcore::alloc_t* gTestAllocator;
 
-class utf32_alloc : public xcore::runes_alloc_t
+class utf_runes_alloc : public xcore::runes_alloc_t
 {
 public:
     virtual runes_t allocate(s32 len, s32 cap, s32 type) 
@@ -27,6 +27,13 @@ public:
 		{
 			utf32::prune prunes = (utf32::prune)gTestAllocator->allocate(sizeof(utf32::rune) * cap, sizeof(utf32::rune));
 			prunes[cap - 1] = utf32::TERMINATOR;
+			runes_t runes(prunes, prunes, prunes + cap - 1);
+			return runes;
+		}
+		else if (type == utf16::TYPE)
+		{
+			utf16::prune prunes = (utf16::prune)gTestAllocator->allocate(sizeof(utf16::rune) * cap, sizeof(utf16::rune));
+			prunes[cap - 1] = utf16::TERMINATOR;
 			runes_t runes(prunes, prunes, prunes + cap - 1);
 			return runes;
 		}
@@ -52,7 +59,7 @@ public:
 		slice_t.m_runes.m_ascii.m_eos = nullptr;
 	}
 };
-static utf32_alloc sUtf32Alloc;
+static utf_runes_alloc sUtfRunesAlloc;
 
 UNITTEST_SUITE_BEGIN(dirinfo)
 {
@@ -84,12 +91,12 @@ UNITTEST_SUITE_BEGIN(dirinfo)
 
 		UNITTEST_TEST(constructor1)
 		{
-			const char* str = "TEST:\\textfiles\\docs";
+			const char* str = "TEST:\\textfiles\\docs\\";
 			dirpath_t dp = filesystem_t::dirpath(str);
 			dirinfo_t di ( dp );
 			CHECK_TRUE(di.getDirpath() == dp);
 
-			const char* str2 = "textfiles\\docs";
+			const char* str2 = "textfiles\\docs\\";
 			dirpath_t dp2 = filesystem_t::dirpath(str2);
 			dirinfo_t di2(dp2);
 			CHECK_TRUE(di2.getDirpath() == dp2);

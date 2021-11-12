@@ -64,32 +64,32 @@ namespace xcore
     // Static functions
     bool dirinfo_t::sCreate(const dirpath_t& dirpath)
     {
-        filedevice_t* device = dirpath.m_device->m_fd;
+        filedevice_t* device = dirpath.m_device->m_fileDevice;
         return (device != nullptr && device->createDir(dirpath));
     }
 
     bool dirinfo_t::sDelete(const dirpath_t& dirpath)
     {
-        filedevice_t* device = dirpath.m_device->m_fd;
+        filedevice_t* device = dirpath.m_device->m_fileDevice;
         return (device != nullptr && device->deleteDir(dirpath));
     }
 
     bool dirinfo_t::sExists(const dirpath_t& dirpath)
     {
-        filedevice_t* device = dirpath.m_device->m_fd;
+        filedevice_t* device = dirpath.m_device->m_fileDevice;
         return (device != nullptr && device->hasDir(dirpath));
     }
 
     void dirinfo_t::sEnumerate(const dirpath_t& dirpath, enumerate_delegate_t& enumerator)
     {
-        filedevice_t* device = dirpath.m_device->m_fd;
+        filedevice_t* device = dirpath.m_device->m_fileDevice;
         if (device != nullptr)
             device->enumerate(dirpath, enumerator);
     }
 
     bool dirinfo_t::sSetTime(const dirpath_t& dirpath, const filetimes_t& ftimes)
     {
-        filedevice_t* device = dirpath.m_device->m_fd;
+        filedevice_t* device = dirpath.m_device->m_fileDevice;
         if (device != nullptr)
             return device->setDirTime(dirpath, ftimes);
         return false;
@@ -97,7 +97,7 @@ namespace xcore
 
     bool dirinfo_t::sGetTime(const dirpath_t& dirpath, filetimes_t& ftimes)
     {
-        filedevice_t* device = dirpath.m_device->m_fd;
+        filedevice_t* device = dirpath.m_device->m_fileDevice;
         if (device != NULL && device->getDirTime(dirpath, ftimes))
             return true;
         ftimes = filetimes_t();
@@ -106,7 +106,7 @@ namespace xcore
 
     bool dirinfo_t::sSetAttrs(const dirpath_t& dirpath, const fileattrs_t& fattrs)
     {
-        filedevice_t* device = dirpath.m_device->m_fd;
+        filedevice_t* device = dirpath.m_device->m_fileDevice;
         if (device != nullptr)
             return device->setDirAttr(dirpath, fattrs);
         return false;
@@ -114,7 +114,7 @@ namespace xcore
 
     bool dirinfo_t::sGetAttrs(const dirpath_t& dirpath, fileattrs_t& fattrs)
     {
-        filedevice_t* device = dirpath.m_device->m_fd;
+        filedevice_t* device = dirpath.m_device->m_fileDevice;
         if (device != nullptr)
         {
             return device->getDirAttr(dirpath, fattrs);
@@ -125,8 +125,8 @@ namespace xcore
 
     bool dirinfo_t::sCopy(const dirpath_t& srcdirpath, const dirpath_t& dstdirpath, bool overwrite)
     {
-        filedevice_t* srcdevice = srcdirpath.m_device->m_fd;
-        filedevice_t* dstdevice = dstdirpath.m_device->m_fd;
+        filedevice_t* srcdevice = srcdirpath.m_device->m_fileDevice;
+        filedevice_t* dstdevice = dstdirpath.m_device->m_fileDevice;
         if (srcdevice != nullptr && dstdevice != nullptr)
             return srcdevice->copyDir(srcdirpath, dstdirpath, overwrite);
         return false;
@@ -134,8 +134,8 @@ namespace xcore
 
     bool dirinfo_t::sMove(const dirpath_t& srcdirpath, const dirpath_t& dstdirpath, bool overwrite)
     {
-        filedevice_t* srcdevice = srcdirpath.m_device->m_fd;
-        filedevice_t* dstdevice = dstdirpath.m_device->m_fd;
+        filedevice_t* srcdevice = srcdirpath.m_device->m_fileDevice;
+        filedevice_t* dstdevice = dstdirpath.m_device->m_fileDevice;
         if (srcdevice != nullptr && dstdevice != nullptr)
             return srcdevice->moveDir(srcdirpath, dstdirpath, overwrite);
         return false;
