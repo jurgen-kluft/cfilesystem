@@ -103,7 +103,7 @@ namespace xcore
 
     pathname_t* filepath_t::extensionstr() const
     {
-        return m_filename;
+        return m_extension;
     }
 
     void filepath_t::split(s32 pivot, dirpath_t& left, filepath_t& right) const

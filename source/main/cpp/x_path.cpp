@@ -336,7 +336,7 @@ namespace xcore
     {
         const u64 hname = calchash(namestr);
         pathname_t* name = m_filename_table.find(hname);
-        while (name != nullptr && xcore::compare(namestr, name->m_name) != 0)
+        while (name != nullptr && xcore::compare(namestr, crunes_t(name->m_name, name->m_len)) != 0)
         {
             name = m_filename_table.next(hname, name);
         }
@@ -478,7 +478,7 @@ namespace xcore
 
         if (parser.has_extension())
         { 
-            out_extension = register_name(parser.m_extension);
+            out_extension = register_extension(parser.m_extension);
         }
         else {
             out_extension = &sNilName;
