@@ -369,7 +369,7 @@ namespace xcore
 
     s32 dirpath_t::compare(const dirpath_t& other) const
     {
-        s32 const de = m_device==m_device;
+        s32 const de = other.m_device->compare(m_device);
         if (de != 0)
             return de;
         s32 const pe = m_path->compare(other.m_path);

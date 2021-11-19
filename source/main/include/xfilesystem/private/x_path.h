@@ -107,13 +107,13 @@ namespace xcore
         s32        compare(crunes_t const& name) const;
 
         pathname_t*        attach();
+        bool               detach();
         void               release(alloc_t* allocator);
 
         void               to_string(runes_t& str) const;
 
     protected:
         friend class filesys_t;
-        static bool        release(pathname_t* name);
         static pathname_t* construct(alloc_t* allocator, u64 hname, crunes_t const& name);
 
         XCORE_CLASS_PLACEMENT_NEW_DELETE
@@ -154,6 +154,7 @@ namespace xcore
         pathdevice_t*  attach();
         bool           detach(filesys_t* root);
         void           destruct(alloc_t* allocator, pathdevice_t*& device);
+        s32            compare(pathdevice_t* device) const;
         void           to_string(runes_t& str) const;
 
         filesys_t*    m_root;         // 

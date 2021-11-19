@@ -120,19 +120,20 @@ namespace xcore
     s32 pathname_t::compare(crunes_t const& name) const { return xcore::compare(crunes_t(m_name, m_len), name); }
 
     pathname_t* pathname_t::attach() { m_refs++; return this;  }
+
+    bool pathname_t::detach()
+    {
+        if (m_refs > 0)
+        {
+            m_refs -= 1;
+            return m_refs == 0;
+        }
+        return false;
+    }
+
     void pathname_t::release(alloc_t* allocator) 
     {
         allocator->deallocate(this);
-    }
-
-    bool pathname_t::release(pathname_t* name)
-    {
-        if (name->m_refs > 0)
-        {
-            name->m_refs -= 1;
-            return name->m_refs == 0;
-        }
-        return false;
     }
 
     pathname_t* pathname_t::construct(alloc_t* allocator, u64 hname, crunes_t const& name)
@@ -295,7 +296,7 @@ namespace xcore
         if (name == &sNilName)
             return;
 
-        if (pathname_t::release(name))
+        if (name->detach())
         {
             m_filename_table.remove(name);
             name->release(m_allocator);
@@ -312,7 +313,7 @@ namespace xcore
         if (name == &sNilName)
             return;
 
-        if (pathname_t::release(name))
+        if (name->detach())
         {
             m_extension_table.remove(name);
             name->release(m_allocator);
@@ -794,6 +795,16 @@ namespace xcore
         
         return false;
     }
+
+    s32 pathdevice_t::compare(pathdevice_t* device) const
+    {
+        if (m_deviceName == device->m_deviceName)
+            return 0;
+        else if (m_deviceName < device->m_deviceName)
+            return -1;
+        return 1;
+    }
+
 
     void pathdevice_t::to_string(runes_t& str) const
     {

@@ -68,6 +68,8 @@ namespace xcore
 
         s32 compare(const filepath_t& right) const;
         void to_string(runes_t& str) const;
+
+        filepath_t& operator=(const filepath_t& fp);
     };
 
     extern bool operator==(const filepath_t& left, const filepath_t& right);

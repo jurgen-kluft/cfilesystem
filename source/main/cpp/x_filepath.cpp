@@ -17,10 +17,26 @@ namespace xcore
         m_filename = other.m_filename->attach();
         m_extension = other.m_extension->attach();
     }
-    filepath_t::filepath_t(pathname_t* filename, pathname_t* extension) : m_dirpath(), m_filename(filename), m_extension(extension) {}
+    
+    filepath_t::filepath_t(pathname_t* filename, pathname_t* extension) : m_dirpath()
+    {
+        m_filename = filename->attach();
+        m_extension = extension->attach(); 
+    }
+
     filepath_t::filepath_t(pathdevice_t* device, path_t* path, pathname_t* filename, pathname_t* extension)
-        : m_dirpath(device, path), m_filename(filename), m_extension(extension) {}
-    filepath_t::filepath_t(dirpath_t const& dirpath, pathname_t* filename, pathname_t* extension) : m_dirpath(dirpath), m_filename(filename), m_extension(extension) {}
+        : m_dirpath(device, path)
+    {
+        m_filename = filename->attach();
+        m_extension = extension->attach(); 
+    }
+
+    filepath_t::filepath_t(dirpath_t const& dirpath, pathname_t* filename, pathname_t* extension)
+        : m_dirpath(dirpath)
+    {
+        m_filename = filename->attach();
+        m_extension = extension->attach();
+    }
 
     filepath_t::~filepath_t()
     {
@@ -57,7 +73,16 @@ namespace xcore
         m_dirpath = dirpath;
     }
 
-    void filepath_t::setFilename(pathname_t* filename) { filename->attach(); m_filename->release(m_dirpath.m_device->m_root->m_allocator); m_filename = filename; }
+    void filepath_t::setFilename(pathname_t* filename) 
+    { 
+        if (filename != m_filename)
+        {
+            filesys_t* root = m_dirpath.m_device->m_root;
+            root->release_filename(m_filename);
+            m_filename = filename->attach();
+        }
+    }
+
     void filepath_t::setFilename(crunes_t const& filenamestr)
     {
         filesys_t* root = m_dirpath.m_device->m_root;
@@ -70,7 +95,17 @@ namespace xcore
         m_extension = out_extension->attach();
 
     }
-    void filepath_t::setExtension(pathname_t* extension) { extension->attach(); m_extension->release(m_dirpath.m_device->m_root->m_allocator); m_extension = extension; }
+    
+    void filepath_t::setExtension(pathname_t* extension) 
+    { 
+        if (extension != m_extension)
+        {
+            filesys_t* root = m_dirpath.m_device->m_root;
+            root->release_extension(m_extension);
+            m_extension = extension->attach();
+        }
+    }
+    
     void filepath_t::setExtension(crunes_t const& extensionstr)
     {
         filesys_t* root = m_dirpath.m_device->m_root;
@@ -201,6 +236,18 @@ namespace xcore
         s32 const de = m_dirpath.compare(right.m_dirpath);
         return de;
     }
+
+    filepath_t& filepath_t::operator=(const filepath_t& fp)
+    {
+        m_dirpath = fp.m_dirpath;
+        filesys_t* root = m_dirpath.m_device->m_root;
+        root->release_filename(m_filename);
+        root->release_extension(m_extension);
+        m_filename = fp.m_filename->attach();
+        m_extension = fp.m_extension->attach();
+        return *this;
+    }
+
 
     bool operator==(const filepath_t& left, const filepath_t& right)
     {
