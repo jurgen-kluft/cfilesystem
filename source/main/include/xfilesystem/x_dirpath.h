@@ -32,6 +32,8 @@ namespace xcore
         friend class filesys_t;
         friend class fileinfo_t;
         friend class dirinfo_t;
+        friend class filedevice_t;
+        friend class filedevice_pc_t;
 
     public:
         dirpath_t();
@@ -73,6 +75,7 @@ namespace xcore
         s32 compare(const dirpath_t& other) const;
 
         void to_string(runes_t& str) const;
+        s32 to_strlen() const;
 
         dirpath_t& operator=(dirpath_t const& other);
 

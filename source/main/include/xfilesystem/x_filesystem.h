@@ -19,9 +19,7 @@ namespace xcore
     class filesystem_t;
 
     class filepath_t;
-    class fileinfo_t;
     class dirpath_t;
-    class dirinfo_t;
     class filesys_t;
     class filedevice_t;
 
@@ -50,16 +48,14 @@ namespace xcore
 
         static void        open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream);
         static void        close(stream_t&);
-        static void        info(filepath_t const& path, fileinfo_t& out_fileinfo);
-        static void        info(dirpath_t const& path, dirinfo_t& out_dirinfo);
-        static bool        exists(fileinfo_t const&);
-        static bool        exists(dirinfo_t const&);
-        static s64         size(fileinfo_t const&);
-        static void        rename(fileinfo_t const&, filepath_t const&);
-        static void        move(fileinfo_t const& src, fileinfo_t const& dst);
-        static void        copy(fileinfo_t const& src, fileinfo_t const& dst);
-        static void        rm(fileinfo_t const&);
-        static void        rm(dirinfo_t const&);
+        static bool        exists(filepath_t const&);
+        static bool        exists(dirpath_t const&);
+        static s64         size(filepath_t const&);
+        static void        rename(filepath_t const&, filepath_t const&);
+        static void        move(filepath_t const& src, filepath_t const& dst);
+        static void        copy(filepath_t const& src, filepath_t const& dst);
+        static void        rm(filepath_t const&);
+        static void        rm(dirpath_t const&);
 
     protected:
         friend class filesys_t;

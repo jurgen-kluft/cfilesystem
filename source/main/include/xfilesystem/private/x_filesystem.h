@@ -18,8 +18,6 @@ namespace xcore
 
     class filesys_t;
     class filedevice_t;
-    class fileinfo_t;
-    class dirinfo_t;
     class stream_t;
     class istream_t;
 
@@ -32,6 +30,7 @@ namespace xcore
         filesys_t*    m_owner;
         s32           m_refcount;
         s32           m_salt;
+        filedevice_t* m_filedevice;
         pathdevice_t* m_device;
         path_t*       m_path;
         pathname_t*   m_filename;
@@ -55,10 +54,8 @@ namespace xcore
         static void          destroy(stream_t& stream);
         static void          resolve(filepath_t const&, pathdevice_t*& device, path_t*& dir, pathname_t*& filename, pathname_t*& extension);
         static void          resolve(dirpath_t const&, pathdevice_t*& device, path_t*& dir);
-        static pathdevice_t* get_pathdevice(dirinfo_t const& dirinfo);
         static pathdevice_t* get_pathdevice(dirpath_t const& dirpath);
         static pathdevice_t* get_pathdevice(filepath_t const& filepath);
-        static path_t*       get_path(dirinfo_t const& dirinfo);
         static path_t*       get_path(dirpath_t const& dirpath);
         static path_t*       get_path(filepath_t const& filepath);
         static pathname_t*   get_filename(filepath_t const& filepath);
@@ -68,15 +65,15 @@ namespace xcore
 
         // -----------------------------------------------------------
         void open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream);
-        void close(stream_t&);
-        bool exists(fileinfo_t const&);
-        bool exists(dirinfo_t const&);
-        s64  size(fileinfo_t const&);
-        void rename(fileinfo_t const&, filepath_t const&);
-        void move(fileinfo_t const& src, fileinfo_t const& dst);
-        void copy(fileinfo_t const& src, fileinfo_t const& dst);
-        void rm(fileinfo_t const&);
-        void rm(dirinfo_t const&);
+        void close(stream_t& stream);
+        bool exists(filepath_t const&);
+        bool exists(dirpath_t const&);
+        s64  size(filepath_t const&);
+        void rename(filepath_t const&, filepath_t const&);
+        void move(filepath_t const& src, filepath_t const& dst);
+        void copy(filepath_t const& src, filepath_t const& dst);
+        void rm(filepath_t const&);
+        void rm(dirpath_t const&);
 
         // -----------------------------------------------------------
         //
@@ -125,6 +122,13 @@ namespace xcore
         bool has_device(const crunes_t& device_name);
         bool register_device(const crunes_t& device_name, filedevice_t* device);
         bool register_alias(const crunes_t& alias_name, const crunes_t& device_name);
+
+        filehandle_t* obtain_filehandle();
+        void          release_filehandle(filehandle_t* fh);
+        
+        filehandle_t*  m_filehandles_array;
+        filehandle_t** m_filehandles_free;
+        s32            m_filehandles_count;
 
         pathname_t*   find_name(crunes_t const& namestr) const;
         pathdevice_t* find_device(pathname_t* devicename) const;

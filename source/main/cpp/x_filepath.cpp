@@ -73,6 +73,18 @@ namespace xcore
         m_dirpath = dirpath;
     }
 
+    void filepath_t::setDevice(crunes_t const& devicename)
+    {
+        filesys_t* root = m_dirpath.m_device->m_root;
+
+        fullpath_parser_utf32 parser;
+        parser.parse(devicename);
+        if (parser.has_device())
+        {
+            m_dirpath.m_device = root->register_device(parser.m_device);
+        }
+    }
+
     void filepath_t::setFilename(pathname_t* filename) 
     { 
         if (filename != m_filename)
@@ -109,9 +121,8 @@ namespace xcore
     void filepath_t::setExtension(crunes_t const& extensionstr)
     {
         filesys_t* root = m_dirpath.m_device->m_root;
-        pathname_t* out_extension = root->register_extension(extensionstr);
-        root->release_extension(m_extension);
-        m_extension = out_extension->attach();
+        pathname_t* extension = root->register_extension(extensionstr);
+        setExtension(extension);
     }
 
     dirpath_t filepath_t::root() const { return m_dirpath.root(); }
@@ -223,6 +234,14 @@ namespace xcore
         str += (utf32::rune)'.';
         crunes_t extensionstr(m_extension->m_name, m_extension->m_len);
         xcore::concatenate(str, extensionstr);
+    }
+
+    s32 filepath_t::to_strlen() const
+    {
+        s32 len = m_dirpath.to_strlen();
+        len += m_filename->m_len + 1;
+        len += m_extension->m_len + 1;
+        return len;
     }
 
     s32 filepath_t::compare(const filepath_t& right) const

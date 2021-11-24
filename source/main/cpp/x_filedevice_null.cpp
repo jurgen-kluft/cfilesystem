@@ -13,8 +13,6 @@
 #include "xfilesystem/private/x_filedevice.h"
 #include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/x_attributes.h"
-#include "xfilesystem/x_fileinfo.h"
-#include "xfilesystem/x_dirinfo.h"
 
 namespace xcore
 {
@@ -62,6 +60,7 @@ namespace xcore
             return false;
         }
 
+        virtual bool flushFile(void* nFileHandle) { return false; }
         virtual bool closeFile(void* nFileHandle) { return false; }
 
         virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t& strm)

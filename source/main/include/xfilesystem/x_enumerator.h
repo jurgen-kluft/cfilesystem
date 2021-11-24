@@ -7,8 +7,11 @@
 
 namespace xcore
 {
-    class fileinfo_t;
-    class dirinfo_t;
+    class fileattrs_t;
+    class filetimes_t;
+    class filepath_t;
+    class dirpath_t;
+
     class enumerate_delegate_t
     {
     public:
@@ -17,7 +20,8 @@ namespace xcore
         // want to recurse into that directory.
         // When you receive a 'fileinfo' and return false you indicate that you want to
         // terminate the iteration.
-        virtual bool operator()(s32 depth, fileinfo_t const* fi, dirinfo_t const* di) = 0;
+        virtual bool operator()(s32 depth, filepath_t const& fi, fileattrs_t const& fa, filetimes_t const& ft) = 0;
+        virtual bool operator()(s32 depth, dirpath_t const& di) = 0;
     };
 
 }; // namespace xcore

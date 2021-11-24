@@ -52,7 +52,7 @@ namespace xcore
                     if (sFileDevices[j] == fd)
                         sFileDevices[j] = nullptr;
                 }
-                x_DestroyFileDevice(ctxt->m_allocator, fd);
+                x_DestroyFileDevice(fd);
             }
         }
 
@@ -100,7 +100,7 @@ namespace xcore
                     {
                         if (sFileDevices[eDriveType] == NULL)
                         {
-                            sFileDevices[eDriveType] = x_CreateFileDevice(ctxt->m_allocator, boCanWrite);
+                            sFileDevices[eDriveType] = x_CreateFileDevice(boCanWrite);
                         }
                         filedevice_t* device = sFileDevices[eDriveType];
 

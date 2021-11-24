@@ -9,6 +9,4 @@
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_dirinfo.h"
-#include "xfilesystem/x_fileinfo.h"
 #include "xfilesystem/x_stream.h"

@@ -8,35 +8,25 @@
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_dirinfo.h"
-#include "xfilesystem/x_fileinfo.h"
 #include "xfilesystem/x_stream.h"
 
 using namespace xcore;
 
 extern alloc_t* gTestAllocator;
+extern filedevice_t* gTestFileDevice;
 
 UNITTEST_SUITE_BEGIN(filestream)
 {
 	UNITTEST_FIXTURE(main)
 	{
-//		void callbackWrite_TEST_func(x_asyncio_result ioResult){}
-//		void callbackRead_TEST_func(x_asyncio_result ioResult){}
-//
-//		x_asyncio_callback_struct callbackWrite_TEST;
-//		x_asyncio_callback_struct callbackRead_TEST;
-
 		UNITTEST_FIXTURE_SETUP()
 		{
 			filesystem_t::context_t ctxt;
 			ctxt.m_allocator = gTestAllocator;
 			ctxt.m_max_open_files = 32;
 			filesystem_t::create(ctxt);
-			// callbackWrite_TEST.callback = callbackWrite_TEST_func;
-			// callbackWrite_TEST.userData = NULL;
-			// 
-			// callbackRead_TEST.callback = callbackRead_TEST_func;
-			// callbackRead_TEST.userData = NULL;
+			const char* deviceName = "TEST:\\";
+			CHECK_TRUE(filesystem_t::register_device(deviceName, gTestFileDevice));
 		}
 
 		UNITTEST_FIXTURE_TEARDOWN()
@@ -47,7 +37,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 		UNITTEST_TEST(open)
 		{
 			filepath_t fp = filesystem_t::filepath("TEST:\\textfiles\\readme1st.txt");
-			stream_t fs;  filesystem_t::open(fp, FileMode_Open, FileAccess_Read, FileOp_Sync, fs);
+			stream_t fs;  
+			filesystem_t::open(fp, FileMode_Open, FileAccess_Read, FileOp_Sync, fs);
 			CHECK_TRUE(fs.isOpen());
 			if (fs.isOpen())
 			{
@@ -138,10 +129,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 			filepath_t xfp1 = filesystem_t::filepath(str1);
 			stream_t xfs1; filesystem_t::open(xfp1, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs1);
 			CHECK_EQUAL(xfs1.isAsync(),false);
-
 			stream_t xfs2; filesystem_t::open(xfp1, FileMode_Open, FileAccess_ReadWrite, FileOp_Async, xfs2);
 			CHECK_EQUAL(xfs2.isAsync(),true);
-
 		}
 
 		UNITTEST_TEST(getLength)
@@ -268,9 +257,6 @@ UNITTEST_SUITE_BEGIN(filestream)
 			const char* str2 = "Test:\\copyTo1\\copy.txt";
 			filepath_t xfp2 = filesystem_t::filepath(str2);
 			stream_t fpTemp;
-			CHECK_FALSE(fileinfo_t::sExists(xfp2));
-			CHECK_TRUE(fileinfo_t::sCreate(xfp2,fpTemp));
-			CHECK_TRUE(fileinfo_t::sExists(xfp2));
 			stream_t xfs2; filesystem_t::open(xfp2, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs2);
 			xbyte stream_buffer_data[1024];
 			buffer_t stream_buffer(1024, stream_buffer_data);
@@ -281,8 +267,6 @@ UNITTEST_SUITE_BEGIN(filestream)
 			{
 				CHECK_EQUAL(buffer1[n],buffer2[n]);
 			}
-			CHECK_TRUE(fileinfo_t::sDelete(xfp2));
-			CHECK_FALSE(fileinfo_t::sExists(xfp2));
 		}
 
 		UNITTEST_TEST(copyTo2)
@@ -295,9 +279,6 @@ UNITTEST_SUITE_BEGIN(filestream)
 			const char* str2 = "Test:\\copyTo1\\copy.txt";
 			filepath_t xfp2 = filesystem_t::filepath(str2);
 			stream_t fpTemp;
-			CHECK_FALSE(fileinfo_t::sExists(xfp2));
-			CHECK_TRUE(fileinfo_t::sCreate(xfp2,fpTemp));
-			CHECK_TRUE(fileinfo_t::sExists(xfp2));
 			stream_t xfs2; filesystem_t::open(xfp2, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs2);
 
 			xbyte stream_buffer_data[1024];
@@ -311,8 +292,6 @@ UNITTEST_SUITE_BEGIN(filestream)
 			{
 				CHECK_EQUAL(buffer1[n],buffer2[n]);
 			}
-			CHECK_TRUE(fileinfo_t::sDelete(xfp2));
-			CHECK_FALSE(fileinfo_t::sExists(xfp2));
 		}
 	}
 }

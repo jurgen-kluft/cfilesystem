@@ -389,6 +389,17 @@ namespace xcore
         }
     }
 
+    s32 dirpath_t::to_strlen() const
+    {
+        s32 len = m_device->to_strlen();
+        for (s32 i = 0; i < m_path->m_len; i++)
+        {
+            pathname_t* pname = m_path->m_path[i];
+            len += pname->m_len + 1;
+        }
+        return len;
+    }
+
     dirpath_t& dirpath_t::operator=(dirpath_t const& other)
     {
         filesys_t* root = m_device->m_root;

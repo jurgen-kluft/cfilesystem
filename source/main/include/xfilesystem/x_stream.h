@@ -41,12 +41,11 @@ namespace xcore
         s64 read(xbyte*, s64);
         s64 write(xbyte const*, s64);
 
+        stream_t& operator=(const stream_t&);
+
     protected:
-        stream_t(istream_t* impl, filedevice_t* fd, filehandle_t* fh);
+        stream_t(istream_t* impl, filehandle_t* fh);
 
-        stream_t& operator=(const stream_t&) { return *this; }
-
-        filedevice_t* m_filedevice;
         filehandle_t* m_filehandle;
         istream_t* m_pimpl;
         s64 m_offset;
@@ -54,7 +53,6 @@ namespace xcore
 
         friend class filesystem_t;
 		friend class filesys_t;
-        friend class stream_t;
     };
 
     void xstream_copy(stream_t& src, stream_t& dst, buffer_t& buffer);

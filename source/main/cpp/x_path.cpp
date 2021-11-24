@@ -252,6 +252,14 @@ namespace xcore
         m_filename_table.init(m_allocator, 65536);
         m_extension_table.init(m_allocator, 8192);
 
+        m_filehandles_free = (filehandle_t**)m_allocator->allocate(sizeof(filehandle_t*) * m_max_open_files);
+        m_filehandles_array = (filehandle_t*)m_allocator->allocate(sizeof(filehandle_t) * m_max_open_files);
+        m_filehandles_count = m_max_open_files;
+        for (s32 i = 0; i < m_filehandles_count; ++i)
+        {
+            m_filehandles_free[i] = &m_filehandles_array[i];
+        }
+
         sNilName.m_hash = 0;
         sNilName.m_len = 0;
         sNilName.m_name[0] = utf32::TERMINATOR;
@@ -286,6 +294,9 @@ namespace xcore
             m_tdevice[i].m_redirector = nullptr;
         }
         m_num_devices = 0;
+
+        m_allocator->deallocate(m_filehandles_free);
+        m_allocator->deallocate(m_filehandles_array);
 
         m_filename_table.release(allocator);
         m_extension_table.release(allocator);
@@ -717,7 +728,6 @@ namespace xcore
     path_t* path_t::construct(alloc_t* allocator, s32 cap)
     {
         ASSERT(cap > 0);
-        cap = ((cap + 3) & ~3);
         s32 const allocsize = sizeof(path_t) + (sizeof(pathname_t*) * (cap - 1));
         path_t* path = (path_t*)allocator->allocate(allocsize);
         path->m_cap = cap;
@@ -829,6 +839,32 @@ namespace xcore
             device = devices[i];
             device->m_devicePath->to_string(str);
         }
+    }
+
+    s32 pathdevice_t::to_strlen() const
+    {
+        s32 i = 0;
+        pathdevice_t const* device = this;
+        pathdevice_t const* devices[32];
+        do
+        {
+            devices[i++] = device;
+            device = device->m_redirector;
+        } while (device != nullptr && i < 32);
+
+        device = devices[--i];
+
+        // should be the root device (has filedevice), so first emit the device name.
+        // this device should not have any device path.
+        s32 len = device->m_deviceName->m_len;
+
+        // the rest of the devices are aliases and should be appending their paths
+        while (--i >= 0)
+        {
+            device = devices[i];
+            len += device->m_devicePath->m_len;
+        }
+        return len;
     }
 
 }; // namespace xcore

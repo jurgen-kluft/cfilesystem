@@ -28,9 +28,8 @@ namespace xcore
     struct pathdevice_t;
 
     // System file device
-    extern filedevice_t* x_CreateFileDevice(alloc_t* allocator, bool boCanWrite);
-    extern void         x_DestroyFileDevice(alloc_t* allocator, filedevice_t*);
-
+    extern filedevice_t* x_CreateFileDevice(bool boCanWrite);
+    extern void          x_DestroyFileDevice(filedevice_t*);
     extern filedevice_t* x_NullFileDevice();
 
     // File device
@@ -54,8 +53,10 @@ namespace xcore
         virtual bool getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const = 0;
 
         virtual bool openFile(filepath_t const& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& outHandle) = 0;
+        virtual bool createFile(const filepath_t& szFilename, bool boRead, bool boWrite, void*& nFileHandle) = 0;
         virtual bool readFile(void* pHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead)           = 0;
         virtual bool writeFile(void* pHandle, u64 pos, void const* buffer, u64 count, u64& outNumBytesWritten) = 0;
+        virtual bool flushFile(void* pHandle)                                                                  = 0;
         virtual bool closeFile(void* pHandle)                                                                  = 0;
 
         virtual bool createStream(filepath_t const& szFilename, bool boRead, bool boWrite, stream_t& strm) = 0;

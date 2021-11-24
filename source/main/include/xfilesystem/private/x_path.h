@@ -156,6 +156,7 @@ namespace xcore
         void           destruct(alloc_t* allocator, pathdevice_t*& device);
         s32            compare(pathdevice_t* device) const;
         void           to_string(runes_t& str) const;
+        s32            to_strlen() const;
 
         filesys_t*    m_root;         // 
         pathname_t*   m_alias;        // an alias redirection (e.g. "data")

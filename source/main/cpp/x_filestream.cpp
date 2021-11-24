@@ -21,7 +21,9 @@ namespace xcore
         virtual u64  getLength(filedevice_t* fd, filehandle_t* fh) const;
         virtual void setLength(filedevice_t* fd, filehandle_t* fh, u64 length);
         virtual s64  setPos(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& current, s64 pos);
+        virtual void flush(filedevice_t* fd, filehandle_t*& fh);
         virtual void close(filedevice_t* fd, filehandle_t*& fh);
+
         virtual s64 read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, xbyte* buffer, s64 count);
         virtual s64 write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const xbyte* buffer, s64 count);
     };
@@ -48,7 +50,7 @@ namespace xcore
 
     // ---------------------------------------------------------------------------------------------
 
-    void* open_filestream(filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, u32 out_caps)
+    void* open_filestream(alloc_t* a, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, u32 out_caps)
     {
         bool can_read, can_write, can_seek, can_async;
         
@@ -168,13 +170,22 @@ namespace xcore
 
     u64  filestream_t::getLength(filedevice_t* fd, filehandle_t* fh) const
     {
-        u64 length;
-        if (fd->getLengthOfFile(fh, length))
-            return length;
+        u64 length = 0;
+        if (fh->m_handle != INVALID_FILE_HANDLE)
+        {
+            if (fd->getLengthOfFile(fh->m_handle, length))
+                return length;
+        }
         return 0;
     }
 
-    void filestream_t::setLength(filedevice_t* fd, filehandle_t* fh, u64 length) { fd->setLengthOfFile(fh, length); }
+    void filestream_t::setLength(filedevice_t* fd, filehandle_t* fh, u64 length) 
+    { 
+        if (fh->m_handle != INVALID_FILE_HANDLE)
+        {
+            fd->setLengthOfFile(fh->m_handle, length);
+        }
+    }
 
     s64 filestream_t::setPos(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& offset, s64 seek)
     {
@@ -187,11 +198,19 @@ namespace xcore
         return old_offset;
     }
 
+    void filestream_t::flush(filedevice_t* fd, filehandle_t*& fh)
+    {
+        if (fh->m_handle != INVALID_FILE_HANDLE)
+        {
+            fd->flushFile(fh->m_handle);
+        }
+    }
+
     void filestream_t::close(filedevice_t* fd, filehandle_t*& fh)
     {
-        if (fh != INVALID_FILE_HANDLE)
+        if (fh->m_handle != INVALID_FILE_HANDLE)
         {
-            fd->closeFile(fh);
+            fd->closeFile(fh->m_handle);
         }
     }
 
@@ -200,12 +219,15 @@ namespace xcore
         enum_t<ECaps> ecaps(caps);
         if (ecaps.is_set(USE_READ))
         {
-            u64 n;
-            if (fd->readFile(fh, pos, buffer, count, n))
+            if (fh->m_handle != INVALID_FILE_HANDLE)
             {
-                pos += n;
+                u64 n;
+                if (fd->readFile(fh->m_handle, pos, buffer, count, n))
+                {
+                    pos += n;
+                }
+                return n;
             }
-            return n;
         }
         return 0;
     }
@@ -215,12 +237,15 @@ namespace xcore
         enum_t<ECaps> ecaps(caps);
         if (ecaps.is_set(USE_WRITE))
         {
-            u64 n;
-            if (fd->writeFile(fh, pos, buffer, count, n))
+            if (fh->m_handle != INVALID_FILE_HANDLE)
             {
-                pos += n;
+                u64 n;
+                if (fd->writeFile(fh->m_handle, pos, buffer, count, n))
+                {
+                    pos += n;
+                }
+                return n;
             }
-            return n;
         }
         return 0;
     }

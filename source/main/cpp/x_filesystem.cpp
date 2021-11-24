@@ -1,9 +1,7 @@
 #include "xbase/x_target.h"
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
-#include "xfilesystem/x_fileinfo.h"
 #include "xfilesystem/x_dirpath.h"
-#include "xfilesystem/x_dirinfo.h"
 #include "xfilesystem/x_stream.h"
 #include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/private/x_filedevice.h"
@@ -30,15 +28,15 @@ namespace xcore
 
     void filesystem_t::close(stream_t& xs) { return mImpl->close(xs); }
 
-    bool filesystem_t::exists(fileinfo_t const& xfi) { return mImpl->exists(xfi); }
-    bool filesystem_t::exists(dirinfo_t const& xdi) { return mImpl->exists(xdi); }
-    s64  filesystem_t::size(fileinfo_t const& xfi) { return mImpl->size(xfi); }
+    bool filesystem_t::exists(filepath_t const& xfi) { return mImpl->exists(xfi); }
+    bool filesystem_t::exists(dirpath_t const& xdi) { return mImpl->exists(xdi); }
+    s64  filesystem_t::size(filepath_t const& xfi) { return mImpl->size(xfi); }
 
-    void filesystem_t::rename(fileinfo_t const& xfi, filepath_t const& xfp) { mImpl->rename(xfi, xfp); }
-    void filesystem_t::move(fileinfo_t const& src, fileinfo_t const& dst) { mImpl->move(src, dst); }
-    void filesystem_t::copy(fileinfo_t const& src, fileinfo_t const& dst) { mImpl->copy(src, dst); }
-    void filesystem_t::rm(fileinfo_t const& xfi) { mImpl->rm(xfi); }
-    void filesystem_t::rm(dirinfo_t const& xdi) { mImpl->rm(xdi); }
+    void filesystem_t::rename(filepath_t const& xfi, filepath_t const& xfp) { mImpl->rename(xfi, xfp); }
+    void filesystem_t::move(filepath_t const& src, filepath_t const& dst) { mImpl->move(src, dst); }
+    void filesystem_t::copy(filepath_t const& src, filepath_t const& dst) { mImpl->copy(src, dst); }
+    void filesystem_t::rm(filepath_t const& xfi) { mImpl->rm(xfi); }
+    void filesystem_t::rm(dirpath_t const& xdi) { mImpl->rm(xdi); }
 
     // -----------------------------------------------------------
     // -----------------------------------------------------------
@@ -71,11 +69,9 @@ namespace xcore
         dir = get_path(dp);
     }
 
-    pathdevice_t*       filesys_t::get_pathdevice(dirinfo_t const& dirinfo) { return dirinfo.m_path.m_device; }
     pathdevice_t * filesys_t::get_pathdevice(dirpath_t const& dirpath) { return dirpath.m_device; }
     pathdevice_t * filesys_t::get_pathdevice(filepath_t const& filepath) { return filepath.m_dirpath.m_device; }
 
-    path_t * filesys_t::get_path(dirinfo_t const& dirinfo) { return dirinfo.m_path.m_path; }
     path_t * filesys_t::get_path(dirpath_t const& dirpath) { return dirpath.m_path; }
     path_t * filesys_t::get_path(filepath_t const& filepath) { return filepath.m_dirpath.m_path; }
 
@@ -122,18 +118,60 @@ namespace xcore
         dp = dirpath;
     }
 
-    void filesys_t::open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream) { out_stream = stream_t(); }
+    extern istream_t* get_filestream();
 
-    void filesys_t::close(stream_t& stream) {}
+    void filesys_t::open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream) 
+    { 
+        filedevice_t* fd = filename.m_dirpath.m_device->m_fileDevice;
+        
+        void* filehandle;
+        if (fd->openFile(filename, mode, access, op, filehandle))
+        {
+            filehandle_t* fh = obtain_filehandle();
+            fh->m_owner = this;
+            fh->m_handle = filehandle;
+            fh->m_filedevice = fd;
+            fh->m_filename = filename.m_filename->attach();
+            fh->m_extension = filename.m_extension->attach();
+            fh->m_device = filename.m_dirpath.m_device->attach();
+            fh->m_path = filename.m_dirpath.m_path->attach();
+            out_stream = stream_t(get_filestream(), fh);
+        }
+    }
 
-    bool filesys_t::exists(fileinfo_t const&) { return false; }
-    bool filesys_t::exists(dirinfo_t const&) { return false; }
-    s64  filesys_t::size(fileinfo_t const&) { return 0; }
-    void filesys_t::rename(fileinfo_t const&, filepath_t const&) {}
-    void filesys_t::move(fileinfo_t const& src, fileinfo_t const& dst) {}
-    void filesys_t::copy(fileinfo_t const& src, fileinfo_t const& dst) {}
-    void filesys_t::rm(fileinfo_t const&) {}
-    void filesys_t::rm(dirinfo_t const&) {}
+    void filesys_t::close(stream_t& stream) 
+    {
+        filehandle_t* fh = stream.m_filehandle;
+        filedevice_t* fd = fh->m_filedevice;
+
+        if (fh->m_refcount == 1)
+        {
+            fd->closeFile(fh->m_handle);
+            fh->m_handle = nullptr;
+
+            release_device(fh->m_device);
+            release_path(fh->m_path);
+            release_filename(fh->m_filename);
+            release_extension(fh->m_extension);
+            
+            m_allocator->deallocate(fh);
+        }
+        fh->m_refcount -= 1;
+
+        release_filehandle(fh);
+
+        stream.m_filehandle = nullptr;
+        stream.m_pimpl = nullptr;
+    }
+
+    bool filesys_t::exists(filepath_t const&) { return false; }
+    bool filesys_t::exists(dirpath_t const&) { return false; }
+    s64  filesys_t::size(filepath_t const&) { return 0; }
+    void filesys_t::rename(filepath_t const&, filepath_t const&) {}
+    void filesys_t::move(filepath_t const& src, filepath_t const& dst) {}
+    void filesys_t::copy(filepath_t const& src, filepath_t const& dst) {}
+    void filesys_t::rm(filepath_t const&) {}
+    void filesys_t::rm(dirpath_t const&) {}
 
 
     bool filesys_t::has_device(const crunes_t& device_name)
@@ -178,5 +216,19 @@ namespace xcore
 
         return true;
     }
+
+    filehandle_t* filesys_t::obtain_filehandle()
+    {
+        s32 index = --m_filehandles_count;
+        filehandle_t* fh = m_filehandles_free[index];
+        m_filehandles_free[index] = nullptr;
+        return fh;
+    }
+
+    void          filesys_t::release_filehandle(filehandle_t* fh)
+    {
+        m_filehandles_free[m_filehandles_count++];
+    }
+
 
 } // namespace xcore

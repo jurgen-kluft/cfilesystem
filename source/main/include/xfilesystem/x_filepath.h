@@ -25,6 +25,8 @@ namespace xcore
 
         friend class fileinfo_t;
         friend class filesys_t;
+        friend class filedevice_t;
+        friend class filedevice_pc_t;
 
     public:
         filepath_t();
@@ -41,6 +43,7 @@ namespace xcore
         void makeRelativeTo(const dirpath_t& dirpath);
         void makeAbsoluteTo(const dirpath_t& dirpath);
 
+        void setDevice(crunes_t const& devicename);
         void setDirpath(dirpath_t const& dirpath);
         void setFilename(pathname_t* filename);
         void setFilename(crunes_t const& filename);
@@ -68,6 +71,7 @@ namespace xcore
 
         s32 compare(const filepath_t& right) const;
         void to_string(runes_t& str) const;
+        s32 to_strlen() const;
 
         filepath_t& operator=(const filepath_t& fp);
     };
