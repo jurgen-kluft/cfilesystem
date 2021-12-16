@@ -296,7 +296,7 @@ namespace xcore
         runes_t tofilename16(tofilenamestr, tofilenamestr + tofilenamestrlen);
         szToFilename.to_string(tofilename16);
 
-        BOOL result = ::MoveFileW((LPCWSTR)filename16.str16(), (LPCWSTR)tofilename16.m_runes.m_utf16.m_str) != 0;
+        BOOL result = ::MoveFileW((LPCWSTR)filename16.str16(), (LPCWSTR)tofilename16.m_utf16.m_str) != 0;
 
         allocator->deallocate(filenamestr);
         allocator->deallocate(tofilenamestr);
@@ -322,7 +322,7 @@ namespace xcore
         runes_t tofilename16(tofilenamestr, tofilenamestr + tofilenamestrlen);
         szToFilename.to_string(tofilename16);
 
-        BOOL result = ::CopyFileW((LPCWSTR)filename16.str16(), (LPCWSTR)tofilename16.m_runes.m_utf16.m_str, failIfExists) != 0;
+        BOOL result = ::CopyFileW((LPCWSTR)filename16.str16(), (LPCWSTR)tofilename16.m_utf16.m_str, failIfExists) != 0;
 
         allocator->deallocate(filenamestr);
         allocator->deallocate(tofilenamestr);
@@ -596,7 +596,7 @@ namespace xcore
         runes_t topath16(topathstr, topathstr + topathstrlen);
         szToDirPath.to_string(topath16);
 
-        BOOL result = ::MoveFileExW((LPCWSTR)path16.str16(), (LPCWSTR)topath16.m_runes.m_utf16.m_str, dwFlags) != 0;
+        BOOL result = ::MoveFileExW((LPCWSTR)path16.str16(), (LPCWSTR)topath16.m_utf16.m_str, dwFlags) != 0;
         return result;
     }
 
@@ -656,11 +656,11 @@ namespace xcore
         bool push_dir()
         {
             runes_t dirname;
-            dirname.m_runes.m_utf16.m_str = (utf16::prune)mDirStack->mFindData.cFileName;
-            dirname.m_runes.m_utf16.m_end = dirname.m_runes.m_utf16.m_str;
-            while (*dirname.m_runes.m_utf16.m_end != '\0')
+            dirname.m_utf16.m_str = (utf16::prune)mDirStack->mFindData.cFileName;
+            dirname.m_utf16.m_end = dirname.m_utf16.m_str;
+            while (*dirname.m_utf16.m_end != '\0')
             {
-                dirname.m_runes.m_utf16.m_end++;
+                dirname.m_utf16.m_end++;
             }
 
             mFilePath.down(mSysRoot->register_dirname(dirname));
@@ -704,12 +704,12 @@ namespace xcore
         {
             // Prepare FileInfo
             runes_t filename;
-            filename.m_runes.m_utf16.m_str = (utf16::prune)mDirStack->mFindData.cFileName;
-            filename.m_runes.m_utf16.m_end = filename.m_runes.m_utf16.m_str;
-            filename.m_runes.m_utf16.m_eos = (utf16::prune)mDirStack->mFindData.cFileName[sizeof(mDirStack->mFindData.cFileName) - 1];
-            while (filename.m_runes.m_utf16.m_end < filename.m_runes.m_utf16.m_eos && *filename.m_runes.m_utf16.m_end != '\0')
+            filename.m_utf16.m_str = (utf16::prune)mDirStack->mFindData.cFileName;
+            filename.m_utf16.m_end = filename.m_utf16.m_str;
+            filename.m_utf16.m_eos = (utf16::prune)mDirStack->mFindData.cFileName[sizeof(mDirStack->mFindData.cFileName) - 1];
+            while (filename.m_utf16.m_end < filename.m_utf16.m_eos && *filename.m_utf16.m_end != '\0')
             {
-                filename.m_runes.m_utf16.m_end++;
+                filename.m_utf16.m_end++;
             }
             pathname_t* fname;
             pathname_t* fext;
@@ -754,7 +754,7 @@ namespace xcore
             mFilePath.dirpath().to_string(mPathStr);
             mPathStr += '*';
 
-            nextnode->mFindHandle = ::FindFirstFileW(LPCWSTR(mPathStr.m_runes.m_utf16.m_str), &nextnode->mFindData);
+            nextnode->mFindHandle = ::FindFirstFileW(LPCWSTR(mPathStr.m_utf16.m_str), &nextnode->mFindData);
 
             if (nextnode->mFindHandle != INVALID_HANDLE_VALUE)
             {
@@ -824,10 +824,10 @@ namespace xcore
             utf16::prune str = (utf16::prune)m_alloc->allocate(sizeof(utf16::rune) * len);
             runes_t runes16(str, str + len);
 
-            DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)runes16.m_runes.m_utf16.m_str);
+            DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)runes16.m_utf16.m_str);
             if (dwFileAttributes & FILE_ATTRIBUTE_READONLY) // change read-only file mode
-                ::SetFileAttributesW((LPCWSTR)runes16.m_runes.m_utf16.m_str, dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
-            ::DeleteFileW((LPCWSTR)runes16.m_runes.m_utf16.m_str);
+                ::SetFileAttributesW((LPCWSTR)runes16.m_utf16.m_str, dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
+            ::DeleteFileW((LPCWSTR)runes16.m_utf16.m_str);
 
             m_alloc->deallocate(str);
             return true;
@@ -927,7 +927,7 @@ namespace xcore
         runes_t dirpath16(pathstr, pathstr + pathstrlen);
         szDirPath.to_string(dirpath16);
 
-        bool result = ::SetFileAttributesW((LPCWSTR)dirpath16.m_runes.m_utf16.m_str, dwFileAttributes) == TRUE;
+        bool result = ::SetFileAttributesW((LPCWSTR)dirpath16.m_utf16.m_str, dwFileAttributes) == TRUE;
 
         return result;
     }
@@ -942,7 +942,7 @@ namespace xcore
         szDirPath.to_string(dirpath16);
 
         bool  result           = false;
-        DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)dirpath16.m_runes.m_utf16.m_str);
+        DWORD dwFileAttributes = ::GetFileAttributesW((LPCWSTR)dirpath16.m_utf16.m_str);
         if (dwFileAttributes != INVALID_FILE_ATTRIBUTES)
         {
             result = true;
