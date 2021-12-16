@@ -2,6 +2,7 @@
 #include "xbase/x_base.h"
 #include "xbase/x_allocator.h"
 #include "xbase/x_console.h"
+#include "xbase/x_context.h"
 
 #include "xtime/x_time.h"
 #include "xfilesystem/x_filesystem.h"
@@ -72,7 +73,6 @@ namespace xcore
 
 		virtual void		v_release()
 		{
-			mAllocator->release();
 			mAllocator = NULL;
 		}
 	};
@@ -109,27 +109,29 @@ public:
 
 static FileSystemIoThreadInterface		sThreadObject;
 
-xcore::alloc_t* gTestAllocator = NULL;
+xcore::alloc_t *gTestAllocator = NULL;
 xcore::UnitTestAssertHandler gAssertHandler;
 
 bool gRunUnitTest(UnitTest::TestReporter& reporter)
 {
-	xtime::x_Init();
-	xbase::x_Init();
+	xbase::init();
+	xtime::init();
 
 #ifdef TARGET_DEBUG
-	xcore::asserthandler_t::sRegisterHandler(&gAssertHandler);
+	xcore::context_t::set_assert_handler(&gAssertHandler);
 #endif
+	xcore::console->write("Configuration: ");
+	xcore::console->setColor(xcore::console_t::YELLOW);
+	xcore::console->writeLine(TARGET_FULL_DESCR_STR);
+	xcore::console->setColor(xcore::console_t::NORMAL);
 
-	xcore::alloc_t* systemAllocator = xcore::alloc_t::get_system();
+	xcore::alloc_t* systemAllocator = xcore::context_t::system_alloc();
 	xcore::UnitTestAllocator unittestAllocator( systemAllocator );
 	UnitTest::SetAllocator(&unittestAllocator);
 
-	xcore::console->write("Configuration: ");
-	xcore::console->writeLine(TARGET_FULL_DESCR_STR);
-
 	xcore::TestAllocator testAllocator(systemAllocator);
 	gTestAllocator = &testAllocator;
+	xcore::context_t::set_system_alloc(&testAllocator);
 
 	int r = UNITTEST_SUITE_RUN(reporter, xFileUnitTest);
 	if (UnitTest::GetNumAllocations()!=0)
@@ -141,9 +143,9 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter)
 	gTestAllocator->release();
 
 	UnitTest::SetAllocator(NULL);
+	xcore::context_t::set_system_alloc(systemAllocator);
 
-	xtime::x_Exit();
-	xbase::x_Exit();
-
+	xtime::exit();
+	xbase::exit();
 	return r==0;
 }
