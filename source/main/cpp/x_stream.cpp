@@ -26,6 +26,11 @@ namespace xcore
 
     static stream_nil sNullStreamImp;
 
+    istream_t* get_nullstream()
+    {
+        return &sNullStreamImp;
+    }
+
     stream_t::stream_t() : m_caps(0), m_filehandle(nullptr), m_offset(0), m_pimpl(&sNullStreamImp)
     {
 

@@ -260,7 +260,7 @@ UNITTEST_SUITE_BEGIN(filestream)
 			stream_t xfs2; filesystem_t::open(xfp2, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs2);
 			xbyte stream_buffer_data[1024];
 			buffer_t stream_buffer(1024, stream_buffer_data);
-			xstream_copy(xfs1, xfs2, stream_buffer);
+			stream_copy(xfs1, xfs2, stream_buffer);
 			xbyte buffer2[10];
 			xfs2.read(buffer2, 10);
 			for(int n =0; n < 10; ++n)
@@ -283,7 +283,7 @@ UNITTEST_SUITE_BEGIN(filestream)
 
 			xbyte stream_buffer_data[1024];
 			buffer_t stream_buffer(1024, stream_buffer_data);
-			xstream_copy(xfs1, xfs2, stream_buffer);
+			stream_copy(xfs1, xfs2, stream_buffer);
 
 			xbyte buffer2[20];
 			u64 readLen = xfs2.read(buffer2, 20);

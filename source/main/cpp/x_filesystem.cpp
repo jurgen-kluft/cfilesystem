@@ -3,6 +3,7 @@
 #include "xfilesystem/x_filepath.h"
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_stream.h"
+#include "xfilesystem/private/x_istream.h"
 #include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/private/x_filedevice.h"
 
@@ -45,10 +46,6 @@ namespace xcore
     // -----------------------------------------------------------
     // -----------------------------------------------------------
     // -----------------------------------------------------------
-    void filesys_t::create_filestream(const filepath_t& filepath, EFileMode fm, EFileAccess fa, EFileOp fo, stream_t& out_stream) 
-    { 
-        out_stream = stream_t(); 
-    }
 
     void filesys_t::destroy(stream_t& stream) 
     {
@@ -136,6 +133,10 @@ namespace xcore
             fh->m_device = filename.m_dirpath.m_device->attach();
             fh->m_path = filename.m_dirpath.m_path->attach();
             out_stream = stream_t(get_filestream(), fh);
+        }
+        else
+        {
+            out_stream = stream_t(get_nullstream(), nullptr);
         }
     }
 
@@ -227,7 +228,7 @@ namespace xcore
 
     void          filesys_t::release_filehandle(filehandle_t* fh)
     {
-        m_filehandles_free[m_filehandles_count++];
+        m_filehandles_free[m_filehandles_count++] = fh;
     }
 
 

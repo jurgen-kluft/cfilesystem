@@ -251,7 +251,7 @@ namespace xcore
     }
 
 
-    void xstream_copy(stream_t& src, stream_t& dst, buffer_t& buffer)
+    void stream_copy(stream_t& src, stream_t& dst, buffer_t& buffer)
     {
         s64 streamLength = (s64)src.getLength();
         while (streamLength > 0)

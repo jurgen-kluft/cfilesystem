@@ -55,7 +55,8 @@ namespace xcore
 		friend class filesys_t;
     };
 
-    void xstream_copy(stream_t& src, stream_t& dst, buffer_t& buffer);
+    
+    extern void stream_copy(stream_t& src, stream_t& dst, buffer_t& buffer);
 
 }; // namespace xcore
 

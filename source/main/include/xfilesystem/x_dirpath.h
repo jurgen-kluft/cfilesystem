@@ -59,6 +59,7 @@ namespace xcore
         dirpath_t parent() const; // "E:\documents\old\inventory\", -> "E:\documents\old\"
         dirpath_t relative() const;   // "E:\documents\old\inventory\", -> "documents\old\inventory\"
         dirpath_t base() const;   // "E:\documents\old\inventory\", -> "inventory\"
+        filepath_t file(crunes_t const& filepath);// "E:\documents\old\inventory\" + "docs\readme.txt", -> "E:\documents\old\inventory\docs\readme.txt"
 
         s32 getLevels() const;
         s32 getLevelOf(dirpath_t const& parent) const;

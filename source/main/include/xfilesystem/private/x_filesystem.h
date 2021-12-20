@@ -50,7 +50,6 @@ namespace xcore
         filehandle_t* m_filehandle_list_active;
         filehandle_t* m_filehandle_array;
 
-        static void          create_filestream(const filepath_t& filepath, EFileMode fm, EFileAccess fa, EFileOp fo, stream_t& out_stream);
         static void          destroy(stream_t& stream);
         static void          resolve(filepath_t const&, pathdevice_t*& device, path_t*& dir, pathname_t*& filename, pathname_t*& extension);
         static void          resolve(dirpath_t const&, pathdevice_t*& device, path_t*& dir);

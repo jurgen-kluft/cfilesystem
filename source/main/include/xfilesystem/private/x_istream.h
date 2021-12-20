@@ -27,6 +27,7 @@ namespace xcore
     };
 
     extern void* open_filestream(alloc_t* a, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, u32 out_caps);
+    extern istream_t* get_nullstream();
 };
 
 #endif

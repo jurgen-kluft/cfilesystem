@@ -21,13 +21,14 @@ namespace xcore
     //
     //  Use cases:
     //  - From filesys_t* you can ask for the root directory of a device
-    //    - tdirpath_t appdir = root->device_root("appdir");
+    //    - dirpath_t appdir = root->device_root("appdir");
     //  - So now with an existing tdirpath_t dir, you could do the following:
-    //    - tdirpath_t bins = appdir->down("bin") // even if this folder doesn't exist, it will be 'added'
-    //    - tfilepath_t coolexe = bins->file("cool.exe");
-    //    - pathname_t* datafilename; pathname_t* dataextension; root->filename("data.txt", datafilename, dataextension);
-    //    - tfilepath_t datafilepath = bins->file(datafilename, dataextension);
-    //    - stream_t datastream = datafilepath->open();
+    //    - dirpath_t bins = appdir.down("bin") // even if this folder doesn't exist, it will be 'added'
+    //    - filepath_t coolexe = bins.file("cool.exe");
+    //    - pathname_t* datafilename; pathname_t* dataextension; 
+    //    - root->filename("data.txt", datafilename, dataextension);
+    //    - filepath_t datafilepath = bins.file(datafilename, dataextension);
+    //    - stream_t datastream = datafilepath.open();
     //      datastream.close();
 
     struct path_t;
