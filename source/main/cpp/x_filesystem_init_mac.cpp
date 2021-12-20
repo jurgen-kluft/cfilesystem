@@ -88,18 +88,18 @@ namespace xcore
                 if (len > cap)
                     cap = len;
                 runes_t str;
-                str.m_runes.m_utf32.m_bos      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
-                str.m_runes.m_utf32.m_str      = str.m_runes.m_utf32.m_bos;
-                str.m_runes.m_utf32.m_end      = str.m_runes.m_utf32.m_str + len;
-                str.m_runes.m_utf32.m_eos      = str.m_runes.m_utf32.m_str + cap;
-                str.m_runes.m_utf32.m_str[cap] = '\0';
-                str.m_runes.m_utf32.m_str[len] = '\0';
+                str.m_utf32.m_bos      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
+                str.m_utf32.m_str      = str.m_utf32.m_bos;
+                str.m_utf32.m_end      = str.m_utf32.m_str + len;
+                str.m_utf32.m_eos      = str.m_utf32.m_str + cap;
+                str.m_utf32.m_str[cap] = '\0';
+                str.m_utf32.m_str[len] = '\0';
                 return str;
             }
 
             virtual void deallocate(runes_t& r)
             {
-                m_allocator->deallocate(r.m_runes.m_utf32.m_bos);
+                m_allocator->deallocate(r.m_utf32.m_bos);
                 r = runes_t();
             }
 
