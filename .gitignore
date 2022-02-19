@@ -18,7 +18,6 @@ target/
 !*.pl
 
 !*.go
-!*.lua
 
 !*.cs
 !*.csproj
