@@ -1,15 +1,15 @@
-#include "xbase/x_target.h"
-#include "xbase/x_base.h"
-#include "xbase/x_allocator.h"
-#include "xbase/x_console.h"
-#include "xbase/x_context.h"
+#include "cbase/c_target.h"
+#include "cbase/c_base.h"
+#include "cbase/c_allocator.h"
+#include "cbase/c_console.h"
+#include "cbase/c_context.h"
 
-#include "xtime/x_time.h"
-#include "xfilesystem/x_filesystem.h"
-#include "xfilesystem/x_threading.h"
+#include "ctime/c_time.h"
+#include "cfilesystem/c_filesystem.h"
+#include "cfilesystem/c_threading.h"
 
-#include "xunittest/xunittest.h"
-#include "xunittest/private/ut_ReportAssert.h"
+#include "cunittest/xunittest.h"
+#include "cunittest/private/ut_ReportAssert.h"
 
 using namespace ncore;
 
