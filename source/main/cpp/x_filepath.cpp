@@ -7,7 +7,7 @@
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_filepath.h"
 
-namespace xcore
+namespace ncore
 {
 
     filepath_t::filepath_t() : m_dirpath(), m_filename(&filesys_t::sNilName), m_extension(&filesys_t::sNilName) {}
@@ -230,10 +230,10 @@ namespace xcore
     {
         m_dirpath.to_string(str);
         crunes_t filenamestr(m_filename->m_name, m_filename->m_len);
-        xcore::concatenate(str, filenamestr);
+        ncore::concatenate(str, filenamestr);
         str += (utf32::rune)'.';
         crunes_t extensionstr(m_extension->m_name, m_extension->m_len);
-        xcore::concatenate(str, extensionstr);
+        ncore::concatenate(str, extensionstr);
     }
 
     s32 filepath_t::to_strlen() const
@@ -283,4 +283,4 @@ namespace xcore
         return filepath_t(dirpath, filepath.filenamestr(), filepath.extensionstr());
     }
 
-} // namespace xcore
+} // namespace ncore

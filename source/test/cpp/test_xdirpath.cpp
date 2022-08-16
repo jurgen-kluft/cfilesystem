@@ -10,7 +10,7 @@
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_stream.h"
 
-using namespace xcore;
+using namespace ncore;
 
 extern alloc_t* gTestAllocator;
 

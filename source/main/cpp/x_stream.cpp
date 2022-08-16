@@ -7,7 +7,7 @@
 #include "xfilesystem/private/x_istream.h"
 #include "xfilesystem/private/x_enumerations.h"
 
-namespace xcore
+namespace ncore
 {
     class stream_nil : public istream_t
     {
@@ -19,8 +19,8 @@ namespace xcore
         virtual s64  setPos(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& current, s64 pos) { return current; }
         virtual void flush(filedevice_t* fd, filehandle_t*& fh) { }
         virtual void close(filedevice_t* fd, filehandle_t*& fh) { }
-        virtual s64 read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, xbyte* buffer, s64 count) { return 0; }
-        virtual s64 write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const xbyte* buffer, s64 count) { return 0; }
+        virtual s64 read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, u8* buffer, s64 count) { return 0; }
+        virtual s64 write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const u8* buffer, s64 count) { return 0; }
         virtual void release() {}
     };
 
@@ -74,13 +74,13 @@ namespace xcore
         m_pimpl->flush(m_filehandle->m_filedevice, m_filehandle);
     }
 
-    s64 stream_t::read(xbyte* buffer, s64 length) 
+    s64 stream_t::read(u8* buffer, s64 length) 
     { 
         u64 bytesRead = m_pimpl->read(m_filehandle->m_filedevice, m_filehandle, m_caps, m_offset, buffer, length);
         return bytesRead;
     }
 
-    s64 stream_t::write(xbyte const* buffer, s64 length)
+    s64 stream_t::write(u8 const* buffer, s64 length)
     {
         u64 bytesWritten = m_pimpl->write(m_filehandle->m_filedevice, m_filehandle, m_caps, m_offset, buffer, length);
         return bytesWritten;
@@ -103,4 +103,4 @@ namespace xcore
         m_offset = 0;
     }
 
-}; // namespace xcore
+}; // namespace ncore

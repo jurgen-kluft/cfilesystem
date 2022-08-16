@@ -2,7 +2,7 @@
 #include "xbase/x_debug.h"
 
 #include "xfilesystem/x_attributes.h"
-namespace xcore
+namespace ncore
 {
     enum EAttributes
     {
@@ -108,4 +108,4 @@ namespace xcore
     bool filetimes_t::operator==(const filetimes_t& other) const { return m_creationtime == other.m_creationtime && m_lastaccesstime == other.m_lastaccesstime && m_lastwritetime == other.m_lastwritetime; }
 
     bool filetimes_t::operator!=(const filetimes_t& other) const { return m_creationtime != other.m_creationtime || m_lastaccesstime != other.m_lastaccesstime || m_lastwritetime != other.m_lastwritetime; }
-} // namespace xcore
+} // namespace ncore

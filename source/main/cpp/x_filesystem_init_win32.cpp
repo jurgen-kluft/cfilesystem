@@ -16,7 +16,7 @@
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
 
-namespace xcore
+namespace ncore
 {
     namespace
     {
@@ -33,7 +33,7 @@ namespace xcore
             DRIVE_TYPE_NUM         = 7,
         };
 
-        static filedevice_t* sFileDevices[DRIVE_TYPE_NUM] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+        static filedevice_t* sFileDevices[DRIVE_TYPE_NUM] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
         static const wchar_t* sSystemDeviceLetters[] = {L"a", L"b", L"c", L"d", L"e", L"f", L"g", L"h", L"i", L"j", L"k", L"l", L"m", L"n", L"o", L"p", L"q", L"r", L"s", L"t", L"u", L"v", L"w", L"x", L"y", L"z"};
         static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
@@ -98,7 +98,7 @@ namespace xcore
 
                     if (!ctxt->has_device(string32))
                     {
-                        if (sFileDevices[eDriveType] == NULL)
+                        if (sFileDevices[eDriveType] == nullptr)
                         {
                             sFileDevices[eDriveType] = x_CreateFileDevice(boCanWrite);
                         }
@@ -204,7 +204,7 @@ namespace xcore
         {
             runes_t  dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
             crunes_t dir16((utf16::pcrune)dir);
-            xcore::copy(dir16, dir32);
+            ncore::copy(dir16, dir32);
             runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
             root->register_alias("appdir:\\", appdir);
         }
@@ -215,7 +215,7 @@ namespace xcore
         {
             runes_t  curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
             crunes_t dir16((utf16::pcrune)dir);
-            xcore::copy(dir16, curdir);
+            ncore::copy(dir16, curdir);
             root->register_alias("curdir:\\", curdir);
         }
     }
@@ -238,6 +238,6 @@ namespace xcore
         mImpl = nullptr;
     }
 
-}; // namespace xcore
+}; // namespace ncore
 
 #endif // TARGET_PC

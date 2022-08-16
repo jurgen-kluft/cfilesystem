@@ -18,7 +18,7 @@
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/private/x_filedevice.h"
 
-namespace xcore
+namespace ncore
 {
     //------------------------------------------------------------------------------------------
 
@@ -26,6 +26,6 @@ namespace xcore
 
     void doIO(io_thread_t* io_thread) {}
 
-}; // namespace xcore
+}; // namespace ncore
 
 #endif // TARGET_PC

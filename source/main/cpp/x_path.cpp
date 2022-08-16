@@ -10,7 +10,7 @@
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_filepath.h"
 
-namespace xcore
+namespace ncore
 {
     //  What are the benefits of using a table like below to manage filepaths and dirpaths?
     //  - Sharing of strings
@@ -104,7 +104,7 @@ namespace xcore
     {
         crunes_t cname(name->m_name, name->m_len);
         crunes_t cother(other->m_name, other->m_len);
-        return xcore::compare(cname, cother);
+        return ncore::compare(cname, cother);
     }
 
     s32 pathname_t::compare(const pathname_t* other) const
@@ -113,12 +113,12 @@ namespace xcore
         {
             crunes_t name(m_name, m_len);
             crunes_t othername(other->m_name, other->m_len);
-            return xcore::compare(name, othername);
+            return ncore::compare(name, othername);
         }
         return false;
     }
 
-    s32 pathname_t::compare(crunes_t const& name) const { return xcore::compare(crunes_t(m_name, m_len), name); }
+    s32 pathname_t::compare(crunes_t const& name) const { return ncore::compare(crunes_t(m_name, m_len), name); }
 
     pathname_t* pathname_t::attach() { m_refs++; return this;  }
 
@@ -157,7 +157,7 @@ namespace xcore
     void    pathname_t::to_string(runes_t& out_str) const
     {
         crunes_t namestr(m_name, m_name + m_len);
-        xcore::concatenate(out_str, namestr);
+        ncore::concatenate(out_str, namestr);
     }
 
 
@@ -349,7 +349,7 @@ namespace xcore
     {
         const u64 hname = calchash(namestr);
         pathname_t* name = m_filename_table.find(hname);
-        while (name != nullptr && xcore::compare(namestr, crunes_t(name->m_name, name->m_len)) != 0)
+        while (name != nullptr && ncore::compare(namestr, crunes_t(name->m_name, name->m_len)) != 0)
         {
             name = m_filename_table.next(hname, name);
         }
@@ -510,7 +510,7 @@ namespace xcore
     { 
         const u64 hname = calchash(extension);
         pathname_t* name = m_extension_table.find(hname);
-        while (name != nullptr && xcore::compare(extension, name->m_name) != 0)
+        while (name != nullptr && ncore::compare(extension, name->m_name) != 0)
         {
             name = m_extension_table.next(hname, name);
         }
@@ -721,8 +721,8 @@ namespace xcore
         {
             pathname_t* dirname = m_path[i];
             crunes_t dirstr(dirname->m_name, dirname->m_name + dirname->m_len);
-            xcore::concatenate(str, dirstr);
-            xcore::concatenate(str, slashstr);
+            ncore::concatenate(str, dirstr);
+            ncore::concatenate(str, slashstr);
         }
     }
 
@@ -868,4 +868,4 @@ namespace xcore
         return len;
     }
 
-}; // namespace xcore
+}; // namespace ncore

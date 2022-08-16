@@ -9,7 +9,7 @@
 #include "xbase/x_runes.h"
 #include "xfilesystem/x_filesystem.h"
 
-namespace xcore
+namespace ncore
 {
     class alloc_t;
 
@@ -165,6 +165,6 @@ namespace xcore
         pathdevice_t* m_redirector;   // If device path can point to another pathdevice_t
         filedevice_t* m_fileDevice;   // or the final device (e.g. "e:\")
     };
-}; // namespace xcore
+}; // namespace ncore
 
 #endif // __X_FILESYSTEM_XPATH_H__

@@ -14,7 +14,7 @@
 #include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/x_attributes.h"
 
-namespace xcore
+namespace ncore
 {
     class xfiledevice_null : public filedevice_t
     {
@@ -158,5 +158,5 @@ namespace xcore
         return &filedevice_null;
     }
 
-}; // namespace xcore
+}; // namespace ncore
 

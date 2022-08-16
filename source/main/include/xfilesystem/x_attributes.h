@@ -7,7 +7,7 @@
 
 #include "xtime/x_datetime.h"
 
-namespace xcore
+namespace ncore
 {
     class fileattrs_t
     {
@@ -32,7 +32,7 @@ namespace xcore
         bool operator!=(const fileattrs_t&) const;
 
     private:
-        xcore::u32 mFlags;
+        ncore::u32 mFlags;
     };
 
     class filetimes_t
@@ -62,6 +62,6 @@ namespace xcore
         datetime_t m_lastaccesstime;
         datetime_t m_lastwritetime;
     };
-}; // namespace xcore
+}; // namespace ncore
 
 #endif

@@ -5,7 +5,7 @@
 #pragma once
 #endif
 
-namespace xcore
+namespace ncore
 {
     class fileattrs_t;
     class filetimes_t;
@@ -24,6 +24,6 @@ namespace xcore
         virtual bool operator()(s32 depth, dirpath_t const& di) = 0;
     };
 
-}; // namespace xcore
+}; // namespace ncore
 
 #endif

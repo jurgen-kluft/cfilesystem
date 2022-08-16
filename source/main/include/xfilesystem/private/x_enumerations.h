@@ -8,7 +8,7 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_limits.h"
 
-namespace xcore
+namespace ncore
 {
 	/// Typedefs
 	typedef		u32			xasync_id;

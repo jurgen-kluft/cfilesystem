@@ -7,7 +7,7 @@
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/private/x_filesystem.h"
 
-namespace xcore
+namespace ncore
 {
     //==============================================================================
     // dirpath_t: "Device:\\Folder\Folder\"
@@ -384,7 +384,7 @@ namespace xcore
         {
             pathname_t* pname = m_path->m_path[i];
             crunes_t namestr(pname->m_name, pname->m_len);
-            xcore::concatenate(str, namestr);
+            ncore::concatenate(str, namestr);
             str += (utf32::rune)'\\';
         }
     }
@@ -420,4 +420,4 @@ namespace xcore
         return dp;
     }
 
-}; // namespace xcore
+}; // namespace ncore

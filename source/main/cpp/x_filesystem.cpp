@@ -7,7 +7,7 @@
 #include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/private/x_filedevice.h"
 
-namespace xcore
+namespace ncore
 {
     void* INVALID_FILE_HANDLE = (void*)-1;
     void* PENDING_FILE_HANDLE = (void*)-2;
@@ -232,4 +232,4 @@ namespace xcore
     }
 
 
-} // namespace xcore
+} // namespace ncore

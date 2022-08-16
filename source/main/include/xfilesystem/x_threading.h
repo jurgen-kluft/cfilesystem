@@ -8,7 +8,7 @@
 //==============================================================================
 #include "xbase/x_debug.h"
 
-namespace xcore
+namespace ncore
 {
     class io_thread_t
     {
@@ -20,6 +20,6 @@ namespace xcore
         virtual void wait()        = 0;
         virtual void signal()      = 0;
     };
-}; // namespace xcore
+}; // namespace ncore
 
 #endif

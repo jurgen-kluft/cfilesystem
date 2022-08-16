@@ -10,7 +10,7 @@
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_stream.h"
 
-using namespace xcore;
+using namespace ncore;
 
 extern alloc_t* gTestAllocator;
 extern filedevice_t* gTestFileDevice;
@@ -196,7 +196,7 @@ UNITTEST_SUITE_BEGIN(filestream)
 			filepath_t xfp1 = filesystem_t::filepath(str1);
 			stream_t xfs1; filesystem_t::open(xfp1, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs1);
 			CHECK_EQUAL(xfs1.getPos(),0);
-			xbyte buffer1[8124];
+			u8 buffer1[8124];
 			u64 fileLen1 = xfs1.read(buffer1, 10); 
 			CHECK_EQUAL(10,fileLen1);
 		}
@@ -206,7 +206,7 @@ UNITTEST_SUITE_BEGIN(filestream)
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
 			filepath_t xfp1 = filesystem_t::filepath(str1);
 			stream_t xfs1; filesystem_t::open(xfp1, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs1);
-			xbyte byte;
+			u8 byte;
 			u64 len = xfs1.read(&byte, 1);
 			CHECK_EQUAL(byte,'T');
 			CHECK_EQUAL(len,1);
@@ -218,13 +218,13 @@ UNITTEST_SUITE_BEGIN(filestream)
 			filepath_t xfp1 = filesystem_t::filepath(str1);
 			stream_t xfs1; filesystem_t::open(xfp1, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs1);
 			CHECK_EQUAL(xfs1.getPos(),0);
-			xbyte buffer1[10];
+			u8 buffer1[10];
 			u64 fileLen1 = xfs1.read(buffer1, 10);
 			CHECK_EQUAL(fileLen1,10);
-			xbyte buffer_write[10] = "abcdefghi";
+			u8 buffer_write[10] = "abcdefghi";
 			xfs1.write(buffer_write, 10);
 
-			xbyte buffer_read[10];
+			u8 buffer_read[10];
 			u64 fileLen3 = xfs1.read(buffer_read, 10);
 			CHECK_EQUAL(fileLen3,10);
 			for(int n = 0; n<10;++n)
@@ -239,12 +239,12 @@ UNITTEST_SUITE_BEGIN(filestream)
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
 			filepath_t xfp1 = filesystem_t::filepath(str1);
 			stream_t xfs1; filesystem_t::open(xfp1, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs1);
-			u64 len1 = xfs1.write((xbyte const*)"M", 1);
-			xbyte byte;
+			u64 len1 = xfs1.write((u8 const*)"M", 1);
+			u8 byte;
 			u64 len2 = xfs1.read(&byte, 1);
 			CHECK_EQUAL(byte,'M');
 			CHECK_EQUAL(len2,len1);
-			xfs1.write((xbyte const*)"T", 1);
+			xfs1.write((u8 const*)"T", 1);
 		}
 
 		UNITTEST_TEST(copyTo1)
@@ -252,16 +252,16 @@ UNITTEST_SUITE_BEGIN(filestream)
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
 			filepath_t xfp1 = filesystem_t::filepath(str1);
 			stream_t xfs1; filesystem_t::open(xfp1, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs1);
-			xbyte buffer1[10];
+			u8 buffer1[10];
 			xfs1.read(buffer1, 10);
 			const char* str2 = "Test:\\copyTo1\\copy.txt";
 			filepath_t xfp2 = filesystem_t::filepath(str2);
 			stream_t fpTemp;
 			stream_t xfs2; filesystem_t::open(xfp2, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs2);
-			xbyte stream_buffer_data[1024];
+			u8 stream_buffer_data[1024];
 			buffer_t stream_buffer(1024, stream_buffer_data);
 			stream_copy(xfs1, xfs2, stream_buffer);
-			xbyte buffer2[10];
+			u8 buffer2[10];
 			xfs2.read(buffer2, 10);
 			for(int n =0; n < 10; ++n)
 			{
@@ -274,18 +274,18 @@ UNITTEST_SUITE_BEGIN(filestream)
 			const char* str1 = "TEST:\\textfiles\\docs\\tech.txt";
 			filepath_t xfp1 = filesystem_t::filepath(str1);
 			stream_t xfs1; filesystem_t::open(xfp1, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs1);
-			xbyte buffer1[10];
+			u8 buffer1[10];
 			xfs1.read(buffer1, 10);
 			const char* str2 = "Test:\\copyTo1\\copy.txt";
 			filepath_t xfp2 = filesystem_t::filepath(str2);
 			stream_t fpTemp;
 			stream_t xfs2; filesystem_t::open(xfp2, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs2);
 
-			xbyte stream_buffer_data[1024];
+			u8 stream_buffer_data[1024];
 			buffer_t stream_buffer(1024, stream_buffer_data);
 			stream_copy(xfs1, xfs2, stream_buffer);
 
-			xbyte buffer2[20];
+			u8 buffer2[20];
 			u64 readLen = xfs2.read(buffer2, 20);
 			CHECK_EQUAL(readLen,10);
 			for(int n = 0; n < 10; ++n)

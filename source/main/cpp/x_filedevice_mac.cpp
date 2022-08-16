@@ -22,7 +22,7 @@
 
 //@TODO: When filedevice_pc_t is working OK we can copy and implement the Mac/OSX version
 
-namespace xcore
+namespace ncore
 {
     class xfiledevice_mac : public filedevice_t
     {
@@ -112,5 +112,5 @@ namespace xcore
     }
 
     void x_DestroyFileDevice(filedevice_t* fd) { x_DestroyFileDeviceMac(fd); }
-} // namespace xcore
+} // namespace ncore
 #endif // TARGET_MAC

@@ -27,7 +27,7 @@
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_filesystem.h"
 
-namespace xcore
+namespace ncore
 {
     class filedevice_pc_t : public filedevice_t
     {
@@ -137,7 +137,7 @@ namespace xcore
         device->to_string(drivepath);
 
         bool result = false;
-        if (GetDiskFreeSpaceExW((LPCWSTR)drivepath.str16(), NULL, &totalbytes, &freebytes) != 0)
+        if (GetDiskFreeSpaceExW((LPCWSTR)drivepath.str16(), nullptr, &totalbytes, &freebytes) != 0)
         {
             freeSpace  = freebytes.QuadPart;
             totalSpace = totalbytes.QuadPart;
@@ -163,7 +163,7 @@ namespace xcore
         szFilename.to_string(filename16);
 
         bool   result      = false;
-        HANDLE nFileHandle = ::CreateFileW(LPCWSTR(filename16.str16()), fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        HANDLE nFileHandle = ::CreateFileW(LPCWSTR(filename16.str16()), fileMode, shareType, nullptr, disposition, attrFlags, nullptr);
         if (nFileHandle != INVALID_HANDLE_VALUE)
         {
             ::CloseHandle((HANDLE)nFileHandle);
@@ -188,7 +188,7 @@ namespace xcore
         runes_t filename16(filenamestr, filenamestr + filenamestrlen);
         szFilename.to_string(filename16);
 
-        HANDLE handle = ::CreateFileW(LPCWSTR(filename16.str16()), fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        HANDLE handle = ::CreateFileW(LPCWSTR(filename16.str16()), fileMode, shareType, nullptr, disposition, attrFlags, nullptr);
         nFileHandle   = handle;
 
         allocator->deallocate(filenamestr);
@@ -209,7 +209,7 @@ namespace xcore
         runes_t filename16(filenamestr, filenamestr + filenamestrlen);
         szFilename.to_string(filename16);
 
-        HANDLE handle = ::CreateFileW((LPCWSTR)filename16.str16(), fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        HANDLE handle = ::CreateFileW((LPCWSTR)filename16.str16(), fileMode, shareType, nullptr, disposition, attrFlags, nullptr);
         nFileHandle   = handle;
 
         allocator->deallocate(filenamestr);
@@ -222,7 +222,7 @@ namespace xcore
         if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
         {
             DWORD numBytesRead;
-            bool  boSuccess = ::ReadFile((HANDLE)nFileHandle, buffer, (DWORD)count, &numBytesRead, NULL);
+            bool  boSuccess = ::ReadFile((HANDLE)nFileHandle, buffer, (DWORD)count, &numBytesRead, nullptr);
 
             if (boSuccess)
             {
@@ -253,7 +253,7 @@ namespace xcore
         if (seek(nFileHandle, __SEEK_ORIGIN, pos, newPos))
         {
             DWORD numBytesWritten;
-            bool  boSuccess = ::WriteFile((HANDLE)nFileHandle, buffer, (DWORD)count, &numBytesWritten, NULL);
+            bool  boSuccess = ::WriteFile((HANDLE)nFileHandle, buffer, (DWORD)count, &numBytesWritten, nullptr);
 
             if (boSuccess)
             {
@@ -366,8 +366,8 @@ namespace xcore
 
     bool filedevice_pc_t::setLengthOfFile(void* nFileHandle, u64 inLength)
     {
-        xsize_t distanceLow  = (xsize_t)inLength;
-        xsize_t distanceHigh = (xsize_t)(inLength >> 32);
+        uint_t distanceLow  = (uint_t)inLength;
+        uint_t distanceHigh = (uint_t)(inLength >> 32);
         ::SetFilePointer((HANDLE)nFileHandle, (LONG)distanceLow, (PLONG)&distanceHigh, FILE_BEGIN);
         ::SetEndOfFile((HANDLE)nFileHandle);
         return true;
@@ -398,18 +398,18 @@ namespace xcore
 
             FILETIME _creationTime;
             u64      uCreationTime       = creationTime.toFileTime();
-            _creationTime.dwHighDateTime = xmem::hiu32(uCreationTime);
-            _creationTime.dwLowDateTime  = xmem::lou32(uCreationTime);
+            _creationTime.dwHighDateTime = nmem::hiu32(uCreationTime);
+            _creationTime.dwLowDateTime  = nmem::lou32(uCreationTime);
 
             FILETIME _lastAccessTime;
             u64      uLastAccessTime       = lastAccessTime.toFileTime();
-            _lastAccessTime.dwHighDateTime = xmem::hiu32(uLastAccessTime);
-            _lastAccessTime.dwLowDateTime  = xmem::lou32(uLastAccessTime);
+            _lastAccessTime.dwHighDateTime = nmem::hiu32(uLastAccessTime);
+            _lastAccessTime.dwLowDateTime  = nmem::lou32(uLastAccessTime);
 
             FILETIME _lastWriteTime;
             u64      uLastWriteTime       = lastWriteTime.toFileTime();
-            _lastWriteTime.dwHighDateTime = xmem::hiu32(uLastWriteTime);
-            _lastWriteTime.dwLowDateTime  = xmem::lou32(uLastWriteTime);
+            _lastWriteTime.dwHighDateTime = nmem::hiu32(uLastWriteTime);
+            _lastWriteTime.dwLowDateTime  = nmem::lou32(uLastWriteTime);
 
             ::SetFileTime((HANDLE)nFileHandle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
             closeFile(nFileHandle);
@@ -427,9 +427,9 @@ namespace xcore
             FILETIME _lastAccessTime;
             FILETIME _lastWriteTime;
             ::GetFileTime((HANDLE)nFileHandle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
-            datetime_t CreationTime   = datetime_t::sFromFileTime((u64)xmem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
-            datetime_t LastAccessTime = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
-            datetime_t LastWriteTime  = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
+            datetime_t CreationTime   = datetime_t::sFromFileTime((u64)nmem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
+            datetime_t LastAccessTime = datetime_t::sFromFileTime((u64)nmem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
+            datetime_t LastWriteTime  = datetime_t::sFromFileTime((u64)nmem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
             ftimes.setCreationTime(CreationTime);
             ftimes.setLastAccessTime(LastAccessTime);
             ftimes.setLastWriteTime(LastWriteTime);
@@ -501,18 +501,18 @@ namespace xcore
 
         FILETIME _creationTime;
         u64      uCreationTime       = creationTime.toFileTime();
-        _creationTime.dwHighDateTime = xmem::hiu32(uCreationTime);
-        _creationTime.dwLowDateTime  = xmem::lou32(uCreationTime);
+        _creationTime.dwHighDateTime = nmem::hiu32(uCreationTime);
+        _creationTime.dwLowDateTime  = nmem::lou32(uCreationTime);
 
         FILETIME _lastAccessTime;
         u64      uLastAccessTime       = lastAccessTime.toFileTime();
-        _lastAccessTime.dwHighDateTime = xmem::hiu32(uLastAccessTime);
-        _lastAccessTime.dwLowDateTime  = xmem::lou32(uLastAccessTime);
+        _lastAccessTime.dwHighDateTime = nmem::hiu32(uLastAccessTime);
+        _lastAccessTime.dwLowDateTime  = nmem::lou32(uLastAccessTime);
 
         FILETIME _lastWriteTime;
         u64      uLastWriteTime       = lastWriteTime.toFileTime();
-        _lastWriteTime.dwHighDateTime = xmem::hiu32(uLastWriteTime);
-        _lastWriteTime.dwLowDateTime  = xmem::lou32(uLastWriteTime);
+        _lastWriteTime.dwHighDateTime = nmem::hiu32(uLastWriteTime);
+        _lastWriteTime.dwLowDateTime  = nmem::lou32(uLastWriteTime);
 
         ::SetFileTime((HANDLE)nFileHandle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
         return true;
@@ -524,9 +524,9 @@ namespace xcore
         FILETIME _lastAccessTime;
         FILETIME _lastWriteTime;
         ::GetFileTime((HANDLE)nFileHandle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
-        datetime_t CreationTime   = datetime_t::sFromFileTime((u64)xmem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
-        datetime_t LastAccessTime = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
-        datetime_t LastWriteTime  = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
+        datetime_t CreationTime   = datetime_t::sFromFileTime((u64)nmem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
+        datetime_t LastAccessTime = datetime_t::sFromFileTime((u64)nmem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
+        datetime_t LastWriteTime  = datetime_t::sFromFileTime((u64)nmem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
         ftimes.setCreationTime(CreationTime);
         ftimes.setLastAccessTime(LastAccessTime);
         ftimes.setLastWriteTime(LastWriteTime);
@@ -547,7 +547,7 @@ namespace xcore
         runes_t path16(pathstr, pathstr + pathstrlen);
         szDirPath.to_string(path16);
 
-        nDirHandle = ::CreateFileW((LPCWSTR)path16.str16(), fileMode, shareType, NULL, disposition, attrFlags, NULL);
+        nDirHandle = ::CreateFileW((LPCWSTR)path16.str16(), fileMode, shareType, nullptr, disposition, attrFlags, nullptr);
 
         allocator->deallocate(pathstr);
         return nDirHandle != INVALID_HANDLE_VALUE;
@@ -574,7 +574,7 @@ namespace xcore
         runes_t path16(pathstr, pathstr + pathstrlen);
         szDirPath.to_string(path16);
 
-        BOOL result = ::CreateDirectoryW(LPCWSTR(path16.str16()), NULL) != 0;
+        BOOL result = ::CreateDirectoryW(LPCWSTR(path16.str16()), nullptr) != 0;
 
         allocator->deallocate(pathstr);
         return result;
@@ -690,11 +690,11 @@ namespace xcore
 
         filetimes_t build_filetimes(WIN32_FIND_DATAW* nFileData)
         {
-            u64 const  creationtime   = xmem::makeu64(nFileData->ftCreationTime.dwLowDateTime, nFileData->ftCreationTime.dwHighDateTime);
+            u64 const  creationtime   = nmem::makeu64(nFileData->ftCreationTime.dwLowDateTime, nFileData->ftCreationTime.dwHighDateTime);
             datetime_t creationdt     = datetime_t::sFromFileTime(creationtime);
-            u64 const  lastwritetime  = xmem::makeu64(nFileData->ftLastWriteTime.dwLowDateTime, nFileData->ftLastWriteTime.dwHighDateTime);
+            u64 const  lastwritetime  = nmem::makeu64(nFileData->ftLastWriteTime.dwLowDateTime, nFileData->ftLastWriteTime.dwHighDateTime);
             datetime_t lastwritedt    = datetime_t::sFromFileTime(lastwritetime);
-            u64 const  lastaccesstime = xmem::makeu64(nFileData->ftLastAccessTime.dwLowDateTime, nFileData->ftLastAccessTime.dwHighDateTime);
+            u64 const  lastaccesstime = nmem::makeu64(nFileData->ftLastAccessTime.dwLowDateTime, nFileData->ftLastAccessTime.dwHighDateTime);
             datetime_t lastaccessdt   = datetime_t::sFromFileTime(lastaccesstime);
 
             return filetimes_t(creationdt, lastaccessdt, lastwritedt);
@@ -862,18 +862,18 @@ namespace xcore
 
             FILETIME _creationTime;
             u64      uCreationTime       = creationTime.toFileTime();
-            _creationTime.dwHighDateTime = xmem::hiu32(uCreationTime);
-            _creationTime.dwLowDateTime  = xmem::lou32(uCreationTime);
+            _creationTime.dwHighDateTime = nmem::hiu32(uCreationTime);
+            _creationTime.dwLowDateTime  = nmem::lou32(uCreationTime);
 
             FILETIME _lastAccessTime;
             u64      uLastAccessTime       = lastAccessTime.toFileTime();
-            _lastAccessTime.dwHighDateTime = xmem::hiu32(uLastAccessTime);
-            _lastAccessTime.dwLowDateTime  = xmem::lou32(uLastAccessTime);
+            _lastAccessTime.dwHighDateTime = nmem::hiu32(uLastAccessTime);
+            _lastAccessTime.dwLowDateTime  = nmem::lou32(uLastAccessTime);
 
             FILETIME _lastWriteTime;
             u64      uLastWriteTime       = lastWriteTime.toFileTime();
-            _lastWriteTime.dwHighDateTime = xmem::hiu32(uLastWriteTime);
-            _lastWriteTime.dwLowDateTime  = xmem::lou32(uLastWriteTime);
+            _lastWriteTime.dwHighDateTime = nmem::hiu32(uLastWriteTime);
+            _lastWriteTime.dwLowDateTime  = nmem::lou32(uLastWriteTime);
 
             ::SetFileTime(handle, &_creationTime, &_lastAccessTime, &_lastWriteTime);
             sCloseDir(handle);
@@ -896,9 +896,9 @@ namespace xcore
             datetime_t outCreationTime;
             datetime_t outLastAccessTime;
             datetime_t outLastWriteTime;
-            outCreationTime   = datetime_t::sFromFileTime((u64)xmem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
-            outLastAccessTime = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
-            outLastWriteTime  = datetime_t::sFromFileTime((u64)xmem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
+            outCreationTime   = datetime_t::sFromFileTime((u64)nmem::makeu64(_creationTime.dwLowDateTime, _creationTime.dwHighDateTime));
+            outLastAccessTime = datetime_t::sFromFileTime((u64)nmem::makeu64(_lastAccessTime.dwLowDateTime, _lastAccessTime.dwHighDateTime));
+            outLastWriteTime  = datetime_t::sFromFileTime((u64)nmem::makeu64(_lastWriteTime.dwLowDateTime, _lastWriteTime.dwHighDateTime));
             ftimes.setCreationTime(outCreationTime);
             ftimes.setLastAccessTime(outLastAccessTime);
             ftimes.setLastWriteTime(outLastWriteTime);
@@ -1028,6 +1028,6 @@ namespace xcore
     bool filedevice_pc_t::seekCurrent(void* nFileHandle, u64 pos, u64& newPos) { return seek(nFileHandle, __SEEK_CURRENT, pos, newPos); }
     bool filedevice_pc_t::seekEnd(void* nFileHandle, u64 pos, u64& newPos) { return seek(nFileHandle, __SEEK_END, pos, newPos); }
 
-}; // namespace xcore
+}; // namespace ncore
 
 #endif // TARGET_PC

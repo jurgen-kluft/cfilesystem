@@ -13,7 +13,7 @@
 #include "xfilesystem/private/x_filesystem.h"
 #include "xfilesystem/private/x_istream.h"
 
-namespace xcore
+namespace ncore
 {
     class filestream_t : public istream_t
     {
@@ -24,8 +24,8 @@ namespace xcore
         virtual void flush(filedevice_t* fd, filehandle_t*& fh);
         virtual void close(filedevice_t* fd, filehandle_t*& fh);
 
-        virtual s64 read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, xbyte* buffer, s64 count);
-        virtual s64 write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const xbyte* buffer, s64 count);
+        virtual s64 read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, u8* buffer, s64 count);
+        virtual s64 write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const u8* buffer, s64 count);
     };
 
     enum ECaps
@@ -78,7 +78,7 @@ namespace xcore
         {
             if (caps.is_set(CAN_WRITE))
             {
-                if (fd->hasFile(filename) == xFALSE)
+                if (fd->hasFile(filename) == False)
                 {
                     fd->openFile(filename, mode, access, op, handle);
                     fd->setLengthOfFile(handle, 0);
@@ -214,7 +214,7 @@ namespace xcore
         }
     }
 
-    s64 filestream_t::read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, xbyte* buffer, s64 count)
+    s64 filestream_t::read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, u8* buffer, s64 count)
     {
         enum_t<ECaps> ecaps(caps);
         if (ecaps.is_set(USE_READ))
@@ -232,7 +232,7 @@ namespace xcore
         return 0;
     }
 
-    s64 filestream_t::write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const xbyte* buffer, s64 count)
+    s64 filestream_t::write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const u8* buffer, s64 count)
     {
         enum_t<ECaps> ecaps(caps);
         if (ecaps.is_set(USE_WRITE))
@@ -262,4 +262,4 @@ namespace xcore
         }
     }
 
-}; // namespace xcore
+}; // namespace ncore

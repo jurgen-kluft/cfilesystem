@@ -13,7 +13,7 @@
 #include "xfilesystem/private/x_enumerations.h"
 #include "xfilesystem/x_stream.h"
 
-namespace xcore
+namespace ncore
 {
     class alloc_t;
     class filesystem_t;
@@ -68,6 +68,6 @@ namespace xcore
     class io_thread_t;
     extern void doIO(io_thread_t*);
 
-}; // namespace xcore
+}; // namespace ncore
 
 #endif // __X_FILESYSTEM_H__

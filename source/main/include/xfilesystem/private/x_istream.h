@@ -7,7 +7,7 @@
 
 #include "xfilesystem/private/x_enumerations.h"
 
-namespace xcore
+namespace ncore
 {
     class alloc_t;
     class filedevice_t;

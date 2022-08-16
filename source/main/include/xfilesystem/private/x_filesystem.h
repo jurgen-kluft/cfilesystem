@@ -10,7 +10,7 @@
 #include "xfilesystem/private/x_enumerations.h"
 #include "xfilesystem/private/x_path.h"
 
-namespace xcore
+namespace ncore
 {
     struct runes_t;
     struct crunes_t;
@@ -135,6 +135,6 @@ namespace xcore
         XCORE_CLASS_PLACEMENT_NEW_DELETE
     };
 
-}; // namespace xcore
+}; // namespace ncore
 
 #endif

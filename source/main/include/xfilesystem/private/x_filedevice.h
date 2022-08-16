@@ -11,7 +11,7 @@
 #define MAX_ENUM_SEARCH_FILES 32
 #define MAX_ENUM_SEARCH_DIRS 16
 
-namespace xcore
+namespace ncore
 {
 	class alloc_t;
     struct runes_t;
@@ -92,6 +92,6 @@ namespace xcore
 
         virtual bool enumerate(dirpath_t const& szDirPath, enumerate_delegate_t& enumerator) = 0;
     };
-}; // namespace xcore
+}; // namespace ncore
 
 #endif

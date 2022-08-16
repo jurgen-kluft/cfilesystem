@@ -10,7 +10,7 @@
 #include "xfilesystem/x_dirpath.h"
 #include "xfilesystem/x_filesystem.h"
 
-namespace xcore
+namespace ncore
 {
     class dirpath_t;
     class filesystem_t;
@@ -81,6 +81,6 @@ namespace xcore
 
     extern filepath_t operator+(const dirpath_t& dirpath, const filepath_t& filepath);
 
-}; // namespace xcore
+}; // namespace ncore
 
 #endif

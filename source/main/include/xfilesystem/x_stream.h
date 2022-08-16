@@ -8,7 +8,7 @@
 #include "xbase/x_debug.h"
 #include "xbase/x_buffer.h"
 
-namespace xcore
+namespace ncore
 {
     class istream_t;
     struct filehandle_t;
@@ -38,8 +38,8 @@ namespace xcore
         void close();
         void flush();
 
-        s64 read(xbyte*, s64);
-        s64 write(xbyte const*, s64);
+        s64 read(u8*, s64);
+        s64 write(u8 const*, s64);
 
         stream_t& operator=(const stream_t&);
 
@@ -58,6 +58,6 @@ namespace xcore
     
     extern void stream_copy(stream_t& src, stream_t& dst, buffer_t& buffer);
 
-}; // namespace xcore
+}; // namespace ncore
 
 #endif

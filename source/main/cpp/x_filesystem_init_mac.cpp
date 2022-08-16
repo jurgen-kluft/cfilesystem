@@ -20,7 +20,7 @@
 #include "xfilesystem/x_filesystem.h"
 #include "xfilesystem/x_filepath.h"
 
-namespace xcore
+namespace ncore
 {
     namespace
     {
@@ -29,7 +29,7 @@ namespace xcore
             char  buffer1[PATH_MAX];
             char  buffer2[PATH_MAX];
             char* path     = buffer1;
-            char* resolved = NULL;
+            char* resolved = nullptr;
             int   length   = -1;
 
             for (;;)
@@ -132,7 +132,7 @@ namespace xcore
         {
             runes_t dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
             crunes_t dir16((utf16::pcrune)dir);
-            xcore::copy(dir16, dir32);
+            ncore::copy(dir16, dir32);
             runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
             imp->m_devman->add_alias("appdir:\\", appdir);
         }
@@ -144,7 +144,7 @@ namespace xcore
         {
             runes_t curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
             crunes_t dir16((utf16::pcrune)dir);
-            xcore::copy(dir16, curdir);
+            ncore::copy(dir16, curdir);
             imp->m_devman->add_alias("curdir:\\", curdir);
         }
     }
@@ -167,6 +167,6 @@ namespace xcore
         mImpl->m_allocator->destruct(mImpl);
         mImpl = nullptr;
     }
-} // namespace xcore
+} // namespace ncore
 
 #endif
