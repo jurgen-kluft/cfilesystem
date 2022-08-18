@@ -8,7 +8,7 @@
 #include "cfilesystem/c_filesystem.h"
 #include "cfilesystem/c_threading.h"
 
-#include "cunittest/xunittest.h"
+#include "cunittest/cunittest.h"
 #include "cunittest/private/ut_ReportAssert.h"
 
 using namespace ncore;
@@ -114,8 +114,8 @@ ncore::UnitTestAssertHandler gAssertHandler;
 
 bool gRunUnitTest(UnitTest::TestReporter& reporter)
 {
-	xbase::init();
-	xtime::init();
+	cbase::init();
+	ctime::init();
 
 #ifdef TARGET_DEBUG
 	ncore::context_t::set_assert_handler(&gAssertHandler);
@@ -136,7 +136,7 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter)
 	int r = UNITTEST_SUITE_RUN(reporter, xFileUnitTest);
 	if (UnitTest::GetNumAllocations()!=0)
 	{
-		reporter.reportFailure(__FILE__, __LINE__, "xunittest", "memory leaks detected!");
+		reporter.reportFailure(__FILE__, __LINE__, "cunittest", "memory leaks detected!");
 		r = -1;
 	}
 
@@ -145,7 +145,7 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter)
 	UnitTest::SetAllocator(nullptr);
 	ncore::context_t::set_system_alloc(systemAllocator);
 
-	xtime::exit();
-	xbase::exit();
+	ctime::exit();
+	cbase::exit();
 	return r==0;
 }

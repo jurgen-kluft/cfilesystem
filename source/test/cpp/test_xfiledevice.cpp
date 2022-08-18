@@ -4,7 +4,7 @@
 #include "cbase/c_allocator.h"
 #include "cbase/c_printf.h"
 
-#include "cunittest/xunittest.h"
+#include "cunittest/cunittest.h"
 
 #include "cfilesystem/private/c_filedevice.h"
 #include "cfilesystem/c_attributes.h"

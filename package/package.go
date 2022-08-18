@@ -1,38 +1,39 @@
-package xfilesystem
+package cfilesystem
 
 import (
+	cbase "github.com/jurgen-kluft/cbase/package"
 	"github.com/jurgen-kluft/ccode/denv"
-	"github.com/jurgen-kluft/xbase/package"
-	"github.com/jurgen-kluft/xentry/package"
-	"github.com/jurgen-kluft/xtime/package"
+	centry "github.com/jurgen-kluft/centry/package"
+	ctime "github.com/jurgen-kluft/ctime/package"
+	cunittest "github.com/jurgen-kluft/cunittest/package"
 )
 
-// GetPackage returns the package object of 'xfilesystem'
+// GetPackage returns the package object of 'cfilesystem'
 func GetPackage() *denv.Package {
 	// Dependencies
-	xunittestpkg := xunittest.GetPackage()
-	xentrypkg := xentry.GetPackage()
-	xbasepkg := xbase.GetPackage()
-	xtimepkg := xtime.GetPackage()
+	cunittestpkg := cunittest.GetPackage()
+	centrypkg := centry.GetPackage()
+	cbasepkg := cbase.GetPackage()
+	ctimepkg := ctime.GetPackage()
 
-	// The main (xfilesystem) package
-	mainpkg := denv.NewPackage("xfilesystem")
-	mainpkg.AddPackage(xunittestpkg)
-	mainpkg.AddPackage(xentrypkg)
-	mainpkg.AddPackage(xbasepkg)
-	mainpkg.AddPackage(xtimepkg)
+	// The main (cfilesystem) package
+	mainpkg := denv.NewPackage("cfilesystem")
+	mainpkg.AddPackage(cunittestpkg)
+	mainpkg.AddPackage(centrypkg)
+	mainpkg.AddPackage(cbasepkg)
+	mainpkg.AddPackage(ctimepkg)
 
-	// 'xfilesystem' library
-	mainlib := denv.SetupDefaultCppLibProject("xfilesystem", "github.com\\jurgen-kluft\\xfilesystem")
-	mainlib.Dependencies = append(mainlib.Dependencies, xbasepkg.GetMainLib())
-	mainlib.Dependencies = append(mainlib.Dependencies, xtimepkg.GetMainLib())
+	// 'cfilesystem' library
+	mainlib := denv.SetupDefaultCppLibProject("cfilesystem", "github.com\\jurgen-kluft\\cfilesystem")
+	mainlib.Dependencies = append(mainlib.Dependencies, cbasepkg.GetMainLib())
+	mainlib.Dependencies = append(mainlib.Dependencies, ctimepkg.GetMainLib())
 
-	// 'xfilesystem' unittest project
-	maintest := denv.SetupDefaultCppTestProject("xfilesystem_test", "github.com\\jurgen-kluft\\xfilesystem")
-	maintest.Dependencies = append(maintest.Dependencies, xunittestpkg.GetMainLib())
-	maintest.Dependencies = append(maintest.Dependencies, xentrypkg.GetMainLib())
-	maintest.Dependencies = append(maintest.Dependencies, xbasepkg.GetMainLib())
-	maintest.Dependencies = append(maintest.Dependencies, xtimepkg.GetMainLib())
+	// 'cfilesystem' unittest project
+	maintest := denv.SetupDefaultCppTestProject("cfilesystem_test", "github.com\\jurgen-kluft\\cfilesystem")
+	maintest.Dependencies = append(maintest.Dependencies, cunittestpkg.GetMainLib())
+	maintest.Dependencies = append(maintest.Dependencies, centrypkg.GetMainLib())
+	maintest.Dependencies = append(maintest.Dependencies, cbasepkg.GetMainLib())
+	maintest.Dependencies = append(maintest.Dependencies, ctimepkg.GetMainLib())
 	maintest.Dependencies = append(maintest.Dependencies, mainlib)
 
 	mainpkg.AddMainLib(mainlib)
