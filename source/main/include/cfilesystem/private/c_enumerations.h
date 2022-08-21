@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_ENUMERATIONS_H__
-#define __X_FILESYSTEM_ENUMERATIONS_H__
+#ifndef __C_FILESYSTEM_ENUMERATIONS_H__
+#define __C_FILESYSTEM_ENUMERATIONS_H__
 #include "cbase/c_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
@@ -86,4 +86,4 @@ namespace ncore
 
 };
 
-#endif // __X_FILESYSTEM_ENUMERATIONS_H__
+#endif // __C_FILESYSTEM_ENUMERATIONS_H__

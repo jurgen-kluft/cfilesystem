@@ -1,5 +1,5 @@
-#ifndef __X_FILESYSTEM_ENUMERATOR_H__
-#define __X_FILESYSTEM_ENUMERATOR_H__
+#ifndef __C_FILESYSTEM_ENUMERATOR_H__
+#define __C_FILESYSTEM_ENUMERATOR_H__
 #include "cbase/c_target.h"
 #ifdef USE_PRAGMA_ONCE
 #pragma once

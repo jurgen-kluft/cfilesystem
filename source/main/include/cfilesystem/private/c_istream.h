@@ -1,5 +1,5 @@
-#ifndef __XFILESYSTEM_XISTREAM_H__
-#define __XFILESYSTEM_XISTREAM_H__
+#ifndef __CFILESYSTEM_XISTREAM_H__
+#define __CFILESYSTEM_XISTREAM_H__
 #include "cbase/c_target.h"
 #ifdef USE_PRAGMA_ONCE
 #pragma once
