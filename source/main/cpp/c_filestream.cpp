@@ -90,7 +90,7 @@ namespace ncore
         {
             if (caps.is_set(CAN_WRITE))
             {
-                if (fd->hasFile(filename) == xTRUE)
+                if (fd->hasFile(filename) == True)
                 {
                     fd->openFile(filename, mode, access, op, handle);
                     fd->setLengthOfFile(handle, 0);
@@ -105,7 +105,7 @@ namespace ncore
         break;
         case FileMode_Open:
         {
-            if (fd->hasFile(filename) == xTRUE)
+            if (fd->hasFile(filename) == True)
             {
                 fd->openFile(filename, mode, access, op, handle);
             }
@@ -118,7 +118,7 @@ namespace ncore
         case FileMode_OpenOrCreate:
         {
             {
-                if (fd->hasFile(filename) == xTRUE)
+                if (fd->hasFile(filename) == True)
                 {
                     fd->openFile(filename, mode, access, op, handle);
                     fd->setLengthOfFile(handle, 0);
@@ -135,7 +135,7 @@ namespace ncore
         {
             if (caps.is_set(CAN_WRITE))
             {
-                if (fd->hasFile(filename) == xTRUE)
+                if (fd->hasFile(filename) == True)
                 {
                     fd->openFile(filename, mode, access, op, handle);
                     if (handle != INVALID_FILE_HANDLE)
@@ -150,7 +150,7 @@ namespace ncore
         {
             if (caps.is_set(CAN_WRITE))
             {
-                if (fd->hasFile(filename) == xTRUE)
+                if (fd->hasFile(filename) == True)
                 {
                     fd->openFile(filename, mode, access, op, handle);
                     if (handle != INVALID_FILE_HANDLE)
