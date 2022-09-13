@@ -430,7 +430,7 @@ namespace ncore
 						t->mFileLength = sizeof(t->mFileData);
 
 					if (data!=nullptr)
-						x_memcopy(t->mFileData, data, dataSize);
+						nmem::memcpy(t->mFileData, data, dataSize);
 					else
 						x_memclr(t->mFileData, sizeof(t->mFileData));
 
@@ -502,7 +502,7 @@ namespace ncore
 				if (count < bytesToRead)
 					bytesToRead = count;
 
-				x_memcopy(buffer, testFile->mFileData + pos, (ncore::s32)bytesToRead);
+				nmem::memcpy(buffer, testFile->mFileData + pos, (ncore::s32)bytesToRead);
 				outNumBytesRead = bytesToRead;
 				return true;
 			}
@@ -527,7 +527,7 @@ namespace ncore
 					testFile->mFileLength = testFile->mMaxFileLength;
 				}
 
-				x_memcopy(testFile->mFileData + pos, buffer, (s32)bytesToWrite);
+				nmem::memcpy(testFile->mFileData + pos, buffer, (s32)bytesToWrite);
 				outNumBytesWritten = bytesToWrite;
 				return true;
 			}
@@ -557,7 +557,7 @@ namespace ncore
 
 				if (dstTestFile!=nullptr)
 				{
-					x_memcpy(dstTestFile->mFileData, srcTestFile->mFileData, sizeof(dstTestFile->mFileData));
+					nmem::memcpy(dstTestFile->mFileData, srcTestFile->mFileData, sizeof(dstTestFile->mFileData));
 					dstTestFile->mFileLength = srcTestFile->mFileLength;
 					return true;
 				}
