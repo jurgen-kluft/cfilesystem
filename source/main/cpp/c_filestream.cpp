@@ -41,25 +41,22 @@ namespace ncore
         USE_ASYNC = 0x8000,
     };
 
-    //extern istream_t* get_filestream();
+    // extern istream_t* get_filestream();
     static filestream_t s_filestream;
-    istream_t* get_filestream()
-    {
-        return &s_filestream;
-    }
+    istream_t*          get_filestream() { return &s_filestream; }
 
     // ---------------------------------------------------------------------------------------------
 
     void* open_filestream(alloc_t* a, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, u32 out_caps)
     {
         bool can_read, can_write, can_seek, can_async;
-        
+
         // fd->caps(filename, can_read, can_write, can_seek, can_async);
         can_read  = true;
         can_write = true;
         can_seek  = true;
         can_async = true;
-        
+
         enum_t<ECaps> caps;
         caps.test_set(CAN_WRITE, can_write);
         caps.test_set(CAN_READ, can_read);
@@ -74,101 +71,101 @@ namespace ncore
         void* handle = nullptr;
         switch (mode)
         {
-        case FileMode_CreateNew:
-        {
-            if (caps.is_set(CAN_WRITE))
+            case FileMode_CreateNew:
             {
-                if (fd->hasFile(filename) == False)
+                if (caps.is_set(CAN_WRITE))
                 {
-                    fd->openFile(filename, mode, access, op, handle);
-                    fd->setLengthOfFile(handle, 0);
-                }
-            }
-        }
-        break;
-        case FileMode_Create:
-        {
-            if (caps.is_set(CAN_WRITE))
-            {
-                if (fd->hasFile(filename) == True)
-                {
-                    fd->openFile(filename, mode, access, op, handle);
-                    fd->setLengthOfFile(handle, 0);
-                }
-                else
-                {
-                    fd->openFile(filename, mode, access, op, handle);
-                    fd->setLengthOfFile(handle, 0);
-                }
-            }
-        }
-        break;
-        case FileMode_Open:
-        {
-            if (fd->hasFile(filename) == True)
-            {
-                fd->openFile(filename, mode, access, op, handle);
-            }
-            else
-            {
-                handle = INVALID_FILE_HANDLE;
-            }
-        }
-        break;
-        case FileMode_OpenOrCreate:
-        {
-            {
-                if (fd->hasFile(filename) == True)
-                {
-                    fd->openFile(filename, mode, access, op, handle);
-                    fd->setLengthOfFile(handle, 0);
-                }
-                else
-                {
-                    fd->openFile(filename, mode, access, op, handle);
-                    fd->setLengthOfFile(handle, 0);
-                }
-            }
-        }
-        break;
-        case FileMode_Truncate:
-        {
-            if (caps.is_set(CAN_WRITE))
-            {
-                if (fd->hasFile(filename) == True)
-                {
-                    fd->openFile(filename, mode, access, op, handle);
-                    if (handle != INVALID_FILE_HANDLE)
+                    if (fd->hasFile(filename) == False)
                     {
+                        fd->openFile(filename, mode, access, op, handle);
                         fd->setLengthOfFile(handle, 0);
                     }
                 }
             }
-        }
-        break;
-        case FileMode_Append:
-        {
-            if (caps.is_set(CAN_WRITE))
+            break;
+            case FileMode_Create:
+            {
+                if (caps.is_set(CAN_WRITE))
+                {
+                    if (fd->hasFile(filename) == True)
+                    {
+                        fd->openFile(filename, mode, access, op, handle);
+                        fd->setLengthOfFile(handle, 0);
+                    }
+                    else
+                    {
+                        fd->openFile(filename, mode, access, op, handle);
+                        fd->setLengthOfFile(handle, 0);
+                    }
+                }
+            }
+            break;
+            case FileMode_Open:
             {
                 if (fd->hasFile(filename) == True)
                 {
                     fd->openFile(filename, mode, access, op, handle);
-                    if (handle != INVALID_FILE_HANDLE)
+                }
+                else
+                {
+                    handle = INVALID_FILE_HANDLE;
+                }
+            }
+            break;
+            case FileMode_OpenOrCreate:
+            {
+                {
+                    if (fd->hasFile(filename) == True)
                     {
-                        caps.test_set(USE_READ, false);
-                        caps.test_set(USE_SEEK, false);
-                        caps.test_set(USE_WRITE, true);
+                        fd->openFile(filename, mode, access, op, handle);
+                        fd->setLengthOfFile(handle, 0);
+                    }
+                    else
+                    {
+                        fd->openFile(filename, mode, access, op, handle);
+                        fd->setLengthOfFile(handle, 0);
                     }
                 }
             }
-        }
-        break;
+            break;
+            case FileMode_Truncate:
+            {
+                if (caps.is_set(CAN_WRITE))
+                {
+                    if (fd->hasFile(filename) == True)
+                    {
+                        fd->openFile(filename, mode, access, op, handle);
+                        if (handle != INVALID_FILE_HANDLE)
+                        {
+                            fd->setLengthOfFile(handle, 0);
+                        }
+                    }
+                }
+            }
+            break;
+            case FileMode_Append:
+            {
+                if (caps.is_set(CAN_WRITE))
+                {
+                    if (fd->hasFile(filename) == True)
+                    {
+                        fd->openFile(filename, mode, access, op, handle);
+                        if (handle != INVALID_FILE_HANDLE)
+                        {
+                            caps.test_set(USE_READ, false);
+                            caps.test_set(USE_SEEK, false);
+                            caps.test_set(USE_WRITE, true);
+                        }
+                    }
+                }
+            }
+            break;
         }
 
         return handle;
     }
 
-    u64  filestream_t::getLength(filedevice_t* fd, filehandle_t* fh) const
+    u64 filestream_t::getLength(filedevice_t* fd, filehandle_t* fh) const
     {
         u64 length = 0;
         if (fh->m_handle != INVALID_FILE_HANDLE)
@@ -179,8 +176,8 @@ namespace ncore
         return 0;
     }
 
-    void filestream_t::setLength(filedevice_t* fd, filehandle_t* fh, u64 length) 
-    { 
+    void filestream_t::setLength(filedevice_t* fd, filehandle_t* fh, u64 length)
+    {
         if (fh->m_handle != INVALID_FILE_HANDLE)
         {
             fd->setLengthOfFile(fh->m_handle, length);
@@ -189,7 +186,7 @@ namespace ncore
 
     s64 filestream_t::setPos(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& offset, s64 seek)
     {
-        s64 old_offset = offset;
+        s64           old_offset = offset;
         enum_t<ECaps> ecaps(caps);
         if (ecaps.is_set(USE_SEEK))
         {
@@ -249,7 +246,6 @@ namespace ncore
         }
         return 0;
     }
-
 
     void stream_copy(stream_t& src, stream_t& dst, buffer_t& buffer)
     {
