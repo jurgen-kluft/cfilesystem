@@ -358,7 +358,7 @@ namespace ncore
 
 			virtual bool			enumerate(dirpath_t const& szDirPath, enumerate_delegate_t& _enumerator);
 
-			XCORE_CLASS_PLACEMENT_NEW_DELETE
+			DCORE_CLASS_PLACEMENT_NEW_DELETE
 		};
 
 		static TestDir*		sFindTestDir(const dirpath_t& szDir)

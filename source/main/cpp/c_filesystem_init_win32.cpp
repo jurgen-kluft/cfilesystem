@@ -176,7 +176,7 @@ namespace ncore
                 slice_t = runes_t();
             }
 
-            XCORE_CLASS_PLACEMENT_NEW_DELETE
+            DCORE_CLASS_PLACEMENT_NEW_DELETE
         };
     } // namespace
 

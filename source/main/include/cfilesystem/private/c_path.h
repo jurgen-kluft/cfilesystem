@@ -116,7 +116,7 @@ namespace ncore
         friend class filesys_t;
         static pathname_t* construct(alloc_t* allocator, u64 hname, crunes_t const& name);
 
-        XCORE_CLASS_PLACEMENT_NEW_DELETE
+        DCORE_CLASS_PLACEMENT_NEW_DELETE
     };
 
     struct pathname_table_t

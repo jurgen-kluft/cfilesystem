@@ -31,7 +31,7 @@ namespace ncore
         dirpath_t mDrivePath;
         bool      mCanWrite;
 
-        XCORE_CLASS_PLACEMENT_NEW_DELETE
+        DCORE_CLASS_PLACEMENT_NEW_DELETE
 
         xfiledevice_mac(alloc_t* alloc, const dirpath_t& pDrivePath, bool boCanWrite) : mAllocator(alloc), mDrivePath(pDrivePath), mCanWrite(boCanWrite) {}
         virtual ~xfiledevice_mac() {}

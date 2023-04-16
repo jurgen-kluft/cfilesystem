@@ -132,7 +132,7 @@ namespace ncore
         pathname_t*   find_name(crunes_t const& namestr) const;
         pathdevice_t* find_device(pathname_t* devicename) const;
 
-        XCORE_CLASS_PLACEMENT_NEW_DELETE
+        DCORE_CLASS_PLACEMENT_NEW_DELETE
     };
 
 }; // namespace ncore

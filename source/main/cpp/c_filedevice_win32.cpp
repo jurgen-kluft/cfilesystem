@@ -33,7 +33,7 @@ namespace ncore
     {
     public:
 
-        XCORE_CLASS_PLACEMENT_NEW_DELETE
+        DCORE_CLASS_PLACEMENT_NEW_DELETE
 
         filedevice_pc_t() {}
         virtual ~filedevice_pc_t() {}
@@ -627,7 +627,7 @@ namespace ncore
             WIN32_FIND_DATAW mFindData;
             node*            mPrev;
 
-            XCORE_CLASS_PLACEMENT_NEW_DELETE
+            DCORE_CLASS_PLACEMENT_NEW_DELETE
         };
 
         alloc_t* mNodeHeap;
