@@ -5,6 +5,7 @@
 #pragma once
 #endif
 
+#include "cbase/c_stream.h"
 #include "cfilesystem/private/c_enumerations.h"
 
 namespace ncore
