@@ -1,4 +1,4 @@
-#include "cbase/c_target.h"
+#include "ccore/c_target.h"
 #include "cbase/c_runes.h"
 
 #ifdef TARGET_MAC
@@ -10,7 +10,7 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include "cbase/c_debug.h"
+#include "ccore/c_debug.h"
 #include "cbase/c_va_list.h"
 
 #include "cfilesystem/private/c_filedevice.h"

@@ -1,9 +1,9 @@
 #include "cbase/c_allocator.h"
 #include "cbase/c_binary_search.h"
-#include "cbase/c_debug.h"
+#include "ccore/c_debug.h"
 #include "cbase/c_hash.h"
 #include "cbase/c_runes.h"
-#include "cbase/c_target.h"
+#include "ccore/c_target.h"
 
 #include "cfilesystem/private/c_filedevice.h"
 #include "cfilesystem/private/c_filesystem.h"

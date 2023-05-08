@@ -1,4 +1,4 @@
-#include "cbase/c_target.h"
+#include "ccore/c_target.h"
 #ifdef TARGET_PC
 
 #define WIN32_LEAN_AND_MEAN
@@ -7,7 +7,7 @@
 #include <windows.h>
 #include <stdio.h>
 
-#include "cbase/c_debug.h"
+#include "ccore/c_debug.h"
 #include "cbase/c_va_list.h"
 
 #include "cfilesystem/private/c_filedevice.h"

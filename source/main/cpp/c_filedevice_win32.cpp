@@ -1,4 +1,4 @@
-#include "cbase/c_target.h"
+#include "ccore/c_target.h"
 #if defined TARGET_PC
 
 //==============================================================================
@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #include "cbase/c_allocator.h"
-#include "cbase/c_debug.h"
+#include "ccore/c_debug.h"
 #include "cbase/c_limits.h"
 #include "cbase/c_memory.h"
 #include "cbase/c_runes.h"

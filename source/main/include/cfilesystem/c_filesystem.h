@@ -1,13 +1,13 @@
 #ifndef __C_FILESYSTEM_H__
 #define __C_FILESYSTEM_H__
-#include "cbase/c_target.h"
+#include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
 #pragma once
 #endif
 
 #include "cbase/c_allocator.h"
 #include "cbase/c_buffer.h"
-#include "cbase/c_debug.h"
+#include "ccore/c_debug.h"
 #include "cbase/c_runes.h"
 
 #include "cfilesystem/private/c_enumerations.h"

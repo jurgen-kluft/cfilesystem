@@ -1,5 +1,5 @@
-#include "cbase/c_target.h"
-#include "cbase/c_debug.h"
+#include "ccore/c_target.h"
+#include "ccore/c_debug.h"
 
 #include "cfilesystem/c_attributes.h"
 namespace ncore

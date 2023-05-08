@@ -1,6 +1,6 @@
-#include "cbase/c_target.h"
+#include "ccore/c_target.h"
 #include "cbase/c_bit_field.h"
-#include "cbase/c_debug.h"
+#include "ccore/c_debug.h"
 #include "cbase/c_limits.h"
 #include "cbase/c_va_list.h"
 

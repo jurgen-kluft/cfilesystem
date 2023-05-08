@@ -1,11 +1,11 @@
 #ifndef __C_FILESYSTEM_ENUMERATIONS_H__
 #define __C_FILESYSTEM_ENUMERATIONS_H__
-#include "cbase/c_target.h"
+#include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE 
 #pragma once 
 #endif
 
-#include "cbase/c_debug.h"
+#include "ccore/c_debug.h"
 #include "cbase/c_limits.h"
 
 namespace ncore
