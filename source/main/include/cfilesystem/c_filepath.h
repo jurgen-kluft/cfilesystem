@@ -15,13 +15,13 @@ namespace ncore
     class dirpath_t;
     class filesystem_t;
 
-    struct pathname_t;
+    struct pathnode_t;
 
     class filepath_t
     {
         dirpath_t   m_dirpath;
-        pathname_t* m_filename;
-        pathname_t* m_extension;
+        pathnode_t* m_filename;
+        pathnode_t* m_extension;
 
         friend class fileinfo_t;
         friend class filesys_t;
@@ -31,9 +31,9 @@ namespace ncore
     public:
         filepath_t();
         filepath_t(const filepath_t&);
-        filepath_t(pathname_t* filename, pathname_t* extension);
-        filepath_t(pathdevice_t* device, path_t* path, pathname_t* filename, pathname_t* extension);
-        filepath_t(dirpath_t const& dirpath, pathname_t* filename, pathname_t* extension);
+        filepath_t(pathnode_t* filename, pathnode_t* extension);
+        filepath_t(pathdevice_t* device, path_t* path, pathnode_t* filename, pathnode_t* extension);
+        filepath_t(dirpath_t const& dirpath, pathnode_t* filename, pathnode_t* extension);
         ~filepath_t();
 
         void clear();
@@ -45,9 +45,9 @@ namespace ncore
 
         void setDevice(crunes_t const& devicename);
         void setDirpath(dirpath_t const& dirpath);
-        void setFilename(pathname_t* filename);
+        void setFilename(pathnode_t* filename);
         void setFilename(crunes_t const& filename);
-        void setExtension(pathname_t* extension);
+        void setExtension(pathnode_t* extension);
         void setExtension(crunes_t const& extension);
 
         dirpath_t   root() const;
@@ -56,17 +56,17 @@ namespace ncore
         filepath_t  filename() const;
         filepath_t  relative() const;
 
-        pathname_t* dirstr() const;
-        pathname_t* filenamestr() const;
-        pathname_t* extensionstr() const;
+        pathnode_t* dirstr() const;
+        pathnode_t* filenamestr() const;
+        pathnode_t* extensionstr() const;
 
         void split(s32 pivot, dirpath_t& left, filepath_t& right) const;
-        void truncate(filepath_t& filepath, pathname_t*& folder) const;
-        void truncate(pathname_t*& folder, filepath_t& filepath) const;
-        void combine(pathname_t* folder, filepath_t const& filepath);
-        void combine(filepath_t const& filepath, pathname_t* folder);
+        void truncate(filepath_t& filepath, pathnode_t*& folder) const;
+        void truncate(pathnode_t*& folder, filepath_t& filepath) const;
+        void combine(pathnode_t* folder, filepath_t const& filepath);
+        void combine(filepath_t const& filepath, pathnode_t* folder);
 
-        void down(pathname_t* folder);
+        void down(pathnode_t* folder);
         void up();
 
         s32 compare(const filepath_t& right) const;

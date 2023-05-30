@@ -2,7 +2,7 @@
 #define __C_FILESYSTEM_DIRPATH_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-#pragma once
+#    pragma once
 #endif
 
 #include "ccore/c_debug.h"
@@ -26,7 +26,8 @@ namespace ncore
     {
     protected:
         pathdevice_t* m_device;
-        path_t* m_path;
+        pathnode_t*   m_base;          // "[E:\][documents\old\inventory\]" or null ( == current working directory)
+        pathnode_t*   m_path;          // "[books\sci-fi\]"
 
         friend class filepath_t;
         friend class filesys_t;
@@ -50,16 +51,16 @@ namespace ncore
         void makeRelativeTo(const dirpath_t& dirpath);
         void makeAbsoluteTo(const dirpath_t& dirpath);
 
-        pathname_t* devname() const; // "E:\documents\old\inventory\", -> "E"
-        pathname_t* rootname() const;// "E:\documents\old\inventory\", -> "documents"
-        pathname_t* basename() const;// "E:\documents\old\inventory\", -> "inventory"
+        pathname_t* devname() const;               // "E:\documents\old\inventory\", -> "E"
+        pathname_t* rootname() const;              // "E:\documents\old\inventory\", -> "documents"
+        pathname_t* basename() const;              // "E:\documents\old\inventory\", -> "inventory"
 
-        dirpath_t device() const; // "E:\documents\old\inventory\", -> "E:\"
-        dirpath_t root() const;   // "E:\documents\old\inventory\", -> "E:\documents\"
-        dirpath_t parent() const; // "E:\documents\old\inventory\", -> "E:\documents\old\"
-        dirpath_t relative() const;   // "E:\documents\old\inventory\", -> "documents\old\inventory\"
-        dirpath_t base() const;   // "E:\documents\old\inventory\", -> "inventory\"
-        filepath_t file(crunes_t const& filepath);// "E:\documents\old\inventory\" + "docs\readme.txt", -> "E:\documents\old\inventory\docs\readme.txt"
+        dirpath_t  device() const;                 // "E:\documents\old\inventory\", -> "E:\"
+        dirpath_t  root() const;                   // "E:\documents\old\inventory\", -> "E:\documents\old\inventory"
+        dirpath_t  parent() const;                 // "E:\documents\old\inventory\", -> "E:\documents\old\inventory\"
+        dirpath_t  relative() const;               // "E:\documents\old\inventory\", -> "books\sci-fi\"
+        dirpath_t  base() const;                   // "E:\documents\old\inventory\", -> "sci-fi\"
+        filepath_t file(crunes_t const& filepath); // "E:\documents\old\inventory\" + "perry-rhodan.pdf", -> "E:\documents\old\inventory\books\sci-fi\perry-rhodan.pdf"
 
         s32 getLevels() const;
         s32 getLevelOf(dirpath_t const& parent) const;
@@ -76,7 +77,7 @@ namespace ncore
         s32 compare(const dirpath_t& other) const;
 
         void to_string(runes_t& str) const;
-        s32 to_strlen() const;
+        s32  to_strlen() const;
 
         dirpath_t& operator=(dirpath_t const& other);
 
@@ -88,7 +89,6 @@ namespace ncore
 
     extern dirpath_t operator+(const dirpath_t& dirpath, const dirpath_t& append_dirpath);
 
-
-}; // namespace ncore
+};     // namespace ncore
 
 #endif // __C_FILESYSTEM_DIRPATH_H__

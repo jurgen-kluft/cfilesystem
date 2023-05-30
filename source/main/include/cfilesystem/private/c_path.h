@@ -1,5 +1,5 @@
-#ifndef __C_FILESYSTEM_XPATH_H__
-#define __C_FILESYSTEM_XPATH_H__
+#ifndef __C_FILESYSTEM_PATH_H__
+#define __C_FILESYSTEM_PATH_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
 #    pragma once
@@ -72,45 +72,63 @@ namespace ncore
     // has siblings (files and folders) and so on. The root folder is the only one
     // that has no siblings. The root folder is the only one that has a null parent.
     //
-    struct pathname_t
+    struct pathitem_t
     {
-        pathname_t* m_siblings[2]; // rbtree, left/right
-        u32         m_str_offset;  // offset into 'm_textdata'
-        u16         m_str_len;     // length of the string
-        u8          m_color;       // rbtree, color (0=red, 1=black)
-        u8          m_flags;       // flags
+        pathitem_t* m_siblings[2]; // rbtree, left/right
     };
 
-    struct pathname_table_t
+    struct pathname_t
     {
-        inline pathname_table_t() : m_len(0), m_cap(0), m_table(nullptr) {}
+        u32 m_str_offset; // offset into 'm_textdata'
+        u16 m_str_len;    // length of the string
+        u8  m_color;      // bst-tree, color (0=red, 1=black)
+        u8  m_flags;      // flags; device/folder/file/extension
+    };
+
+    struct pathnames_t
+    {
+        inline pathnames_t() : m_len(0), m_cap(0), m_table(nullptr) {}
 
         void init(alloc_t* allocator, s32 cap = 65536);
         void release(alloc_t* allocator);
 
-        pathname_t* find(utf32::pcrune item) const;
-        pathname_t* insert(utf32::pcrune item);
-        bool        remove(pathname_t*);
+        enum EType
+        {
+            kDevice    = 0,
+            kFolder    = 1,
+            kFile      = 2,
+            kExtension = 3,
+        };
 
-        utf32::prune m_textdata;
-        pathname_t*  m_root;
+        pathname_t* find(utf32::pcrune item, EType type) const;
+        pathname_t* insert(utf32::pcrune item, EType type);
+        bool        remove(pathname_t* item);
+
+        utf32::rune* m_text_data;       // Virtual memory array
+        pathitem_t*  m_item_array;      // Virtual memory array
+        pathitem_t*  m_item_free_head;  // Head of the free list
+        u64          m_item_free_index; // Index of the free list
+        pathname_t*  m_item_keys;       // Virtual memory array
+        pathitem_t*  m_device_names;    // bst-tree root, device names
+        pathitem_t*  m_file_names;      // bst-tree root, file names
+        pathitem_t*  m_folder_names;    // bst-tree root, folder names
+        pathitem_t*  m_extensions;      // bst-tree root, file extensions
     };
 
     struct pathnode_t
     {
-        pathnode_t* m_parent;      // parent folder (not part of rbtree)
-        pathnode_t* m_siblings[2]; // rbtree, left/right
-        pathnode_t* m_children;    // rbtree, content root
-        u32         m_str_offset;  // file/folder string
-        u16         m_str_len;     // string length
-        u8          m_color;       // sibling color
+        pathname_t* m_name;    // file/folder name
+        pathnode_t* m_parent;  // parent folder (not part of rbtree)
+        pathnode_t* m_files;   // rbtree, content root, files
+        pathnode_t* m_folders; // rbtree, content root, sub folders
     };
 
-    struct paths_t
+    struct pathnodes_t
     {
-        pathnode_t*      m_freenodes; // Should be a virtual memory array
-        pathname_table_t m_names;
-        pathname_table_t m_extensions;
+        pathitem_t* m_treenode_free;   //
+        pathitem_t* m_treenode_array;  // Should be a virtual memory array
+        u8*         m_treenode_colors; //
+        pathnode_t* m_treenode_keys;   //
     };
 
     struct pathdevice_t
@@ -133,6 +151,6 @@ namespace ncore
         pathdevice_t* m_redirector; // If device path can point to another pathdevice_t
         filedevice_t* m_fileDevice; // or the final device (e.g. "e:\")
     };
-}; // namespace ncore
+};                                  // namespace ncore
 
-#endif // __C_FILESYSTEM_XPATH_H__
+#endif                              // __C_FILESYSTEM_PATH_H__
