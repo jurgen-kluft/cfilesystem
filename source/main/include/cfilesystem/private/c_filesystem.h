@@ -2,7 +2,7 @@
 #define __C_FILESYSTEM_FILESYSTEM_IMP_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-#pragma once
+#    pragma once
 #endif
 
 //==============================================================================
@@ -76,16 +76,15 @@ namespace ncore
 
         // -----------------------------------------------------------
         //
-        u32              m_max_open_files;
-        u32              m_max_path_objects;
-        char             m_default_slash;
-        alloc_t*         m_allocator;
-        runes_alloc_t*   m_stralloc;
-        s32              m_num_devices;
-        s32              m_max_devices;
-        pathdevice_t     m_tdevice[64];
-        pathname_table_t m_filename_table;
-        pathname_table_t m_extension_table;
+        u32            m_max_open_files;
+        u32            m_max_path_objects;
+        char           m_default_slash;
+        alloc_t*       m_allocator;
+        runes_alloc_t* m_stralloc;
+        s32            m_num_devices;
+        s32            m_max_devices;
+        pathdevice_t   m_tdevice[64];
+        paths_t*       m_paths; // all data for pathnode_t, pathname_t, path_t, etc.
 
         static pathdevice_t sNilDevice;
         static pathname_t   sNilName;
@@ -111,12 +110,12 @@ namespace ncore
         void          release_path(path_t* path);
         void          release_device(pathdevice_t* dev);
 
-        pathname_t*   get_empty_name() const;
-        path_t* get_parent_path(path_t* path);
-        void    get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path);
-        void    get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path);
-        void    get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path);
-        void    get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right);
+        pathname_t* get_empty_name() const;
+        path_t*     get_parent_path(path_t* path);
+        void        get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path);
+        void        get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path);
+        void        get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path);
+        void        get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right);
 
         bool has_device(const crunes_t& device_name);
         bool register_device(const crunes_t& device_name, filedevice_t* device);
@@ -124,7 +123,7 @@ namespace ncore
 
         filehandle_t* obtain_filehandle();
         void          release_filehandle(filehandle_t* fh);
-        
+
         filehandle_t*  m_filehandles_array;
         filehandle_t** m_filehandles_free;
         s32            m_filehandles_count;

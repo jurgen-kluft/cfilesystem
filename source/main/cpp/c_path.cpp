@@ -12,32 +12,32 @@
 
 namespace ncore
 {
-    //  What are the benefits of using a table like below to manage filepaths and dirpaths?
-    //  - Sharing of strings
-    //  - Easy manipulation of dirpath, can easily go to parent or child directory, likely without doing any allocations
-    //  - You can prime the table which then results in no allocations when you are using existing filepaths and dirpaths
-    //  - Combining dirpath with filepath becomes very easy
-    //  - No need to deal with different types of slashes
+    //  What are the benefits of using a method like below to manage filepaths and dirpaths?
+    //  - Sharing of underlying strings
+    //  - Easy manipulation of dirpath, can easily go to parent or child directory, without doing any allocations
+    //  - You can prime the table which then results in no allocations when you are using existing filepaths and/or dirpaths
+    //  - Combining dirpath with filepath becomes very straightforward
+    //  - No need to deal with forward or backward slash
     //
     //  Use cases:
     //  - From filesys_t* you can ask for the root directory of a device
-    //    - dirpath_t appdir = root->device_root("appdir");
-    //  - So now with an existing tdirpath_t dir, you could do the following:
+    //    - filesys_t* fs_root = filesys_t::root();
+    //    - dirpath_t appdir = fs_root->device_root("appdir");
+    //  - So now with an existing dirpath_t dir, you could do the following:
     //    - dirpath_t bins = appdir.down("bin") // even if this folder doesn't exist, it will be 'added'
     //    - filepath_t coolexe = bins.file("cool.exe");
     //    - pathname_t* datafilename; pathname_t* dataextension; 
-    //    - root->filename("data.txt", datafilename, dataextension);
+    //    - fs_root->filename("data.txt", datafilename, dataextension);
     //    - filepath_t datafilepath = bins.file(datafilename, dataextension);
-    //    - stream_t datastream = datafilepath.open();
-    //      datastream.close();
+    //    - filestream_t datastream = datafilepath.open(); // if this file doesn't exist, it will be created
+    //    - .. read from the datastream
+    //    - datastream.close();
 
     struct path_t;
     struct pathname_t;
     struct pathdevice_t;
 
     class filesys_t;
-
-
 
     void fullpath_parser_utf32::parse(const crunes_t& fullpath)
     {

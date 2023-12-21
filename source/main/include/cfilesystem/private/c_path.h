@@ -65,71 +65,93 @@ namespace ncore
     class filepath_t;
     class dirpath_t;
     struct filesysroot_t;
-    struct pathname_t;
 
     // The whole path table should become a red-black tree and not a hash table.
     // Every 'folder' has siblings (files and folders), each 'folder' sibling again
     // has siblings (files and folders) and so on. The root folder is the only one
     // that has no siblings. The root folder is the only one that has a null parent.
+    // This means using a red-black tree we can have trees within trees within trees, and
+    // with a hash table it would be harder to handle 'sizing' of each sub table.
     //
-    struct pathitem_t
+    struct paths_t
     {
-        pathitem_t* m_siblings[2]; // rbtree, left/right
-    };
+        paths_t();
 
-    struct pathname_t
-    {
-        u32 m_str_offset; // offset into 'm_textdata'
-        u16 m_str_len;    // length of the string
-        u8  m_color;      // bst-tree, color (0=red, 1=black)
-        u8  m_flags;      // flags; device/folder/file/extension
-    };
-
-    struct pathnames_t
-    {
-        inline pathnames_t() : m_len(0), m_cap(0), m_table(nullptr) {}
-
-        void init(alloc_t* allocator, s32 cap = 65536);
+        void init(alloc_t* allocator, u32 cap = 1024 * 1024);
         void release(alloc_t* allocator);
 
         enum EType
         {
-            kDevice    = 0,
-            kFolder    = 1,
-            kFile      = 2,
-            kExtension = 3,
+            kDevice = 0,
+            kFolder = 1,
+            kFile   = 2,
+            kString = 3,
+            kMask   = 0xF,
+            kColor  = 0x10,
         };
 
-        pathname_t* find(utf32::pcrune item, EType type) const;
-        pathname_t* insert(utf32::pcrune item, EType type);
-        bool        remove(pathname_t* item);
+        struct name_t
+        {
+            u32           m_length;
+            utf32::pcrune str() const { return reinterpret_cast<utf32::pcrune>(this + 1); }
+        };
 
-        utf32::rune* m_text_data;       // Virtual memory array
-        pathitem_t*  m_item_array;      // Virtual memory array
-        pathitem_t*  m_item_free_head;  // Head of the free list
-        u64          m_item_free_index; // Index of the free list
-        pathname_t*  m_item_keys;       // Virtual memory array
-        pathitem_t*  m_device_names;    // bst-tree root, device names
-        pathitem_t*  m_file_names;      // bst-tree root, file names
-        pathitem_t*  m_folder_names;    // bst-tree root, folder names
-        pathitem_t*  m_extensions;      // bst-tree root, file extensions
+        struct node_t
+        {
+            u32 m_siblings[2]; // rbtree(left/right)
+            u32 m_item;        // index to file_t, folder_t or offset into text data
+            u8  m_flags;
+        };
+
+        struct file_t
+        {
+            node_t* m_parent; // parent folder (not part of rbtree)
+        };
+
+        struct folder_t
+        {
+            node_t* m_parent;  // parent folder (not part of rbtree)
+            node_t* m_files;   // rbtree, content root, files
+            node_t* m_folders; // rbtree, content root, sub folders
+        };
+
+        static inline bool is_typeof(node_t* n, EType type) { return (n->m_flags & kMask) == type; }
+        static inline bool is_red(node_t* n) { return n->m_flags & kColor == kColor; }
+        static inline bool is_black(node_t* n) { return n->m_flags & kColor == 0; }
+        static inline void set_red(node_t* n) { n->m_flags |= kColor; }
+        static inline void set_black(node_t* n) { n->m_flags &= ~kColor; }
+        static bool        is_filetype(node_t* n) { return is_typeof(n, kFile); }
+        file_t*            get_file(node_t* n); // file_t
+
+        static bool is_foldertype(node_t* n) { return is_typeof(n, kFolder); }
+        folder_t*   get_folder(node_t* n); // folder_t
+        static bool is_stringtype(node_t* n) { return is_typeof(n, kString); }
+        static void get_string(node_t* n, name_t*& str);
+
+        node_t* find(utf32::pcrune item, EType type) const;
+        node_t* insert(utf32::pcrune item, EType type);
+        bool    remove(node_t* item);
+
+        utf32::rune* m_text_data; // Virtual memory array ([length, rune[], length, rune[], ...])
+
+        node_t*   m_node_array;        // Virtual memory array
+        node_t*   m_node_free_head;    // Head of the free list
+        u64       m_node_free_index;   // Index of the free list
+        file_t*   m_file_array;        // Virtual memory array
+        file_t*   m_file_free_head;    // Head of the free list
+        u64       m_file_free_index;   // Index of the free list
+        folder_t* m_folder_array;      // Virtual memory array
+        folder_t* m_folder_free_head;  // Head of the free list
+        u64       m_folder_free_index; // Index of the free list
+
+        node_t* m_strings_root;    // bst-tree root, all strings
+        node_t* m_devices_root;    // bst-tree root, device names
+        node_t* m_files_root;      // bst-tree root, file names
+        node_t* m_folders_root;    // bst-tree root, folder names
+        node_t* m_extensions_root; // bst-tree root, file extensions
     };
 
-    struct pathnode_t
-    {
-        pathname_t* m_name;    // file/folder name
-        pathnode_t* m_parent;  // parent folder (not part of rbtree)
-        pathnode_t* m_files;   // rbtree, content root, files
-        pathnode_t* m_folders; // rbtree, content root, sub folders
-    };
-
-    struct pathnodes_t
-    {
-        pathitem_t* m_treenode_free;   //
-        pathitem_t* m_treenode_array;  // Should be a virtual memory array
-        u8*         m_treenode_colors; //
-        pathnode_t* m_treenode_keys;   //
-    };
+    typedef paths_t::node_t pathnode_t;
 
     struct pathdevice_t
     {
@@ -151,6 +173,6 @@ namespace ncore
         pathdevice_t* m_redirector; // If device path can point to another pathdevice_t
         filedevice_t* m_fileDevice; // or the final device (e.g. "e:\")
     };
-};                                  // namespace ncore
+}; // namespace ncore
 
-#endif                              // __C_FILESYSTEM_PATH_H__
+#endif // __C_FILESYSTEM_PATH_H__
