@@ -1,5 +1,6 @@
 #include "cbase/c_allocator.h"
 #include "cbase/c_binary_search.h"
+#include "cbase/c_buffer.h"
 #include "ccore/c_debug.h"
 #include "cbase/c_hash.h"
 #include "cbase/c_runes.h"
@@ -12,248 +13,125 @@
 
 namespace ncore
 {
-    //  What are the benefits of using a method like below to manage filepaths and dirpaths?
     //  - Sharing of underlying strings
-    //  - Easy manipulation of dirpath, can easily go to parent or child directory, without doing any allocations
-    //  - You can prime the table which then results in no allocations when you are using existing filepaths and/or dirpaths
+    //  - Easy manipulation of dirpath, can easily go to parent or child directory (if it exists), without doing any allocations
+    //  - You can prime it which then results in no or a lot less allocations when you are using existing filepaths and/or dirpaths
     //  - Combining dirpath with filepath becomes very straightforward
     //  - No need to deal with forward or backward slash
     //
     //  Use cases:
     //  - From filesys_t* you can ask for the root directory of a device
-    //    - filesys_t* fs_root = filesys_t::root();
-    //    - dirpath_t appdir = fs_root->device_root("appdir");
+    //    - filesys_t* root = filesys_t::root();
+    //    - dirpath_t appdir = root->device_root("appdir");
     //  - So now with an existing dirpath_t dir, you could do the following:
     //    - dirpath_t bins = appdir.down("bin") // even if this folder doesn't exist, it will be 'added'
     //    - filepath_t coolexe = bins.file("cool.exe");
-    //    - pathname_t* datafilename; pathname_t* dataextension; 
-    //    - fs_root->filename("data.txt", datafilename, dataextension);
+    //    - pathnode_t* datafilename; pathnode_t* dataextension;
+    //    - root->filename("data.txt", datafilename, dataextension);
     //    - filepath_t datafilepath = bins.file(datafilename, dataextension);
     //    - filestream_t datastream = datafilepath.open(); // if this file doesn't exist, it will be created
     //    - .. read from the datastream
     //    - datastream.close();
 
-    struct path_t;
-    struct pathname_t;
-    struct pathdevice_t;
+    // So how do we go about implementing this?
+    // The main goal is to share strings, so we are going to need a rb-tree to keep track of all the directory strings, filename strings, and extension strings.
+    // When we add a directory to this tree, we will need to split the directory string into parts, and then add each part to the tree.
+    // Example:
+    //  - "E:\documents\books\sci-fi\", the following parts will be added to the tree:
+    //    -> "E:\"
+    //    -> "documents\"
+    //    -> "books\"
+    //    -> "sci-fi\"
+    //
+    // So when we add a directory like "E:\documents\music", we will need to split the string into parts, and then add each part to the tree starting from the root.
+    // This means that we need to be able to refer to a parent, so that when we add "E:\documents\music", we can find "E:\" and then "documents\" and then add "music"
+    // with a reference to "documents\".
+    //
 
     class filesys_t;
+    struct pathdevice_t;
+    struct pathnode_t;
+
+    // -------------------------------------------------------------------------------------------
+    // fullpath parser
+    //
+
+    class fullpath_parser_utf32
+    {
+    public:
+        crunes_t m_device;
+        crunes_t m_path;
+        crunes_t m_filename;
+        crunes_t m_extension;
+        crunes_t m_first_folder;
+
+        void parse(const crunes_t& fullpath);
+
+        bool has_device() const { return !m_device.is_empty(); }
+        bool has_path() const { return !m_path.is_empty(); }
+        bool has_filename() const { return !m_filename.is_empty(); }
+        bool has_extension() const { return !m_extension.is_empty(); }
+
+        crunes_t deviceAndPath() const;
+        crunes_t path() const;
+
+        crunes_t iterate_folder() const { return m_first_folder; }
+        bool     next_folder(crunes_t& folder) const;
+    };
 
     void fullpath_parser_utf32::parse(const crunes_t& fullpath)
     {
-        utf32::rune slash_chars[] = {'\\', '\0'};
+        utf32::rune slash_chars[] = {'\\', '/', '\0'};
         crunes_t    slash(slash_chars);
         utf32::rune devicesep_chars[] = {':', '\\', '\0'};
         crunes_t    devicesep(devicesep_chars);
 
-        m_device          = findSelectUntilIncluded(fullpath, devicesep);
+        m_device          = findSelectUntilIncludedAbortAtOneOf(fullpath, devicesep, slash_chars);
         crunes_t filepath = selectAfterExclude(fullpath, m_device);
         m_path            = findLastSelectUntilIncluded(filepath, slash);
         m_filename        = selectAfterExclude(fullpath, m_path);
-        m_filename     = findLastSelectUntil(m_filename, '.');
-        m_extension    = selectAfterExclude(fullpath, m_filename);
-        m_first_folder = findSelectUntil(m_path, slash);
-        m_last_folder  = findLastSelectUntil(m_path, slash);
-        m_last_folder  = selectAfterExclude(m_path, m_last_folder);
-        trimLeft(m_last_folder, '\\');
+        m_filename        = findLastSelectUntil(m_filename, '.');
+        m_extension       = selectAfterExclude(fullpath, m_filename);
+        m_first_folder    = findSelectUntilIncluded(m_path, slash);
+    }
+
+    crunes_t fullpath_parser_utf32::deviceAndPath() const
+    {
+        // example: e:\projects\binary_reader\bin\book.pdf, "e:\projects\binary_reader\bin\"
+        return selectFromToInclude(m_device, m_device, m_path);
+    }
+
+    crunes_t fullpath_parser_utf32::path() const
+    {
+        // example: e:\projects\binary_reader\bin\book.pdf, "projects\binary_reader\bin\"
+        return m_path;
     }
 
     bool fullpath_parser_utf32::next_folder(crunes_t& folder) const
     {
-        // example: projects\binary_reader\bin\ 
+        // example: projects\binary_reader\bin\, "projects\" -> "binary_reader\" -> "bin\"
         folder = selectAfterExclude(m_path, folder);
         trimLeft(folder, '\\');
         folder = findSelectUntil(folder, '\\');
         return !folder.is_empty();
     }
 
-    bool fullpath_parser_utf32::prev_folder(crunes_t& folder) const
-    {
-        // example: projects\binary_reader\bin\ 
-        folder = selectBeforeExclude(m_path, folder);
-        if (folder.is_empty())
-            return false;
-        trimRight(folder, '\\');
-        crunes_t prevfolder = findLastSelectAfter(folder, '\\');
-        if (!prevfolder.is_empty())
-        {
-            folder = prevfolder;
-        }
-        return true;
-    }
-
-
-
-    // 
-    // pathname_t implementations
-    // 
-    pathname_t::pathname_t() : m_hash(0), m_next(nullptr), m_refs(0), m_len(0)
-    {
-        m_name[0] = utf32::TERMINATOR;
-        m_name[1] = utf32::TERMINATOR;
-    }
-    pathname_t::pathname_t(s32 strlen) : m_hash(0), m_next(nullptr), m_refs(0), m_len(strlen)
-    {
-        m_name[0]      = utf32::TERMINATOR;
-        m_name[strlen] = utf32::TERMINATOR;
-    }
-
-    bool pathname_t::isEmpty() const { return m_len == 0; }
-
-    s32 pathname_t::compare(const pathname_t* name, const pathname_t* other)
-    {
-        crunes_t cname(name->m_name, name->m_len);
-        crunes_t cother(other->m_name, other->m_len);
-        return ncore::compare(cname, cother);
-    }
-
-    s32 pathname_t::compare(const pathname_t* other) const
-    {
-        if (m_len == other->m_len)
-        {
-            crunes_t name(m_name, m_len);
-            crunes_t othername(other->m_name, other->m_len);
-            return ncore::compare(name, othername);
-        }
-        return false;
-    }
-
-    s32 pathname_t::compare(crunes_t const& name) const { return ncore::compare(crunes_t(m_name, m_len), name); }
-
-    pathname_t* pathname_t::attach() { m_refs++; return this;  }
-
-    bool pathname_t::detach()
-    {
-        if (m_refs > 0)
-        {
-            m_refs -= 1;
-            return m_refs == 0;
-        }
-        return false;
-    }
-
-    void pathname_t::release(alloc_t* allocator) 
-    {
-        allocator->deallocate(this);
-    }
-
-    pathname_t* pathname_t::construct(alloc_t* allocator, u64 hname, crunes_t const& name)
-    {
-        u32 const strlen = name.size();
-        u32 const strcap = strlen - 1;
-
-        void*    name_mem = allocator->allocate(sizeof(pathname_t) + (sizeof(utf32::rune) * strcap), sizeof(void*));
-        pathname_t* pname = new (name_mem) pathname_t(strlen);
-
-        pname->m_hash = hname;
-        pname->m_next = nullptr;
-        pname->m_refs = 0;
-        runes_t dststr(pname->m_name, pname->m_name + strlen);
-        copy(name, dststr);
-
-        return pname;
-    }
-
-    void    pathname_t::to_string(runes_t& out_str) const
-    {
-        crunes_t namestr(m_name, m_name + m_len);
-        ncore::concatenate(out_str, namestr);
-    }
-
-
-    //
-    // pathname_table_t implementations
-    // 
-    void pathname_table_t::init(alloc_t* allocator, s32 cap)
-    {
-        m_len = 0;
-        m_cap = cap;
-        m_table = (pathname_t**)allocator->allocate(sizeof(pathname_t*) * cap);
-        for (s32 i = 0; i < m_cap; i++)
-            m_table[i] = nullptr;
-    }
-
-    void pathname_table_t::release(alloc_t* allocator)
-    {
-        allocator->deallocate(m_table);
-        m_table = nullptr;
-        m_len = 0;
-        m_cap = 0;
-    }
-
-    pathname_t* pathname_table_t::find(u64 hash) const
-    {
-        u32 index = hash_to_index(hash);
-        return m_table[index];
-    }
-
-    pathname_t* pathname_table_t::next(u64 hash, pathname_t* prev) const
-    {
-        return prev->m_next;
-    }
-
-    void pathname_table_t::insert(pathname_t* name)
-    {
-        u32 const index = hash_to_index(name->m_hash);
-        pathname_t** iter = &m_table[index];
-        while (*iter!=nullptr)
-        {
-            if (name->m_hash <= (*iter)->m_hash)
-            {
-                if (*iter==name || (name->m_hash == (*iter)->m_hash && name->compare(*iter) == 0))
-                {
-                    // already exists
-                    return;
-                }
-                else
-                {
-                    name->m_next = (*iter);
-                    *iter = name;
-                    return;
-                }
-            }
-            iter = &((*iter)->m_next);
-        }
-        *iter = name;
-    }
-
-    bool pathname_table_t::remove(pathname_t* name)
-    {
-        u32 const index = hash_to_index(name->m_hash);
-        pathname_t** iter = &m_table[index];
-        while (*iter != nullptr)
-        {
-            if (*iter == name)
-            {
-                *iter = name->m_next;
-                return true;
-            }
-            iter = &((*iter)->m_next);
-        }
-        return false;
-    }
-
-    u32  pathname_table_t::hash_to_index(u64 hash) const
-    {
-        u32 const index = (u32)(hash & (m_cap - 1));
-        return index;
-    }
-
+    // -------------------------------------------------------------------------------------------
     //
     // filesys_t functions
     //
-    pathdevice_t filesys_t::sNilDevice;
-    pathname_t   filesys_t::sNilName;
-    path_t       filesys_t::sNilPath;
+    pathdevice_t* filesys_t::sNilDevice;
+    pathstr_t*    filesys_t::sNilName;
+    pathnode_t*   filesys_t::sNilNode;
 
     void filesys_t::init(alloc_t* allocator)
     {
         m_allocator = allocator;
 
-        m_filename_table.init(m_allocator, 65536);
-        m_extension_table.init(m_allocator, 8192);
+        m_paths = m_allocator->construct<paths_t>(m_allocator);
+        m_paths->init(m_allocator, 65536 * 32768);
 
-        m_filehandles_free = (filehandle_t**)m_allocator->allocate(sizeof(filehandle_t*) * m_max_open_files);
+        m_filehandles_free  = (filehandle_t**)m_allocator->allocate(sizeof(filehandle_t*) * m_max_open_files);
         m_filehandles_array = (filehandle_t*)m_allocator->allocate(sizeof(filehandle_t) * m_max_open_files);
         m_filehandles_count = m_max_open_files;
         for (s32 i = 0; i < m_filehandles_count; ++i)
@@ -261,23 +139,17 @@ namespace ncore
             m_filehandles_free[i] = &m_filehandles_array[i];
         }
 
-        sNilName.m_hash = 0;
-        sNilName.m_len = 0;
-        sNilName.m_name[0] = utf32::TERMINATOR;
-        sNilName.m_next = nullptr;
-        sNilName.m_refs = 0;
+        sNilName = m_paths->get_nil_name();
+        sNilNode = m_paths->get_nil_node();
 
-        sNilPath.m_cap = 1;
-        sNilPath.m_len = 0;
-        sNilPath.m_path[0] = nullptr;
-        sNilPath.m_ref = 0;
-
-        sNilDevice.m_root = this;
-        sNilDevice.m_alias = &sNilName;
-        sNilDevice.m_deviceName = &sNilName;
-        sNilDevice.m_devicePath = &sNilPath;
-        sNilDevice.m_redirector = nullptr;
-        sNilDevice.m_fileDevice = nullptr;
+        sNilDevice               = &m_tdevice[0];
+        sNilDevice->m_root       = this;
+        sNilDevice->m_alias      = sNilName;
+        sNilDevice->m_deviceName = sNilName;
+        sNilDevice->m_devicePath = sNilNode;
+        sNilDevice->m_redirector = nullptr;
+        sNilDevice->m_fileDevice = nullptr;
+        m_num_devices            = 1;
     }
 
     void filesys_t::exit(alloc_t* allocator)
@@ -287,8 +159,8 @@ namespace ncore
             release_name(m_tdevice[i].m_alias);
             release_name(m_tdevice[i].m_deviceName);
             release_path(m_tdevice[i].m_devicePath);
-            m_tdevice[i].m_root = nullptr;
-            m_tdevice[i].m_alias = nullptr;
+            m_tdevice[i].m_root       = nullptr;
+            m_tdevice[i].m_alias      = nullptr;
             m_tdevice[i].m_deviceName = nullptr;
             m_tdevice[i].m_devicePath = nullptr;
             m_tdevice[i].m_fileDevice = nullptr;
@@ -299,236 +171,145 @@ namespace ncore
         m_allocator->deallocate(m_filehandles_free);
         m_allocator->deallocate(m_filehandles_array);
 
-        m_filename_table.release(allocator);
-        m_extension_table.release(allocator);
+        m_paths->release(m_allocator);
     }
 
-    void filesys_t::release_name(pathname_t* name) 
+    void filesys_t::release_name(pathstr_t* p)
     {
-        if (name == &sNilName)
+        if (p == sNilName)
             return;
-
-        if (name->detach())
-        {
-            m_filename_table.remove(name);
-            name->release(m_allocator);
-        }
+        // m_paths->detach(p);
     }
 
-    void filesys_t::release_filename(pathname_t* name) 
+    void filesys_t::release_name(pathstr_t* p)
     {
-        release_name(name);
-    }
-
-    void filesys_t::release_extension(pathname_t* name) 
-    {
-        if (name == &sNilName)
+        if (p == sNilName)
             return;
-
-        if (name->detach())
-        {
-            m_extension_table.remove(name);
-            name->release(m_allocator);
-        }
+        m_paths->detach(p);
     }
 
-    void filesys_t::release_path(path_t* path)
+    void filesys_t::release_filename(pathstr_t* p)
     {
-        if (path == &sNilPath)
+        if (p == sNilName)
             return;
-
-        if (path->detach(this))
-        { 
-            path_t::destruct(m_allocator, path);
-        }
+        m_paths->detach(p);
     }
 
-    void filesys_t::release_device(pathdevice_t* dev) {}
-
-    pathname_t* filesys_t::find_name(crunes_t const& namestr) const
+    void filesys_t::release_extension(pathstr_t* p)
     {
-        const u64 hname = calchash(namestr);
-        pathname_t* name = m_filename_table.find(hname);
-        while (name != nullptr && ncore::compare(namestr, crunes_t(name->m_name, name->m_len)) != 0)
-        {
-            name = m_filename_table.next(hname, name);
-        }
+        if (p == sNilName)
+            return;
+        m_paths->detach(p);
+    }
+
+    void filesys_t::release_path(pathnode_t* p)
+    {
+        if (p == sNilNode)
+            return;
+        m_paths->detach(p);
+    }
+
+    void filesys_t::release_device(pathdevice_t* dev)
+    {
+        if (dev == sNilDevice)
+            return;
+        m_paths->detach(dev);
+    }
+
+    pathstr_t* filesys_t::find_name(crunes_t const& namestr) const
+    {
+        pathstr_t* name = nullptr;
+
         return name;
     }
 
-    pathname_t* filesys_t::register_name(crunes_t const& namestr) 
-    { 
-        pathname_t* name = find_name(namestr);
-        if (name == nullptr)
-        {
-            const u64 hname = calchash(namestr);
-            name = pathname_t::construct(m_allocator, hname, namestr);
-            m_filename_table.insert(name);
-        }
-        return name;
-    }
+    void filesys_t::register_name(crunes_t const& namestr, pathstr_t*& outname) { outname = nullptr; }
 
-    pathname_t* filesys_t::get_empty_name() const
-    {
-        return &sNilName;
-    }
-
-    bool filesys_t::register_directory(crunes_t const& directory, pathname_t*& out_devicename, path_t*& out_path)
+    void filesys_t::register_fulldirpath(crunes_t const& fulldirpath, pathstr_t*& outdevicename, pathnode_t*& outnode)
     {
         fullpath_parser_utf32 parser;
-        parser.parse(directory);
+        parser.parse(fulldirpath);
 
+        outdevicename = sNilName;
         if (parser.has_device())
         {
-            out_devicename = register_name(parser.m_device);
-        }
-        else
-        {
-            out_devicename = &sNilName;
+            outdevicename = m_paths->findOrInsert(parser.m_device);
         }
 
+        outnode = sNilNode;
         if (parser.has_path())
         {
-            crunes_t folder = parser.iterate_folder();
-            s32 c = 1;
-            while (parser.next_folder(folder))
+            crunes_t    folder      = parser.iterate_folder();
+            pathnode_t* parent_node = nullptr;
+            do
             {
-                c += 1;
-            }
-
-            out_path = path_t::construct(m_allocator, c);
-            folder = parser.iterate_folder();
-            out_path->m_path[out_path->m_len++] = register_dirname(folder);
-            while (parser.next_folder(folder) && out_path->m_len < out_path->m_cap)
-            {
-                out_path->m_path[out_path->m_len++] = register_dirname(folder);
-            }
-            for (c = 0; c < out_path->m_len; c++)
-            {
-                out_path->m_path[c]->attach();
-            }
+                pathstr_t*  folder_pathstr = m_paths->findOrInsert(folder);
+                pathnode_t* folder_node    = m_paths->findOrInsert(parent_node, folder_pathstr);
+                parent_node                = folder_node;
+            } while (parser.next_folder(folder));
+            outnode = parent_node;
         }
-        else
-        {
-            out_path = &sNilPath;
-        }
-
-        return true;
     }
 
-    bool filesys_t::register_directory(path_t** paths_to_concatenate, s32 paths_len, path_t*& out_path)
+    void filesys_t::register_dirpath(crunes_t const& dirpath, pathnode_t*& outnode)
     {
-        s32 depth = 0;
-        for (s32 i = 0; i < paths_len; i++)
+        fullpath_parser_utf32 parser;
+        parser.parse(dirpath);
+
+        outnode = sNilNode;
+        if (parser.has_path())
         {
-            depth += paths_to_concatenate[i]->m_len;
+            crunes_t    folder      = parser.iterate_folder();
+            pathnode_t* parent_node = nullptr;
+            do
+            {
+                pathstr_t*  folder_pathstr = m_paths->findOrInsert(folder);
+                pathnode_t* folder_node    = m_paths->findOrInsert(parent_node, folder_pathstr);
+                parent_node                = folder_node;
+            } while (parser.next_folder(folder));
+            outnode = parent_node;
         }
-        out_path = path_t::construct(m_allocator, depth);
-        
-        depth = 0;
-        for (s32 i = 0; i < paths_len; i++)
-        {
-            path_t::copy_array(paths_to_concatenate[i]->m_path, 0, paths_to_concatenate[i]->m_len, out_path->m_path, depth);
-            depth += paths_to_concatenate[i]->m_len;
-        }
-        return true;
     }
 
-    bool filesys_t::register_filename(crunes_t const& fullfilename, pathname_t*& out_filename, pathname_t*& out_extension)
+    void filesys_t::register_filename(crunes_t const& namestr, pathstr_t*& out_filename, pathstr_t*& out_extension)
     {
-        // split filename into name+extension
-        crunes_t filename = findLastSelectUntil(fullfilename, ".");
-        crunes_t extension = selectAfterExclude(fullfilename, filename);
-        out_filename = register_name(filename);
-        out_extension = register_extension(extension);
-        return false;
+        crunes_t filename_str  = namestr;
+        filename_str           = findLastSelectUntil(filename_str, '.');
+        crunes_t extension_str = selectAfterExclude(namestr, filename_str);
+        out_filename           = m_paths->findOrInsert(filename_str);
+        out_extension          = m_paths->findOrInsert(extension_str);
     }
 
-    bool filesys_t::register_fullfilepath(crunes_t const& fullfilepath, pathname_t*& out_devicename, path_t*& out_path, pathname_t*& out_filename, pathname_t*& out_extension)
+    void filesys_t::register_fullfilepath(crunes_t const& fullfilepath, pathstr_t*& out_device, pathnode_t*& out_path, pathstr_t*& out_filename, pathstr_t*& out_extension)
     {
         fullpath_parser_utf32 parser;
         parser.parse(fullfilepath);
 
+        out_device = sNilName;
+        out_path   = sNilNode;
         if (parser.has_device())
         {
-            out_devicename = register_name(parser.m_device);
+            register_fulldirpath(parser.deviceAndPath(), out_device, out_path);
         }
-        else
+        else if (parser.has_path())
         {
-            out_devicename = &sNilName;
+            register_dirpath(parser.path(), out_path);
         }
 
-        if (parser.has_path())
-        {
-            crunes_t folder = parser.iterate_folder();
-            s32 c = 1;
-            while (parser.next_folder(folder))
-            {
-                c += 1;
-            }
-
-            out_path = path_t::construct(m_allocator, c);
-            folder = parser.iterate_folder();
-            c = 0;
-            out_path->m_path[c++] = register_dirname(folder);
-            while (parser.next_folder(folder))
-            {
-                out_path->m_path[c++] = register_dirname(folder);
-            }
-        }
-        else
-        {
-            out_path = &sNilPath;
-        }
-
+        out_filename = sNilName;
         if (parser.has_filename())
-        { 
-            out_filename = register_name(parser.m_filename);
-        }
-        else {
-            out_filename = &sNilName;
+        {
+            register_name(parser.m_filename, out_filename);
         }
 
+        out_extension = sNilName;
         if (parser.has_extension())
-        { 
-            out_extension = register_extension(parser.m_extension);
-        }
-        else {
-            out_extension = &sNilName;
-        }
-
-        return true;
-
-    }
-
-    pathname_t* filesys_t::register_dirname(crunes_t const& fulldirname)
-    {
-        return register_name(fulldirname);
-    }
-
-    pathname_t* filesys_t::register_extension(crunes_t const& extension) 
-    { 
-        const u64 hname = calchash(extension);
-        pathname_t* name = m_extension_table.find(hname);
-        while (name != nullptr && ncore::compare(extension, name->m_name) != 0)
         {
-            name = m_extension_table.next(hname, name);
+            register_name(parser.m_extension, out_extension);
         }
-        if (name == nullptr)
-        {
-            name = pathname_t::construct(m_allocator, hname, extension);
-            m_extension_table.insert(name);
-        }
-        return name;
     }
 
-    pathdevice_t* filesys_t::register_device(crunes_t const& device)
-    {
-        pathname_t* devicename = register_name(device);
-        return register_device(devicename);
-    }
-
-    pathdevice_t* filesys_t::find_device(pathname_t* devicename) const
+    pathdevice_t* filesys_t::find_device(pathstr_t* devicename) const
     {
         for (s32 i = 0; i < m_num_devices; ++i)
         {
@@ -540,236 +321,157 @@ namespace ncore
         return nullptr;
     }
 
-    pathdevice_t* filesys_t::register_device(pathname_t* devicename)
+    pathdevice_t* filesys_t::register_device(pathstr_t* devicename)
     {
         pathdevice_t* device = find_device(devicename);
         if (device == nullptr)
         {
             if (m_num_devices < 64)
             {
-                m_tdevice[m_num_devices].m_root = this;
-                m_tdevice[m_num_devices].m_alias = &sNilName;
+                m_tdevice[m_num_devices].m_root       = this;
+                m_tdevice[m_num_devices].m_alias      = sNilName;
                 m_tdevice[m_num_devices].m_deviceName = devicename;
-                m_tdevice[m_num_devices].m_devicePath = &sNilPath;
+                m_tdevice[m_num_devices].m_devicePath = sNilNode;
                 m_tdevice[m_num_devices].m_redirector = nullptr;
                 m_tdevice[m_num_devices].m_fileDevice = nullptr;
-                device = &m_tdevice[m_num_devices];
+                device                                = &m_tdevice[m_num_devices];
                 m_num_devices++;
             }
-            else 
+            else
             {
-                device = &sNilDevice;
+                device = sNilDevice;
             }
         }
         return device;
     }
 
-    path_t* filesys_t::get_parent_path(path_t* path)
-    {
-        if (path->m_len == 0)
-            return &sNilPath;
-        if (path->m_len == 1)
-            return &sNilPath;
+    pathnode_t* filesys_t::get_parent_path(pathnode_t* path) { return path->m_parent; }
 
-        s32 depth = path->m_len - 1;
-        path_t* out_path = path_t::construct(m_allocator, depth);
-        path_t::copy_array(path->m_path, 0, depth, out_path->m_path, 0);
-        return out_path;
-    }
-
-    void filesys_t::get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path)
-    {
-        s32 depth = path->m_len + 1;
-        out_path = path_t::construct(m_allocator, depth);
-        path_t::copy_array(path->m_path, 0, depth-1, out_path->m_path, 0);
-        out_path->m_path[path->m_len] = folder;
-    }
-
-    void filesys_t::get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path)
-    {
-        s32 depth = path->m_len + 1;
-        out_path = path_t::construct(m_allocator, depth);
-        path_t::copy_array(path->m_path, 0, depth-1, out_path->m_path, 1);
-        out_path->m_path[0] = folder;
-    }
-
-    void filesys_t::get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path)
-    {
-        s32 depth = llen + rlen;
-        out_path = path_t::construct(m_allocator, depth);
-        path_t::copy_array(left->m_path, lstart, llen, out_path->m_path, 0);
-        path_t::copy_array(right->m_path, rstart, rlen, out_path->m_path, llen);
-    }
-
-    void filesys_t::get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right)
-    {
-        if (pivot == 0)
-        {
-            if (left != nullptr)
-            {
-                *left = path;
-            }
-            if (right != nullptr)
-            {
-                *right = nullptr;
-            }
-        }
-        else if (pivot >= path->m_len)
-        {
-            if (left != nullptr)
-            {
-                *left = nullptr;
-            }
-            if (right != nullptr)
-            {
-                *right = path;
-            }
-        }
-        else
-        {
-            if (left != nullptr)
-            {
-                s32 len = pivot;
-                path_t* newpath = path_t::construct(m_allocator, len);
-                path_t::copy_array(path->m_path, 0, len, newpath->m_path, 0);
-                *left = newpath;
-            }
-            if (right != nullptr)
-            {
-                s32 len = path->m_len - pivot;
-                path_t* newpath = path_t::construct(m_allocator, len);
-                path_t::copy_array(path->m_path, 0, len, newpath->m_path, 0);
-                *right = newpath;
-            }
-        }
-    }
-
+    // -------------------------------------------------------------------------------------------
     //
-    // path_t implementations
-    // 
+    // paths_t implementations
+    //
+    void paths_t::init(alloc_t* allocator, u32 cap)
+    {
+        // allocate text entries using an average of 32 bytes per string excluding the name_t header
+        // @todo; these should be virtual buffers
+        m_text_data_cap  = cap * (32 + sizeof(name_t));
+        m_text_data      = (name_t*)allocator->allocate(m_text_data_cap, sizeof(void*));
+        m_text_data_size = sizeof(name_t);
 
-    path_t* path_t::attach() 
-    { 
-        m_ref++; 
-        return this; 
+        m_node_array      = (folder_t*)allocator->allocate(sizeof(folder_t) * cap, sizeof(void*));
+        m_node_free_head  = nullptr;
+        m_node_free_index = 1;
+
+        m_nil_str                = (name_t*)m_text_data;
+        m_nil_str->m_hash        = 0;
+        m_nil_str->m_len         = 0;
+        m_nil_str->m_children[0] = 0; // left
+        m_nil_str->m_children[1] = 0; // right
+
+        m_nil_node                = m_node_array;
+        m_nil_node->m_children[0] = 0; // left
+        m_nil_node->m_children[1] = 0; // right
+        m_nil_node->m_parent      = 0;
+        m_nil_node->m_name        = m_nil_str;
+
+        m_strings_root = nullptr;
+        m_nodes_root   = nullptr;
     }
 
-    bool path_t::detach(filesys_t* root)
+    void paths_t::release(alloc_t* allocator)
     {
-        if (m_ref > 0)
+        allocator->deallocate(m_text_data);
+        m_text_data      = nullptr;
+        m_text_data_size = 0;
+        m_text_data_cap  = 0;
+
+        m_node_array      = nullptr;
+        m_node_free_head  = nullptr;
+        m_node_free_index = 0;
+
+        m_nil_node = nullptr;
+        m_nil_str  = nullptr;
+
+        m_strings_root = nullptr;
+        m_nodes_root   = nullptr;
+    }
+
+    static u32 hash(utf8::pcrune str, utf8::pcrune end)
+    {
+        u32 hash = 0;
+        while (str < end)
         {
-            m_ref -= 1;
-            if (m_ref == 0)
+            hash = hash + *str++ * 31;
+        }
+        return hash;
+    }
+
+    pathstr_t* paths_t::findOrInsert(crunes_t const& str)
+    {
+        // write this string to the text buffer as utf8
+        name_t* str_entry = (name_t*)((u8*)m_text_data + m_text_data_size);
+        str_entry->reset();
+
+        // need a function to write crunes_t to a utf-8 buffer
+        utf8::prune str8 = nullptr;
+        utf8::prune end8 = nullptr;
+
+        u32 const str_hash = hash(str8, end8);
+        u32 const str_len  = end8 - str8;
+
+        // See if we can find the string in the tree
+        name_t* it = m_strings_root;
+        while (it != m_nil_str)
+        {
+            s32 c = 0;
+            if (str_hash == it->m_hash)
             {
-                for (s32 i = 0; i < m_len; i++)
-                {
-                    pathname_t* dirname = m_path[i];
-                    root->release_name(dirname);
-                }
-                return true;
+                // binary comparison
+                utf8::pcrune ostr8 = it->str();
+                utf8::pcrune oend8 = it->str() + it->m_len;
+                c                  = compare_buffers(str8, end8, ostr8, oend8);
+                if (c == 0)
+                    return it;
+                c = (c + 1) >> 1;
             }
+            else if (str_hash < it->m_hash)
+            {
+                c = 0;
+            }
+            else
+            {
+                c = 1;
+            }
+            it = (name_t*)((u8*)m_text_data + it->m_children[c]);
         }
-        return false;
+
+        // not found, so create and add it
+        it = str_entry;
+
+        // add it to the tree
+
+        return it;
     }
 
-    pathname_t* path_t::get_name() const
-    {
-        if (m_len == 0) 
-            return &filesys_t::sNilName;
-        return m_path[m_len - 1];
-    }
-
-    path_t* path_t::prepend(pathname_t* folder, alloc_t* allocator)
-    {
-        path_t* path = construct(allocator, folder->m_len + 1);
-        copy_array(m_path, 0, m_len, path->m_path, 1);
-        path->m_path[0] = folder->attach();
-        return path;
-    }
-
-    path_t* path_t::append(pathname_t* folder, alloc_t* allocator)
-    {
-        path_t* path = construct(allocator, folder->m_len + 1);
-        copy_array(m_path, 0, m_len, path->m_path, 0);
-        path->m_path[m_len - 1] = folder->attach();
-        return path;
-    }
-
-    s32 path_t::compare(path_t* other) const
-    {
-        if (other == this)
-            return 0;
-
-        if (m_len < other->m_len)
-            return -1;
-        if (m_len > other->m_len)
-            return 1;
-        for (s32 i = 0; i < m_len; i++)
-        {
-            s32 c = m_path[i]->compare(other->m_path[i]);
-            if (c != 0)
-                return c;
-        }
-        return 0;
-    }
-
-    void    path_t::to_string(runes_t& str) const
-    {
-        const char* slash = "\\";
-        crunes_t slashstr(slash, slash + 1);
-        for (s32 i = 0; i < m_len; i++)
-        {
-            pathname_t* dirname = m_path[i];
-            crunes_t dirstr(dirname->m_name, dirname->m_name + dirname->m_len);
-            ncore::concatenate(str, dirstr);
-            ncore::concatenate(str, slashstr);
-        }
-    }
-
-    path_t* path_t::construct(alloc_t* allocator, s32 cap)
-    {
-        ASSERT(cap > 0);
-        s32 const allocsize = sizeof(path_t) + (sizeof(pathname_t*) * (cap - 1));
-        path_t* path = (path_t*)allocator->allocate(allocsize);
-        path->m_cap = cap;
-        path->m_len = 0;
-        path->m_ref = 0;
-        path->m_path[0] = nullptr;
-        return path;
-    }
-
-    void path_t::destruct(alloc_t* allocator, path_t* path)
-    {
-        allocator->deallocate(path);
-    }
-
-    void path_t::copy_array(pathname_t** from, u32 from_start, u32 from_len, pathname_t** to, u32 to_start)
-    {
-        pathname_t* const* src = from + from_start;
-        pathname_t* const* end = src + from_len;
-        pathname_t** dst = to + to_start;
-        while (src < end)
-            *dst++ = *src++;
-    }
-
-
+    // -------------------------------------------------------------------------------------------
     //
     // pathdevice_t implementations
-    // 
+    //
     void pathdevice_t::init(filesys_t* owner)
     {
-        m_root = owner;
-        m_alias = &owner->sNilName;
-        m_deviceName = &owner->sNilName;
-        m_devicePath = &owner->sNilPath;
+        m_root       = owner;
+        m_alias      = owner->sNilName;
+        m_deviceName = owner->sNilName;
+        m_devicePath = owner->sNilNode;
         m_redirector = nullptr;
-        m_fileDevice = x_NullFileDevice();
+        m_fileDevice = gNullFileDevice();
     }
 
     pathdevice_t* pathdevice_t::construct(alloc_t* allocator, filesys_t* owner)
     {
-        void*      device_mem = allocator->allocate(sizeof(pathdevice_t), sizeof(void*));
-        pathdevice_t* device  = static_cast<pathdevice_t*>(device_mem);
+        void*         device_mem = allocator->allocate(sizeof(pathdevice_t), sizeof(void*));
+        pathdevice_t* device     = static_cast<pathdevice_t*>(device_mem);
         device->init(owner);
         return device;
     }
@@ -782,28 +484,28 @@ namespace ncore
 
     pathdevice_t* pathdevice_t::attach()
     {
-        m_alias->attach();
-        m_deviceName->attach();
-        m_devicePath->attach();
-        if (m_redirector!=nullptr)
+        m_root->m_paths->attach(m_alias);
+        m_root->m_paths->attach(m_deviceName);
+        m_root->m_paths->attach(m_devicePath);
+        if (m_redirector != nullptr)
             m_redirector->attach();
         return this;
     }
 
-    bool pathdevice_t::detach(filesys_t* root)
+    bool pathdevice_t::detach()
     {
-        root->release_name(m_alias);
-        root->release_name(m_deviceName);
-        root->release_path(m_devicePath);
+        m_root->release_name(m_alias);
+        m_root->release_name(m_deviceName);
+        m_root->release_path(m_devicePath);
         if (m_redirector != nullptr)
-            m_redirector->detach(root);
+            m_redirector->detach();
 
-        m_alias = &root->sNilName;
-        m_deviceName = &root->sNilName;
-        m_devicePath = &root->sNilPath;
+        m_alias      = m_root->sNilName;
+        m_deviceName = m_root->sNilName;
+        m_devicePath = m_root->sNilNode;
         m_redirector = nullptr;
         m_fileDevice = nullptr;
-        
+
         return false;
     }
 
@@ -816,41 +518,40 @@ namespace ncore
         return 1;
     }
 
-
     void pathdevice_t::to_string(runes_t& str) const
     {
-        s32 i = 0;
+        s32                 i      = 0;
         pathdevice_t const* device = this;
         pathdevice_t const* devices[32];
         do
         {
             devices[i++] = device;
-            device = device->m_redirector;
+            device       = device->m_redirector;
         } while (device != nullptr && i < 32);
 
         device = devices[--i];
 
         // should be the root device (has filedevice), so first emit the device name.
         // this device should not have any device path.
-        device->m_deviceName->to_string(str);
+        m_root->m_paths->to_string(device->m_deviceName, str);
 
         // the rest of the devices are aliases and should be appending their paths
         while (--i >= 0)
         {
             device = devices[i];
-            device->m_devicePath->to_string(str);
+            m_root->m_paths->to_string(device->m_deviceName, str);
         }
     }
 
     s32 pathdevice_t::to_strlen() const
     {
-        s32 i = 0;
+        s32                 i      = 0;
         pathdevice_t const* device = this;
         pathdevice_t const* devices[32];
         do
         {
             devices[i++] = device;
-            device = device->m_redirector;
+            device       = device->m_redirector;
         } while (device != nullptr && i < 32);
 
         device = devices[--i];
@@ -863,9 +564,8 @@ namespace ncore
         while (--i >= 0)
         {
             device = devices[i];
-            len += device->m_devicePath->m_len;
+            len += device->m_devicePath->m_name->m_len;
         }
         return len;
     }
-
 }; // namespace ncore

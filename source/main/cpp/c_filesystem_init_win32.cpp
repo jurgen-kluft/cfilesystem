@@ -39,7 +39,7 @@ namespace ncore
         static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
                                                       L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
 
-        static void x_FileSystemDestroyFileDevices(filesys_t* ctxt)
+        static void gFileSystemDestroyFileDevices(filesys_t* ctxt)
         {
             for (s32 i = 0; i < DRIVE_TYPE_NUM; i++)
             {
@@ -56,7 +56,7 @@ namespace ncore
             }
         }
 
-        static void x_FileSystemRegisterSystemAliases(filesys_t* ctxt)
+        static void gFileSystemRegisterSystemAliases(filesys_t* ctxt)
         {
             runez_t<utf32::rune, 255> string32;
 
@@ -145,39 +145,6 @@ namespace ncore
             }
         }
 
-        //------------------------------------------------------------------------------
-        // The string allocator
-        class fs_utfalloc : public runes_alloc_t
-        {
-            alloc_t* m_allocator;
-
-        public:
-            fs_utfalloc(alloc_t* _allocator) : m_allocator(_allocator) {}
-
-            virtual runes_t allocate(s32 len, s32 cap, s32 type)
-            {
-                if (len > cap)
-                    cap = len;
-                runes_t str;
-                str.m_utf32.m_bos      = (utf32::rune*)m_allocator->allocate((cap + 1) * sizeof(utf32::rune), sizeof(void*));
-                str.m_utf32.m_str      = str.m_utf32.m_bos;
-                str.m_utf32.m_end      = str.m_utf32.m_str + len;
-                str.m_utf32.m_eos      = str.m_utf32.m_str + cap;
-                str.m_utf32.m_str[cap] = '\0';
-                str.m_utf32.m_str[len] = '\0';
-                return str;
-            }
-
-            virtual void deallocate(runes_t& slice_t)
-            {
-                if (slice_t.is_nil())
-                    return;
-                m_allocator->deallocate(slice_t.m_utf32.m_bos);
-                slice_t = runes_t();
-            }
-
-            DCORE_CLASS_PLACEMENT_NEW_DELETE
-        };
     } // namespace
 
     //------------------------------------------------------------------------------
@@ -185,7 +152,6 @@ namespace ncore
     {
         filesys_t* root          = ctxt.m_allocator->construct<filesys_t>();
         root->m_allocator        = ctxt.m_allocator;
-        root->m_stralloc         = ctxt.m_allocator->construct<fs_utfalloc>(ctxt.m_allocator);
         root->m_default_slash    = ctxt.m_default_slash;
         root->m_max_open_files   = ctxt.m_max_open_files;
         root->m_max_path_objects = ctxt.m_max_path_objects;
@@ -193,7 +159,7 @@ namespace ncore
 
         root->init(ctxt.m_allocator);
 
-        x_FileSystemRegisterSystemAliases(root);
+        gFileSystemRegisterSystemAliases(root);
 
         utf32::rune adir32[512] = {'\0'};
 
@@ -231,7 +197,7 @@ namespace ncore
     //------------------------------------------------------------------------------
     void filesystem_t::destroy()
     {
-        x_FileSystemDestroyFileDevices(mImpl);
+        gFileSystemDestroyFileDevices(mImpl);
         mImpl->exit(mImpl->m_allocator);
         mImpl->m_allocator->destruct(mImpl->m_stralloc);
         mImpl->m_allocator->destruct(mImpl);

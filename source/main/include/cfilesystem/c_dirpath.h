@@ -25,9 +25,8 @@ namespace ncore
     class dirpath_t
     {
     protected:
-        pathdevice_t* m_device;
-        pathnode_t*   m_base;          // "[E:\][documents\old\inventory\]" or null ( == current working directory)
-        pathnode_t*   m_path;          // "[books\sci-fi\]"
+        pathdevice_t* m_device; // "E:\" (the file device)
+        pathnode_t*   m_path;   // "documents\old\inventory\books\sci-fi\"
 
         friend class filepath_t;
         friend class filesys_t;
@@ -40,7 +39,7 @@ namespace ncore
         dirpath_t();
         dirpath_t(dirpath_t const& other);
         dirpath_t(pathdevice_t* device);
-        dirpath_t(pathdevice_t* device, path_t* path);
+        dirpath_t(pathdevice_t* device, pathnode_t* path);
         ~dirpath_t();
 
         void clear();
@@ -51,27 +50,18 @@ namespace ncore
         void makeRelativeTo(const dirpath_t& dirpath);
         void makeAbsoluteTo(const dirpath_t& dirpath);
 
-        pathname_t* devname() const;               // "E:\documents\old\inventory\", -> "E"
-        pathname_t* rootname() const;              // "E:\documents\old\inventory\", -> "documents"
-        pathname_t* basename() const;              // "E:\documents\old\inventory\", -> "inventory"
+        pathstr_t* devname() const;  // "E:\documents\old\inventory\", -> "E:\"
+        pathstr_t* rootname() const; // "E:\documents\old\inventory\", -> "documents"
+        pathstr_t* basename() const; // "E:\documents\old\inventory\", -> "inventory"
 
-        dirpath_t  device() const;                 // "E:\documents\old\inventory\", -> "E:\"
-        dirpath_t  root() const;                   // "E:\documents\old\inventory\", -> "E:\documents\old\inventory"
-        dirpath_t  parent() const;                 // "E:\documents\old\inventory\", -> "E:\documents\old\inventory\"
-        dirpath_t  relative() const;               // "E:\documents\old\inventory\", -> "books\sci-fi\"
-        dirpath_t  base() const;                   // "E:\documents\old\inventory\", -> "sci-fi\"
-        filepath_t file(crunes_t const& filepath); // "E:\documents\old\inventory\" + "perry-rhodan.pdf", -> "E:\documents\old\inventory\books\sci-fi\perry-rhodan.pdf"
+        dirpath_t  device() const;                 // "E:\documents\old\inventory\books\sci-fi\", -> "E:\"
+        dirpath_t  root() const;                   // "E:\documents\old\inventory\books\sci-fi\", -> "E:\documents\"
+        dirpath_t  parent() const;                 // "E:\documents\old\inventory\books\sci-fi\", -> "E:\documents\old\inventory\books\"
+        filepath_t file(crunes_t const& filepath); // "E:\documents\old\inventory\books\sci-fi\" + "perry-rhodan.pdf", -> "E:\documents\old\inventory\books\sci-fi\perry-rhodan.pdf"
 
         s32 getLevels() const;
-        s32 getLevelOf(dirpath_t const& parent) const;
 
-        void split(s32 pivot, dirpath_t& left, dirpath_t& right) const;
-        void truncate(dirpath_t& dirpath, pathname_t*& folder) const;
-        void truncate(pathname_t*& folder, dirpath_t& dirpath) const;
-        void combine(pathname_t* folder, dirpath_t const& dirpath);
-        void combine(dirpath_t const& dirpath, pathname_t* folder);
-
-        void down(pathname_t* folder);
+        void down(crunes_t const& folder);
         void up();
 
         s32 compare(const dirpath_t& other) const;
@@ -89,6 +79,6 @@ namespace ncore
 
     extern dirpath_t operator+(const dirpath_t& dirpath, const dirpath_t& append_dirpath);
 
-};     // namespace ncore
+}; // namespace ncore
 
 #endif // __C_FILESYSTEM_DIRPATH_H__

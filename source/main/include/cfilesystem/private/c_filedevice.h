@@ -28,9 +28,9 @@ namespace ncore
     struct pathdevice_t;
 
     // System file device
-    extern filedevice_t* x_CreateFileDevice(bool boCanWrite);
-    extern void          x_DestroyFileDevice(filedevice_t*);
-    extern filedevice_t* x_NullFileDevice();
+    extern filedevice_t* gCreateFileDevice(bool boCanWrite);
+    extern void          gDestroyFileDevice(filedevice_t*);
+    extern filedevice_t* gNullFileDevice();
 
     // File device
     //

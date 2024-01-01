@@ -15,9 +15,6 @@
 
 namespace ncore
 {
-    class alloc_t;
-    class filesystem_t;
-
     class filepath_t;
     class dirpath_t;
     class filesys_t;
@@ -28,9 +25,8 @@ namespace ncore
     public:
         struct context_t
         {
-            inline context_t() : m_allocator(nullptr), m_stralloc(nullptr), m_max_open_files(32), m_max_path_objects(8192), m_default_slash('/') {}
+            inline context_t() : m_allocator(nullptr), m_max_open_files(32), m_max_path_objects(8192), m_default_slash('/') {}
             alloc_t*       m_allocator;
-            runes_alloc_t* m_stralloc;
             u32            m_max_open_files;
             u32            m_max_path_objects;
             char           m_default_slash;

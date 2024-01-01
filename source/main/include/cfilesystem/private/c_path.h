@@ -39,32 +39,10 @@ namespace ncore
     // FilenameWithoutExtension = "Filename"
     //==============================================================================
 
-    class fullpath_parser_utf32
-    {
-    public:
-        crunes_t m_device;
-        crunes_t m_path;
-        crunes_t m_filename;
-        crunes_t m_extension;
-        crunes_t m_first_folder;
-        crunes_t m_last_folder;
-
-        void parse(const crunes_t& fullpath);
-
-        bool has_device() const { return !m_device.is_empty(); }
-        bool has_path() const { return !m_path.is_empty(); }
-        bool has_filename() const { return !m_filename.is_empty(); }
-        bool has_extension() const { return !m_extension.is_empty(); }
-
-        crunes_t iterate_folder() const { return m_first_folder; }
-        bool     next_folder(crunes_t& folder) const;
-        crunes_t last_folder() const { return m_last_folder; }
-        bool     prev_folder(crunes_t& folder) const;
-    };
-
     class filepath_t;
     class dirpath_t;
     struct filesysroot_t;
+    struct pathdevice_t;
 
     // The whole path table should become a red-black tree and not a hash table.
     // Every 'folder' has siblings (files and folders), each 'folder' sibling again
@@ -77,81 +55,117 @@ namespace ncore
     {
         paths_t();
 
-        void init(alloc_t* allocator, u32 cap = 1024 * 1024);
-        void release(alloc_t* allocator);
-
         enum EType
         {
-            kDevice = 0,
-            kFolder = 1,
-            kFile   = 2,
-            kString = 3,
-            kMask   = 0xF,
-            kColor  = 0x10,
-        };
-
-        struct name_t
-        {
-            u32           m_length;
-            utf32::pcrune str() const { return reinterpret_cast<utf32::pcrune>(this + 1); }
+            kNil    = 0x00,
+            kFolder = 0x01,
+            kFile   = 0x02,
+            kString = 0x03,
+            kMask   = 0x0F,
         };
 
         struct node_t
         {
-            u32 m_siblings[2]; // rbtree(left/right)
-            u32 m_item;        // index to file_t, folder_t or offset into text data
-            u8  m_flags;
+            u32         m_children[2]; // left, right (rbtree)
+            inline bool is_red() const { return (m_children[0] & (0x80000000)) != 0; }
+            inline bool is_black() const { return (m_children[0] & (0x80000000)) == 0; }
+            inline void set_red() { m_children[0] |= (0x80000000); }
+            inline void set_black() { m_children[0] &= ~(0x80000000); }
+            inline u32  get_left() const { return m_children[0] & ~(0x80000000); }
+            inline u32  get_right() const { return m_children[1]; }
+            inline u32  get_child(s8 child) const { return m_children[child] & ~(0x80000000); }
+            inline void set_left(u32 index) { m_children[0] = (m_children[0]) | (index & ~(0x80000000)); }
+            inline void set_right(u32 index) { m_children[1] = index; }
+            inline void set_left(s8 child, u32 index) { m_children[child] = (m_children[child]) | (index & ~(0x80000000)); }
         };
 
-        struct file_t
+        struct name_t : node_t
         {
-            node_t* m_parent; // parent folder (not part of rbtree)
+            u32 m_hash; // hash of the string
+            u32 m_len;  // flags; string len(24)
+
+            void reset()
+            {
+                m_children[0] = 0;
+                m_children[1] = 0;
+                m_hash        = 0;
+                m_len         = 0;
+            }
+
+            static s32 compare(name_t* left, name_t* right)
+            {
+                if (left->m_hash < right->m_hash)
+                    return -1;
+                if (left->m_hash > right->m_hash)
+                    return 1;
+                return utf8::compare(left->str(), left->m_len, right->str(), right->m_len);
+            }
+
+            inline utf8::pcrune str() const { return (utf8::pcrune)(this + 1); }
+            // text data follows here in utf-8 format
         };
 
-        struct folder_t
+        struct folder_t : node_t
         {
-            node_t* m_parent;  // parent folder (not part of rbtree)
-            node_t* m_files;   // rbtree, content root, files
-            node_t* m_folders; // rbtree, content root, sub folders
+            folder_t* m_parent; // folder parent
+            name_t*   m_name;   // folder name
+
+            static inline s32 compare(folder_t* left, folder_t* right)
+            {
+                // comparison is in this order:
+                // - string hash -> string length -> string data
+                // - parent
+                s32 c = name_t::compare(left->m_name, right->m_name);
+                if (c == 0)
+                {
+                    if (left->m_parent < right->m_parent)
+                        c = -1;
+                    else if (left->m_parent > right->m_parent)
+                        c = 1;
+                }
+                return c;
+            }
         };
 
-        static inline bool is_typeof(node_t* n, EType type) { return (n->m_flags & kMask) == type; }
-        static inline bool is_red(node_t* n) { return n->m_flags & kColor == kColor; }
-        static inline bool is_black(node_t* n) { return n->m_flags & kColor == 0; }
-        static inline void set_red(node_t* n) { n->m_flags |= kColor; }
-        static inline void set_black(node_t* n) { n->m_flags &= ~kColor; }
-        static bool        is_filetype(node_t* n) { return is_typeof(n, kFile); }
-        file_t*            get_file(node_t* n); // file_t
+        void          init(alloc_t* allocator, u32 cap = 1024 * 1024);
+        void          release(alloc_t* allocator);
+        folder_t*     attach(folder_t* node) {}
+        name_t*       attach(name_t* node) { return node; }
+        void          detach(folder_t* node) {}
+        void          detach(name_t* node) {}
+        pathdevice_t* attach(pathdevice_t* device) { return device; }
+        void          detach(pathdevice_t* device) {}
 
-        static bool is_foldertype(node_t* n) { return is_typeof(n, kFolder); }
-        folder_t*   get_folder(node_t* n); // folder_t
-        static bool is_stringtype(node_t* n) { return is_typeof(n, kString); }
-        static void get_string(node_t* n, name_t*& str);
+        name_t*   findOrInsert(crunes_t const& str);
+        bool      remove(name_t* item);
+        folder_t* findOrInsert(folder_t* parent, name_t* str);
+        bool      remove(folder_t* item);
+        void      to_string(folder_t* str, runes_t& out_str) const;
+        void      to_string(name_t* str, runes_t& out_str) const;
+        s32       to_strlen(folder_t* str) const;
+        s32       compare(name_t* left, name_t* right) const { return name_t::compare(left, right); }
+        s32       compare(folder_t* left, folder_t* right) const;
 
-        node_t* find(utf32::pcrune item, EType type) const;
-        node_t* insert(utf32::pcrune item, EType type);
-        bool    remove(node_t* item);
+        inline folder_t* get_nil_node() const { return m_nil_node; }
+        name_t*          get_nil_name() const { return m_nil_str; }
 
-        utf32::rune* m_text_data; // Virtual memory array ([length, rune[], length, rune[], ...])
+        void* m_text_data;      // Virtual memory array ([hash, length, rune[]], [hash, length, rune[]], [], [], ..)
+        u64   m_text_data_size; // Current size of the text data
+        u64   m_text_data_cap;  // Current capacity of the text data
 
-        node_t*   m_node_array;        // Virtual memory array
-        node_t*   m_node_free_head;    // Head of the free list
-        u64       m_node_free_index;   // Index of the free list
-        file_t*   m_file_array;        // Virtual memory array
-        file_t*   m_file_free_head;    // Head of the free list
-        u64       m_file_free_index;   // Index of the free list
-        folder_t* m_folder_array;      // Virtual memory array
-        folder_t* m_folder_free_head;  // Head of the free list
-        u64       m_folder_free_index; // Index of the free list
+        folder_t* m_node_array;      // Virtual memory array
+        folder_t* m_node_free_head;  // Head of the free list
+        u64       m_node_free_index; // Index of the free list
 
-        node_t* m_strings_root;    // bst-tree root, all strings
-        node_t* m_devices_root;    // bst-tree root, device names
-        node_t* m_files_root;      // bst-tree root, file names
-        node_t* m_folders_root;    // bst-tree root, folder names
-        node_t* m_extensions_root; // bst-tree root, file extensions
+        folder_t* m_nil_node; // sentinel node
+        name_t*   m_nil_str;  // sentinel string
+
+        name_t*   m_strings_root; // bst-tree root, all strings
+        folder_t* m_nodes_root;   // bst-tree root, paths
     };
 
-    typedef paths_t::node_t pathnode_t;
+    typedef paths_t::folder_t pathnode_t;
+    typedef paths_t::name_t   pathstr_t;
 
     struct pathdevice_t
     {
@@ -159,16 +173,16 @@ namespace ncore
 
         void          init(filesys_t* owner);
         pathdevice_t* construct(alloc_t* allocator, filesys_t* owner);
-        pathdevice_t* attach();
-        bool          detach(filesys_t* root);
         void          destruct(alloc_t* allocator, pathdevice_t*& device);
+        pathdevice_t* attach();
+        bool          detach();
         s32           compare(pathdevice_t* device) const;
         void          to_string(runes_t& str) const;
         s32           to_strlen() const;
 
-        filesys_t*    m_root;       //
-        pathname_t*   m_alias;      // an alias redirection (e.g. "data")
-        pathname_t*   m_deviceName; // "[appdir:\]data\bin.pc\", "[data:\]files\" to "[appdir:\]data\bin.pc\files\"
+        filesys_t*    m_root;
+        pathstr_t*    m_alias;      // an alias redirection (e.g. "data")
+        pathstr_t*    m_deviceName; // "[appdir:\]data\bin.pc\", "[data:\]files\" to "[appdir:\]data\bin.pc\files\"
         pathnode_t*   m_devicePath; // "appdir:\[data\bin.pc\]", "data:\[files\]" to "appdir:\[data\bin.pc\files\]"
         pathdevice_t* m_redirector; // If device path can point to another pathdevice_t
         filedevice_t* m_fileDevice; // or the final device (e.g. "e:\")

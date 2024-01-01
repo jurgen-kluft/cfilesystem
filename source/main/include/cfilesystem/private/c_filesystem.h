@@ -21,9 +21,6 @@ namespace ncore
     class stream_t;
     class istream_t;
 
-    struct path_t;
-    struct pathname_t;
-
     struct filehandle_t
     {
         void*         m_handle;
@@ -32,9 +29,9 @@ namespace ncore
         s32           m_salt;
         filedevice_t* m_filedevice;
         pathdevice_t* m_device;
-        path_t*       m_path;
-        pathname_t*   m_filename;
-        pathname_t*   m_extension;
+        pathnode_t*   m_path;
+        pathstr_t*    m_filename;
+        pathstr_t*    m_extension;
         filehandle_t* m_prev;
         filehandle_t* m_next;
     };
@@ -50,15 +47,16 @@ namespace ncore
         filehandle_t* m_filehandle_list_active;
         filehandle_t* m_filehandle_array;
 
+        // -----------------------------------------------------------
         static void          destroy(stream_t& stream);
-        static void          resolve(filepath_t const&, pathdevice_t*& device, path_t*& dir, pathname_t*& filename, pathname_t*& extension);
-        static void          resolve(dirpath_t const&, pathdevice_t*& device, path_t*& dir);
+        static void          resolve(filepath_t const&, pathdevice_t*& device, pathnode_t*& dir, pathstr_t*& filename, pathstr_t*& extension);
+        static void          resolve(dirpath_t const&, pathdevice_t*& device, pathnode_t*& dir);
         static pathdevice_t* get_pathdevice(dirpath_t const& dirpath);
         static pathdevice_t* get_pathdevice(filepath_t const& filepath);
-        static path_t*       get_path(dirpath_t const& dirpath);
-        static path_t*       get_path(filepath_t const& filepath);
-        static pathname_t*   get_filename(filepath_t const& filepath);
-        static pathname_t*   get_extension(filepath_t const& filepath);
+        static pathnode_t*   get_path(dirpath_t const& dirpath);
+        static pathnode_t*   get_path(filepath_t const& filepath);
+        static pathstr_t*    get_filename(filepath_t const& filepath);
+        static pathstr_t*    get_extension(filepath_t const& filepath);
         static filesys_t*    get_filesystem(dirpath_t const& dirpath);
         static filesys_t*    get_filesystem(filepath_t const& filepath);
 
@@ -84,38 +82,33 @@ namespace ncore
         s32            m_num_devices;
         s32            m_max_devices;
         pathdevice_t   m_tdevice[64];
-        paths_t*       m_paths; // all data for pathnode_t, pathname_t, path_t, etc.
+        paths_t*       m_paths; // all data for pathnode_t, pathnode_t, pathnode_t, etc.
 
-        static pathdevice_t sNilDevice;
-        static pathname_t   sNilName;
-        static path_t       sNilPath;
+        static pathdevice_t* sNilDevice;
+        static pathstr_t*    sNilName;
+        static pathnode_t*   sNilNode;
 
         void filepath(const char* str, filepath_t&);
         void dirpath(const char* str, dirpath_t&);
         void filepath(const crunes_t& str, filepath_t&);
         void dirpath(const crunes_t& str, dirpath_t&);
 
-        pathname_t*   register_name(crunes_t const& namestr);
-        bool          register_directory(crunes_t const& directory, pathname_t*& out_devicename, path_t*& out_path);
-        bool          register_directory(path_t** paths_to_concatenate, s32 paths_len, path_t*& out_path);
-        bool          register_filename(crunes_t const& filename, pathname_t*& out_filename, pathname_t*& out_extension);
-        bool          register_fullfilepath(crunes_t const& fullfilepath, pathname_t*& out_devicename, path_t*& out_path, pathname_t*& out_filename, pathname_t*& out_extension);
-        pathname_t*   register_dirname(crunes_t const& fulldirname);
-        pathname_t*   register_extension(crunes_t const& extension);
-        pathdevice_t* register_device(crunes_t const& device);
-        pathdevice_t* register_device(pathname_t* device);
-        void          release_name(pathname_t* name);
-        void          release_filename(pathname_t* name);
-        void          release_extension(pathname_t* name);
-        void          release_path(path_t* path);
-        void          release_device(pathdevice_t* dev);
+        void register_fulldirpath(crunes_t const& fulldirpath, pathstr_t*& out_devicename, pathnode_t*& out_path);
+        void register_fullfilepath(crunes_t const& fullfilepath, pathstr_t*& out_devicename, pathnode_t*& out_path, pathstr_t*& out_filename, pathstr_t*& out_extension);
+        void register_dirpath(crunes_t const& dirpath, pathnode_t*& out_path);
+        void register_filename(crunes_t const& namestr, pathstr_t*& filename, pathstr_t*& extension);
+        void register_name(crunes_t const& namestr, pathstr_t*& name);
 
-        pathname_t* get_empty_name() const;
-        path_t*     get_parent_path(path_t* path);
-        void        get_expand_path(path_t* path, pathname_t* folder, path_t*& out_path);
-        void        get_expand_path(pathname_t* folder, path_t* path, path_t*& out_path);
-        void        get_expand_path(path_t* left, s32 lstart, s32 llen, path_t* right, s32 rstart, s32 rlen, path_t*& out_path);
-        void        get_split_path(path_t* path, s32 pivot, path_t** left, path_t** right);
+        pathdevice_t* register_device(crunes_t const& device);
+        pathdevice_t* register_device(pathstr_t* device);
+
+        void release_name(pathstr_t* name);
+        void release_filename(pathstr_t* name);
+        void release_extension(pathstr_t* name);
+        void release_path(pathnode_t* path);
+        void release_device(pathdevice_t* dev);
+
+        pathnode_t* get_parent_path(pathnode_t* path);
 
         bool has_device(const crunes_t& device_name);
         bool register_device(const crunes_t& device_name, filedevice_t* device);
@@ -128,8 +121,8 @@ namespace ncore
         filehandle_t** m_filehandles_free;
         s32            m_filehandles_count;
 
-        pathname_t*   find_name(crunes_t const& namestr) const;
-        pathdevice_t* find_device(pathname_t* devicename) const;
+        pathstr_t*   find_name(crunes_t const& namestr) const;
+        pathdevice_t* find_device(pathstr_t* devicename) const;
 
         DCORE_CLASS_PLACEMENT_NEW_DELETE
     };
