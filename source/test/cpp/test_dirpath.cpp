@@ -55,7 +55,7 @@ UNITTEST_SUITE_BEGIN(dirpath)
 		{
 			const char* asciidirstr = "c:\\the\\name\\is\\johhnywalker\\";
 			dirpath_t dirpath = filesystem_t::dirpath(asciidirstr);
-			runez_t<ascii::rune, 128> dirstr;
+			nrunes::runestr_t<ascii::rune, 128> dirstr;
 			dirpath.to_string(dirstr);
 			CHECK_EQUAL(0, compare(dirstr, asciidirstr));
 		}

@@ -64,6 +64,23 @@ namespace ncore
             kMask   = 0x0F,
         };
 
+        // Dynamic length
+        struct str_t
+        {
+            u32                 m_hash;
+            u32                 m_len;
+            inline utf8::pcrune str() const { return reinterpret_cast<utf8::pcrune>(this + 1); }
+
+            static s32 compare(str_t* left, str_t* right)
+            {
+                if (left->m_hash < right->m_hash)
+                    return -1;
+                if (left->m_hash > right->m_hash)
+                    return 1;
+                return utf8::compare(left->str(), left->m_len, right->str(), right->m_len);
+            }
+        };
+
         struct node_t
         {
             u32         m_children[2]; // left, right (rbtree)
@@ -79,51 +96,30 @@ namespace ncore
             inline void set_left(s8 child, u32 index) { m_children[child] = (m_children[child]) | (index & ~(0x80000000)); }
         };
 
+        // Techically this is str_t but now part of a rbtree
         struct name_t : node_t
         {
-            u32 m_hash; // hash of the string
-            u32 m_len;  // flags; string len(24)
+            str_t* m_str; // Pointing somewhere in 'm_text_data'
 
             void reset()
             {
                 m_children[0] = 0;
                 m_children[1] = 0;
-                m_hash        = 0;
-                m_len         = 0;
+                m_str         = nullptr;
             }
-
-            static s32 compare(name_t* left, name_t* right)
-            {
-                if (left->m_hash < right->m_hash)
-                    return -1;
-                if (left->m_hash > right->m_hash)
-                    return 1;
-                return utf8::compare(left->str(), left->m_len, right->str(), right->m_len);
-            }
-
-            inline utf8::pcrune str() const { return (utf8::pcrune)(this + 1); }
-            // text data follows here in utf-8 format
         };
 
         struct folder_t : node_t
         {
             folder_t* m_parent; // folder parent
-            name_t*   m_name;   // folder name
+            str_t*    m_name;   // folder name
 
-            static inline s32 compare(folder_t* left, folder_t* right)
+            void reset()
             {
-                // comparison is in this order:
-                // - string hash -> string length -> string data
-                // - parent
-                s32 c = name_t::compare(left->m_name, right->m_name);
-                if (c == 0)
-                {
-                    if (left->m_parent < right->m_parent)
-                        c = -1;
-                    else if (left->m_parent > right->m_parent)
-                        c = 1;
-                }
-                return c;
+                m_children[0] = 0;
+                m_children[1] = 0;
+                m_parent      = nullptr;
+                m_name        = nullptr;
             }
         };
 
@@ -143,13 +139,13 @@ namespace ncore
         void      to_string(folder_t* str, runes_t& out_str) const;
         void      to_string(name_t* str, runes_t& out_str) const;
         s32       to_strlen(folder_t* str) const;
-        s32       compare(name_t* left, name_t* right) const { return name_t::compare(left, right); }
-        s32       compare(folder_t* left, folder_t* right) const;
+        s32       compare(name_t* left, name_t* right) const { return str_t::compare(left->m_str, right->m_str); }
+        s32       compare(folder_t* left, folder_t* right) const { return str_t::compare(left->m_name, right->m_name); }
 
         inline folder_t* get_nil_node() const { return m_nil_node; }
         name_t*          get_nil_name() const { return m_nil_str; }
 
-        void* m_text_data;      // Virtual memory array ([hash, length, rune[]], [hash, length, rune[]], [], [], ..)
+        void* m_text_data;      // Virtual memory array (text_t[])
         u64   m_text_data_size; // Current size of the text data
         u64   m_text_data_cap;  // Current capacity of the text data
 

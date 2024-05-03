@@ -26,7 +26,8 @@ UNITTEST_SUITE_BEGIN(filestream)
 			ctxt.m_max_open_files = 32;
 			filesystem_t::create(ctxt);
 			const char* deviceName = "TEST:\\";
-			CHECK_TRUE(filesystem_t::register_device(deviceName, gTestFileDevice));
+			crunes_t deviceNameRunes(deviceName);
+			CHECK_TRUE(filesystem_t::register_device(deviceNameRunes, gTestFileDevice));
 		}
 
 		UNITTEST_FIXTURE_TEARDOWN()
@@ -259,7 +260,7 @@ UNITTEST_SUITE_BEGIN(filestream)
 			stream_t fpTemp;
 			stream_t xfs2; filesystem_t::open(xfp2, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs2);
 			u8 stream_buffer_data[1024];
-			buffer_t stream_buffer(1024, stream_buffer_data);
+			buffer_t stream_buffer(stream_buffer_data, stream_buffer_data + 1024);
 			stream_copy(xfs1, xfs2, stream_buffer);
 			u8 buffer2[10];
 			xfs2.read(buffer2, 10);
@@ -282,7 +283,7 @@ UNITTEST_SUITE_BEGIN(filestream)
 			stream_t xfs2; filesystem_t::open(xfp2, FileMode_Open, FileAccess_ReadWrite, FileOp_Sync, xfs2);
 
 			u8 stream_buffer_data[1024];
-			buffer_t stream_buffer(1024, stream_buffer_data);
+			buffer_t stream_buffer(stream_buffer_data, stream_buffer_data+1024);
 			stream_copy(xfs1, xfs2, stream_buffer);
 
 			u8 buffer2[20];

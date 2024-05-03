@@ -50,6 +50,8 @@ namespace ncore
         void makeRelativeTo(const dirpath_t& dirpath);
         void makeAbsoluteTo(const dirpath_t& dirpath);
 
+        dirpath_t relative();
+
         pathstr_t* devname() const;  // "E:\documents\old\inventory\", -> "E:\"
         pathstr_t* rootname() const; // "E:\documents\old\inventory\", -> "documents"
         pathstr_t* basename() const; // "E:\documents\old\inventory\", -> "inventory"
