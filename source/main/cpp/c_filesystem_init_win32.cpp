@@ -1,20 +1,20 @@
 #include "ccore/c_target.h"
 #ifdef TARGET_PC
 
-#define WIN32_LEAN_AND_MEAN
-#define NOGDI
-#define NOKANJI
-#include <windows.h>
-#include <stdio.h>
+#    define WIN32_LEAN_AND_MEAN
+#    define NOGDI
+#    define NOKANJI
+#    include <windows.h>
+#    include <stdio.h>
 
-#include "ccore/c_debug.h"
-#include "cbase/c_va_list.h"
+#    include "ccore/c_debug.h"
+#    include "cbase/c_va_list.h"
 
-#include "cfilesystem/private/c_filedevice.h"
-#include "cfilesystem/private/c_filesystem.h"
+#    include "cfilesystem/private/c_filedevice.h"
+#    include "cfilesystem/private/c_filesystem.h"
 
-#include "cfilesystem/c_filesystem.h"
-#include "cfilesystem/c_filepath.h"
+#    include "cfilesystem/c_filesystem.h"
+#    include "cfilesystem/c_filepath.h"
 
 namespace ncore
 {
@@ -37,7 +37,7 @@ namespace ncore
 
         static const wchar_t* sSystemDeviceLetters[] = {L"a", L"b", L"c", L"d", L"e", L"f", L"g", L"h", L"i", L"j", L"k", L"l", L"m", L"n", L"o", L"p", L"q", L"r", L"s", L"t", L"u", L"v", L"w", L"x", L"y", L"z"};
         static const wchar_t* sSystemDevicePaths[]   = {L"a:\\", L"b:\\", L"c:\\", L"d:\\", L"e:\\", L"f:\\", L"g:\\", L"h:\\", L"i:\\", L"j:\\", L"k:\\", L"l:\\", L"m:\\",
-                                                      L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
+                                                        L"n:\\", L"o:\\", L"p:\\", L"q:\\", L"r:\\", L"s:\\", L"t:\\", L"u:\\", L"v:\\", L"w:\\", L"x:\\", L"y:\\", L"z:\\"};
 
         static void gFileSystemDestroyFileDevices(filesys_t* ctxt)
         {
@@ -147,63 +147,66 @@ namespace ncore
 
     } // namespace
 
-    //------------------------------------------------------------------------------
-    void filesystem_t::create(filesystem_t::context_t const& ctxt)
+    namespace nfs
     {
-        filesys_t* root          = ctxt.m_allocator->construct<filesys_t>();
-        root->m_allocator        = ctxt.m_allocator;
-        root->m_default_slash    = ctxt.m_default_slash;
-        root->m_max_open_files   = ctxt.m_max_open_files;
-        root->m_max_path_objects = ctxt.m_max_path_objects;
-        filesystem_t::mImpl      = root;
 
-        root->init(ctxt.m_allocator);
-
-        gFileSystemRegisterSystemAliases(root);
-
-        utf32::rune adir32[512] = {'\0'};
-
-        // Get the application directory (by removing the executable filename)
-        wchar_t dir[512] = {'\0'}; // Needs to end with a backslash!
-        DWORD   result   = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
-        if (result != 0)
+        //------------------------------------------------------------------------------
+        void filesystem_t::create(filesystem_t::context_t const& ctxt)
         {
-            runes_t  dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
-            crunes_t dir16((utf16::pcrune)dir);
-            ncore::copy(dir16, dir32);
-            runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
-            root->register_alias("appdir:\\", appdir);
+            filesys_t* root          = ctxt.m_allocator->construct<filesys_t>();
+            root->m_allocator        = ctxt.m_allocator;
+            root->m_default_slash    = ctxt.m_default_slash;
+            root->m_max_open_files   = ctxt.m_max_open_files;
+            root->m_max_path_objects = ctxt.m_max_path_objects;
+            filesystem_t::mImpl      = root;
+
+            root->init(ctxt.m_allocator);
+
+            gFileSystemRegisterSystemAliases(root);
+
+            utf32::rune adir32[512] = {'\0'};
+
+            // Get the application directory (by removing the executable filename)
+            wchar_t dir[512] = {'\0'}; // Needs to end with a backslash!
+            DWORD   result   = ::GetModuleFileNameW(0, dir, sizeof(dir) - 1);
+            if (result != 0)
+            {
+                runes_t  dir32(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
+                crunes_t dir16((utf16::pcrune)dir);
+                ncore::copy(dir16, dir32);
+                runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
+                root->register_alias("appdir:\\", appdir);
+            }
+
+            // Get the working directory
+            result = ::GetCurrentDirectoryW(sizeof(dir) - 1, dir);
+            if (result != 0)
+            {
+                runes_t  curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
+                crunes_t dir16((utf16::pcrune)dir);
+                ncore::copy(dir16, curdir);
+                root->register_alias("curdir:\\", curdir);
+            }
         }
 
-        // Get the working directory
-        result = ::GetCurrentDirectoryW(sizeof(dir) - 1, dir);
-        if (result != 0)
+        //------------------------------------------------------------------------------
+        // Summary:
+        //     Terminate the filesystem.
+        // Arguments:
+        //     void
+        // Returns:
+        //     void
+        // Description:
+        //------------------------------------------------------------------------------
+        void filesystem_t::destroy()
         {
-            runes_t  curdir(adir32, adir32, adir32 + (sizeof(adir32) / sizeof(adir32[0])) - 1);
-            crunes_t dir16((utf16::pcrune)dir);
-            ncore::copy(dir16, curdir);
-            root->register_alias("curdir:\\", curdir);
+            gFileSystemDestroyFileDevices(mImpl);
+            mImpl->exit(mImpl->m_allocator);
+            mImpl->m_allocator->destruct(mImpl->m_stralloc);
+            mImpl->m_allocator->destruct(mImpl);
+            mImpl = nullptr;
         }
-    }
-
-    //------------------------------------------------------------------------------
-    // Summary:
-    //     Terminate the filesystem.
-    // Arguments:
-    //     void
-    // Returns:
-    //     void
-    // Description:
-    //------------------------------------------------------------------------------
-    void filesystem_t::destroy()
-    {
-        gFileSystemDestroyFileDevices(mImpl);
-        mImpl->exit(mImpl->m_allocator);
-        mImpl->m_allocator->destruct(mImpl->m_stralloc);
-        mImpl->m_allocator->destruct(mImpl);
-        mImpl = nullptr;
-    }
-
+    } // namespace nfs
 }; // namespace ncore
 
 #endif // TARGET_PC

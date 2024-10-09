@@ -74,64 +74,68 @@ namespace ncore
 
     } // namespace
 
-    void filesystem_t::create(context_t const& ctxt)
+    namespace nfs
     {
-        filesys_t* imp       = ctxt.m_allocator->construct<filesys_t>();
-        imp->m_default_slash = ctxt.m_default_slash;
-        imp->m_allocator     = ctxt.m_allocator;
-        filesystem_t::mImpl  = imp;
 
-//        imp->m_devman = ctxt.m_allocator->construct<devicemanager_t>(imp->m_stralloc);
-
-        // TODO: Register attach devices
-
-        utf32::rune adir32[512] = {'\0'};
-
-        // Mac OS, getting the current working directory
-        // TODO: Correct implementation
-
-        // Get the application directory (by removing the executable filename)
-        wchar_t dir[512] = {'~', '/', '\0'}; // Needs to end with a backslash!
-        s32     result   = 1;
-        if (result != 0)
+        void filesystem_t::create(context_t const& ctxt)
         {
-            runes_t  dir32(adir32, 0, (u32)(sizeof(adir32) / sizeof(adir32[0])) - 1);
-            crunes_t dir16((utf16::pcrune)dir);
-            ncore::copy(dir16, dir32);
-            runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
-//            imp->m_devman->add_alias("appdir:\\", appdir);
+            filesys_t* imp       = ctxt.m_allocator->construct<filesys_t>();
+            imp->m_default_slash = ctxt.m_default_slash;
+            imp->m_allocator     = ctxt.m_allocator;
+            filesystem_t::mImpl  = imp;
+
+            //        imp->m_devman = ctxt.m_allocator->construct<devicemanager_t>(imp->m_stralloc);
+
+            // TODO: Register attach devices
+
+            utf32::rune adir32[512] = {'\0'};
+
+            // Mac OS, getting the current working directory
+            // TODO: Correct implementation
+
+            // Get the application directory (by removing the executable filename)
+            wchar_t dir[512] = {'~', '/', '\0'}; // Needs to end with a backslash!
+            s32     result   = 1;
+            if (result != 0)
+            {
+                runes_t  dir32(adir32, 0, (u32)(sizeof(adir32) / sizeof(adir32[0])) - 1);
+                crunes_t dir16((utf16::pcrune)dir);
+                ncore::copy(dir16, dir32);
+                runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
+                //            imp->m_devman->add_alias("appdir:\\", appdir);
+            }
+
+            // Get the working directory
+            result = 1;
+            // getExecutablePath();
+            if (result != 0)
+            {
+                runes_t  curdir(adir32, 0, (u32)(sizeof(adir32) / sizeof(adir32[0])) - 1);
+                crunes_t dir16((utf16::pcrune)dir);
+                ncore::copy(dir16, curdir);
+                //            imp->m_devman->add_alias("curdir:\\", curdir);
+            }
         }
 
-        // Get the working directory
-        result = 1;
-        // getExecutablePath();
-        if (result != 0)
+        //------------------------------------------------------------------------------
+        // Summary:
+        //     Terminate the filesystem.
+        // Arguments:
+        //     void
+        // Returns:
+        //     void
+        // Description:
+        //------------------------------------------------------------------------------
+        void filesystem_t::destroy()
         {
-            runes_t  curdir(adir32, 0, (u32)(sizeof(adir32) / sizeof(adir32[0])) - 1);
-            crunes_t dir16((utf16::pcrune)dir);
-            ncore::copy(dir16, curdir);
-//            imp->m_devman->add_alias("curdir:\\", curdir);
+            //        mImpl->m_devman->exit();
+
+            mImpl->m_allocator->destruct(mImpl->m_stralloc);
+            //        mImpl->m_allocator->destruct(mImpl->m_devman);
+            mImpl->m_allocator->destruct(mImpl);
+            mImpl = nullptr;
         }
-    }
-
-    //------------------------------------------------------------------------------
-    // Summary:
-    //     Terminate the filesystem.
-    // Arguments:
-    //     void
-    // Returns:
-    //     void
-    // Description:
-    //------------------------------------------------------------------------------
-    void filesystem_t::destroy()
-    {
-//        mImpl->m_devman->exit();
-
-        mImpl->m_allocator->destruct(mImpl->m_stralloc);
-//        mImpl->m_allocator->destruct(mImpl->m_devman);
-        mImpl->m_allocator->destruct(mImpl);
-        mImpl = nullptr;
-    }
+    } // namespace nfs
 } // namespace ncore
 
 #endif

@@ -2,7 +2,7 @@
 #define __CFILESYSTEM_XSTREAM_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-#pragma once
+#    pragma once
 #endif
 
 #include "ccore/c_debug.h"
@@ -11,53 +11,54 @@
 namespace ncore
 {
     class istream_t;
-    struct filehandle_t;
-    class filedevice_t;
-
-    ///< stream_t object
-    ///< The main interface of a stream object, user deals with this object most of the time.
-    class stream_t
+    namespace nfs
     {
-    public:
-        stream_t();
-        stream_t(const stream_t&);
-        ~stream_t();
+        struct filehandle_t;
+        class filedevice_t;
 
-        bool canRead() const;
-        bool canSeek() const;
-        bool canWrite() const;
+        // The main interface of a stream object, user deals with this object most of the time.
+        class stream_t
+        {
+        public:
+            stream_t();
+            stream_t(const stream_t&);
+            ~stream_t();
 
-        bool isOpen() const;
-        bool isAsync() const;
+            bool canRead() const;
+            bool canSeek() const;
+            bool canWrite() const;
 
-        u64  getLength() const;
-        void setLength(u64 length);
-        s64  getPos() const;
-        s64  setPos(s64 pos);
+            bool isOpen() const;
+            bool isAsync() const;
 
-        void close();
-        void flush();
+            u64  getLength() const;
+            void setLength(u64 length);
+            s64  getPos() const;
+            s64  setPos(s64 pos);
 
-        s64 read(u8*, s64);
-        s64 write(u8 const*, s64);
+            void close();
+            void flush();
 
-        stream_t& operator=(const stream_t&);
+            s64 read(u8*, s64);
+            s64 write(u8 const*, s64);
 
-    protected:
-        stream_t(istream_t* impl, filehandle_t* fh);
+            stream_t& operator=(const stream_t&);
 
-        filehandle_t* m_filehandle;
-        istream_t* m_pimpl;
-        s64 m_offset;
-        u32 m_caps;
+        protected:
+            stream_t(istream_t* impl, filehandle_t* fh);
 
-        friend class filesystem_t;
-		friend class filesys_t;
-    };
+            filehandle_t* m_filehandle;
+            istream_t*    m_pimpl;
+            s64           m_offset;
+            u32           m_caps;
 
-    
-    extern void stream_copy(stream_t& src, stream_t& dst, buffer_t& buffer);
+            friend class filesystem_t;
+            friend class filesys_t;
+        };
 
+        extern void stream_copy(stream_t& src, stream_t& dst, buffer_t& buffer);
+
+    } // namespace nfs
 }; // namespace ncore
 
 #endif

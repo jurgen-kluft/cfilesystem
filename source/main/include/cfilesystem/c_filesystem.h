@@ -1,8 +1,8 @@
-#ifndef __C_FILESYSTEM_H__
-#define __C_FILESYSTEM_H__
+#ifndef __C_FILESYSTEM_FILESYSTEM_H__
+#define __C_FILESYSTEM_FILESYSTEM_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-#pragma once
+#    pragma once
 #endif
 
 #include "cbase/c_allocator.h"
@@ -17,53 +17,48 @@ namespace ncore
 {
     class filepath_t;
     class dirpath_t;
-    class filesys_t;
-    class filedevice_t;
 
-    class filesystem_t
+    namespace nfs
     {
-    public:
+        class filesys_t;
+        class filedevice_t;
+
         struct context_t
         {
             inline context_t() : m_allocator(nullptr), m_max_open_files(32), m_max_path_objects(8192), m_default_slash('/') {}
-            alloc_t*       m_allocator;
-            u32            m_max_open_files;
-            u32            m_max_path_objects;
-            char           m_default_slash;
+            alloc_t* m_allocator;
+            u32      m_max_open_files;
+            u32      m_max_path_objects;
+            char     m_default_slash;
         };
 
-        static void create(context_t const&);
-        static void destroy();
+        void create(context_t const&);
+        void destroy();
 
-        static bool register_device(const crunes_t& device_name, filedevice_t*);
+        bool register_device(const crunes_t& device_name, filedevice_t*);
 
-        static filepath_t filepath(const char* str);
-        static dirpath_t  dirpath(const char* str);
-        static filepath_t filepath(const crunes_t& str);
-        static dirpath_t  dirpath(const crunes_t& str);
+        filepath_t filepath(const char* str);
+        dirpath_t  dirpath(const char* str);
+        filepath_t filepath(const crunes_t& str);
+        dirpath_t  dirpath(const crunes_t& str);
 
-        static void        open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream);
-        static void        close(stream_t&);
-        static bool        exists(filepath_t const&);
-        static bool        exists(dirpath_t const&);
-        static s64         size(filepath_t const&);
-        static void        rename(filepath_t const&, filepath_t const&);
-        static void        move(filepath_t const& src, filepath_t const& dst);
-        static void        copy(filepath_t const& src, filepath_t const& dst);
-        static void        rm(filepath_t const&);
-        static void        rm(dirpath_t const&);
+        void open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream);
+        void close(stream_t&);
+        bool exists(filepath_t const&);
+        bool exists(dirpath_t const&);
+        s64  size(filepath_t const&);
+        void rename(filepath_t const&, filepath_t const&);
+        void move(filepath_t const& src, filepath_t const& dst);
+        void copy(filepath_t const& src, filepath_t const& dst);
+        void rm(filepath_t const&);
+        void rm(dirpath_t const&);
 
-    protected:
-        friend class filesys_t;
-        static filesys_t* mImpl;
-    };
-
-    // doIO; user has to call this from either the main thread or an IO thread.
-    // This call will block the calling thread and it will stay in a do-while
-    // until io_thread_t->quit() is true.
-    class io_thread_t;
-    extern void doIO(io_thread_t*);
-
+        // doIO; user has to call this from either the main thread or an IO thread.
+        // This call will block the calling thread and it will stay in a do-while
+        // until io_thread_t->quit() is true.
+        class io_thread_t;
+        extern void doIO(io_thread_t*);
+    }; // namespace nfs
 }; // namespace ncore
 
 #endif // __C_FILESYSTEM_H__
