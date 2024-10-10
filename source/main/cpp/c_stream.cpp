@@ -35,18 +35,18 @@ namespace ncore
 
         istream_t* get_nullstream() { return &sNullStreamImp; }
 
-        stream_t::stream_t() : m_caps(0), m_filehandle(nullptr), m_offset(0), m_pimpl(&sNullStreamImp) {}
+        stream_t::stream_t() : m_caps(), m_filehandle(nullptr), m_offset(0), m_pimpl(&sNullStreamImp) {}
 
         stream_t::stream_t(const stream_t& str) : m_caps(str.m_caps), m_filehandle(str.m_filehandle), m_offset(str.m_offset), m_pimpl(str.m_pimpl) {}
 
         stream_t::~stream_t() {}
 
         bool stream_t::canRead() const { return true; }
-        bool stream_t::canSeek() const { return (m_caps & STREAM_CAPS_SEEK) != 0; }
-        bool stream_t::canWrite() const { return (m_caps & STREAM_CAPS_WRITE) != 0; }
+        bool stream_t::canSeek() const { return m_caps.CanSeek(); }
+        bool stream_t::canWrite() const { return m_caps.CanWrite(); }
 
         bool stream_t::isOpen() const { return m_filehandle != INVALID_FILE_HANDLE; }
-        bool stream_t::isAsync() const { return (m_caps & STREAM_CAPS_ASYNC) != 0; }
+        bool stream_t::isAsync() const { return m_caps.CanAsync() != 0; }
 
         u64  stream_t::getLength() const { return m_pimpl->getLength(); }
         void stream_t::setLength(u64 length) { m_pimpl->setLength(length); }
@@ -82,7 +82,7 @@ namespace ncore
         {
             m_filehandle = fh;
             m_pimpl      = impl;
-            m_caps       = 0;
+            m_caps       = EStreamCaps::None();
             m_offset     = 0;
         }
     } // namespace nfs

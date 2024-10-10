@@ -15,7 +15,7 @@ namespace ncore
 
         filesys_t* mImpl = nullptr;
 
-        void open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream) { mImpl->open(filename, mode, access, op, out_stream); }
+        void open(const filepath_t& filename, EFileMode::Enum mode, EFileAccess::Enum access, EFileOp::Enum op, stream_t& out_stream) { mImpl->open(filename, mode, access, op, out_stream); }
         void close(stream_t& stream) { return mImpl->close(stream); }
         bool exists(filepath_t const& filepath) { return mImpl->exists(filepath); }
         bool exists(dirpath_t const& dirpath) { return mImpl->exists(dirpath); }
@@ -38,7 +38,7 @@ namespace ncore
 
         extern istream_t* get_filestream();
 
-        void filesys_t::open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream)
+        void filesys_t::open(const filepath_t& filename, EFileMode::Enum mode, EFileAccess::Enum access, EFileOp::Enum op, stream_t& out_stream)
         {
             filedevice_t* fd = filename.m_dirpath.m_device->m_fileDevice;
 

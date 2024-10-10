@@ -36,7 +36,7 @@ namespace ncore
                 return true;
             }
 
-            virtual bool openFile(const filepath_t& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle)
+            virtual bool openFile(const filepath_t& szFilename, EFileMode::Enum mode, EFileAccess::Enum access, EFileOp::Enum op, void*& nFileHandle)
             {
                 nFileHandle = INVALID_FILE_HANDLE;
                 return false;
@@ -152,7 +152,7 @@ namespace ncore
             }
         };
 
-        filedevice_t* x_NullFileDevice()
+        filedevice_t* g_NullFileDevice()
         {
             static filedevice_null_t filedevice_null;
             return &filedevice_null;

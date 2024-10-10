@@ -8,6 +8,8 @@
 #include "ccore/c_debug.h"
 #include "cbase/c_buffer.h"
 
+#include "cfilesystem/private/c_enumerations.h"
+
 namespace ncore
 {
     class istream_t;
@@ -47,10 +49,10 @@ namespace ncore
         protected:
             stream_t(istream_t* impl, filehandle_t* fh);
 
-            filehandle_t* m_filehandle;
-            istream_t*    m_pimpl;
-            s64           m_offset;
-            u32           m_caps;
+            filehandle_t*     m_filehandle;
+            istream_t*        m_pimpl;
+            s64               m_offset;
+            EStreamCaps::Enum m_caps;
 
             friend class filesystem_t;
             friend class filesys_t;

@@ -18,7 +18,7 @@ namespace ncore
         class filedevice_t;
         struct filehandle_t;
 
-        extern void*      open_filestream(alloc_t* a, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, u32 out_caps);
+        extern void*      open_filestream(alloc_t* a, filedevice_t* fd, const filepath_t& filename, EFileMode::Enum mode, EFileAccess::Enum access, EFileOp::Enum op, u32 out_caps);
         extern istream_t* get_nullstream();
     } // namespace nfs
 }; // namespace ncore

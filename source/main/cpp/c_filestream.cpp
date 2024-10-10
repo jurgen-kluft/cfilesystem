@@ -27,6 +27,21 @@ namespace ncore
 
             virtual s64 read(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, u8* buffer, s64 count);
             virtual s64 write(filedevice_t* fd, filehandle_t* fh, u32 caps, s64& pos, const u8* buffer, s64 count);
+
+            virtual bool vcanSeek() const { return true; }
+            virtual bool vcanRead() const { return true; }
+            virtual bool vcanWrite() const { return false; }
+            virtual bool vcanView() const { return false; }
+            virtual void vflush() {}
+            virtual void vclose() {}
+            virtual u64  vgetLength() const { return 0; }
+            virtual void vsetLength(u64 length) {}
+            virtual s64  vsetPos(s64 pos) { return 0; }
+            virtual s64  vgetPos() const { return 0; }
+            virtual s64  vread(u8* buffer, s64 count) { return 0; }
+            virtual s64  vview(u8 const*& buffer, s64 count) { return 0; }
+            virtual s64  vwrite(const u8* buffer, s64 count) { return 0; }
+
         };
 
         enum ECaps
@@ -48,13 +63,13 @@ namespace ncore
 
         // ---------------------------------------------------------------------------------------------
 
-        void* open_filestream(alloc_t* a, filedevice_t* fd, const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, u32 out_caps)
+        void* open_filestream(alloc_t* a, filedevice_t* fd, const filepath_t& filename, EFileMode::Enum mode, EFileAccess::Enum access, EFileOp::Enum op, u32 out_caps)
         {
             bool can_read, can_write, can_seek, can_async;
 
             // fd->caps(filename, can_read, can_write, can_seek, can_async);
-            can_read  = true;
-            can_write = true;
+            can_read  = access.IsRead() || access.IsReadWrite();
+            can_write = access.IsWrite() || access.IsReadWrite();
             can_seek  = true;
             can_async = true;
 
@@ -66,13 +81,13 @@ namespace ncore
 
             caps.test_set(USE_READ, true);
             caps.test_set(USE_SEEK, can_seek);
-            caps.test_set(USE_WRITE, can_write && ((access & FileAccess_Write) != 0));
-            caps.test_set(USE_ASYNC, can_async && (op == FileOp_Async));
+            caps.test_set(USE_WRITE, can_write);
+            caps.test_set(USE_ASYNC, can_async);
 
             void* handle = nullptr;
-            switch (mode)
+            switch (mode.value)
             {
-                case FileMode_CreateNew:
+                case EFileMode::Value_CreateNew:
                 {
                     if (caps.is_set(CAN_WRITE))
                     {
@@ -84,7 +99,7 @@ namespace ncore
                     }
                 }
                 break;
-                case FileMode_Create:
+                case EFileMode::Value_Create:
                 {
                     if (caps.is_set(CAN_WRITE))
                     {
@@ -101,7 +116,7 @@ namespace ncore
                     }
                 }
                 break;
-                case FileMode_Open:
+                case EFileMode::Value_Open:
                 {
                     if (fd->hasFile(filename) == true)
                     {
@@ -113,7 +128,7 @@ namespace ncore
                     }
                 }
                 break;
-                case FileMode_OpenOrCreate:
+                case EFileMode::Value_OpenOrCreate:
                 {
                     {
                         if (fd->hasFile(filename) == true)
@@ -129,7 +144,7 @@ namespace ncore
                     }
                 }
                 break;
-                case FileMode_Truncate:
+                case EFileMode::Value_Truncate:
                 {
                     if (caps.is_set(CAN_WRITE))
                     {
@@ -144,7 +159,7 @@ namespace ncore
                     }
                 }
                 break;
-                case FileMode_Append:
+                case EFileMode::Value_Append:
                 {
                     if (caps.is_set(CAN_WRITE))
                     {
@@ -253,8 +268,8 @@ namespace ncore
             s64 streamLength = (s64)src.getLength();
             while (streamLength > 0)
             {
-                u64 const r = src.read(buffer.m_mutable, buffer.m_len);
-                dst.write(buffer.m_mutable, buffer.m_len);
+                u64 const r = src.read(buffer.m_begin, buffer.size());
+                dst.write(buffer.m_begin, buffer.size());
                 streamLength -= r;
             }
         }

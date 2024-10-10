@@ -42,7 +42,7 @@ namespace ncore
         filepath_t filepath(const crunes_t& str);
         dirpath_t  dirpath(const crunes_t& str);
 
-        void open(const filepath_t& filename, EFileMode mode, EFileAccess access, EFileOp op, stream_t& out_stream);
+        void open(const filepath_t& filename, EFileMode::Enum mode, EFileAccess::Enum access, EFileOp::Enum op, stream_t& out_stream);
         void close(stream_t&);
         bool exists(filepath_t const&);
         bool exists(dirpath_t const&);

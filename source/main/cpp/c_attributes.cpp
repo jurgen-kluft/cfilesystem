@@ -16,9 +16,7 @@ namespace ncore
         };
 
         fileattrs_t::fileattrs_t() : mFlags(0) {}
-
         fileattrs_t::fileattrs_t(const fileattrs_t& other) : mFlags(other.mFlags) {}
-
         fileattrs_t::fileattrs_t(bool boArchive, bool boReadonly, bool boHidden, bool boSystem) : mFlags(0)
         {
             setArchive(boArchive);

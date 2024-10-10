@@ -53,7 +53,7 @@ namespace ncore
 
             virtual bool getDeviceInfo(filedevice_t* device, u64& totalSpace, u64& freeSpace) const = 0;
 
-            virtual bool openFile(filepath_t const& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& outHandle) = 0;
+            virtual bool openFile(filepath_t const& szFilename, EFileMode::Enum mode, EFileAccess::Enum access, EFileOp::Enum op, void*& outHandle) = 0;
             virtual bool createFile(const filepath_t& szFilename, bool boRead, bool boWrite, void*& nFileHandle)                  = 0;
             virtual bool readFile(void* pHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead)                          = 0;
             virtual bool writeFile(void* pHandle, u64 pos, void const* buffer, u64 count, u64& outNumBytesWritten)                = 0;

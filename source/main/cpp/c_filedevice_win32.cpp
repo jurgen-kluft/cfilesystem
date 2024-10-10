@@ -23,8 +23,6 @@
 #    include "cfilesystem/private/c_filedevice.h"
 #    include "cfilesystem/private/c_filesystem.h"
 #    include "cfilesystem/c_attributes.h"
-#    include "cfilesystem/c_filepath.h"
-#    include "cfilesystem/c_dirpath.h"
 #    include "cfilesystem/c_filesystem.h"
 
 namespace ncore
@@ -46,7 +44,7 @@ namespace ncore
 
             virtual bool getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const;
 
-            virtual bool openFile(const filepath_t& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle);
+            virtual bool openFile(const filepath_t& szFilename, EFileMode::Enum mode, EFileAccess::Enum access, EFileOp::Enum op, void*& nFileHandle);
             virtual bool createFile(const filepath_t& szFilename, bool boRead, bool boWrite, void*& nFileHandle);
             virtual bool readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead);
             virtual bool writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten);

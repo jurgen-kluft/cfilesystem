@@ -17,7 +17,7 @@
 #    include "cfilesystem/private/c_filesystem.h"
 
 #    include "cfilesystem/c_filesystem.h"
-#    include "cfilesystem/c_filepath.h"
+
 
 namespace ncore
 {
@@ -76,13 +76,14 @@ namespace ncore
 
     namespace nfs
     {
+        static filesys_t* sImpl = nullptr;
 
-        void filesystem_t::create(context_t const& ctxt)
+        void create(context_t const& ctxt)
         {
             filesys_t* imp       = ctxt.m_allocator->construct<filesys_t>();
             imp->m_default_slash = ctxt.m_default_slash;
             imp->m_allocator     = ctxt.m_allocator;
-            filesystem_t::mImpl  = imp;
+            sImpl = imp;
 
             //        imp->m_devman = ctxt.m_allocator->construct<devicemanager_t>(imp->m_stralloc);
 
@@ -98,10 +99,10 @@ namespace ncore
             s32     result   = 1;
             if (result != 0)
             {
-                runes_t  dir32(adir32, 0, (u32)(sizeof(adir32) / sizeof(adir32[0])) - 1);
-                crunes_t dir16((utf16::pcrune)dir);
-                ncore::copy(dir16, dir32);
-                runes_t appdir = findLastSelectUntilIncluded(dir32, '\\');
+                runes_t  dir32 = make_runes(adir32, 0, 0, (u32)(sizeof(adir32) / sizeof(adir32[0])) - 1);
+                crunes_t dir16 = make_crunes((utf16::pcrune)dir);
+                nrunes::copy(dir16, dir32);
+                runes_t appdir = nrunes::findLastSelectUntilIncluded(dir32, '\\');
                 //            imp->m_devman->add_alias("appdir:\\", appdir);
             }
 
@@ -110,9 +111,9 @@ namespace ncore
             // getExecutablePath();
             if (result != 0)
             {
-                runes_t  curdir(adir32, 0, (u32)(sizeof(adir32) / sizeof(adir32[0])) - 1);
-                crunes_t dir16((utf16::pcrune)dir);
-                ncore::copy(dir16, curdir);
+                runes_t  curdir = make_runes(adir32, 0, (u32)(sizeof(adir32) / sizeof(adir32[0])) - 1);
+                crunes_t dir16 = make_crunes((utf16::pcrune)dir);
+                nrunes::copy(dir16, curdir);
                 //            imp->m_devman->add_alias("curdir:\\", curdir);
             }
         }
@@ -126,14 +127,12 @@ namespace ncore
         //     void
         // Description:
         //------------------------------------------------------------------------------
-        void filesystem_t::destroy()
+        void destroy()
         {
             //        mImpl->m_devman->exit();
-
-            mImpl->m_allocator->destruct(mImpl->m_stralloc);
             //        mImpl->m_allocator->destruct(mImpl->m_devman);
-            mImpl->m_allocator->destruct(mImpl);
-            mImpl = nullptr;
+            sImpl->m_allocator->destruct(sImpl);
+            sImpl = nullptr;
         }
     } // namespace nfs
 } // namespace ncore

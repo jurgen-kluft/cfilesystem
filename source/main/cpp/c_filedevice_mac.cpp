@@ -14,17 +14,16 @@
 #include "cfilesystem/private/c_filedevice.h"
 #include "cfilesystem/private/c_filesystem.h"
 #include "cfilesystem/c_attributes.h"
-#include "cfilesystem/c_fileinfo.h"
-#include "cfilesystem/c_dirinfo.h"
-#include "cfilesystem/c_filepath.h"
-#include "cfilesystem/c_dirpath.h"
 #include "cfilesystem/c_filesystem.h"
+#include "cfilesystem/c_stream.h"
 
 //@TODO: When filedevice_pc_t is working OK we can copy and implement the Mac/OSX version
 
 namespace ncore
 {
-    class xfiledevice_mac : public filedevice_t
+    namespace nfs
+    {
+    class filedevice_mac_t : public filedevice_t
     {
     public:
         alloc_t*  mAllocator;
@@ -33,15 +32,15 @@ namespace ncore
 
         DCORE_CLASS_PLACEMENT_NEW_DELETE
 
-        xfiledevice_mac(alloc_t* alloc, const dirpath_t& pDrivePath, bool boCanWrite) : mAllocator(alloc), mDrivePath(pDrivePath), mCanWrite(boCanWrite) {}
-        virtual ~xfiledevice_mac() {}
+        filedevice_mac_t(alloc_t* alloc, const dirpath_t& pDrivePath, bool boCanWrite) : mAllocator(alloc), mDrivePath(pDrivePath), mCanWrite(boCanWrite) {}
+        virtual ~filedevice_mac_t() {}
 
         virtual bool canSeek() const { return true; }
         virtual bool canWrite() const { return mCanWrite; }
 
-        virtual bool getDeviceInfo(pathdevice_t* device, u64& totalSpace, u64& freeSpace) const { return false; }
+        virtual bool getDeviceInfo(filedevice_t* device, u64& totalSpace, u64& freeSpace) const { return false; }
 
-        virtual bool openFile(const filepath_t& szFilename, EFileMode mode, EFileAccess access, EFileOp op, void*& nFileHandle) { return false; }
+        virtual bool openFile(const filepath_t& szFilename, EFileMode::Enum mode, EFileAccess::Enum access, EFileOp::Enum op, void*& nFileHandle) { return false; }
         virtual bool createFile(const filepath_t& szFilename, bool boRead, bool boWrite, void*& nFileHandle) { return false; }
         virtual bool readFile(void* nFileHandle, u64 pos, void* buffer, u64 count, u64& outNumBytesRead) { return false; }
         virtual bool writeFile(void* nFileHandle, u64 pos, const void* buffer, u64 count, u64& outNumBytesWritten) { return false; }
@@ -93,24 +92,26 @@ namespace ncore
         static void* sOpenDir(dirpath_t const& szDirPath);
     };
 
-    filedevice_t* x_CreateFileDeviceMac(alloc_t* alloc, bool boCanWrite)
+    filedevice_t* g_CreateFileDeviceMac(alloc_t* alloc, bool boCanWrite)
     {
-        xfiledevice_mac* file_device = alloc->construct<xfiledevice_mac>(alloc, boCanWrite);
+        filedevice_mac_t* file_device = alloc->construct<filedevice_mac_t>(alloc, boCanWrite);
         return file_device;
     }
 
-    void x_DestroyFileDeviceMac(filedevice_t* device)
+    void g_DestroyFileDeviceMac(filedevice_t* device)
     {
-        xfiledevice_mac* file_device = (xfiledevice_mac*)device;
+        filedevice_mac_t* file_device = (filedevice_mac_t*)device;
         file_device->mAllocator->destruct(file_device);
     }
 
-    filedevice_t* x_CreateFileDevice(alloc_t* allocator, bool boCanWrite)
+    filedevice_t* g_CreateFileDevice(alloc_t* allocator, bool boCanWrite)
     {
         dirpath_t drivePath = filesystem_t::dirpath(pDrivePath);
-        return x_CreateFileDeviceMac(allocator, drivePath, boCanWrite);
+        return g_CreateFileDeviceMac(allocator, drivePath, boCanWrite);
     }
 
-    void x_DestroyFileDevice(filedevice_t* fd) { x_DestroyFileDeviceMac(fd); }
+    void g_DestroyFileDevice(filedevice_t* fd) { g_DestroyFileDeviceMac(fd); }
+    }
+
 } // namespace ncore
 #endif // TARGET_MAC
