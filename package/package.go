@@ -27,19 +27,19 @@ func GetPackage() *denv.Package {
 	mainpkg.AddPackage(ctimepkg)
 
 	// 'cfilesystem' library
-	mainlib := denv.SetupDefaultCppLibProject("cfilesystem", "github.com\\jurgen-kluft\\cfilesystem")
-	mainlib.Dependencies = append(mainlib.Dependencies, ccorepkg.GetMainLib())
-	mainlib.Dependencies = append(mainlib.Dependencies, cbasepkg.GetMainLib())
-	mainlib.Dependencies = append(mainlib.Dependencies, cvmempkg.GetMainLib())
-	mainlib.Dependencies = append(mainlib.Dependencies, ctimepkg.GetMainLib())
+	mainlib := denv.SetupCppLibProject("cfilesystem", "github.com\\jurgen-kluft\\cfilesystem")
+	mainlib.AddDependencies(ccorepkg.GetMainLib()...)
+	mainlib.AddDependencies(cbasepkg.GetMainLib()...)
+	mainlib.AddDependencies(cvmempkg.GetMainLib()...)
+	mainlib.AddDependencies(ctimepkg.GetMainLib()...)
 
 	// 'cfilesystem' unittest project
 	maintest := denv.SetupDefaultCppTestProject("cfilesystem_test", "github.com\\jurgen-kluft\\cfilesystem")
-	maintest.Dependencies = append(maintest.Dependencies, cunittestpkg.GetMainLib())
-	maintest.Dependencies = append(maintest.Dependencies, ccorepkg.GetMainLib())
-	maintest.Dependencies = append(maintest.Dependencies, cbasepkg.GetMainLib())
-	maintest.Dependencies = append(maintest.Dependencies, cvmempkg.GetMainLib())
-	maintest.Dependencies = append(maintest.Dependencies, ctimepkg.GetMainLib())
+	maintest.AddDependencies(cunittestpkg.GetMainLib()...)
+	maintest.AddDependencies(ccorepkg.GetMainLib()...)
+	maintest.AddDependencies(cbasepkg.GetMainLib()...)
+	maintest.AddDependencies(cvmempkg.GetMainLib()...)
+	maintest.AddDependencies(ctimepkg.GetMainLib()...)
 	maintest.Dependencies = append(maintest.Dependencies, mainlib)
 
 	mainpkg.AddMainLib(mainlib)
