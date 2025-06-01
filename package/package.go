@@ -9,40 +9,51 @@ import (
 	cvmem "github.com/jurgen-kluft/cvmem/package"
 )
 
-// GetPackage returns the package object of 'cfilesystem'
+const (
+	repo_path = "github.com\\jurgen-kluft\\"
+	repo_name = "cfilesystem"
+)
+
 func GetPackage() *denv.Package {
-	// Dependencies
+	name := repo_name
+
+	// dependencies
 	cunittestpkg := cunittest.GetPackage()
 	ccorepkg := ccore.GetPackage()
 	cbasepkg := cbase.GetPackage()
 	cvmempkg := cvmem.GetPackage()
 	ctimepkg := ctime.GetPackage()
 
-	// The main (cfilesystem) package
-	mainpkg := denv.NewPackage("cfilesystem")
+	// main package
+	mainpkg := denv.NewPackage(repo_path, repo_name)
 	mainpkg.AddPackage(cunittestpkg)
 	mainpkg.AddPackage(ccorepkg)
 	mainpkg.AddPackage(cbasepkg)
 	mainpkg.AddPackage(cvmempkg)
 	mainpkg.AddPackage(ctimepkg)
 
-	// 'cfilesystem' library
-	mainlib := denv.SetupCppLibProject("cfilesystem", "github.com\\jurgen-kluft\\cfilesystem")
+	// main library
+	mainlib := denv.SetupCppLibProject(mainpkg, name)
 	mainlib.AddDependencies(ccorepkg.GetMainLib()...)
 	mainlib.AddDependencies(cbasepkg.GetMainLib()...)
 	mainlib.AddDependencies(cvmempkg.GetMainLib()...)
 	mainlib.AddDependencies(ctimepkg.GetMainLib()...)
 
-	// 'cfilesystem' unittest project
-	maintest := denv.SetupDefaultCppTestProject("cfilesystem_test", "github.com\\jurgen-kluft\\cfilesystem")
+	// test library
+	testlib := denv.SetupCppTestLibProject(mainpkg, name)
+	testlib.AddDependencies(ccorepkg.GetTestLib()...)
+	testlib.AddDependencies(cbasepkg.GetTestLib()...)
+	testlib.AddDependencies(cvmempkg.GetTestLib()...)
+	testlib.AddDependencies(ctimepkg.GetTestLib()...)
+	testlib.AddDependencies(cunittestpkg.GetTestLib()...)
+
+	// unittest project
+	maintest := denv.SetupCppTestProject(mainpkg, name)
 	maintest.AddDependencies(cunittestpkg.GetMainLib()...)
-	maintest.AddDependencies(ccorepkg.GetMainLib()...)
-	maintest.AddDependencies(cbasepkg.GetMainLib()...)
-	maintest.AddDependencies(cvmempkg.GetMainLib()...)
-	maintest.AddDependencies(ctimepkg.GetMainLib()...)
-	maintest.Dependencies = append(maintest.Dependencies, mainlib)
+	maintest.AddDependency(testlib)
 
 	mainpkg.AddMainLib(mainlib)
+	mainpkg.AddTestLib(testlib)
 	mainpkg.AddUnittest(maintest)
 	return mainpkg
 }
