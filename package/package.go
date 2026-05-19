@@ -6,7 +6,6 @@ import (
 	ccore "github.com/jurgen-kluft/ccore/package"
 	ctime "github.com/jurgen-kluft/ctime/package"
 	cunittest "github.com/jurgen-kluft/cunittest/package"
-	cvmem "github.com/jurgen-kluft/cvmem/package"
 )
 
 const (
@@ -21,7 +20,6 @@ func GetPackage() *denv.Package {
 	cunittestpkg := cunittest.GetPackage()
 	ccorepkg := ccore.GetPackage()
 	cbasepkg := cbase.GetPackage()
-	cvmempkg := cvmem.GetPackage()
 	ctimepkg := ctime.GetPackage()
 
 	// main package
@@ -29,21 +27,18 @@ func GetPackage() *denv.Package {
 	mainpkg.AddPackage(cunittestpkg)
 	mainpkg.AddPackage(ccorepkg)
 	mainpkg.AddPackage(cbasepkg)
-	mainpkg.AddPackage(cvmempkg)
 	mainpkg.AddPackage(ctimepkg)
 
 	// main library
 	mainlib := denv.SetupCppLibProject(mainpkg, name)
 	mainlib.AddDependencies(ccorepkg.GetMainLib())
 	mainlib.AddDependencies(cbasepkg.GetMainLib())
-	mainlib.AddDependencies(cvmempkg.GetMainLib())
 	mainlib.AddDependencies(ctimepkg.GetMainLib())
 
 	// test library
 	testlib := denv.SetupCppTestLibProject(mainpkg, name)
 	testlib.AddDependencies(ccorepkg.GetTestLib())
 	testlib.AddDependencies(cbasepkg.GetTestLib())
-	testlib.AddDependencies(cvmempkg.GetTestLib())
 	testlib.AddDependencies(ctimepkg.GetTestLib())
 	testlib.AddDependencies(cunittestpkg.GetTestLib())
 
